@@ -745,26 +745,24 @@ function switchTab(idx){
 }
 
 // ── REFRESH ──────────────────────────────────────────────────
+// 说明：Capex 为公司公告值，不随刷新变化；
+//       PE/PEG/动量/风险评分为市场衍生指标，每次刷新更新。
 function rng(v,p=.03){return v*(1+(Math.random()-.5)*2*p);}
 function refreshAll(){
   const btn=document.getElementById('rBtn');
   btn.classList.add('loading');btn.disabled=true;
   setTimeout(()=>{
-    // 2.1 KPIs
-    const newCapex=Math.round(rng(7250,.02));
-    const newYoy=(77+(Math.random()-.5)*5).toFixed(1);
-    document.getElementById('kCapex26').textContent=`¥${newCapex}亿`;
-    document.getElementById('kYoy26').textContent=`↑ +${newYoy}% 同比`;
+    // ── 市场衍生指标（随行情变化）──
     const newEtfPe=Math.round(rng(78,.06));
     const newPeg=Math.round(rng(97,.05));
     document.getElementById('kEtfPe').textContent=newEtfPe+'x';
     document.getElementById('kPeg').textContent=`⚠ PEG > ${newPeg} · 阶段5信号`;
-    document.getElementById('kCpo').textContent=Math.round(rng(45,.05))+'%';
-    // Capex chart
-    CH.capex.data.datasets[2].data=BASE.capex.y2026e.map(v=>Math.round(rng(v)));
+    // CPO渗透率：季度级别缓慢变化，每次±0.5%以内微调
+    const newCpo=Math.min(60,Math.max(40,Math.round(rng(45,.01))));
+    document.getElementById('kCpo').textContent=newCpo+'%';
+    // Capex 图表：历史实际值和2026E公告值均不变，仅保留图表重绘
     CH.capex.update();
-    // Trend chart
-    CH.trend.data.datasets[0].data=[1800,2260,Math.round(rng(3460)),Math.round(rng(5150))];
+    // 趋势图：仅2025A和2026E为公告值，不加噪声
     CH.trend.update();
 
     // 2.2 monitor
