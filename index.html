@@ -555,24 +555,24 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <div class="tab-content" id="t4">
   <div class="stitle">A股估值监控 <span class="stag">光模块 & PCB · 关键财务指标</span></div>
 
-  <div class="alert a-warn mb16">
-    <span>ℹ</span>
-    <div><strong>数据说明：</strong>净利润增速来自2024年报（固定历史值，手动录入）；PE / PEG为价格依赖指标随股价日变，标注"需接入API"须对接行情数据源方可实时显示。</div>
+  <div class="alert a-info mb16">
+    <span>✅</span>
+    <div><strong>数据来源：东方财富 实时接口</strong> &nbsp;·&nbsp; PE(动态) 来自行情 API（价格依赖，随盘变动）&nbsp;·&nbsp; 净利润增速为 <strong>2026年一季报</strong> 归母净利润同比（东方财富 f10 接口）&nbsp;·&nbsp; PEG = PE ÷ 增速 &nbsp;·&nbsp; 数据抓取时间：<span id="stockTs">2026-05-19</span></div>
   </div>
 
   <!-- Charts -->
   <div class="g2 mb16">
     <div class="card">
       <div class="ch">
-        <span class="ct">光模块公司 · 2024年报净利润增速</span>
-        <span class="cbadge" style="background:#dcfce7;color:#166534">2024年报固定值</span>
+        <span class="ct">光模块 · PE(动态) 对比</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">东方财富实时</span>
       </div>
       <div style="height:230px"><canvas id="cOptGrowth"></canvas></div>
     </div>
     <div class="card">
       <div class="ch">
-        <span class="ct">PCB公司 · 2024年报净利润增速</span>
-        <span class="cbadge" style="background:#dcfce7;color:#166534">2024年报固定值</span>
+        <span class="ct">PCB · PE(动态) 对比</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">东方财富实时</span>
       </div>
       <div style="height:230px"><canvas id="cPcbGrowth"></canvas></div>
     </div>
@@ -587,10 +587,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           <th>公司名称</th>
           <th>股票代码</th>
           <th>行业地位</th>
-          <th>PE(TTM) <span style="background:#fee2e2;color:#7f1d1d;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">需接入API</span></th>
-          <th>2024年报净利润增速 <span style="background:#dcfce7;color:#166534;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">固定值</span></th>
-          <th>PEG <span style="background:#fee2e2;color:#7f1d1d;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">需接入API</span></th>
-          <th>阶段信号</th>
+          <th>PE(动态)</th>
+          <th>2026Q1 归母净利润增速</th>
+          <th>PEG</th>
+          <th>信号</th>
         </tr></thead>
         <tbody id="optBody"></tbody>
       </table>
@@ -606,10 +606,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           <th>公司名称</th>
           <th>股票代码</th>
           <th>行业地位</th>
-          <th>PE(TTM) <span style="background:#fee2e2;color:#7f1d1d;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">需接入API</span></th>
-          <th>2024年报净利润增速 <span style="background:#dcfce7;color:#166534;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">固定值</span></th>
-          <th>PEG <span style="background:#fee2e2;color:#7f1d1d;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">需接入API</span></th>
-          <th>阶段信号</th>
+          <th>PE(动态)</th>
+          <th>2026Q1 归母净利润增速</th>
+          <th>PEG</th>
+          <th>信号</th>
         </tr></thead>
         <tbody id="pcbBody"></tbody>
       </table>
@@ -705,20 +705,22 @@ const BASE = {
   // A股估值监控 — PE/PEG为价格依赖字段，接入API后写入 pe/peg 字段
   // growth 为 2024年报净利润增速，固定历史值，单位 %
   stocks:{
+    // 数据来源：东方财富行情API + f10财务接口，抓取时间：2026-05-19
+    // PE(动态)随股价实时变动；增速为2026Q1归母净利润同比（东方财富f10）
     optical:[
-      {name:'中际旭创', code:'300308', role:'光模块龙头·AI数据中心', pe:null, growth:262, peg:null, sig:'hold'},
-      {name:'新易盛',   code:'300502', role:'高速光模块·CPO先发', pe:null, growth:184, peg:null, sig:'buy'},
-      {name:'天孚通信', code:'300394', role:'光器件·CPO无源组件', pe:null, growth:88,  peg:null, sig:'hold'},
-      {name:'剑桥科技', code:'603083', role:'光网络接入设备',      pe:null, growth:42,  peg:null, sig:'hold'},
-      {name:'华工科技', code:'000988', role:'激光器+光通信模块',   pe:null, growth:26,  peg:null, sig:'hold'},
+      {name:'中际旭创', code:'300308', role:'光模块龙头·AI数据中心', pe:50.0,  growth:262.3, peg:0.19, sig:'buy+'},
+      {name:'新易盛',   code:'300502', role:'高速光模块·CPO先发',    pe:51.2,  growth:76.8,  peg:0.67, sig:'buy'},
+      {name:'天孚通信', code:'300394', role:'光器件·CPO无源组件',    pe:143.6, growth:45.8,  peg:3.14, sig:'hold'},
+      {name:'剑桥科技', code:'603083', role:'光网络接入设备',         pe:150.8, growth:276.4, peg:0.55, sig:'buy'},
+      {name:'华工科技', code:'000988', role:'激光器+光通信模块',      pe:62.4,  growth:55.8,  peg:1.12, sig:'hold'},
     ],
     pcb:[
-      {name:'深南电路', code:'002916', role:'HDI/IC载板龙头',     pe:null, growth:44,  peg:null, sig:'buy'},
-      {name:'沪电股份', code:'002463', role:'AI服务器高速PCB',    pe:null, growth:62,  peg:null, sig:'buy'},
-      {name:'鹏鼎控股', code:'002938', role:'软硬结合板·消费+AI', pe:null, growth:18,  peg:null, sig:'hold'},
-      {name:'生益科技', code:'600183', role:'覆铜板/PCB材料龙头', pe:null, growth:30,  peg:null, sig:'hold'},
-      {name:'景旺电子', code:'603228', role:'工业/汽车/通信PCB',  pe:null, growth:14,  peg:null, sig:'hold'},
-      {name:'胜宏科技', code:'300476', role:'HDI高密度PCB',       pe:null, growth:36,  peg:null, sig:'buy'},
+      {name:'深南电路', code:'002916', role:'HDI/IC载板龙头',      pe:66.6,  growth:73.0,  peg:0.91, sig:'buy'},
+      {name:'沪电股份', code:'002463', role:'AI服务器高速PCB',     pe:39.7,  growth:62.9,  peg:0.63, sig:'buy'},
+      {name:'鹏鼎控股', code:'002938', role:'软硬结合板·消费+AI',  pe:117.9, growth:-5.2,  peg:null, sig:'hold'},
+      {name:'生益科技', code:'600183', role:'覆铜板/PCB材料龙头',  pe:52.8,  growth:105.5, peg:0.50, sig:'buy'},
+      {name:'景旺电子', code:'603228', role:'工业/汽车/通信PCB',   pe:75.4,  growth:-28.4, peg:null, sig:'watch'},
+      {name:'胜宏科技', code:'300476', role:'HDI高密度PCB',        pe:64.3,  growth:39.9,  peg:1.61, sig:'hold'},
     ]
   },
 };
@@ -994,20 +996,22 @@ function mkOptGrowth(){
     type:'bar',
     data:{
       labels:d.map(s=>s.name),
-      datasets:[{
-        label:'2024年报净利润增速(%)',
-        data:d.map(s=>s.growth),
-        backgroundColor:d.map(s=>s.growth>100?'rgba(5,150,105,.65)':s.growth>30?'rgba(37,99,235,.55)':'rgba(99,102,241,.5)'),
-        borderRadius:5
-      }]
+      datasets:[
+        {label:'PE(动态)', data:d.map(s=>s.pe),
+         backgroundColor:d.map(s=>s.pe>100?'rgba(220,38,38,.6)':s.pe>60?'rgba(245,158,11,.6)':'rgba(5,150,105,.6)'),
+         borderRadius:5, yAxisID:'y'},
+        {label:'2026Q1增速(%)', data:d.map(s=>s.growth),
+         backgroundColor:'rgba(37,99,235,.25)', borderRadius:5,
+         type:'bar', yAxisID:'y2'},
+      ]
     },
     options:{
-      indexAxis:'y',
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' +'+ctx.parsed.x+'%'}}},
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#64748b',font:{size:11},boxWidth:11}}},
       scales:{
-        x:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>'+'+v+'%'}},
-        y:{grid:{display:false},ticks:{color:'#1e293b',font:{size:12}}}
+        x:{grid:{display:false},ticks:{color:'#1e293b',font:{size:11}}},
+        y:{position:'left',grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'x'},title:{display:true,text:'PE',color:'#64748b',font:{size:10}}},
+        y2:{position:'right',grid:{display:false},ticks:{color:'#3b82f6',callback:v=>v+'%'},title:{display:true,text:'增速%',color:'#3b82f6',font:{size:10}}}
       }
     }
   });
@@ -1020,20 +1024,22 @@ function mkPcbGrowth(){
     type:'bar',
     data:{
       labels:d.map(s=>s.name),
-      datasets:[{
-        label:'2024年报净利润增速(%)',
-        data:d.map(s=>s.growth),
-        backgroundColor:d.map(s=>s.growth>50?'rgba(5,150,105,.65)':s.growth>25?'rgba(37,99,235,.55)':'rgba(99,102,241,.5)'),
-        borderRadius:5
-      }]
+      datasets:[
+        {label:'PE(动态)', data:d.map(s=>s.pe),
+         backgroundColor:d.map(s=>s.pe>100?'rgba(220,38,38,.6)':s.pe>60?'rgba(245,158,11,.6)':'rgba(5,150,105,.6)'),
+         borderRadius:5, yAxisID:'y'},
+        {label:'2026Q1增速(%)', data:d.map(s=>s.growth),
+         backgroundColor:d.map(s=>s.growth<0?'rgba(220,38,38,.2)':'rgba(37,99,235,.25)'),
+         borderRadius:5, type:'bar', yAxisID:'y2'},
+      ]
     },
     options:{
-      indexAxis:'y',
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' +'+ctx.parsed.x+'%'}}},
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#64748b',font:{size:11},boxWidth:11}}},
       scales:{
-        x:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>'+'+v+'%'}},
-        y:{grid:{display:false},ticks:{color:'#1e293b',font:{size:12}}}
+        x:{grid:{display:false},ticks:{color:'#1e293b',font:{size:11}}},
+        y:{position:'left',grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'x'},title:{display:true,text:'PE',color:'#64748b',font:{size:10}}},
+        y2:{position:'right',grid:{display:false},ticks:{color:'#3b82f6',callback:v=>v+'%'},title:{display:true,text:'增速%',color:'#3b82f6',font:{size:10}}}
       }
     }
   });
@@ -1041,18 +1047,27 @@ function mkPcbGrowth(){
 
 function renderStocks(){
   const sigHtml={
+    'buy+':'<span class="sig s-buy">▲▲ 强买</span>',
     'buy' :'<span class="sig s-buy">▲ 买入</span>',
     'hold':'<span class="sig s-hold">— 持有</span>',
+    'watch':'<span class="sig s-watch">◎ 关注</span>',
     'sell':'<span class="sig s-sell">▼ 减持</span>',
   };
-  const apiTag='<span style="color:#94a3b8;font-size:11px">— 需接入API</span>';
+  const pegColor=p=>p==null?'#94a3b8':p<1?'var(--green)':p<2?'var(--blue)':'var(--red)';
+  const pegText=p=>p==null?'N/A (负增长)':p.toFixed(2);
+  const growthCell=g=>{
+    if(g==null) return '<span style="color:#94a3b8">—</span>';
+    const c=g<0?'var(--red)':g>100?'var(--green)':'var(--blue)';
+    const pre=g>0?'+':'';
+    return `<span style="font-weight:600;color:${c}">${pre}${g}%</span>`;
+  };
   const row=r=>`<tr>
     <td><strong>${r.name}</strong></td>
-    <td class="tx3" style="font-family:monospace">${r.code}</td>
+    <td style="font-family:monospace;font-size:12px;color:var(--text2)">${r.code}</td>
     <td class="tx3">${r.role}</td>
-    <td style="text-align:center">${r.pe!=null?r.pe+'x':apiTag}</td>
-    <td style="font-weight:600;color:${r.growth>100?'var(--green)':r.growth>30?'var(--blue)':'var(--text)'}">+${r.growth}%</td>
-    <td style="text-align:center">${r.peg!=null?r.peg:apiTag}</td>
+    <td style="font-weight:700;color:${r.pe>100?'var(--red)':r.pe>60?'var(--yellow)':'var(--green)'}">${r.pe}x</td>
+    <td>${growthCell(r.growth)}</td>
+    <td style="font-weight:600;color:${pegColor(r.peg)}">${pegText(r.peg)}</td>
     <td>${sigHtml[r.sig]||r.sig}</td>
   </tr>`;
   document.getElementById('optBody').innerHTML = BASE.stocks.optical.map(row).join('');
