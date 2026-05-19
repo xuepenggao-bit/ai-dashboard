@@ -158,11 +158,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <!-- ═══ TABS ═══ -->
 <nav class="tabs">
   <button class="tab active" onclick="switchTab(0)">📈 AI趋势</button>
-  <button class="tab" onclick="switchTab(1)">🔍 产业链监控</button>
-  <button class="tab" onclick="switchTab(2)">⚠️ 风险仪表板</button>
-  <button class="tab" onclick="switchTab(3)">📊 A股估值监控</button>
-  <button class="tab" onclick="switchTab(4)">💾 存储监控</button>
-  <button class="tab" onclick="switchTab(5)">📋 十步框架</button>
+  <button class="tab" onclick="switchTab(1)">🇨🇳 A股宏观</button>
+  <button class="tab" onclick="switchTab(2)">🔍 产业链监控</button>
+  <button class="tab" onclick="switchTab(3)">⚠️ 风险仪表板</button>
+  <button class="tab" onclick="switchTab(4)">📊 A股估值监控</button>
+  <button class="tab" onclick="switchTab(5)">💾 存储监控</button>
+  <button class="tab" onclick="switchTab(6)">📋 十步框架</button>
 </nav>
 
 <!-- ═══ DATA NOTICE ═══ -->
@@ -229,14 +230,22 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   </div>
 
   <!-- Charts -->
-  <div class="g2 mb16">
+  <div class="g3 mb16">
     <div class="card">
       <div class="ch"><span class="ct">四大Hyperscaler Capex对比 (亿元)</span></div>
-      <div style="height:250px"><canvas id="cCapex"></canvas></div>
+      <div style="height:230px"><canvas id="cCapex"></canvas></div>
     </div>
     <div class="card">
       <div class="ch"><span class="ct">AI Capex增长趋势 2023→2026E</span></div>
-      <div style="height:250px"><canvas id="cTrend"></canvas></div>
+      <div style="height:230px"><canvas id="cTrend"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">OpenAI & Anthropic ARR增长</span>
+        <span class="cbadge" style="background:#fee2e2;color:#991b1b">公司披露/媒体</span>
+      </div>
+      <div style="height:200px"><canvas id="cArr"></canvas></div>
+      <div class="tx3 mt4" style="font-size:10px">季度ARR里程碑 · 蓝=OpenAI 紫=Anthropic · 单位$亿 · 来源: 公司财报/Bloomberg/媒体报道</div>
     </div>
   </div>
 
@@ -374,6 +383,163 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
     </div>
   </div>
+</div>
+
+<!-- ════════════════ TAB A股宏观 ════════════════ -->
+<div class="tab-content" id="tAM">
+  <div class="stitle">A股宏观数据监控 <span class="stag">市场全景 · 宏观经济</span></div>
+
+  <div class="alert a-info mb16">
+    <span>ℹ</span>
+    <div><strong>上半部分</strong>：A股市场动态指标（沪深交易所 · 中国证监会）&nbsp;·&nbsp; <strong>下半部分</strong>：中国宏观经济月度数据（国家统计局 · 中国人民银行）&nbsp;·&nbsp; 带 <span style="background:#fee2e2;color:#991b1b;font-size:10px;padding:1px 4px;border-radius:3px">需接入API</span> 标签的指标需接入行情/交易所数据源</div>
+  </div>
+
+  <!-- ── 上部分：A股市场监控 ── -->
+
+  <!-- KPI Row -->
+  <div class="g4 mb16">
+    <div class="card">
+      <div class="klabel">沪深A股总市值 <span style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2025-Q1 参考</span></div>
+      <div class="kval tb">¥93万亿</div>
+      <div class="kchange up">↑ YoY +12%</div>
+      <div class="tx3 mt4">沪市+深市，含科创/创业板</div>
+    </div>
+    <div class="card">
+      <div class="klabel">上证综指 PE(TTM) <span style="background:#fee2e2;color:#991b1b;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">需接入API</span></div>
+      <div class="kval" id="kSsePe">13.8x</div>
+      <div class="kchange neu">历史均值 ~12x · 偏低区间</div>
+      <div class="tx3 mt4">2025-Q1 末，来源: Wind</div>
+    </div>
+    <div class="card">
+      <div class="klabel">深证成指 PE(TTM) <span style="background:#fee2e2;color:#991b1b;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">需接入API</span></div>
+      <div class="kval ty" id="kSzePe">25.6x</div>
+      <div class="kchange neu">含成长溢价 · 正常偏高</div>
+      <div class="tx3 mt4">2025-Q1 末，来源: Wind</div>
+    </div>
+    <div class="card">
+      <div class="klabel">沪深日均成交 (近30日) <span style="background:#fee2e2;color:#991b1b;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">需接入API</span></div>
+      <div class="kval tb" id="kAvgVol">¥1.1万亿</div>
+      <div class="kchange down">↓ 低于2024-Q4峰值¥2.5万亿</div>
+      <div class="tx3 mt4">来源: 沪深交易所成交统计</div>
+    </div>
+  </div>
+
+  <!-- Row 1: 新增投资者 + 市场估值PE走势 -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">新增A股投资者人数 (万人·季度)</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">中国证监会</span>
+      </div>
+      <div style="height:210px"><canvas id="cNewInv"></canvas></div>
+      <div class="tx3 mt4">2023Q1—2024Q4 · 来源: 中国证监会投资者季度报告 · 2024Q4受924行情驱动大幅增加</div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">A股主要指数PE(TTM)走势 (月末)</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">Wind/交易所</span>
+      </div>
+      <div style="height:210px"><canvas id="cMktPe"></canvas></div>
+      <div class="tx3 mt4">蓝=上证综指 · 绿=深证成指 · 2024-01至2025-03 · 来源: Wind/沪深交易所</div>
+    </div>
+  </div>
+
+  <!-- Row 2: 融资融券 + 北向资金 -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">融资融券余额趋势 (季末·¥亿)</span>
+        <span class="cbadge" style="background:#fee2e2;color:#991b1b">需接入API</span>
+      </div>
+      <div style="height:210px"><canvas id="cMargin"></canvas></div>
+      <div class="tx3 mt4">季末余额近似值 · 来源: 沪深交易所 · 924行情后Q4大幅攀升 · 日频需接入数据API</div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">港股通北向资金 季度净流入 (¥亿)</span>
+        <span class="cbadge" style="background:#fee2e2;color:#991b1b">需接入API</span>
+      </div>
+      <div style="height:210px"><canvas id="cNorth"></canvas></div>
+      <div class="tx3 mt4">季度净买入合计 · 来源: 深交所/港交所互联互通 · 2024全年Q1-Q3净流出，Q4大幅流入</div>
+    </div>
+  </div>
+
+  <!-- Row 3: 涨跌家数 + 前10成交占比 -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">A股每日涨跌家数趋势 (月均·家)</span>
+        <span class="cbadge" style="background:#fee2e2;color:#991b1b">需接入行情API</span>
+      </div>
+      <div style="height:210px"><canvas id="cUpDown"></canvas></div>
+      <div class="tx3 mt4">月均涨跌家数 · 2024全年 · 日频行情数据需接入API · 绿=上涨 红=下跌</div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">前10股票成交额占全市场比 (季度·%)</span>
+        <span class="cbadge" style="background:#fee2e2;color:#991b1b">需接入行情API</span>
+      </div>
+      <div style="height:210px"><canvas id="cConc"></canvas></div>
+      <div class="tx3 mt4">成交集中度 · 越高代表市场越依赖少数龙头 · 2024Q4行情后集中度显著提升</div>
+    </div>
+  </div>
+
+  <!-- ── 分隔线：下半宏观 ── -->
+  <div style="margin:4px 0 20px;padding:12px 0 0;border-top:2px solid var(--border);display:flex;align-items:center;gap:12px">
+    <span style="font-size:15px;font-weight:700">📊 中国宏观经济指标</span>
+    <span class="stag">来源: 国家统计局 · 中国人民银行 · 月度数据 2024—2025</span>
+  </div>
+
+  <!-- Row 4: CPI + 社会融资 -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">中国CPI同比增速 (%)</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">国家统计局</span>
+      </div>
+      <div style="height:210px"><canvas id="cCpi"></canvas></div>
+      <div class="tx3 mt4">居民消费价格指数同比 · 2024-01至2025-03 · 来源: 国家统计局月度数据</div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">社会融资总额 存量同比增速 (%)</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">中国人民银行</span>
+      </div>
+      <div style="height:210px"><canvas id="cTsf"></canvas></div>
+      <div class="tx3 mt4">月末社融存量同比增速 · 2024-01至2024-12 · 来源: 中国人民银行月度数据</div>
+    </div>
+  </div>
+
+  <!-- Row 5: FAI + 零售 -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">固定资产投资 累计同比增速 (%)</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">国家统计局</span>
+      </div>
+      <div style="height:210px"><canvas id="cFai"></canvas></div>
+      <div class="tx3 mt4">全社会固定资产投资累计同比 · 2024年 · 来源: 国家统计局月度数据</div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">社会消费品零售总额 同比增速 (%)</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">国家统计局</span>
+      </div>
+      <div style="height:210px"><canvas id="cRetail"></canvas></div>
+      <div class="tx3 mt4">零售总额当月同比 · 2024-02至2025-01-02 · 来源: 国家统计局月度数据</div>
+    </div>
+  </div>
+
+  <!-- Row 6: 工业利润 full width -->
+  <div class="card mb16">
+    <div class="ch">
+      <span class="ct">规模以上工业企业利润 当月同比增速 (%)</span>
+      <span class="cbadge" style="background:#dbeafe;color:#1e40af">国家统计局</span>
+    </div>
+    <div style="height:220px"><canvas id="cIndustrial"></canvas></div>
+    <div class="tx3 mt4">规模以上工业企业利润总额当月同比 · 2024-01-02合并至2024-12 · 来源: 国家统计局 · 注: 数据波动较大，建议结合累计值综合判断</div>
+  </div>
+
 </div>
 
 <!-- ════════════════ TAB 2.2 ════════════════ -->
@@ -828,6 +994,61 @@ const BASE = {
       {name:'景旺电子', code:'603228', role:'工业/汽车/通信PCB',   pe:75.4,  growth:-28.4, peg:null, sig:'watch'},
       {name:'胜宏科技', code:'300476', role:'HDI高密度PCB',        pe:64.3,  growth:39.9,  peg:1.61, sig:'hold'},
     ]
+  },
+
+  aiArr:{
+    labels:['2023-Q4','2024-Q1','2024-Q2','2024-Q3','2024-Q4','2025-Q1E'],
+    openai:   [16,  34,  40,  60,  130, 200],
+    anthropic:[1,   3,   5,   7,   10,  22 ],
+  },
+
+  ashare:{
+    newInv:{
+      labels:['2023-Q1','2023-Q2','2023-Q3','2023-Q4','2024-Q1','2024-Q2','2024-Q3','2024-Q4'],
+      vals:  [293, 268, 311, 327, 338, 292, 382, 476],
+    },
+    mktPe:{
+      labels:['24-01','24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-01','25-02','25-03'],
+      sse:   [11.2, 11.8, 12.0, 11.5, 11.8, 11.2, 12.1, 12.8, 12.8, 16.2, 15.4, 14.5, 15.0, 15.2, 13.8],
+      sze:   [23.5, 24.6, 25.1, 23.8, 24.5, 22.8, 24.0, 25.6, 25.8, 32.1, 30.2, 28.5, 29.0, 28.8, 25.6],
+    },
+    margin:{
+      labels:['2024-Q1','2024-Q2','2024-Q3','2024-Q4','2025-Q1E'],
+      vals:  [15800, 14200, 14500, 17800, 16500],
+    },
+    north:{
+      labels:['2024-Q1','2024-Q2','2024-Q3','2024-Q4','2025-Q1E'],
+      vals:  [-430, -150, -280, 1320, 220],
+    },
+    updown:{
+      labels:['24-01','24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12'],
+      up:    [2350, 2580, 2270, 2190, 2430, 1980, 2150, 2080, 2450, 3820, 3120, 2680],
+      down:  [2450, 2120, 2530, 2680, 2390, 2880, 2690, 2760, 2380, 1050, 1720, 2150],
+    },
+    conc:{
+      labels:['2024-Q1','2024-Q2','2024-Q3','2024-Q4','2025-Q1E'],
+      vals:  [28.5, 27.8, 29.2, 35.6, 32.4],
+    },
+    cpi:{
+      labels:['24-01','24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-01','25-02','25-03'],
+      vals:  [0.7, 0.7, 0.1, 0.3, 0.3, 0.2, 0.5, 0.6, 0.4, 0.3, 0.2, 0.1, 0.5, -0.7, -0.1],
+    },
+    tsf:{
+      labels:['24-01','24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12'],
+      vals:  [9.5, 9.0, 8.7, 8.3, 8.4, 8.1, 8.2, 8.1, 8.0, 7.8, 7.8, 8.0],
+    },
+    fai:{
+      labels:['24-01-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12'],
+      vals:  [4.2, 4.5, 4.2, 4.0, 3.9, 3.6, 3.4, 3.4, 3.4, 3.3, 3.2],
+    },
+    retail:{
+      labels:['24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-01-02'],
+      vals:  [5.5, 3.1, 2.3, 3.7, 2.0, 2.7, 2.1, 3.2, 4.8, 3.0, 3.5, 4.0],
+    },
+    industrial:{
+      labels:['24-01-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12'],
+      vals:  [10.2, -3.5, 4.3, 0.7, 3.5, 4.1, 17.1, 11.9, -10.0, 7.3, 11.0],
+    },
   },
 
   mag7:[
@@ -1305,6 +1526,197 @@ function renderStocks(){
   document.getElementById('pcbBody').innerHTML = BASE.stocks.pcb.map(row).join('');
 }
 
+// ── ARR Chart ────────────────────────────────────────────────
+function mkArr(){
+  const ctx=document.getElementById('cArr').getContext('2d');
+  const d=BASE.aiArr;
+  CH.arr=new Chart(ctx,{type:'line',data:{labels:d.labels,datasets:[
+    {label:'OpenAI ($亿)',data:d.openai,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',borderWidth:2.5,pointRadius:4,fill:true,tension:0.35},
+    {label:'Anthropic ($亿)',data:d.anthropic,borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.08)',borderWidth:2.5,pointRadius:4,fill:true,tension:0.35},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
+    scales:{
+      x:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',font:{size:9}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>'$'+v+'亿'},
+         title:{display:true,text:'ARR ($亿)',color:'#94a3b8',font:{size:9}}},
+    }
+  }});
+}
+
+// ── A股宏观 Charts ───────────────────────────────────────────
+function mkNewInv(){
+  const ctx=document.getElementById('cNewInv').getContext('2d');
+  const d=BASE.ashare.newInv;
+  CH.newInv=new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[
+    {label:'新增投资者(万人)',data:d.vals,
+     backgroundColor:d.vals.map((_,i)=>i>=4?'rgba(5,150,105,.7)':'rgba(99,102,241,.55)'),borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}},
+             annotation:{annotations:{}}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:9}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'万'},
+         suggestedMin:200},
+    }
+  }});
+}
+
+function mkMktPe(){
+  const ctx=document.getElementById('cMktPe').getContext('2d');
+  const d=BASE.ashare.mktPe;
+  CH.mktPe=new Chart(ctx,{type:'line',data:{labels:d.labels,datasets:[
+    {label:'上证PE(TTM)',data:d.sse,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.06)',borderWidth:2,pointRadius:2,fill:true,tension:0.3},
+    {label:'深证PE(TTM)',data:d.sze,borderColor:'#059669',backgroundColor:'rgba(5,150,105,.06)',borderWidth:2,pointRadius:2,fill:true,tension:0.3},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
+    scales:{
+      x:{grid:{color:'rgba(226,232,240,.6)'},ticks:{color:'#64748b',font:{size:9}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'x'}},
+    }
+  }});
+}
+
+function mkMargin(){
+  const ctx=document.getElementById('cMargin').getContext('2d');
+  const d=BASE.ashare.margin;
+  CH.margin=new Chart(ctx,{type:'line',data:{labels:d.labels,datasets:[
+    {label:'融资融券余额(¥亿)',data:d.vals,borderColor:'#d97706',backgroundColor:'rgba(217,119,6,.1)',borderWidth:2.5,pointRadius:4,fill:true,tension:0.3},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:10}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'亿'},suggestedMin:12000},
+    }
+  }});
+}
+
+function mkNorth(){
+  const ctx=document.getElementById('cNorth').getContext('2d');
+  const d=BASE.ashare.north;
+  CH.north=new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[
+    {label:'北向净流入(¥亿)',data:d.vals,
+     backgroundColor:d.vals.map(v=>v>=0?'rgba(5,150,105,.7)':'rgba(220,38,38,.6)'),borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:10}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'亿'}},
+    }
+  }});
+}
+
+function mkUpDown(){
+  const ctx=document.getElementById('cUpDown').getContext('2d');
+  const d=BASE.ashare.updown;
+  CH.updown=new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[
+    {label:'上涨(家)',data:d.up,backgroundColor:'rgba(5,150,105,.65)',borderRadius:2,stack:'s'},
+    {label:'下跌(家)',data:d.down.map(v=>-v),backgroundColor:'rgba(220,38,38,.55)',borderRadius:2,stack:'s'},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:9}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>Math.abs(v)+'家'}},
+    }
+  }});
+}
+
+function mkConc(){
+  const ctx=document.getElementById('cConc').getContext('2d');
+  const d=BASE.ashare.conc;
+  CH.conc=new Chart(ctx,{type:'line',data:{labels:d.labels,datasets:[
+    {label:'前10成交占比(%)',data:d.vals,borderColor:'#0891b2',backgroundColor:'rgba(8,145,178,.1)',borderWidth:2.5,pointRadius:5,fill:true,tension:0.3},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:10}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'%'},suggestedMin:20,suggestedMax:45},
+    }
+  }});
+}
+
+function mkCpi(){
+  const ctx=document.getElementById('cCpi').getContext('2d');
+  const d=BASE.ashare.cpi;
+  CH.cpi=new Chart(ctx,{type:'line',data:{labels:d.labels,datasets:[
+    {label:'CPI同比(%)',data:d.vals,
+     borderColor:'#2563eb',
+     backgroundColor:ctx2=>{
+       const g=ctx.createLinearGradient(0,0,0,200);
+       g.addColorStop(0,'rgba(37,99,235,.15)');g.addColorStop(1,'rgba(37,99,235,.01)');return g;
+     },
+     borderWidth:2.5,pointRadius:3,fill:true,tension:0.3,
+     segment:{borderColor:ctx2=>ctx2.p1.parsed.y<0?'#dc2626':'#2563eb'}},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
+    scales:{
+      x:{grid:{color:'rgba(226,232,240,.6)'},ticks:{color:'#64748b',font:{size:9}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'%'},
+         suggestedMin:-1.2,suggestedMax:1.5},
+    }
+  }});
+}
+
+function mkTsf(){
+  const ctx=document.getElementById('cTsf').getContext('2d');
+  const d=BASE.ashare.tsf;
+  CH.tsf=new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[
+    {label:'社融存量同比(%)',data:d.vals,backgroundColor:'rgba(79,70,229,.65)',borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:9}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'%'},
+         suggestedMin:6,suggestedMax:11},
+    }
+  }});
+}
+
+function mkFai(){
+  const ctx=document.getElementById('cFai').getContext('2d');
+  const d=BASE.ashare.fai;
+  CH.fai=new Chart(ctx,{type:'line',data:{labels:d.labels,datasets:[
+    {label:'FAI累计同比(%)',data:d.vals,borderColor:'#059669',backgroundColor:'rgba(5,150,105,.1)',borderWidth:2.5,pointRadius:3,fill:true,tension:0.3},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
+    scales:{
+      x:{grid:{color:'rgba(226,232,240,.6)'},ticks:{color:'#64748b',font:{size:9}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'%'},
+         suggestedMin:2.5,suggestedMax:5.5},
+    }
+  }});
+}
+
+function mkRetail(){
+  const ctx=document.getElementById('cRetail').getContext('2d');
+  const d=BASE.ashare.retail;
+  CH.retail=new Chart(ctx,{type:'line',data:{labels:d.labels,datasets:[
+    {label:'零售总额同比(%)',data:d.vals,borderColor:'#d97706',backgroundColor:'rgba(217,119,6,.1)',borderWidth:2.5,pointRadius:3,fill:true,tension:0.3},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
+    scales:{
+      x:{grid:{color:'rgba(226,232,240,.6)'},ticks:{color:'#64748b',font:{size:9}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'%'},
+         suggestedMin:0,suggestedMax:7},
+    }
+  }});
+}
+
+function mkIndustrial(){
+  const ctx=document.getElementById('cIndustrial').getContext('2d');
+  const d=BASE.ashare.industrial;
+  CH.industrial=new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[
+    {label:'工业利润同比(%)',data:d.vals,
+     backgroundColor:d.vals.map(v=>v>=0?'rgba(5,150,105,.65)':'rgba(220,38,38,.55)'),borderRadius:4},
+    {label:'趋势线',data:d.vals,type:'line',borderColor:'#7c3aed',borderWidth:2,pointRadius:0,fill:false,tension:0.4},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:9}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'%'}},
+    }
+  }});
+}
+
 function renderMag7(){
   const el = document.getElementById('mag7List');
   if(!el) return;
@@ -1371,7 +1783,9 @@ function refreshAll(){
 // ── INIT ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
   mkCapex();mkTrend();mkSig();mkStageC();mkRadar();mkGauge();mkBubble();mkPort();
-  mkNeoCapex();mkOptGrowth();mkPcbGrowth();mkIntlPe();mkDomStorePe();
+  mkNeoCapex();mkOptGrowth();mkPcbGrowth();mkIntlPe();mkDomStorePe();mkArr();
+  mkNewInv();mkMktPe();mkMargin();mkNorth();mkUpDown();mkConc();
+  mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();
   renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();renderMag7();
   document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
 });
