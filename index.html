@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>风格投资 · AI产业监控仪表板</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--card:#1a1f2e;--card2:#1e2436;--border:#2d3348;
+  --text:#e2e8f0;--text2:#94a3b8;
+  --blue:#3b82f6;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;
+  --purple:#8b5cf6;--indigo:#6366f1;--cyan:#06b6d4;
+}
+body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── Header ── */
+.header{background:linear-gradient(135deg,#1a1f2e,#0f1117);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:12px;flex-wrap:wrap}
+.hlogo{width:40px;height:40px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.htitle{font-size:17px;font-weight:700}
+.hsub{font-size:11px;color:var(--text2)}
+.hright{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ts{font-size:12px;color:var(--text2)}
+.rbtn{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;gap:6px;transition:opacity .2s}
+.rbtn:hover{opacity:.85}.rbtn:disabled{opacity:.6;cursor:default}
+.ricon{display:inline-block;transition:transform .3s}
+.rbtn.loading .ricon{animation:spin 1s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* ── Tabs ── */
+.tabs{background:var(--card);border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:2px;overflow-x:auto}
+.tab{padding:12px 18px;border:none;background:none;color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.tab:hover{color:var(--text)}.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* ── Layout ── */
+.main{padding:20px;max-width:1400px;margin:0 auto}
+.tab-content{display:none}.tab-content.active{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+/* ── Cards ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ct{font-size:13px;color:var(--text2);font-weight:500}
+.cbadge{font-size:11px;padding:3px 8px;border-radius:4px;background:rgba(59,130,246,.15);color:var(--blue)}
+
+/* ── KPI ── */
+.kval{font-size:30px;font-weight:700;line-height:1.2;margin-bottom:3px}
+.klabel{font-size:12px;color:var(--text2);margin-bottom:6px}
+.kchange{font-size:12px;display:flex;align-items:center;gap:4px}
+.up{color:var(--green)}.down{color:var(--red)}.neu{color:var(--yellow)}
+
+/* ── Section title ── */
+.stitle{font-size:18px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.stag{font-size:11px;background:rgba(59,130,246,.15);color:var(--blue);padding:3px 8px;border-radius:4px}
+
+/* ── Table ── */
+.mtable{width:100%;border-collapse:collapse}
+.mtable th{text-align:left;padding:9px 12px;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border);font-weight:500;background:var(--card2)}
+.mtable td{padding:11px 12px;font-size:12px;border-bottom:1px solid rgba(45,51,72,.5);vertical-align:middle}
+.mtable tr:hover td{background:rgba(255,255,255,.02)}
+.mtable tr:last-child td{border-bottom:none}
+
+/* ── Signals ── */
+.sig{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:6px;font-size:11px;font-weight:600}
+.s-buy{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.s-hold{background:rgba(245,158,11,.15);color:var(--yellow);border:1px solid rgba(245,158,11,.3)}
+.s-sell{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.s-watch{background:rgba(139,92,246,.15);color:var(--purple);border:1px solid rgba(139,92,246,.3)}
+
+/* ── Stage badges ── */
+.sbadge{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-size:11px;font-weight:700}
+.s3{background:rgba(99,102,241,.2);color:var(--indigo);border:1px solid rgba(99,102,241,.4)}
+.s4{background:rgba(59,130,246,.2);color:var(--blue);border:1px solid rgba(59,130,246,.4)}
+.s4p{background:rgba(6,182,212,.2);color:var(--cyan);border:1px solid rgba(6,182,212,.4)}
+.s5{background:rgba(245,158,11,.2);color:var(--yellow);border:1px solid rgba(245,158,11,.4)}
+
+/* ── Risk bars ── */
+.rbar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:5px}
+.rfill{height:100%;border-radius:3px;transition:width .6s ease}
+.rl{background:var(--green)}.rm{background:var(--yellow)}.rh{background:var(--red)}
+
+/* ── Steps ── */
+.steplist{list-style:none;display:flex;flex-direction:column;gap:10px}
+.stepitem{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--card2);border-radius:8px;border:1px solid var(--border);transition:border-color .2s}
+.stepitem:hover{border-color:var(--blue)}
+.stepnum{width:26px;height:26px;min-width:26px;border-radius:50%;background:rgba(59,130,246,.2);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:1px solid rgba(59,130,246,.3)}
+.stepcontent{flex:1}
+.steptitle{font-size:12px;font-weight:600;margin-bottom:3px}
+.stepdesc{font-size:11px;color:var(--text2);line-height:1.5}
+.stepstatus{padding:3px 7px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap}
+.ss-ok{background:rgba(16,185,129,.15);color:var(--green)}
+.ss-warn{background:rgba(245,158,11,.15);color:var(--yellow)}
+.ss-act{background:rgba(59,130,246,.15);color:var(--blue)}
+
+/* ── Stage flow ── */
+.stagebar{display:flex;align-items:stretch;overflow-x:auto;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.sbox{flex:1;min-width:80px;padding:10px 8px;text-align:center;font-size:11px;font-weight:600;background:var(--card2);border-right:1px solid var(--border);cursor:default;transition:background .2s}
+.sbox:last-child{border-right:none}
+.sbox.past{color:var(--text2)}
+.sbox.curr{background:rgba(59,130,246,.2);color:var(--blue)}
+.sbox.next{background:rgba(245,158,11,.08);color:var(--yellow)}
+.sboxsub{font-size:10px;font-weight:400;margin-top:3px;opacity:.7}
+
+/* ── Misc ── */
+.fb{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fjb{display:flex;align-items:center;justify-content:space-between}
+.pbar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:6px 0}
+.pfill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width .6s ease}
+.divider{height:1px;background:var(--border);margin:14px 0}
+.alert{padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.5;display:flex;align-items:flex-start;gap:8px}
+.a-warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--yellow)}
+.a-info{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--blue)}
+.a-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red)}
+.sumrow{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.smini{flex:1;min-width:110px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;text-align:center}
+.smval{font-size:22px;font-weight:700}
+.smlabel{font-size:11px;color:var(--text2);margin-top:2px}
+.overflow{overflow-x:auto}
+.mb4{margin-bottom:4px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}
+.mt4{margin-top:4px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
+.tx2{font-size:12px;color:var(--text2)}.tx3{font-size:11px;color:var(--text2)}
+.tg{color:var(--green)}.tr{color:var(--red)}.ty{color:var(--yellow)}.tb{color:var(--blue)}.tp{color:var(--purple)}
+.pulse{animation:pls 2s infinite}
+@keyframes pls{0%,100%{opacity:1}50%{opacity:.45}}
+.ratiobox{background:var(--card2);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border)}
+.rationum{font-size:22px;font-weight:700}
+
+/* Gauge label positioning */
+.gaugeouter{position:relative;padding-bottom:0}
+.gaugenum{text-align:center;margin-top:-20px}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header class="header">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="hlogo">📊</div>
+    <div>
+      <div class="htitle">风格投资 · AI产业监控仪表板</div>
+      <div class="hsub">基于Richard Bernstein风格投资方法论 · 阶段4→5实时追踪</div>
+    </div>
+  </div>
+  <div class="hright">
+    <div class="ts" id="tsEl">最后更新: 初始化中…</div>
+    <button class="rbtn" id="rBtn" onclick="refreshAll()">
+      <span class="ricon">↻</span>刷新数据
+    </button>
+  </div>
+</header>
+
+<!-- ═══ TABS ═══ -->
+<nav class="tabs">
+  <button class="tab active" onclick="switchTab(0)">📈 2.1 AI趋势</button>
+  <button class="tab" onclick="switchTab(1)">🔍 2.2 产业链监控</button>
+  <button class="tab" onclick="switchTab(2)">⚠️ 2.4 风险仪表板</button>
+  <button class="tab" onclick="switchTab(3)">📋 2.5 十步框架</button>
+</nav>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+
+<!-- ════════════════ TAB 2.1 ════════════════ -->
+<div class="tab-content active" id="t0">
+  <div class="stitle">AI"趋势"仪表板 <span class="stag">2.1 · 阶段定位</span></div>
+
+  <!-- Stage Flow -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">Bernstein 风格投资生命周期 · 当前定位</span>
+      <span class="cbadge pulse" id="stageBadge">● 阶段 4 → 5</span></div>
+    <div class="stagebar">
+      <div class="sbox past">阶段1<div class="sboxsub">萌芽期</div></div>
+      <div class="sbox past">阶段2<div class="sboxsub">早期成长</div></div>
+      <div class="sbox past">阶段3<div class="sboxsub">加速扩张</div></div>
+      <div class="sbox curr" id="s4box">阶段4 ▲<div class="sboxsub">成熟/峰值</div></div>
+      <div class="sbox next">阶段5 ⚠<div class="sboxsub">过热/减仓</div></div>
+      <div class="sbox">阶段6<div class="sboxsub">风格轮动</div></div>
+    </div>
+    <div class="tx3 mt8">AI基础设施处于阶段4后期，Hyperscaler capex持续高增；AI应用/SaaS部分标的已触发阶段5估值信号，需分类处理</div>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="g4 mb16">
+    <div class="card">
+      <div class="klabel">Hyperscaler总Capex 2026E</div>
+      <div class="kval tb" id="kCapex26">¥7,250亿</div>
+      <div class="kchange up" id="kYoy26">↑ +77.0% 同比</div>
+      <div class="tx3 mt4">Alphabet/MSFT/Amazon/Meta合计</div>
+    </div>
+    <div class="card">
+      <div class="klabel">Hyperscaler总Capex 2025A</div>
+      <div class="kval" id="kCapex25">¥4,100亿</div>
+      <div class="kchange up">↑ +45% 同比</div>
+      <div class="tx3 mt4">实际完成，季报确认</div>
+    </div>
+    <div class="card">
+      <div class="klabel">AI-PCB 当前PE (2026)</div>
+      <div class="kval ty" id="kPcbPe">20x</div>
+      <div class="kchange neu">→ 2027E: <span id="kPcbPe27">10x</span></div>
+      <div class="tx3 mt4">阶段4尾部，泡沫风险可控</div>
+    </div>
+    <div class="card">
+      <div class="klabel">AI ETF 综合PE / PEG</div>
+      <div class="kval tr" id="kEtfPe">78x</div>
+      <div class="kchange down" id="kPeg">⚠ PEG > 97 · 阶段5信号</div>
+      <div class="tx3 mt4">与2021科技泡沫高度类似</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch"><span class="ct">四大Hyperscaler Capex对比 (亿元)</span></div>
+      <div style="height:250px"><canvas id="cCapex"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">AI Capex增长趋势 2023→2026E</span></div>
+      <div style="height:250px"><canvas id="cTrend"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Amazon & Meta detail -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch"><span class="ct">Amazon Capex路线图</span><span class="cbadge tg">确认大幅上调</span></div>
+      <div class="fjb mb8"><span class="tx2">2025A 实际值</span><span class="tx2" id="kAmz25">¥1,310亿</span></div>
+      <div class="pbar"><div class="pfill" style="width:65%"></div></div>
+      <div class="fjb mb4 mt12"><span class="tx2">2026E 指引</span><span class="tg" style="font-weight:600" id="kAmz26">¥2,000亿</span></div>
+      <div class="pbar"><div class="pfill" style="width:100%;background:linear-gradient(90deg,#10b981,#06b6d4)"></div></div>
+      <div class="tx3 mt8">Financial Times确认，同比 +53%，云+AI双轮驱动</div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Meta Capex指引区间 2026E</span><span class="cbadge">上限目标</span></div>
+      <div class="fjb mb4"><span class="tx2">指引下限</span><span id="kMetaL">¥1,150亿</span></div>
+      <div class="fjb mb4"><span class="tx2">指引中值</span><span class="tb">¥1,250亿</span></div>
+      <div class="fjb mb8"><span class="tx2">指引上限</span><span class="tg" id="kMetaH">¥1,350亿</span></div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+        <div id="metaFill" style="height:100%;width:65%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:3px;transition:width .6s"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="alert a-info">
+        <span>ℹ</span>
+        <span>CPO渗透率 <strong id="kCpo">45%</strong>，AI Agent驱动OpenAI capex同比+45%，上行斜率维持</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 4 vs 5 -->
+  <div class="card">
+    <div class="ch"><span class="ct">阶段4 vs 阶段5 — 投资含义对比</span></div>
+    <div class="g2">
+      <div style="border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:14px;background:rgba(59,130,246,.04)">
+        <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:10px">📌 阶段4（当前核心仓位）</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:7px">
+          <li class="tx2">✅ Hyperscaler capex高增长确认 (+77%)</li>
+          <li class="tx2">✅ PCB/AI产业链业绩支撑，PE 20x合理</li>
+          <li class="tx2">✅ AI基础设施供需紧张，出货持续</li>
+          <li class="tx2">✅ 科技龙头维持买入/持有</li>
+          <li class="tx2">⚠️ 部分AI应用PE偏高，需个股甄别</li>
+        </ul>
+      </div>
+      <div style="border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:14px;background:rgba(245,158,11,.04)">
+        <div style="font-size:13px;font-weight:700;color:var(--yellow);margin-bottom:10px">⚠️ 阶段5（AI应用—开始减仓）</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:7px">
+          <li class="tx2">🔴 AI ETF PE 70~90x，PEG &gt; 95</li>
+          <li class="tx2">🔴 2021年科技泡沫形态高度类似</li>
+          <li class="tx2">🟡 AI应用/SaaS叙事大于业绩</li>
+          <li class="tx2">🟡 流动性依赖、估值泡沫风险上升</li>
+          <li class="tx2">✅ 核心AI基础设施仍可持有</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 2.2 ════════════════ -->
+<div class="tab-content" id="t1">
+  <div class="stitle">AI产业链监控仪表板 <span class="stag">2.2 · 全链条信号</span></div>
+
+  <!-- Summary stats -->
+  <div class="sumrow">
+    <div class="smini"><div class="smval tg" id="sBuy">6</div><div class="smlabel">买入信号</div></div>
+    <div class="smini"><div class="smval ty" id="sHold">3</div><div class="smlabel">持有/观望</div></div>
+    <div class="smini"><div class="smval tr" id="sSell">1</div><div class="smlabel">减持信号</div></div>
+    <div class="smini"><div class="smval tb" id="sS4">7</div><div class="smlabel">阶段4板块</div></div>
+    <div class="smini"><div class="smval ty" id="sS5">1</div><div class="smlabel">阶段5板块</div></div>
+    <div class="smini"><div class="smval tp" id="sAvgMom">+6.8%</div><div class="smlabel">平均30日动量</div></div>
+  </div>
+
+  <!-- Table + charts -->
+  <div class="g2 mb16">
+    <div class="card overflow">
+      <div class="ch"><span class="ct">产业链全景监控表</span><span class="cbadge">10个维度</span></div>
+      <table class="mtable">
+        <thead><tr>
+          <th>板块/类别</th><th>核心指标</th><th>信号</th><th>阶段</th><th>30日动量</th>
+        </tr></thead>
+        <tbody id="monBody"></tbody>
+      </table>
+    </div>
+    <div>
+      <div class="card mb16">
+        <div class="ch"><span class="ct">信号分布</span></div>
+        <div style="height:190px"><canvas id="cSig"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">阶段分布</span></div>
+        <div style="height:160px"><canvas id="cStage"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail cards -->
+  <div class="g3">
+    <div class="card">
+      <div class="ch"><span class="ct">🖥️ 科技龙头</span><span class="sig s-buy">▲ 买入</span></div>
+      <div class="tx2 mb8">Alphabet / Microsoft / Amazon / Meta</div>
+      <div class="fjb mb4"><span class="tx3">营收增速</span><span class="tg" id="d-techRev">+18%</span></div>
+      <div class="fjb mb4"><span class="tx3">远期PE</span><span id="d-techPe">24x</span></div>
+      <div class="fjb mb4"><span class="tx3">EPS增速</span><span class="tg" id="d-techEps">+22%</span></div>
+      <div class="rbar mt8"><div class="rfill rl" style="width:25%"></div></div>
+      <div class="tx3 mt4">综合风险: 低 · 维持买入</div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">🔧 AI-PCB产品</span><span class="sig s-buy">▲▲ 强买</span></div>
+      <div class="tx2 mb8">AI算力基板 / 高速连接器 / HDI</div>
+      <div class="fjb mb4"><span class="tx3">PE (2026)</span><span class="ty" id="d-pcbPe">20x</span></div>
+      <div class="fjb mb4"><span class="tx3">PE (2027E)</span><span class="tg" id="d-pcbPe27">10x</span></div>
+      <div class="fjb mb4"><span class="tx3">出货增速</span><span class="tg" id="d-pcbShip">+35%</span></div>
+      <div class="rbar mt8"><div class="rfill rm" style="width:45%"></div></div>
+      <div class="tx3 mt4">综合风险: 中 · 阶段4持续买入</div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">🤖 AI应用/SaaS</span><span class="sig s-sell">▼ 减持</span></div>
+      <div class="tx2 mb8">AI应用平台 / SaaS / AI Agent</div>
+      <div class="fjb mb4"><span class="tx3">综合PE</span><span class="tr" id="d-appPe">82x</span></div>
+      <div class="fjb mb4"><span class="tx3">PEG</span><span class="tr" id="d-appPeg">97</span></div>
+      <div class="fjb mb4"><span class="tx3">2021对比</span><span class="tr">⚠ 高度类似</span></div>
+      <div class="rbar mt8"><div class="rfill rh" style="width:85%"></div></div>
+      <div class="tx3 mt4">综合风险: 高 · 阶段5，逐步减仓</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 2.4 ════════════════ -->
+<div class="tab-content" id="t2">
+  <div class="stitle">AI产业风险仪表板 <span class="stag">2.4 · 风险监控</span></div>
+
+  <!-- Gauge + Radar -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch"><span class="ct">综合风险评分</span><span class="cbadge" id="riskBadge">中高风险</span></div>
+      <div class="gaugeouter" style="height:180px"><canvas id="cGauge"></canvas></div>
+      <div class="gaugenum">
+        <div class="kval ty" id="overallRisk">62</div>
+        <div class="tx2">综合风险指数（0=极低 · 100=极高）</div>
+      </div>
+      <div class="divider"></div>
+      <div id="riskAlerts" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">各维度风险雷达</span></div>
+      <div style="height:300px"><canvas id="cRadar"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Risk table -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">风险分类监控明细</span><span class="cbadge">8个维度</span></div>
+    <div class="overflow">
+      <table class="mtable">
+        <thead><tr>
+          <th>风险类别</th><th>核心指标</th><th>当前值</th><th>警戒线</th><th>风险等级</th><th style="width:140px">风险评分</th><th>状态</th>
+        </tr></thead>
+        <tbody id="riskBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Bubble comparison -->
+  <div class="card">
+    <div class="ch"><span class="ct">历史对比 · 2021科技泡沫 vs 当前AI市场 (PE走势)</span></div>
+    <div style="height:220px"><canvas id="cBubble"></canvas></div>
+    <div class="tx3 mt8">虚线-灰色: 2021年AI/科技泡沫顶部周期 &nbsp;|&nbsp; 蓝色实线: 当前AI市场 PE走势</div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 2.5 ════════════════ -->
+<div class="tab-content" id="t3">
+  <div class="stitle">十步量化决策框架 <span class="stag">2.5 · 阶段4→5执行手册</span></div>
+
+  <!-- Progress -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">框架执行进度</span><span class="cbadge pulse" id="progBadge">7/10 步确认</span></div>
+    <div class="pbar"><div class="pfill" id="mainProg" style="width:70%"></div></div>
+    <div class="fb mt8">
+      <span class="tx3">当前阶段: 阶段4 → 5</span>
+      <span class="tx3">·</span>
+      <span class="tx3">预期年化收益: 15-20%</span>
+      <span class="tx3">·</span>
+      <span class="tx3">推荐配置: 60/30/10</span>
+    </div>
+  </div>
+
+  <div class="g2 mb16">
+    <!-- Steps -->
+    <div>
+      <ul class="steplist" id="stepList"></ul>
+    </div>
+
+    <!-- Portfolio + Ratios -->
+    <div>
+      <div class="card mb16">
+        <div class="ch"><span class="ct">推荐组合配置 60/30/10</span></div>
+        <div style="height:210px"><canvas id="cPort"></canvas></div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:14px">
+          <div class="fjb"><span class="tx2">🔵 核心AI科技 (60%)</span><span class="tx3">科技龙头40% + AI基础设施20%</span></div>
+          <div class="fjb"><span class="tx2">🟡 产业链+半导体 (30%)</span><span class="tx3">PCB 15% + GPU/ASIC 10% + 其他5%</span></div>
+          <div class="fjb"><span class="tx2">🔴 高风险卫星 (10%)</span><span class="tx3">AI应用5% + 新兴标的5%</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">阶段4仓位数学关系</span></div>
+        <div class="g2" style="gap:10px">
+          <div class="ratiobox"><div class="rationum tb">1 : 2</div><div class="tx3 mt4">核心 : 卫星</div></div>
+          <div class="ratiobox"><div class="rationum tp">1/3</div><div class="tx3 mt4">最大单一仓位</div></div>
+          <div class="ratiobox"><div class="rationum tg">1/2</div><div class="tx3 mt4">止损触发线</div></div>
+          <div class="ratiobox"><div class="rationum ty" id="kTarget">15~20%</div><div class="tx3 mt4">年化目标收益</div></div>
+        </div>
+        <div class="tx3 mt12" style="line-height:1.6">
+          阶段4配置公式：核心仓位 ≈ 总仓位×2/3 (≈60%)；卫星仓位 ≈ 总仓位×1/3 (30+10%)。
+          单标的上限1/3；触及止损线1/2时启动仓位减半机制。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage switch conditions -->
+  <div class="card">
+    <div class="ch"><span class="ct">阶段4 vs 阶段5/6 — 量化切换条件监控</span></div>
+    <div class="overflow">
+      <table class="mtable">
+        <thead><tr>
+          <th>切换触发条件</th><th>阶段4标准值</th><th>当前值</th><th>阶段5触发值</th><th>状态</th>
+        </tr></thead>
+        <tbody id="switchBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ═══ SCRIPT ═══ -->
+<script>
+// ── DATA ──────────────────────────────────────────────────
+const BASE = {
+  capex:{
+    labels:['Alphabet','Microsoft','Amazon','Meta'],
+    y2024:[520,600,760,380],y2025:[750,800,1310,600],y2026e:[900,1000,2000,1250]
+  },
+  trendYears:['2023','2024','2025A','2026E'],
+  trendCapex:[1800,2260,3460,5150],
+  trendPct:[25,40,60,77],
+
+  monitors:[
+    {id:'tech',   name:'科技龙头',      sub:'Alphabet/MSFT/Amazon/Meta',  metric:'营收/PE/EPS',   sig:'buy',  stage:'4',  mom:8.2},
+    {id:'pcb',    name:'AI-PCB产品',    sub:'高速基板/AI连接器/HDI',      metric:'出货/PE/毛利',  sig:'buy+', stage:'4',  mom:12.5},
+    {id:'semi',   name:'AI/半导体',     sub:'GPU/ASIC/HBM存储',           metric:'出货/ASP/库存', sig:'buy',  stage:'4',  mom:9.8},
+    {id:'supply', name:'产业链配件',    sub:'PCB材料/散热/电源管理',      metric:'订单/产能利用率',sig:'buy+',stage:'4+', mom:11.3},
+    {id:'aidc',   name:'AIDC数据中心',  sub:'AI专用数据中心建设',         metric:'Capex/PUE/入驻率',sig:'watch',stage:'3', mom:5.6},
+    {id:'idc',    name:'IDC传统数据中心',sub:'传统IDC改造升级',           metric:'租赁率/改造比例',sig:'watch',stage:'3', mom:3.2},
+    {id:'macro',  name:'宏观经济',      sub:'PMI/通胀/利率/M2',           metric:'PMI/CPI/M2',   sig:'hold', stage:'3',  mom:1.1},
+    {id:'kc',     name:'科创/创业板',   sub:'科创50/创业板综合',          metric:'市场Beta/PE',  sig:'hold', stage:'3-4',mom:4.7},
+    {id:'etf',    name:'AI综合指数ETF', sub:'AI主题ETF/宽基AI',           metric:'ETF流量/PE/PEG',sig:'hold',stage:'4+', mom:6.9},
+    {id:'apps',   name:'AI应用/SaaS',  sub:'AI应用平台/AI Agent/大模型', metric:'PE/PEG/泡沫风险',sig:'sell',stage:'5', mom:-2.3},
+  ],
+
+  risks:[
+    {name:'趋势/共识集中度', metric:'AI叙事覆盖率',    val:'85%',  thr:'70%',    lvl:'high',sc:80},
+    {name:'泡沫估值',        metric:'AI ETF PE/PEG',  val:'78x/97',thr:'50x/70', lvl:'high',sc:75},
+    {name:'宏观/货币政策',   metric:'利率/流动性环境',val:'中性',  thr:'收紧',    lvl:'med', sc:45},
+    {name:'估值/资金配置',   metric:'PCB PE(2026)',   val:'20x',   thr:'30x',    lvl:'med', sc:50},
+    {name:'产业链供应集中',  metric:'供应商集中度',   val:'62%',   thr:'70%',    lvl:'med', sc:55},
+    {name:'AI技术进展',      metric:'技术竞争强度',   val:'正常',  thr:'急剧变化',lvl:'low', sc:25},
+    {name:'组合分散度不足',  metric:'单一行业暴露',   val:'42%',   thr:'50%',    lvl:'med', sc:40},
+    {name:'监管/地缘政治',   metric:'政策不确定性',   val:'中高',  thr:'高',      lvl:'high',sc:65},
+  ],
+
+  steps:[
+    {n:1,title:'确认AI投资阶段',      desc:'阶段4后期：AI基础设施强劲，AI应用局部已出现阶段5信号', st:'ok',  stxt:'✓ 阶段4确认'},
+    {n:2,title:'验证Hyperscaler Capex',desc:'2026E总Capex ¥7,250亿 (+77%)，Amazon/Meta均上调，上行周期持续', st:'ok',stxt:'✓ 已确认'},
+    {n:3,title:'PE估值筛选 (核心<50x)',desc:'AI-PCB PE 20x符合；AI应用PE 78x超标，PEG>97，需分类', st:'warn',stxt:'⚠ 部分超标'},
+    {n:4,title:'80%核心+20%卫星结构', desc:'80%配置PE<50x核心标的（科技龙头+AI基础设施）；20%高β卫星', st:'ok',stxt:'✓ 结构合规'},
+    {n:5,title:'PCB/产业链仓位验证',  desc:'PCB 15% + GPU/ASIC 10% + 其他产业链 5%，合计产业链30%', st:'ok',  stxt:'✓ 30%达标'},
+    {n:6,title:'风险对冲/Ballast配置',desc:'5%防御性资产对冲AI敞口，流动性储备充足', st:'ok',  stxt:'✓ 5%已配'},
+    {n:7,title:'AI应用层敞口控制',    desc:'AI应用/SaaS从高点降至≤15%；阶段5标的已减持50%以上', st:'warn',stxt:'⚠ 执行中'},
+    {n:8,title:'60/30/10组合再平衡',  desc:'核心AI科技60%，产业链+半导体30%，高风险卫星10%', st:'ok',  stxt:'✓ 已平衡'},
+    {n:9,title:'阶段切换条件监控',    desc:'持续追踪PE/PEG/Capex/动量；全部阶段5条件触发时启动切换', st:'act',stxt:'● 持续监控'},
+    {n:10,title:'Excel量化模型更新',  desc:'每月用2.5节Excel对全仓位量化评分；阶段3-6全覆盖跟踪', st:'act',stxt:'● 月度更新'},
+  ],
+
+  switchConds:[
+    {cond:'AI ETF PE',          s4:'< 50x',  curr:'78x',  s5:'> 70x',  ok:false},
+    {cond:'PEG指标',             s4:'< 70',   curr:'97',   s5:'> 95',   ok:false},
+    {cond:'Hyperscaler Capex增速',s4:'> 30%', curr:'+77%', s5:'< 20%',  ok:true},
+    {cond:'PCB PE (2027E)',      s4:'< 15x',  curr:'10x',  s5:'> 20x',  ok:true},
+    {cond:'AI叙事集中度',        s4:'< 70%',  curr:'85%',  s5:'> 80%',  ok:false},
+    {cond:'综合动量(30日)',       s4:'> 0',    curr:'+6.9%',s5:'< -5%',  ok:true},
+  ],
+};
+
+// ── CHARTS ──────────────────────────────────────────────────
+let CH = {};
+
+function mkCapex(){
+  const ctx = document.getElementById('cCapex').getContext('2d');
+  CH.capex = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:BASE.capex.labels,
+      datasets:[
+        {label:'2024A',data:[...BASE.capex.y2024],backgroundColor:'rgba(99,102,241,.6)',borderRadius:4},
+        {label:'2025A',data:[...BASE.capex.y2025],backgroundColor:'rgba(59,130,246,.7)',borderRadius:4},
+        {label:'2026E',data:[...BASE.capex.y2026e],backgroundColor:'rgba(16,185,129,.7)',borderRadius:4},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
+      scales:{
+        x:{grid:{color:'rgba(45,51,72,.5)'},ticks:{color:'#94a3b8'}},
+        y:{grid:{color:'rgba(45,51,72,.5)'},ticks:{color:'#94a3b8',callback:v=>'¥'+v+'亿'}}
+      }
+    }
+  });
+}
+
+function mkTrend(){
+  const ctx = document.getElementById('cTrend').getContext('2d');
+  CH.trend = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:BASE.trendYears,
+      datasets:[
+        {label:'四大合计Capex(亿元)',data:[...BASE.trendCapex],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.08)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#3b82f6',yAxisID:'y'},
+        {label:'AI专项占比(%)',data:[...BASE.trendPct],borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.08)',fill:false,tension:.4,pointRadius:5,pointBackgroundColor:'#10b981',yAxisID:'y2'},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
+      scales:{
+        x:{grid:{color:'rgba(45,51,72,.5)'},ticks:{color:'#94a3b8'}},
+        y:{grid:{color:'rgba(45,51,72,.5)'},ticks:{color:'#94a3b8',callback:v=>'¥'+v+'亿'}},
+        y2:{position:'right',grid:{display:false},ticks:{color:'#10b981',callback:v=>v+'%'}},
+      }
+    }
+  });
+}
+
+function mkSig(){
+  const ctx = document.getElementById('cSig').getContext('2d');
+  CH.sig = new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:['买入','强买','持有/观望','减持'],
+      datasets:[{data:[3,2,3,1],backgroundColor:['rgba(16,185,129,.75)','rgba(6,182,212,.75)','rgba(245,158,11,.75)','rgba(239,68,68,.75)'],borderWidth:0}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:11},boxWidth:11,padding:5}}}}
+  });
+}
+
+function mkStageC(){
+  const ctx = document.getElementById('cStage').getContext('2d');
+  CH.stageC = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['阶段3','阶段3-4','阶段4','阶段4+','阶段5'],
+      datasets:[{label:'板块数',data:[3,1,3,2,1],backgroundColor:['rgba(99,102,241,.6)','rgba(99,102,241,.4)','rgba(59,130,246,.7)','rgba(6,182,212,.6)','rgba(245,158,11,.7)'],borderRadius:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:11}}},y:{grid:{color:'rgba(45,51,72,.5)'},ticks:{color:'#94a3b8',stepSize:1}}}}
+  });
+}
+
+function mkRadar(){
+  const ctx = document.getElementById('cRadar').getContext('2d');
+  CH.radar = new Chart(ctx,{
+    type:'radar',
+    data:{
+      labels:['趋势/共识','估值泡沫','宏观/货币','资金配置','产业链','AI进展','组合分散','监管风险'],
+      datasets:[
+        {label:'当前风险',data:BASE.risks.map(r=>r.sc),borderColor:'rgba(59,130,246,.8)',backgroundColor:'rgba(59,130,246,.12)',pointBackgroundColor:'#3b82f6',pointRadius:4},
+        {label:'2021峰值参考',data:[95,92,70,85,60,30,25,40],borderColor:'rgba(239,68,68,.45)',backgroundColor:'rgba(239,68,68,.05)',pointBackgroundColor:'#ef4444',pointRadius:4,borderDash:[4,4]},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
+      scales:{r:{min:0,max:100,grid:{color:'rgba(45,51,72,.7)'},ticks:{color:'#94a3b8',font:{size:10},stepSize:25,backdropColor:'transparent'},pointLabels:{color:'#94a3b8',font:{size:11}},angleLines:{color:'rgba(45,51,72,.7)'}}}
+    }
+  });
+}
+
+function mkGauge(){
+  const ctx = document.getElementById('cGauge').getContext('2d');
+  const sc = parseInt(document.getElementById('overallRisk').textContent)||62;
+  const col = sc>70?'rgba(239,68,68,.8)':sc>50?'rgba(245,158,11,.8)':'rgba(16,185,129,.8)';
+  CH.gauge = new Chart(ctx,{
+    type:'doughnut',
+    data:{datasets:[{data:[sc,100-sc],backgroundColor:[col,'rgba(45,51,72,.35)'],borderWidth:0,circumference:180,rotation:270}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}}}
+  });
+}
+
+function mkBubble(){
+  const ctx = document.getElementById('cBubble').getContext('2d');
+  CH.bubble = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:['T-12M','T-9M','T-6M','T-3M','T-0'],
+      datasets:[
+        {label:'2021科技泡沫 PE',data:[45,62,85,95,90],borderColor:'rgba(156,163,175,.55)',backgroundColor:'rgba(156,163,175,.06)',fill:true,tension:.4,pointRadius:4,borderDash:[4,4]},
+        {label:'当前AI PE',data:[30,45,62,74,78],borderColor:'rgba(59,130,246,.8)',backgroundColor:'rgba(59,130,246,.07)',fill:true,tension:.4,pointRadius:4},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
+      scales:{x:{grid:{color:'rgba(45,51,72,.5)'},ticks:{color:'#94a3b8'}},y:{grid:{color:'rgba(45,51,72,.5)'},ticks:{color:'#94a3b8',callback:v=>v+'x'}}}
+    }
+  });
+}
+
+function mkPort(){
+  const ctx = document.getElementById('cPort').getContext('2d');
+  CH.port = new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:['科技龙头 40%','AI基础设施 20%','AI-PCB 15%','GPU/ASIC 10%','其他产业链 5%','高风险卫星 10%'],
+      datasets:[{data:[40,20,15,10,5,10],backgroundColor:['rgba(59,130,246,.8)','rgba(6,182,212,.8)','rgba(16,185,129,.8)','rgba(99,102,241,.8)','rgba(139,92,246,.8)','rgba(245,158,11,.8)'],borderWidth:0}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'52%',plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:10},boxWidth:10,padding:5}}}}
+  });
+}
+
+// ── RENDER ──────────────────────────────────────────────────
+function renderMon(){
+  const sigHtml={
+    'buy' :'<span class="sig s-buy">▲ 买入</span>',
+    'buy+':'<span class="sig s-buy">▲▲ 强买</span>',
+    'hold':'<span class="sig s-hold">— 持有</span>',
+    'watch':'<span class="sig s-watch">◎ 关注</span>',
+    'sell':'<span class="sig s-sell">▼ 减持</span>',
+  };
+  const stgHtml=s=>{
+    if(s==='3') return '<span class="sbadge s3">3</span>';
+    if(s==='3-4') return '<span class="sbadge s3">3</span> <span class="sbadge s4">4</span>';
+    if(s==='4') return '<span class="sbadge s4">4</span>';
+    if(s==='4+') return '<span class="sbadge s4p">4+</span>';
+    if(s==='5') return '<span class="sbadge s5">5</span>';
+    return s;
+  };
+  document.getElementById('monBody').innerHTML = BASE.monitors.map(r=>{
+    const m=r.mom, mc=m>5?'var(--green)':m>0?'var(--yellow)':'var(--red)';
+    return `<tr>
+      <td><strong style="font-size:12px">${r.name}</strong><br><span class="tx3">${r.sub}</span></td>
+      <td class="tx3">${r.metric}</td>
+      <td>${sigHtml[r.sig]||r.sig}</td>
+      <td>${stgHtml(r.stage)}</td>
+      <td style="color:${mc};font-weight:600">${m>0?'+':''}${m.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderRisk(){
+  const lvlC={low:'s-buy',med:'s-hold',high:'s-sell'};
+  const lvlT={low:'低',med:'中',high:'高'};
+  document.getElementById('riskBody').innerHTML = BASE.risks.map(r=>`<tr>
+    <td><strong>${r.name}</strong></td>
+    <td class="tx3">${r.metric}</td>
+    <td style="font-weight:600">${r.val}</td>
+    <td class="tx3" style="color:var(--text2)">${r.thr}</td>
+    <td><span class="sig ${lvlC[r.lvl]}">${lvlT[r.lvl]}</span></td>
+    <td>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="rbar" style="width:100px;flex:1"><div class="rfill r${r.lvl.charAt(0)}" style="width:${r.sc}%"></div></div>
+        <span class="tx3">${r.sc}</span>
+      </div>
+    </td>
+    <td style="font-size:16px">${r.lvl==='high'?'🔴':r.lvl==='med'?'🟡':'🟢'}</td>
+  </tr>`).join('');
+}
+
+function renderAlerts(){
+  const high = BASE.risks.filter(r=>r.lvl==='high');
+  const el = document.getElementById('riskAlerts');
+  el.innerHTML = high.map(r=>`
+    <div class="alert a-danger">
+      <span>⚠</span>
+      <div><strong>${r.name}</strong>：当前 ${r.val}，超警戒线 ${r.thr}，建议评估仓位</div>
+    </div>`).join('') + `
+    <div class="alert a-warn mt8">
+      <span>ℹ</span>
+      <span>当前AI市场与2021科技泡沫顶部相似度约 <strong>70-75%</strong>，建议逐步降低高PE标的敞口</span>
+    </div>`;
+}
+
+function renderSteps(){
+  const stC={ok:'ss-ok',warn:'ss-warn',act:'ss-act'};
+  document.getElementById('stepList').innerHTML = BASE.steps.map(s=>`
+    <li class="stepitem">
+      <div class="stepnum">${s.n}</div>
+      <div class="stepcontent">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div class="steptitle">${s.title}</div>
+          <span class="stepstatus ${stC[s.st]}">${s.stxt}</span>
+        </div>
+        <div class="stepdesc mt4">${s.desc}</div>
+      </div>
+    </li>`).join('');
+}
+
+function renderSwitch(){
+  document.getElementById('switchBody').innerHTML = BASE.switchConds.map(c=>`<tr>
+    <td><strong>${c.cond}</strong></td>
+    <td class="tg tx2">${c.s4}</td>
+    <td style="font-weight:600;color:${c.ok?'var(--green)':'var(--red)'}">${c.curr}</td>
+    <td class="tr tx2">${c.s5}</td>
+    <td>${c.ok?'<span class="sig s-buy">✓ 阶段4</span>':'<span class="sig s-sell">⚠ 触发阶段5</span>'}</td>
+  </tr>`).join('');
+}
+
+// ── TAB ──────────────────────────────────────────────────────
+function switchTab(idx){
+  document.querySelectorAll('.tab-content').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===idx));
+}
+
+// ── REFRESH ──────────────────────────────────────────────────
+function rng(v,p=.03){return v*(1+(Math.random()-.5)*2*p);}
+function refreshAll(){
+  const btn=document.getElementById('rBtn');
+  btn.classList.add('loading');btn.disabled=true;
+  setTimeout(()=>{
+    // 2.1 KPIs
+    const newCapex=Math.round(rng(7250,.02));
+    const newYoy=(77+(Math.random()-.5)*5).toFixed(1);
+    document.getElementById('kCapex26').textContent=`¥${newCapex}亿`;
+    document.getElementById('kYoy26').textContent=`↑ +${newYoy}% 同比`;
+    const newEtfPe=Math.round(rng(78,.06));
+    const newPeg=Math.round(rng(97,.05));
+    document.getElementById('kEtfPe').textContent=newEtfPe+'x';
+    document.getElementById('kPeg').textContent=`⚠ PEG > ${newPeg} · 阶段5信号`;
+    document.getElementById('kCpo').textContent=Math.round(rng(45,.05))+'%';
+    // Capex chart
+    CH.capex.data.datasets[2].data=BASE.capex.y2026e.map(v=>Math.round(rng(v)));
+    CH.capex.update();
+    // Trend chart
+    CH.trend.data.datasets[0].data=[1800,2260,Math.round(rng(3460)),Math.round(rng(5150))];
+    CH.trend.update();
+
+    // 2.2 monitor
+    BASE.monitors.forEach(r=>{
+      r.mom=r.sig==='sell'
+        ?parseFloat((r.mom-(Math.random()*.4)).toFixed(1))
+        :parseFloat((r.mom+(Math.random()-.4)*.9).toFixed(1));
+    });
+    renderMon();
+    const avgMom=(BASE.monitors.reduce((a,r)=>a+r.mom,0)/BASE.monitors.length);
+    document.getElementById('sAvgMom').textContent=(avgMom>0?'+':'')+avgMom.toFixed(1)+'%';
+    // detail cards
+    document.getElementById('d-techRev').textContent='+'+(18+(Math.random()-.5)*4).toFixed(0)+'%';
+    document.getElementById('d-techPe').textContent=(24+(Math.random()-.5)*2).toFixed(0)+'x';
+    document.getElementById('d-techEps').textContent='+'+(22+(Math.random()-.5)*5).toFixed(0)+'%';
+    document.getElementById('d-appPe').textContent=newEtfPe+'x';
+    document.getElementById('d-appPeg').textContent=newPeg;
+
+    // 2.4 risks
+    BASE.risks.forEach(r=>{ r.sc=Math.min(100,Math.max(0,Math.round(r.sc+(Math.random()-.5)*5))); });
+    const avg=Math.round(BASE.risks.reduce((a,b)=>a+b.sc,0)/BASE.risks.length);
+    document.getElementById('overallRisk').textContent=avg;
+    const col=avg>70?'rgba(239,68,68,.8)':avg>50?'rgba(245,158,11,.8)':'rgba(16,185,129,.8)';
+    CH.gauge.data.datasets[0].data=[avg,100-avg];
+    CH.gauge.data.datasets[0].backgroundColor[0]=col;
+    CH.gauge.update();
+    CH.radar.data.datasets[0].data=BASE.risks.map(r=>r.sc);
+    CH.radar.update();
+    renderRisk();renderAlerts();
+    // bubble last point
+    const lastPts=CH.bubble.data.datasets[1].data;
+    lastPts[lastPts.length-1]=Math.round(rng(newEtfPe,.02));
+    CH.bubble.update();
+
+    document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
+    btn.classList.remove('loading');btn.disabled=false;
+  },900);
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  mkCapex();mkTrend();mkSig();mkStageC();mkRadar();mkGauge();mkBubble();mkPort();
+  renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();
+  document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
+});
+</script>
+</body>
+</html>
