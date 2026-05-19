@@ -22,16 +22,16 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .hsub{font-size:11px;color:var(--text2)}
 .hright{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .ts{font-size:12px;color:var(--text2)}
-.rbtn{background:var(--blue);color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;gap:6px;transition:opacity .2s}
-.rbtn:hover{opacity:.85}.rbtn:disabled{opacity:.6;cursor:default}
+.rbtn{background:var(--blue);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:600;display:flex;align-items:center;gap:6px;transition:opacity .2s,transform .1s;letter-spacing:.01em}
+.rbtn:hover{opacity:.88}.rbtn:active{transform:scale(.97)}.rbtn:disabled{opacity:.55;cursor:default}
 .ricon{display:inline-block;transition:transform .3s}
 .rbtn.loading .ricon{animation:spin 1s linear infinite}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* ── Tabs ── */
-.tabs{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:2px;overflow-x:auto}
-.tab{padding:13px 20px;border:none;background:none;color:var(--text2);cursor:pointer;font-size:14px;font-family:inherit;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
-.tab:hover{color:var(--text)}.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tabs{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:1px;overflow-x:auto;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.tab{padding:13px 18px;border:none;background:none;color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;letter-spacing:.01em}
+.tab:hover{color:var(--text);background:rgba(0,0,0,.02)}.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
 
 /* ── Layout ── */
 .main{padding:20px;max-width:1400px;margin:0 auto}
@@ -44,27 +44,31 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @media(max-width:600px){.g2,.g3,.g4{grid-template-columns:1fr}}
 
 /* ── Cards ── */
-.card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card{background:#fff;border:1px solid rgba(226,232,240,.9);border-radius:12px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.05),0 0 0 1px rgba(0,0,0,.02)}
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.ct{font-size:13px;color:var(--text2);font-weight:500}
-.cbadge{font-size:11px;padding:3px 8px;border-radius:4px;background:rgba(37,99,235,.08);color:var(--blue)}
+.ct{font-size:13px;color:var(--text2);font-weight:600;letter-spacing:.01em}
+.cbadge{font-size:11px;padding:3px 9px;border-radius:5px;background:rgba(37,99,235,.08);color:var(--blue);font-weight:500}
 
 /* ── KPI ── */
-.kval{font-size:30px;font-weight:700;line-height:1.2;margin-bottom:3px}
-.klabel{font-size:12px;color:var(--text2);margin-bottom:6px}
-.kchange{font-size:12px;display:flex;align-items:center;gap:4px}
+.kval{font-size:28px;font-weight:800;line-height:1.15;margin-bottom:4px;letter-spacing:-.01em}
+.klabel{font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:500;letter-spacing:.02em}
+.kchange{font-size:12px;display:flex;align-items:center;gap:4px;font-weight:500}
 .up{color:var(--green)}.down{color:var(--red)}.neu{color:var(--yellow)}
 
 /* ── Section title ── */
-.stitle{font-size:18px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.stag{font-size:11px;background:rgba(37,99,235,.08);color:var(--blue);padding:3px 8px;border-radius:4px}
+.stitle{font-size:17px;font-weight:700;margin-bottom:20px;padding-bottom:13px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;letter-spacing:-.01em}
+.stag{font-size:11px;background:rgba(37,99,235,.08);color:var(--blue);padding:3px 9px;border-radius:5px;font-weight:500}
 
 /* ── Table ── */
 .mtable{width:100%;border-collapse:collapse}
-.mtable th{text-align:left;padding:9px 12px;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border);font-weight:600;background:#f8fafc;letter-spacing:.02em}
-.mtable td{padding:11px 12px;font-size:12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.mtable th{text-align:left;padding:10px 14px;font-size:11px;color:var(--text2);border-bottom:2px solid var(--border);font-weight:700;background:#f8fafc;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.mtable td{padding:12px 14px;font-size:13px;border-bottom:1px solid #f1f5f9;vertical-align:middle;line-height:1.4}
 .mtable tr:hover td{background:#f8fafc}
 .mtable tr:last-child td{border-bottom:none}
+/* Sortable column headers */
+.th-sort{cursor:pointer;user-select:none;transition:background .15s,color .15s}
+.th-sort:hover{background:#edf0f5;color:var(--text)}
+.th-sort.th-asc,.th-sort.th-desc{color:var(--blue);background:#eff6ff}
 
 /* ── Signals ── */
 .sig{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:5px;font-size:11px;font-weight:600}
@@ -118,9 +122,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .a-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
 .a-danger{background:#fff1f2;border:1px solid #fecdd3;color:#7f1d1d}
 .sumrow{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
-.smini{flex:1;min-width:110px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;text-align:center;box-shadow:0 1px 2px rgba(0,0,0,.03)}
-.smval{font-size:22px;font-weight:700}
-.smlabel{font-size:11px;color:var(--text2);margin-top:2px}
+.smini{flex:1;min-width:110px;background:#fff;border:1px solid rgba(226,232,240,.9);border-radius:10px;padding:14px 16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.smval{font-size:26px;font-weight:800;letter-spacing:-.01em}
+.smlabel{font-size:11px;color:var(--text2);margin-top:4px;font-weight:500}
 .overflow{overflow-x:auto}
 .mb4{margin-bottom:4px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}
 .mt4{margin-top:4px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
@@ -725,11 +729,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div>
       <div class="card mb16">
         <div class="ch"><span class="ct">信号分布</span></div>
-        <div style="height:190px"><canvas id="cSig"></canvas></div>
+        <div style="height:210px"><canvas id="cSig"></canvas></div>
       </div>
       <div class="card">
         <div class="ch"><span class="ct">阶段分布</span></div>
-        <div style="height:160px"><canvas id="cStage"></canvas></div>
+        <div style="height:190px"><canvas id="cStage"></canvas></div>
       </div>
     </div>
   </div>
@@ -1722,6 +1726,13 @@ function renderStocks(){
 const PORT_KEY = 'ai_dash_portfolio_v1';
 let PORT = null;
 let _PORT_PRICES = {};
+let _portSort = {col:null, dir:-1}; // col: null|'pct'|'w', dir: -1=降序 1=升序
+
+function togglePortSort(col){
+  if(_portSort.col===col) _portSort.dir*=-1;
+  else{ _portSort.col=col; _portSort.dir=-1; }
+  renderPortfolio();
+}
 
 function portLoad(){
   if(PORT) return;
@@ -1760,40 +1771,56 @@ function renderPortfolio(){
   // Sectors
   const mktStyle = {SH:'background:#dbeafe;color:#1e40af',SZ:'background:#ede9fe;color:#5b21b6',HK:'background:#fee2e2;color:#991b1b'};
   const mktLabel = {SH:'沪A',SZ:'深A',HK:'港股'};
+  const pctArrow  = _portSort.col==='pct' ? (_portSort.dir<0?'↓':'↑') : '↕';
+  const wArrow    = _portSort.col==='w'   ? (_portSort.dir<0?'↓':'↑') : '↕';
+  const pctThCls  = 'th-sort'+(_portSort.col==='pct'?(_portSort.dir<0?' th-desc':' th-asc'):'');
+  const wThCls    = 'th-sort'+(_portSort.col==='w'  ?(_portSort.dir<0?' th-desc':' th-asc'):'');
+
   document.getElementById('portSectors').innerHTML = PORT.sectors.map((sec,si)=>{
     const secW = secWeights[si];
-    const rows = sec.stocks.length ? sec.stocks.map((sk,ki)=>{
+    // sort display copy; keep original index for edit/delete
+    const disp=[...sec.stocks];
+    if(_portSort.col==='pct'){
+      disp.sort((a,b)=>((_PORT_PRICES[b.code]?.pct??-9999)-(_PORT_PRICES[a.code]?.pct??-9999))*_portSort.dir);
+    } else if(_portSort.col==='w'){
+      disp.sort((a,b)=>((b.w??-1)-(a.w??-1))*_portSort.dir);
+    }
+    const rows = sec.stocks.length ? disp.map((sk)=>{
+      const ki=sec.stocks.indexOf(sk);
       const pi = _PORT_PRICES[sk.code];
       const pctCell = pi
-        ? `<span style="font-weight:600;color:${pi.pct>0?'var(--green)':pi.pct<0?'var(--red)':'var(--text2)'}">${pi.pct>0?'+':''}${Number(pi.pct).toFixed(2)}%</span>`
+        ? `<span style="font-weight:700;font-size:13px;color:${pi.pct>0?'var(--green)':pi.pct<0?'var(--red)':'var(--text2)'}">${pi.pct>0?'+':''}${Number(pi.pct).toFixed(2)}%</span>`
         : `<span style="color:var(--text2);font-size:11px">—</span>`;
       return `<tr>
-        <td style="font-weight:600">${sk.name}</td>
-        <td style="font-size:11px;color:var(--text2)">${sk.code}</td>
+        <td style="font-weight:600;color:var(--text)">${sk.name}</td>
+        <td style="font-family:monospace;font-size:12px;color:var(--text2)">${sk.code}</td>
         <td><span class="mkt-badge" style="${mktStyle[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span></td>
-        <td>${pctCell}</td>
-        <td>${sk.w!=null?'<strong>'+sk.w.toFixed(1)+'%</strong>':'<span style="color:var(--text2);font-size:11px">—</span>'}</td>
-        <td style="color:var(--text2);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sk.note||''}</td>
+        <td style="text-align:right">${pctCell}</td>
+        <td style="text-align:right">${sk.w!=null?'<strong style="color:var(--blue)">'+sk.w.toFixed(1)+'%</strong>':'<span style="color:var(--text2);font-size:11px">—</span>'}</td>
+        <td style="color:var(--text2);font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sk.note||''}</td>
         <td style="white-space:nowrap">
-          <button onclick="openPortModal('edit',${si},${ki})" style="background:none;border:1px solid var(--blue);color:var(--blue);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;font-family:inherit">编辑</button>
-          <button onclick="delPortStock(${si},${ki})" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;font-family:inherit;margin-left:4px">删除</button>
+          <button onclick="openPortModal('edit',${si},${ki})" style="background:none;border:1px solid var(--blue);color:var(--blue);border-radius:5px;padding:3px 9px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:500">编辑</button>
+          <button onclick="delPortStock(${si},${ki})" style="background:none;border:1px solid #fca5a5;color:var(--red);border-radius:5px;padding:3px 9px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:500;margin-left:4px">删除</button>
         </td>
       </tr>`;}).join('')
-    : `<tr><td colspan="7" style="text-align:center;color:var(--text2);font-size:12px;padding:16px">暂无持仓 · 点击"加股票"添加</td></tr>`;
+    : `<tr><td colspan="7" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
     return `<div class="card mb16">
       <div class="sec-header">
-        <span style="width:13px;height:13px;border-radius:3px;background:${sec.color};display:inline-block;flex-shrink:0"></span>
+        <span style="width:14px;height:14px;border-radius:4px;background:${sec.color};display:inline-block;flex-shrink:0;box-shadow:0 1px 3px ${sec.color}66"></span>
         <span style="font-size:14px;font-weight:700">${sec.name}</span>
-        <span style="font-size:12px;color:var(--text2)">${sec.stocks.length}只</span>
+        <span style="font-size:12px;color:var(--text2);background:#f1f5f9;padding:1px 7px;border-radius:10px">${sec.stocks.length}只</span>
         <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span style="font-size:12px;color:var(--text2)">分类仓位 <strong style="font-size:13px;color:var(--blue)">${secW.toFixed(1)}%</strong></span>
+          <span style="font-size:12px;color:var(--text2)">分类仓位 <strong style="font-size:14px;color:var(--blue)">${secW.toFixed(1)}%</strong></span>
           <button onclick="openPortModal('add',${si},-1)" class="btn-primary" style="padding:4px 12px;font-size:12px">+ 加股票</button>
           <button onclick="delPortSector(${si})" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:4px 8px;cursor:pointer;font-size:11px;font-family:inherit">删分类</button>
         </div>
       </div>
       <div class="overflow">
         <table class="mtable"><thead><tr>
-          <th>名称</th><th>代码</th><th>市场</th><th>涨跌幅</th><th>个股仓位</th><th>备注</th><th>操作</th>
+          <th>名称</th><th>代码</th><th>市场</th>
+          <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right">涨跌幅 ${pctArrow}</th>
+          <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right">个股仓位 ${wArrow}</th>
+          <th>备注</th><th>操作</th>
         </tr></thead><tbody>${rows}</tbody></table>
       </div>
     </div>`;
