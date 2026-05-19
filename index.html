@@ -162,6 +162,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <button class="tab" onclick="switchTab(2)">⚠️ 风险仪表板</button>
   <button class="tab" onclick="switchTab(3)">📋 十步框架</button>
   <button class="tab" onclick="switchTab(4)">📊 A股估值监控</button>
+  <button class="tab" onclick="switchTab(5)">💾 存储监控</button>
 </nav>
 
 <!-- ═══ DATA NOTICE ═══ -->
@@ -626,6 +627,89 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   </div>
 </div>
 
+<!-- ════════════════ TAB 存储监控 ════════════════ -->
+<div class="tab-content" id="t5">
+  <div class="stitle">存储监控仪表板 <span class="stag">全球存储链 · PE / 增速 / PEG</span></div>
+
+  <!-- Data source notice -->
+  <div class="alert a-info mb16">
+    <span>📡</span>
+    <div>
+      <strong>数据来源：</strong>
+      美股(MU/SNDK) — Yahoo Finance &nbsp;·&nbsp;
+      韩股(海力士/三星) PE — Naver Finance，增速 — Naver &nbsp;·&nbsp;
+      铠侠(285A.T) — TSE价格，PE待补充 &nbsp;·&nbsp;
+      群联(8299.TW) — 待接入TWSE &nbsp;·&nbsp;
+      A股 — 东方财富行情+f10接口 &nbsp;·&nbsp;
+      数据抓取：<span id="storageTs">2026-05-19</span>
+    </div>
+  </div>
+
+  <!-- Storage cycle context -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">存储行业周期定位 (2022-2026)</span><span class="cbadge pulse">上行周期</span></div>
+    <div class="stagebar">
+      <div class="sbox past">2022下 <div class="sboxsub">去库存</div></div>
+      <div class="sbox past">2023下 <div class="sboxsub">价格触底</div></div>
+      <div class="sbox curr">2024上 ▲<div class="sboxsub">涨价/复苏</div></div>
+      <div class="sbox curr">2025上 ▲<div class="sboxsub">HBM爆发</div></div>
+      <div class="sbox next">2026-27 ⚠<div class="sboxsub">高位/分化</div></div>
+    </div>
+    <div class="tx3 mt8">A股存储公司Q1 2026增速极高（如德明利+4943%、江波龙+2644%）系2023年低基数效应；国际龙头韩国海力士/三星增速转负反映本轮价格已高位波动。HBM、LPDDR5等AI算力存储仍是主线。</div>
+  </div>
+
+  <!-- Charts -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">国际存储龙头 · PE(TTM) 对比</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">实时行情</span>
+      </div>
+      <div style="height:230px"><canvas id="cIntlPe"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">A股存储链 · PE(动态) & 2026Q1增速</span>
+        <span class="cbadge" style="background:#dcfce7;color:#166534">东方财富</span>
+      </div>
+      <div style="height:230px"><canvas id="cDomStorePe"></canvas></div>
+    </div>
+  </div>
+
+  <!-- International table -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">🌏 国际存储龙头估值监控</span><span class="cbadge">6家标的</span></div>
+    <div class="overflow">
+      <table class="mtable">
+        <thead><tr>
+          <th>公司</th><th>代码</th><th>交易所</th><th>地区</th>
+          <th>PE(TTM)</th><th>远期PE</th><th>近期增速</th><th>PEG</th><th>信号</th>
+        </tr></thead>
+        <tbody id="intlStoreBody"></tbody>
+      </table>
+    </div>
+    <div class="tx3 mt8">⚠ 铠侠(285A.T)及群联(8299.TW) PE待接入 TSE/TWSE API；韩国海力士/三星增速为 Naver Finance 最新季度净利润同比，已转负反映存储价格高位震荡</div>
+  </div>
+
+  <!-- Domestic A-share table -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">🇨🇳 A股存储链估值监控</span><span class="cbadge">6家标的</span></div>
+    <div class="overflow">
+      <table class="mtable">
+        <thead><tr>
+          <th>公司名称</th><th>代码</th><th>产业地位</th>
+          <th>PE(动态)</th><th>2026Q1归母净利润增速</th><th>PEG</th><th>信号</th>
+        </tr></thead>
+        <tbody id="domStoreBody"></tbody>
+      </table>
+    </div>
+    <div class="alert a-warn mt12">
+      <span>⚠</span>
+      <div>A股存储公司Q1 2026增速受2023年行业低谷低基数影响极度失真（最高+4943%），<strong>PEG值不具备正常参考意义</strong>，请以当前绝对PE水平及2026-2027年盈利预期为主要估值参考依据。</div>
+    </div>
+  </div>
+</div>
+
 </main>
 
 <!-- ═══ SCRIPT ═══ -->
@@ -701,6 +785,27 @@ const BASE = {
     {co:'xAI',         tkr:'私有',  type:'AI训练算力',    capex:'~$50亿 (估算)',   fwd:'扩建中',          yoy:'N/A',   src:'媒体报道估算', pub:false},
     {co:'SoftBank',    tkr:'9984.T',type:'AI基础设施LP',  capex:'$1,000亿承诺',   fwd:'5年滚动',         yoy:'N/A',   src:'Stargate公告', pub:true},
   ],
+
+  // 存储监控 — 数据来源：Yahoo Finance(美股)、Naver Finance(韩股)、东方财富(A股)
+  // 抓取时间：2026-05-19；铠侠/群联PE待接入TSE/TWSE API
+  storage:{
+    intl:[
+      {name:'美光科技',  tkr:'MU',        mkt:'Nasdaq', region:'美国', pe:32.2,  fwdPe:6.7,  growth:null,  peg:null, sig:'buy',  price:'$681.5',    note:'HBM3E主力供应商，fwdPE=6.7x反映AI内存超级周期'},
+      {name:'闪迪',     tkr:'SNDK',       mkt:'Nasdaq', region:'美国', pe:45.1,  fwdPe:7.6,  growth:null,  peg:null, sig:'hold', price:'$1317.4',   note:'2025-02从WD分拆，NAND Flash纯玩法'},
+      {name:'SK海力士', tkr:'000660.KS',  mkt:'KOSPI',  region:'韩国', pe:11.3,  fwdPe:null, growth:-5.16, peg:null, sig:'buy',  price:'₩1,745,000',note:'HBM龙头，PE极低，增速转负系高基数效应'},
+      {name:'三星电子', tkr:'005930.KS',  mkt:'KOSPI',  region:'韩国', pe:36.8,  fwdPe:null, growth:-1.96, peg:null, sig:'hold', price:'₩275,500',  note:'HBM竞争力落后海力士，DRAM逻辑均衡'},
+      {name:'铠侠',     tkr:'285A.T',     mkt:'TSE',    region:'日本', pe:null,  fwdPe:null, growth:null,  peg:null, sig:'watch',price:'¥49,770',   note:'2024-12东交所上市，全球第三大NAND供应商'},
+      {name:'群联电子', tkr:'8299.TW',    mkt:'TWSE',   region:'台湾', pe:null,  fwdPe:null, growth:null,  peg:null, sig:'watch',price:'待接入',     note:'NAND主控IC龙头，AI SSD受益标的'},
+    ],
+    domestic:[
+      {name:'兆易创新', code:'603986', mkt:'SH', role:'NOR Flash/MCU龙头', pe:48.5,  growth:522.8,  peg:0.09, sig:'buy+'},
+      {name:'澜起科技', code:'688008', mkt:'SH', role:'内存接口芯片(RCD)',  pe:89.1,  growth:61.3,   peg:1.45, sig:'hold'},
+      {name:'江波龙',   code:'301308', mkt:'SZ', role:'NAND Flash存储模组', pe:15.4,  growth:2644.0, peg:0.01, sig:'buy+'},
+      {name:'德明利',   code:'001309', mkt:'SZ', role:'NAND Flash存储模组', pe:11.8,  growth:4943.4, peg:0.00, sig:'buy+'},
+      {name:'佰维存储', code:'688525', mkt:'SH', role:'嵌入式/消费级存储',  pe:12.7,  growth:1567.9, peg:0.01, sig:'buy+'},
+      {name:'大普微',   code:'301666', mkt:'SZ', role:'SSD主控芯片(UW)',    pe:240.6, growth:398.9,  peg:0.60, sig:'hold'},
+    ],
+  },
 
   // A股估值监控 — PE/PEG为价格依赖字段，接入API后写入 pe/peg 字段
   // growth 为 2024年报净利润增速，固定历史值，单位 %
@@ -947,6 +1052,121 @@ function renderSwitch(){
   </tr>`).join('');
 }
 
+function mkIntlPe(){
+  const ctx = document.getElementById('cIntlPe').getContext('2d');
+  const d = BASE.storage.intl.filter(s=>s.pe!=null);
+  CH.intlPe = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels: d.map(s=>s.name),
+      datasets:[{
+        label:'PE(TTM)',
+        data: d.map(s=>s.pe),
+        backgroundColor: d.map(s=>s.pe>40?'rgba(245,158,11,.65)':s.pe>20?'rgba(37,99,235,.55)':'rgba(5,150,105,.65)'),
+        borderRadius:5
+      },{
+        label:'远期PE',
+        data: d.map(s=>s.fwdPe),
+        backgroundColor:'rgba(99,102,241,.35)',
+        borderRadius:5
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#64748b',font:{size:11},boxWidth:11}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#1e293b',font:{size:11}}},
+        y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'x'}}
+      }
+    }
+  });
+}
+
+function mkDomStorePe(){
+  const ctx = document.getElementById('cDomStorePe').getContext('2d');
+  const d = BASE.storage.domestic;
+  CH.domStorePe = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels: d.map(s=>s.name),
+      datasets:[
+        {label:'PE(动态)', data:d.map(s=>s.pe),
+         backgroundColor:d.map(s=>s.pe>100?'rgba(220,38,38,.6)':s.pe>40?'rgba(245,158,11,.6)':'rgba(5,150,105,.6)'),
+         borderRadius:5, yAxisID:'y'},
+        {label:'2026Q1增速(%)', data:d.map(s=>Math.min(s.growth,600)),
+         backgroundColor:'rgba(37,99,235,.2)', borderRadius:5, yAxisID:'y2'},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#64748b',font:{size:11},boxWidth:11}},
+        tooltip:{callbacks:{
+          label:ctx=>{
+            const orig = BASE.storage.domestic[ctx.dataIndex];
+            if(ctx.datasetIndex===1) return ` 增速: +${orig.growth}%${orig.growth>600?' (已截断显示)':''}`;
+            return ` PE: ${ctx.parsed.y}x`;
+          }
+        }}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#1e293b',font:{size:11}}},
+        y:{position:'left',grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'x'},title:{display:true,text:'PE',color:'#64748b',font:{size:10}}},
+        y2:{position:'right',grid:{display:false},ticks:{color:'#3b82f6',callback:v=>v+'%'},title:{display:true,text:'增速%(截断@600)',color:'#3b82f6',font:{size:10}}}
+      }
+    }
+  });
+}
+
+function renderIntlStore(){
+  const sigHtml={
+    'buy+':'<span class="sig s-buy">▲▲ 强买</span>',
+    'buy' :'<span class="sig s-buy">▲ 买入</span>',
+    'hold':'<span class="sig s-hold">— 持有</span>',
+    'watch':'<span class="sig s-watch">◎ 关注</span>',
+  };
+  const na='<span style="color:#94a3b8;font-size:11px">N/A</span>';
+  const naApi='<span style="color:#94a3b8;font-size:11px">待接入</span>';
+  const regionColor={美国:'var(--blue)',韩国:'var(--green)',日本:'var(--red)',台湾:'var(--cyan)'};
+  document.getElementById('intlStoreBody').innerHTML = BASE.storage.intl.map(r=>{
+    const peCell = r.pe!=null ? `<span style="font-weight:700;color:${r.pe>40?'var(--yellow)':r.pe>20?'var(--blue)':'var(--green)'}">${r.pe}x</span>` : naApi;
+    const fpeCell = r.fwdPe!=null ? `<span style="font-weight:600;color:var(--green)">${r.fwdPe}x</span>` : na;
+    const growCell = r.growth!=null
+      ? `<span style="font-weight:600;color:${r.growth<0?'var(--red)':'var(--green)'}">${r.growth>0?'+':''}${r.growth}%</span>`
+      : naApi;
+    const pegCell = r.peg!=null ? r.peg : (r.pe!=null&&r.growth!=null&&r.growth>0?((r.pe/r.growth).toFixed(2)):na);
+    return `<tr>
+      <td><strong>${r.name}</strong><br><span class="tx3">${r.note}</span></td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text2)">${r.tkr}</td>
+      <td class="tx3">${r.mkt}</td>
+      <td style="font-weight:600;color:${regionColor[r.region]||'var(--text)'}">${r.region}</td>
+      <td>${peCell}</td>
+      <td>${fpeCell}</td>
+      <td>${growCell}</td>
+      <td>${pegCell}</td>
+      <td>${sigHtml[r.sig]||r.sig}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDomStore(){
+  const sigHtml={
+    'buy+':'<span class="sig s-buy">▲▲ 强买</span>',
+    'buy' :'<span class="sig s-buy">▲ 买入</span>',
+    'hold':'<span class="sig s-hold">— 持有</span>',
+  };
+  const pegColor=p=>p==null?'#94a3b8':p<1?'var(--green)':p<2?'var(--blue)':'var(--red)';
+  document.getElementById('domStoreBody').innerHTML = BASE.storage.domestic.map(r=>`<tr>
+    <td><strong>${r.name}</strong></td>
+    <td style="font-family:monospace;font-size:12px;color:var(--text2)">${r.code}</td>
+    <td class="tx3">${r.role}</td>
+    <td style="font-weight:700;color:${r.pe>100?'var(--red)':r.pe>40?'var(--yellow)':'var(--green)'}">${r.pe}x</td>
+    <td style="font-weight:600;color:var(--green)">+${r.growth}%</td>
+    <td style="font-weight:600;color:${pegColor(r.peg)}">${r.peg!=null?r.peg.toFixed(2):'N/A'}</td>
+    <td>${sigHtml[r.sig]||r.sig}</td>
+  </tr>`).join('');
+}
+
 function mkNeoCapex(){
   const ctx = document.getElementById('cNeoCapex').getContext('2d');
   const d = BASE.neoCapex;
@@ -1116,8 +1336,8 @@ function refreshAll(){
 // ── INIT ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
   mkCapex();mkTrend();mkSig();mkStageC();mkRadar();mkGauge();mkBubble();mkPort();
-  mkNeoCapex();mkOptGrowth();mkPcbGrowth();
-  renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();
+  mkNeoCapex();mkOptGrowth();mkPcbGrowth();mkIntlPe();mkDomStorePe();
+  renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();
   document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
 });
 </script>
