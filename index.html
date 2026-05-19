@@ -134,6 +134,23 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 /* Gauge label positioning */
 .gaugeouter{position:relative;padding-bottom:0}
 .gaugenum{text-align:center;margin-top:-20px}
+
+/* ── Portfolio / Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center}
+.modal-box{background:#fff;border-radius:12px;padding:24px;width:480px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.18);max-height:90vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
+.form-row{margin-bottom:14px}
+.form-label{font-size:12px;color:var(--text2);font-weight:500;margin-bottom:5px;display:block}
+.form-input{width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;transition:border-color .2s}
+.form-input:focus{border-color:var(--blue)}
+.form-row2c{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.btn-primary{background:var(--blue);color:#fff;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--text2);padding:8px 20px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit}
+.color-swatch{width:24px;height:24px;border-radius:4px;border:2px solid transparent;cursor:pointer;transition:border-color .15s}
+.color-swatch.sel{border-color:#1e293b!important}
+.sec-header{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.mkt-badge{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600}
 </style>
 </head>
 <body>
@@ -159,11 +176,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <nav class="tabs">
   <button class="tab active" onclick="switchTab(0)">📈 AI趋势</button>
   <button class="tab" onclick="switchTab(1)">🇨🇳 A股宏观</button>
-  <button class="tab" onclick="switchTab(2)">🔍 产业链监控</button>
-  <button class="tab" onclick="switchTab(3)">⚠️ 风险仪表板</button>
-  <button class="tab" onclick="switchTab(4)">📊 A股估值监控</button>
-  <button class="tab" onclick="switchTab(5)">💾 存储监控</button>
-  <button class="tab" onclick="switchTab(6)">📋 十步框架</button>
+  <button class="tab" onclick="switchTab(2)">💼 投资组合</button>
+  <button class="tab" onclick="switchTab(3)">🔍 产业链监控</button>
+  <button class="tab" onclick="switchTab(4)">⚠️ 风险仪表板</button>
+  <button class="tab" onclick="switchTab(5)">📊 A股估值监控</button>
+  <button class="tab" onclick="switchTab(6)">💾 存储监控</button>
+  <button class="tab" onclick="switchTab(7)">📋 十步框架</button>
 </nav>
 
 <!-- ═══ DATA NOTICE ═══ -->
@@ -540,6 +558,126 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="tx3 mt4">规模以上工业企业利润总额当月同比 · 2024-01-02合并至2024-12 · 来源: 国家统计局 · 注: 数据波动较大，建议结合累计值综合判断</div>
   </div>
 
+</div>
+
+<!-- ════════════════ TAB 投资组合 ════════════════ -->
+<div class="tab-content" id="tPort">
+  <div class="stitle">投资组合管理 <span class="stag">A股 · 港股 · 可编辑</span></div>
+
+  <!-- KPI Row -->
+  <div class="g4 mb16">
+    <div class="card">
+      <div class="klabel">持仓股票总数</div>
+      <div class="kval tb" id="pKpiStocks">—</div>
+      <div class="tx3 mt4">分布于 <span id="pKpiSectors">—</span> 个分类</div>
+    </div>
+    <div class="card">
+      <div class="klabel">总仓位</div>
+      <div class="kval tb" id="pKpiWeight">—</div>
+      <div class="tx3 mt4" id="pKpiHk">—</div>
+    </div>
+    <div class="card">
+      <div class="klabel">投资策略</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+        <span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600">动量投资</span>
+        <span style="background:#dbeafe;color:#1e40af;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600">成长投资</span>
+        <span style="background:#ede9fe;color:#5b21b6;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600">品质投资</span>
+      </div>
+      <div class="tx3 mt8">综合三重投资风格</div>
+    </div>
+    <div class="card">
+      <div class="klabel">数据存储</div>
+      <div class="tx2 mt6" style="font-size:12px;line-height:1.7">保存于浏览器本地存储（localStorage），刷新后保留。支持A股沪深及港股，个股仓位可选填。</div>
+    </div>
+  </div>
+
+  <!-- Allocation chart + 新增分类 -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch"><span class="ct">仓位分配（按分类）</span><span class="cbadge" id="pTotalBadge">合计 —%</span></div>
+      <div style="height:210px"><canvas id="cPortAlloc"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">新增分类</span></div>
+      <div class="form-row">
+        <label class="form-label">分类名称</label>
+        <input id="newSecName" class="form-input" placeholder="例如：消费、医疗…" type="text" />
+      </div>
+      <div class="form-row">
+        <label class="form-label">标签颜色</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" class="color-swatch sel" onclick="selColor(this,'#22c55e')" style="background:#22c55e"></button>
+          <button type="button" class="color-swatch" onclick="selColor(this,'#3b82f6')" style="background:#3b82f6"></button>
+          <button type="button" class="color-swatch" onclick="selColor(this,'#f97316')" style="background:#f97316"></button>
+          <button type="button" class="color-swatch" onclick="selColor(this,'#8b5cf6')" style="background:#8b5cf6"></button>
+          <button type="button" class="color-swatch" onclick="selColor(this,'#ec4899')" style="background:#ec4899"></button>
+          <button type="button" class="color-swatch" onclick="selColor(this,'#06b6d4')" style="background:#06b6d4"></button>
+          <button type="button" class="color-swatch" onclick="selColor(this,'#dc2626')" style="background:#dc2626"></button>
+        </div>
+        <input id="newSecColor" type="hidden" value="#22c55e" />
+      </div>
+      <div class="form-row2c">
+        <div>
+          <label class="form-label">分类仓位 (%)</label>
+          <input id="newSecWeight" class="form-input" placeholder="0.0" type="number" min="0" max="100" step="0.5" />
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button type="button" onclick="addPortSector()" class="btn-primary" style="width:100%;padding:9px 0">+ 创建分类</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sector cards (rendered by JS) -->
+  <div id="portSectors"></div>
+</div>
+
+<!-- ── Add/Edit Stock Modal ── -->
+<div id="portModal" class="modal-overlay" onclick="if(event.target===this)closePortModal()">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span id="portModalTitle">添加股票</span>
+      <button type="button" onclick="closePortModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);line-height:1">×</button>
+    </div>
+    <form id="portForm" onsubmit="event.preventDefault();submitPortModal()">
+      <div class="form-row">
+        <label class="form-label">所属分类</label>
+        <select id="pSecSel" class="form-input"></select>
+      </div>
+      <div class="form-row2c">
+        <div>
+          <label class="form-label">股票名称 *</label>
+          <input id="pStkName" class="form-input" placeholder="例如: 比亚迪" type="text" required />
+        </div>
+        <div>
+          <label class="form-label">股票代码 *</label>
+          <input id="pStkCode" class="form-input" placeholder="例如: 002594" type="text" required />
+        </div>
+      </div>
+      <div class="form-row2c">
+        <div>
+          <label class="form-label">交易市场</label>
+          <select id="pStkMkt" class="form-input">
+            <option value="SH">沪市 A股 (SH)</option>
+            <option value="SZ">深市 A股 (SZ)</option>
+            <option value="HK">港股 (HK)</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">个股仓位 (%) 可选</label>
+          <input id="pStkWeight" class="form-input" placeholder="留空则不记录" type="number" min="0" max="100" step="0.1" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">备注（可选）</label>
+        <input id="pStkNote" class="form-input" placeholder="例如: 核心仓位 · 长期持有" type="text" />
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-ghost" onclick="closePortModal()">取消</button>
+        <button type="submit" class="btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- ════════════════ TAB 2.2 ════════════════ -->
@@ -993,6 +1131,42 @@ const BASE = {
       {name:'生益科技', code:'600183', role:'覆铜板/PCB材料龙头',  pe:52.8,  growth:105.5, peg:0.50, sig:'buy'},
       {name:'景旺电子', code:'603228', role:'工业/汽车/通信PCB',   pe:75.4,  growth:-28.4, peg:null, sig:'watch'},
       {name:'胜宏科技', code:'300476', role:'HDI高密度PCB',        pe:64.3,  growth:39.9,  peg:1.61, sig:'hold'},
+    ]
+  },
+
+  portfolio:{
+    sectors:[
+      {id:'ai',    name:'AI',    color:'#22c55e', weight:19.0, stocks:[
+        {name:'江波龙',  code:'301308', mkt:'SZ', w:null, note:''},
+        {name:'德明利',  code:'001309', mkt:'SZ', w:null, note:''},
+        {name:'佰维存储',code:'688525', mkt:'SH', w:null, note:''},
+        {name:'兆易创新',code:'603986', mkt:'SH', w:null, note:''},
+        {name:'易中天',  code:'300043', mkt:'SZ', w:null, note:''},
+        {name:'剑桥通信',code:'603083', mkt:'SH', w:null, note:''},
+        {name:'胜宏',    code:'300476', mkt:'SZ', w:null, note:''},
+        {name:'杰瑞股份',code:'002353', mkt:'SZ', w:null, note:''},
+      ]},
+      {id:'ai_w',  name:'AI观察',color:'#86efac', weight:2.0,  stocks:[
+        {name:'生益科技',code:'600183', mkt:'SH', w:null, note:''},
+        {name:'道通科技',code:'688208', mkt:'SH', w:null, note:''},
+        {name:'澜起科技',code:'688008', mkt:'SH', w:null, note:''},
+        {name:'盛弘股份',code:'300693', mkt:'SZ', w:null, note:''},
+        {name:'沪电股份',code:'002463', mkt:'SZ', w:null, note:''},
+        {name:'中材科技',code:'002080', mkt:'SZ', w:null, note:''},
+        {name:'东山精密',code:'002384', mkt:'SZ', w:null, note:''},
+        {name:'麦格米特',code:'002851', mkt:'SZ', w:null, note:''},
+      ]},
+      {id:'nrg',   name:'新能源',color:'#fb923c', weight:4.0,  stocks:[
+        {name:'比亚迪',  code:'002594', mkt:'SZ', w:null, note:''},
+        {name:'宁德时代',code:'300750', mkt:'SZ', w:null, note:''},
+        {name:'亿纬锂能',code:'300014', mkt:'SZ', w:null, note:''},
+        {name:'阳光电源',code:'300274', mkt:'SZ', w:null, note:''},
+      ]},
+      {id:'bio',   name:'生物医药',color:'#f472b6', weight:2.0,  stocks:[
+        {name:'荣昌生物',code:'09995',  mkt:'HK', w:null, note:''},
+        {name:'信达生物',code:'01801',  mkt:'HK', w:null, note:''},
+        {name:'百济神州',code:'688235', mkt:'SH', w:null, note:''},
+      ]},
     ]
   },
 
@@ -1526,6 +1700,163 @@ function renderStocks(){
   document.getElementById('pcbBody').innerHTML = BASE.stocks.pcb.map(row).join('');
 }
 
+// ── Portfolio Management ─────────────────────────────────────
+const PORT_KEY = 'ai_dash_portfolio_v1';
+let PORT = null;
+
+function portLoad(){
+  if(PORT) return;
+  try{
+    const s = localStorage.getItem(PORT_KEY);
+    PORT = s ? JSON.parse(s) : JSON.parse(JSON.stringify(BASE.portfolio));
+  }catch(e){ PORT = JSON.parse(JSON.stringify(BASE.portfolio)); }
+}
+function portSave(){ localStorage.setItem(PORT_KEY, JSON.stringify(PORT)); }
+
+function renderPortfolio(){
+  portLoad();
+  // KPI
+  const total = PORT.sectors.reduce((a,s)=>a+s.stocks.length,0);
+  const wSum  = PORT.sectors.reduce((a,s)=>a+(s.weight||0),0);
+  const hkCnt = PORT.sectors.reduce((a,s)=>a+s.stocks.filter(sk=>sk.mkt==='HK').length,0);
+  document.getElementById('pKpiStocks').textContent  = total+'只';
+  document.getElementById('pKpiSectors').textContent = PORT.sectors.length;
+  document.getElementById('pKpiWeight').textContent  = wSum.toFixed(1)+'%';
+  document.getElementById('pKpiHk').textContent      = '含港股 '+hkCnt+' 只';
+  document.getElementById('pTotalBadge').textContent = '合计 '+wSum.toFixed(1)+'%';
+  // Alloc chart
+  if(CH.portAlloc){ CH.portAlloc.destroy(); CH.portAlloc=null; }
+  const actx = document.getElementById('cPortAlloc');
+  if(actx){
+    CH.portAlloc = new Chart(actx.getContext('2d'),{
+      type:'doughnut',
+      data:{labels:PORT.sectors.map(s=>s.name+' '+s.weight+'%'),
+            datasets:[{data:PORT.sectors.map(s=>s.weight||0),
+                       backgroundColor:PORT.sectors.map(s=>s.color+'cc'),borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
+               plugins:{legend:{position:'right',labels:{color:'#64748b',font:{size:11},boxWidth:12,padding:8}}}}
+    });
+  }
+  // Sectors
+  const mktStyle = {SH:'background:#dbeafe;color:#1e40af',SZ:'background:#ede9fe;color:#5b21b6',HK:'background:#fee2e2;color:#991b1b'};
+  const mktLabel = {SH:'沪A',SZ:'深A',HK:'港股'};
+  document.getElementById('portSectors').innerHTML = PORT.sectors.map((sec,si)=>{
+    const rows = sec.stocks.length ? sec.stocks.map((sk,ki)=>`
+      <tr>
+        <td style="font-weight:600">${sk.name}</td>
+        <td style="font-size:11px;color:var(--text2)">${sk.code}</td>
+        <td><span class="mkt-badge" style="${mktStyle[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span></td>
+        <td>${sk.w!=null?'<strong>'+sk.w.toFixed(1)+'%</strong>':'<span style="color:var(--text2);font-size:11px">—</span>'}</td>
+        <td style="color:var(--text2);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sk.note||''}</td>
+        <td style="white-space:nowrap">
+          <button onclick="openPortModal('edit',${si},${ki})" style="background:none;border:1px solid var(--blue);color:var(--blue);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;font-family:inherit">编辑</button>
+          <button onclick="delPortStock(${si},${ki})" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;font-family:inherit;margin-left:4px">删除</button>
+        </td>
+      </tr>`).join('')
+    : `<tr><td colspan="6" style="text-align:center;color:var(--text2);font-size:12px;padding:16px">暂无持仓 · 点击"加股票"添加</td></tr>`;
+    return `<div class="card mb16">
+      <div class="sec-header">
+        <span style="width:13px;height:13px;border-radius:3px;background:${sec.color};display:inline-block;flex-shrink:0"></span>
+        <span style="font-size:14px;font-weight:700">${sec.name}</span>
+        <span style="font-size:12px;color:var(--text2)">${sec.stocks.length}只</span>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="font-size:12px;color:var(--text2)">分类仓位
+            <input type="number" value="${sec.weight}" min="0" max="100" step="0.5"
+              style="width:58px;border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:13px;font-weight:600;color:var(--blue);text-align:center;margin-left:4px"
+              onchange="updSecWeight(${si},this.value)" />%
+          </label>
+          <button onclick="openPortModal('add',${si},-1)" class="btn-primary" style="padding:4px 12px;font-size:12px">+ 加股票</button>
+          <button onclick="delPortSector(${si})" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:4px 8px;cursor:pointer;font-size:11px;font-family:inherit">删分类</button>
+        </div>
+      </div>
+      <div class="overflow">
+        <table class="mtable"><thead><tr>
+          <th>名称</th><th>代码</th><th>市场</th><th>个股仓位</th><th>备注</th><th>操作</th>
+        </tr></thead><tbody>${rows}</tbody></table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updSecWeight(si,val){
+  PORT.sectors[si].weight = parseFloat(val)||0;
+  portSave();
+  const wSum = PORT.sectors.reduce((a,s)=>a+(s.weight||0),0);
+  document.getElementById('pKpiWeight').textContent = wSum.toFixed(1)+'%';
+  document.getElementById('pTotalBadge').textContent = '合计 '+wSum.toFixed(1)+'%';
+  if(CH.portAlloc){ CH.portAlloc.destroy(); CH.portAlloc=null; }
+  const actx = document.getElementById('cPortAlloc');
+  if(actx) CH.portAlloc = new Chart(actx.getContext('2d'),{type:'doughnut',data:{labels:PORT.sectors.map(s=>s.name+' '+s.weight+'%'),datasets:[{data:PORT.sectors.map(s=>s.weight||0),backgroundColor:PORT.sectors.map(s=>s.color+'cc'),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{color:'#64748b',font:{size:11},boxWidth:12,padding:8}}}}});
+}
+
+function delPortStock(si,ki){
+  if(!confirm('删除 '+PORT.sectors[si].stocks[ki].name+' ？')) return;
+  PORT.sectors[si].stocks.splice(ki,1); portSave(); renderPortfolio();
+}
+function delPortSector(si){
+  if(!confirm('删除分类"'+PORT.sectors[si].name+'"及其所有持仓？')) return;
+  PORT.sectors.splice(si,1); portSave(); renderPortfolio();
+}
+
+let _portModalSi=-1, _portModalKi=-1, _portModalMode='add';
+function openPortModal(mode,si,ki){
+  _portModalMode=mode; _portModalSi=si; _portModalKi=ki;
+  document.getElementById('portModalTitle').textContent = mode==='add'?'添加股票':'编辑股票';
+  const sel=document.getElementById('pSecSel');
+  sel.innerHTML=PORT.sectors.map((s,i)=>`<option value="${i}"${i===si?' selected':''}>${s.name}</option>`).join('');
+  if(mode==='edit'&&ki>=0){
+    const sk=PORT.sectors[si].stocks[ki];
+    document.getElementById('pStkName').value  = sk.name;
+    document.getElementById('pStkCode').value  = sk.code;
+    document.getElementById('pStkMkt').value   = sk.mkt;
+    document.getElementById('pStkWeight').value= sk.w!=null?sk.w:'';
+    document.getElementById('pStkNote').value  = sk.note||'';
+  } else {
+    document.getElementById('pStkName').value  = '';
+    document.getElementById('pStkCode').value  = '';
+    document.getElementById('pStkMkt').value   = 'SH';
+    document.getElementById('pStkWeight').value= '';
+    document.getElementById('pStkNote').value  = '';
+  }
+  document.getElementById('portModal').style.display='flex';
+}
+function closePortModal(){ document.getElementById('portModal').style.display='none'; }
+function submitPortModal(){
+  const tsi = parseInt(document.getElementById('pSecSel').value);
+  const name= document.getElementById('pStkName').value.trim();
+  const code= document.getElementById('pStkCode').value.trim();
+  const mkt = document.getElementById('pStkMkt').value;
+  const wv  = document.getElementById('pStkWeight').value;
+  const note= document.getElementById('pStkNote').value.trim();
+  if(!name||!code){alert('请填写股票名称和代码');return;}
+  const obj = {name,code,mkt,w:wv?parseFloat(wv):null,note};
+  if(_portModalMode==='add'){
+    PORT.sectors[tsi].stocks.push(obj);
+  } else {
+    // if sector changed, move the stock
+    if(tsi!==_portModalSi){ PORT.sectors[_portModalSi].stocks.splice(_portModalKi,1); PORT.sectors[tsi].stocks.push(obj); }
+    else { PORT.sectors[tsi].stocks[_portModalKi]=obj; }
+  }
+  portSave(); closePortModal(); renderPortfolio();
+}
+
+let _selColorEl=null;
+function selColor(el,c){
+  if(_selColorEl) _selColorEl.classList.remove('sel');
+  el.classList.add('sel'); _selColorEl=el;
+  document.getElementById('newSecColor').value=c;
+}
+function addPortSector(){
+  const name = document.getElementById('newSecName').value.trim();
+  const color= document.getElementById('newSecColor').value||'#22c55e';
+  const w    = parseFloat(document.getElementById('newSecWeight').value)||0;
+  if(!name){alert('请输入分类名称');return;}
+  PORT.sectors.push({id:'c'+Date.now(),name,color,weight:w,stocks:[]});
+  document.getElementById('newSecName').value='';
+  document.getElementById('newSecWeight').value='';
+  portSave(); renderPortfolio();
+}
+
 // ── ARR Chart ────────────────────────────────────────────────
 function mkArr(){
   const ctx=document.getElementById('cArr').getContext('2d');
@@ -1784,6 +2115,7 @@ function refreshAll(){
 document.addEventListener('DOMContentLoaded',()=>{
   mkCapex();mkTrend();mkSig();mkStageC();mkRadar();mkGauge();mkBubble();mkPort();
   mkNeoCapex();mkOptGrowth();mkPcbGrowth();mkIntlPe();mkDomStorePe();mkArr();
+  renderPortfolio();
   mkNewInv();mkMktPe();mkMargin();mkNorth();mkUpDown();mkConc();
   mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();
   renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();renderMag7();
