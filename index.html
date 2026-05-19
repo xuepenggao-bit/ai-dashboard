@@ -30,7 +30,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 /* ── Tabs ── */
 .tabs{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:2px;overflow-x:auto}
-.tab{padding:12px 18px;border:none;background:none;color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.tab{padding:13px 20px;border:none;background:none;color:var(--text2);cursor:pointer;font-size:14px;font-family:inherit;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
 .tab:hover{color:var(--text)}.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 
 /* ── Layout ── */
@@ -157,10 +157,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ═══ TABS ═══ -->
 <nav class="tabs">
-  <button class="tab active" onclick="switchTab(0)">📈 2.1 AI趋势</button>
-  <button class="tab" onclick="switchTab(1)">🔍 2.2 产业链监控</button>
-  <button class="tab" onclick="switchTab(2)">⚠️ 2.4 风险仪表板</button>
-  <button class="tab" onclick="switchTab(3)">📋 2.5 十步框架</button>
+  <button class="tab active" onclick="switchTab(0)">📈 AI趋势</button>
+  <button class="tab" onclick="switchTab(1)">🔍 产业链监控</button>
+  <button class="tab" onclick="switchTab(2)">⚠️ 风险仪表板</button>
+  <button class="tab" onclick="switchTab(3)">📋 十步框架</button>
+  <button class="tab" onclick="switchTab(4)">📊 A股估值监控</button>
 </nav>
 
 <!-- ═══ DATA NOTICE ═══ -->
@@ -468,6 +469,81 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   </div>
 </div>
 
+<!-- ════════════════ TAB A股估值 ════════════════ -->
+<div class="tab-content" id="t4">
+  <div class="stitle">A股估值监控 <span class="stag">光模块 & PCB · 关键财务指标</span></div>
+
+  <div class="alert a-warn mb16">
+    <span>ℹ</span>
+    <div><strong>数据说明：</strong>净利润增速来自2024年报（固定历史值，手动录入）；PE / PEG为价格依赖指标随股价日变，标注"需接入API"须对接行情数据源方可实时显示。</div>
+  </div>
+
+  <!-- Charts -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">光模块公司 · 2024年报净利润增速</span>
+        <span class="cbadge" style="background:#dcfce7;color:#166534">2024年报固定值</span>
+      </div>
+      <div style="height:230px"><canvas id="cOptGrowth"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">PCB公司 · 2024年报净利润增速</span>
+        <span class="cbadge" style="background:#dcfce7;color:#166534">2024年报固定值</span>
+      </div>
+      <div style="height:230px"><canvas id="cPcbGrowth"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Optical module table -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">📡 光模块公司估值监控</span><span class="cbadge">5家主要标的</span></div>
+    <div class="overflow">
+      <table class="mtable">
+        <thead><tr>
+          <th>公司名称</th>
+          <th>股票代码</th>
+          <th>行业地位</th>
+          <th>PE(TTM) <span style="background:#fee2e2;color:#7f1d1d;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">需接入API</span></th>
+          <th>2024年报净利润增速 <span style="background:#dcfce7;color:#166534;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">固定值</span></th>
+          <th>PEG <span style="background:#fee2e2;color:#7f1d1d;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">需接入API</span></th>
+          <th>阶段信号</th>
+        </tr></thead>
+        <tbody id="optBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PCB table -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">🔧 PCB公司估值监控</span><span class="cbadge">6家主要标的</span></div>
+    <div class="overflow">
+      <table class="mtable">
+        <thead><tr>
+          <th>公司名称</th>
+          <th>股票代码</th>
+          <th>行业地位</th>
+          <th>PE(TTM) <span style="background:#fee2e2;color:#7f1d1d;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">需接入API</span></th>
+          <th>2024年报净利润增速 <span style="background:#dcfce7;color:#166534;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">固定值</span></th>
+          <th>PEG <span style="background:#fee2e2;color:#7f1d1d;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">需接入API</span></th>
+          <th>阶段信号</th>
+        </tr></thead>
+        <tbody id="pcbBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- How to update note -->
+  <div class="alert a-info">
+    <span>📋</span>
+    <div>
+      <strong>如何更新数据：</strong>
+      PE / PEG 字段在 BASE.stocks 中预留（pe/peg 字段），接入行情API后将实时值写入即可显示。净利润增速在每次季报/年报披露后手动更新 growth 字段。
+    </div>
+  </div>
+</div>
+
 </main>
 
 <!-- ═══ SCRIPT ═══ -->
@@ -527,6 +603,26 @@ const BASE = {
     {cond:'AI叙事集中度',        s4:'< 70%',  curr:'85%',  s5:'> 80%',  ok:false},
     {cond:'综合动量(30日)',       s4:'> 0',    curr:'+6.9%',s5:'< -5%',  ok:true},
   ],
+
+  // A股估值监控 — PE/PEG为价格依赖字段，接入API后写入 pe/peg 字段
+  // growth 为 2024年报净利润增速，固定历史值，单位 %
+  stocks:{
+    optical:[
+      {name:'中际旭创', code:'300308', role:'光模块龙头·AI数据中心', pe:null, growth:262, peg:null, sig:'hold'},
+      {name:'新易盛',   code:'300502', role:'高速光模块·CPO先发', pe:null, growth:184, peg:null, sig:'buy'},
+      {name:'天孚通信', code:'300394', role:'光器件·CPO无源组件', pe:null, growth:88,  peg:null, sig:'hold'},
+      {name:'剑桥科技', code:'603083', role:'光网络接入设备',      pe:null, growth:42,  peg:null, sig:'hold'},
+      {name:'华工科技', code:'000988', role:'激光器+光通信模块',   pe:null, growth:26,  peg:null, sig:'hold'},
+    ],
+    pcb:[
+      {name:'深南电路', code:'002916', role:'HDI/IC载板龙头',     pe:null, growth:44,  peg:null, sig:'buy'},
+      {name:'沪电股份', code:'002463', role:'AI服务器高速PCB',    pe:null, growth:62,  peg:null, sig:'buy'},
+      {name:'鹏鼎控股', code:'002938', role:'软硬结合板·消费+AI', pe:null, growth:18,  peg:null, sig:'hold'},
+      {name:'生益科技', code:'600183', role:'覆铜板/PCB材料龙头', pe:null, growth:30,  peg:null, sig:'hold'},
+      {name:'景旺电子', code:'603228', role:'工业/汽车/通信PCB',  pe:null, growth:14,  peg:null, sig:'hold'},
+      {name:'胜宏科技', code:'300476', role:'HDI高密度PCB',       pe:null, growth:36,  peg:null, sig:'buy'},
+    ]
+  },
 };
 
 // ── CHARTS ──────────────────────────────────────────────────
@@ -751,6 +847,78 @@ function renderSwitch(){
   </tr>`).join('');
 }
 
+function mkOptGrowth(){
+  const ctx = document.getElementById('cOptGrowth').getContext('2d');
+  const d = BASE.stocks.optical;
+  CH.optGrowth = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:d.map(s=>s.name),
+      datasets:[{
+        label:'2024年报净利润增速(%)',
+        data:d.map(s=>s.growth),
+        backgroundColor:d.map(s=>s.growth>100?'rgba(5,150,105,.65)':s.growth>30?'rgba(37,99,235,.55)':'rgba(99,102,241,.5)'),
+        borderRadius:5
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' +'+ctx.parsed.x+'%'}}},
+      scales:{
+        x:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>'+'+v+'%'}},
+        y:{grid:{display:false},ticks:{color:'#1e293b',font:{size:12}}}
+      }
+    }
+  });
+}
+
+function mkPcbGrowth(){
+  const ctx = document.getElementById('cPcbGrowth').getContext('2d');
+  const d = BASE.stocks.pcb;
+  CH.pcbGrowth = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:d.map(s=>s.name),
+      datasets:[{
+        label:'2024年报净利润增速(%)',
+        data:d.map(s=>s.growth),
+        backgroundColor:d.map(s=>s.growth>50?'rgba(5,150,105,.65)':s.growth>25?'rgba(37,99,235,.55)':'rgba(99,102,241,.5)'),
+        borderRadius:5
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' +'+ctx.parsed.x+'%'}}},
+      scales:{
+        x:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>'+'+v+'%'}},
+        y:{grid:{display:false},ticks:{color:'#1e293b',font:{size:12}}}
+      }
+    }
+  });
+}
+
+function renderStocks(){
+  const sigHtml={
+    'buy' :'<span class="sig s-buy">▲ 买入</span>',
+    'hold':'<span class="sig s-hold">— 持有</span>',
+    'sell':'<span class="sig s-sell">▼ 减持</span>',
+  };
+  const apiTag='<span style="color:#94a3b8;font-size:11px">— 需接入API</span>';
+  const row=r=>`<tr>
+    <td><strong>${r.name}</strong></td>
+    <td class="tx3" style="font-family:monospace">${r.code}</td>
+    <td class="tx3">${r.role}</td>
+    <td style="text-align:center">${r.pe!=null?r.pe+'x':apiTag}</td>
+    <td style="font-weight:600;color:${r.growth>100?'var(--green)':r.growth>30?'var(--blue)':'var(--text)'}">+${r.growth}%</td>
+    <td style="text-align:center">${r.peg!=null?r.peg:apiTag}</td>
+    <td>${sigHtml[r.sig]||r.sig}</td>
+  </tr>`;
+  document.getElementById('optBody').innerHTML = BASE.stocks.optical.map(row).join('');
+  document.getElementById('pcbBody').innerHTML = BASE.stocks.pcb.map(row).join('');
+}
+
 // ── TAB ──────────────────────────────────────────────────────
 function switchTab(idx){
   document.querySelectorAll('.tab-content').forEach((el,i)=>el.classList.toggle('active',i===idx));
@@ -793,7 +961,8 @@ function refreshAll(){
 // ── INIT ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
   mkCapex();mkTrend();mkSig();mkStageC();mkRadar();mkGauge();mkBubble();mkPort();
-  renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();
+  mkOptGrowth();mkPcbGrowth();
+  renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();
   document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
 });
 </script>
