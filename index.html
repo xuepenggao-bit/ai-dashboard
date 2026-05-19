@@ -160,9 +160,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <button class="tab active" onclick="switchTab(0)">📈 AI趋势</button>
   <button class="tab" onclick="switchTab(1)">🔍 产业链监控</button>
   <button class="tab" onclick="switchTab(2)">⚠️ 风险仪表板</button>
-  <button class="tab" onclick="switchTab(3)">📋 十步框架</button>
-  <button class="tab" onclick="switchTab(4)">📊 A股估值监控</button>
-  <button class="tab" onclick="switchTab(5)">💾 存储监控</button>
+  <button class="tab" onclick="switchTab(3)">📊 A股估值监控</button>
+  <button class="tab" onclick="switchTab(4)">💾 存储监控</button>
+  <button class="tab" onclick="switchTab(5)">📋 十步框架</button>
 </nav>
 
 <!-- ═══ DATA NOTICE ═══ -->
@@ -183,7 +183,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ════════════════ TAB 2.1 ════════════════ -->
 <div class="tab-content active" id="t0">
-  <div class="stitle">AI"趋势"仪表板 <span class="stag">2.1 · 阶段定位</span></div>
+  <div class="stitle">AI"趋势"仪表板 <span class="stag">阶段定位</span></div>
 
   <!-- Stage Flow -->
   <div class="card mb16">
@@ -215,10 +215,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="tx3 mt4">实际完成，季报确认</div>
     </div>
     <div class="card">
-      <div class="klabel">AI-PCB 当前PE (2026) <span style="background:#dcfce7;color:#166534;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">季度更新</span></div>
-      <div class="kval ty" id="kPcbPe">20x</div>
-      <div class="kchange neu">→ 2027E: <span id="kPcbPe27">10x</span></div>
-      <div class="tx3 mt4">阶段4尾部，泡沫风险可控</div>
+      <div class="klabel">美股7姐妹 中位数TTM PE <span style="background:#fee2e2;color:#991b1b;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2025A 参考</span></div>
+      <div class="kval ty" id="kMag7Pe">36x</div>
+      <div class="kchange neu">均值 <span id="kMag7Avg">41x</span>，NVDA/TSLA拉高</div>
+      <div class="tx3 mt4">6只阶段4 · 1只阶段5(TSLA) · 无阶段3</div>
     </div>
     <div class="card">
       <div class="klabel">AI ETF 综合PE / PEG <span style="background:#fee2e2;color:#7f1d1d;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">需接入行情API</span></div>
@@ -378,7 +378,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ════════════════ TAB 2.2 ════════════════ -->
 <div class="tab-content" id="t1">
-  <div class="stitle">AI产业链监控仪表板 <span class="stag">2.2 · 全链条信号</span></div>
+  <div class="stitle">AI产业链监控仪表板 <span class="stag">全链条信号</span></div>
 
   <!-- Summary stats -->
   <div class="sumrow">
@@ -425,13 +425,14 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="tx3 mt4">综合风险: 低 · 维持买入</div>
     </div>
     <div class="card">
-      <div class="ch"><span class="ct">🔧 AI-PCB产品</span><span class="sig s-buy">▲▲ 强买</span></div>
-      <div class="tx2 mb8">AI算力基板 / 高速连接器 / HDI</div>
-      <div class="fjb mb4"><span class="tx3">PE (2026)</span><span class="ty" id="d-pcbPe">20x</span></div>
-      <div class="fjb mb4"><span class="tx3">PE (2027E)</span><span class="tg" id="d-pcbPe27">10x</span></div>
-      <div class="fjb mb4"><span class="tx3">出货增速</span><span class="tg" id="d-pcbShip">+35%</span></div>
-      <div class="rbar mt8"><div class="rfill rm" style="width:45%"></div></div>
-      <div class="tx3 mt4">综合风险: 中 · 阶段4持续买入</div>
+      <div class="ch"><span class="ct">🌟 美股7姐妹 · PE估值阶段</span><span class="cbadge" style="background:#fee2e2;color:#991b1b">2025A 参考</span></div>
+      <div style="display:flex;gap:5px;margin-bottom:10px;font-size:10px;flex-wrap:wrap">
+        <span style="background:#dcfce7;color:#166534;padding:1px 5px;border-radius:3px">&lt;25x 阶段3</span>
+        <span style="background:#dbeafe;color:#1e40af;padding:1px 5px;border-radius:3px">25–50x 阶段4</span>
+        <span style="background:#fee2e2;color:#7f1d1d;padding:1px 5px;border-radius:3px">&gt;50x 阶段5⚠</span>
+      </div>
+      <div id="mag7List" style="display:flex;flex-direction:column;gap:5px"></div>
+      <div class="tx3 mt8" style="font-size:10px">TTM PE · Yahoo Finance (2025A) · 季度手动更新</div>
     </div>
     <div class="card">
       <div class="ch"><span class="ct">🤖 AI应用/SaaS</span><span class="sig s-sell">▼ 减持</span></div>
@@ -447,7 +448,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ════════════════ TAB 2.4 ════════════════ -->
 <div class="tab-content" id="t2">
-  <div class="stitle">AI产业风险仪表板 <span class="stag">2.4 · 风险监控</span></div>
+  <div class="stitle">AI产业风险仪表板 <span class="stag">风险监控</span></div>
 
   <!-- Gauge + Radar -->
   <div class="g2 mb16">
@@ -485,70 +486,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="ch"><span class="ct">历史对比 · 2021科技泡沫 vs 当前AI市场 (PE走势)</span></div>
     <div style="height:220px"><canvas id="cBubble"></canvas></div>
     <div class="tx3 mt8">虚线-灰色: 2021年AI/科技泡沫顶部周期 &nbsp;|&nbsp; 蓝色实线: 当前AI市场 PE走势</div>
-  </div>
-</div>
-
-<!-- ════════════════ TAB 2.5 ════════════════ -->
-<div class="tab-content" id="t3">
-  <div class="stitle">十步量化决策框架 <span class="stag">2.5 · 阶段4→5执行手册</span></div>
-
-  <!-- Progress -->
-  <div class="card mb16">
-    <div class="ch"><span class="ct">框架执行进度</span><span class="cbadge pulse" id="progBadge">7/10 步确认</span></div>
-    <div class="pbar"><div class="pfill" id="mainProg" style="width:70%"></div></div>
-    <div class="fb mt8">
-      <span class="tx3">当前阶段: 阶段4 → 5</span>
-      <span class="tx3">·</span>
-      <span class="tx3">预期年化收益: 15-20%</span>
-      <span class="tx3">·</span>
-      <span class="tx3">推荐配置: 60/30/10</span>
-    </div>
-  </div>
-
-  <div class="g2 mb16">
-    <!-- Steps -->
-    <div>
-      <ul class="steplist" id="stepList"></ul>
-    </div>
-
-    <!-- Portfolio + Ratios -->
-    <div>
-      <div class="card mb16">
-        <div class="ch"><span class="ct">推荐组合配置 60/30/10</span></div>
-        <div style="height:210px"><canvas id="cPort"></canvas></div>
-        <div style="display:flex;flex-direction:column;gap:6px;margin-top:14px">
-          <div class="fjb"><span class="tx2">🔵 核心AI科技 (60%)</span><span class="tx3">科技龙头40% + AI基础设施20%</span></div>
-          <div class="fjb"><span class="tx2">🟡 产业链+半导体 (30%)</span><span class="tx3">PCB 15% + GPU/ASIC 10% + 其他5%</span></div>
-          <div class="fjb"><span class="tx2">🔴 高风险卫星 (10%)</span><span class="tx3">AI应用5% + 新兴标的5%</span></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="ch"><span class="ct">阶段4仓位数学关系</span></div>
-        <div class="g2" style="gap:10px">
-          <div class="ratiobox"><div class="rationum tb">1 : 2</div><div class="tx3 mt4">核心 : 卫星</div></div>
-          <div class="ratiobox"><div class="rationum tp">1/3</div><div class="tx3 mt4">最大单一仓位</div></div>
-          <div class="ratiobox"><div class="rationum tg">1/2</div><div class="tx3 mt4">止损触发线</div></div>
-          <div class="ratiobox"><div class="rationum ty" id="kTarget">15~20%</div><div class="tx3 mt4">年化目标收益</div></div>
-        </div>
-        <div class="tx3 mt12" style="line-height:1.6">
-          阶段4配置公式：核心仓位 ≈ 总仓位×2/3 (≈60%)；卫星仓位 ≈ 总仓位×1/3 (30+10%)。
-          单标的上限1/3；触及止损线1/2时启动仓位减半机制。
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Stage switch conditions -->
-  <div class="card">
-    <div class="ch"><span class="ct">阶段4 vs 阶段5/6 — 量化切换条件监控</span></div>
-    <div class="overflow">
-      <table class="mtable">
-        <thead><tr>
-          <th>切换触发条件</th><th>阶段4标准值</th><th>当前值</th><th>阶段5触发值</th><th>状态</th>
-        </tr></thead>
-        <tbody id="switchBody"></tbody>
-      </table>
-    </div>
   </div>
 </div>
 
@@ -710,6 +647,70 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   </div>
 </div>
 
+<!-- ════════════════ TAB 十步框架 ════════════════ -->
+<div class="tab-content" id="t3">
+  <div class="stitle">十步量化决策框架 <span class="stag">阶段4→5执行手册</span></div>
+
+  <!-- Progress -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">框架执行进度</span><span class="cbadge pulse" id="progBadge">7/10 步确认</span></div>
+    <div class="pbar"><div class="pfill" id="mainProg" style="width:70%"></div></div>
+    <div class="fb mt8">
+      <span class="tx3">当前阶段: 阶段4 → 5</span>
+      <span class="tx3">·</span>
+      <span class="tx3">预期年化收益: 15-20%</span>
+      <span class="tx3">·</span>
+      <span class="tx3">推荐配置: 60/30/10</span>
+    </div>
+  </div>
+
+  <div class="g2 mb16">
+    <!-- Steps -->
+    <div>
+      <ul class="steplist" id="stepList"></ul>
+    </div>
+
+    <!-- Portfolio + Ratios -->
+    <div>
+      <div class="card mb16">
+        <div class="ch"><span class="ct">推荐组合配置 60/30/10</span></div>
+        <div style="height:210px"><canvas id="cPort"></canvas></div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:14px">
+          <div class="fjb"><span class="tx2">🔵 核心AI科技 (60%)</span><span class="tx3">科技龙头40% + AI基础设施20%</span></div>
+          <div class="fjb"><span class="tx2">🟡 产业链+半导体 (30%)</span><span class="tx3">PCB 15% + GPU/ASIC 10% + 其他5%</span></div>
+          <div class="fjb"><span class="tx2">🔴 高风险卫星 (10%)</span><span class="tx3">AI应用5% + 新兴标的5%</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">阶段4仓位数学关系</span></div>
+        <div class="g2" style="gap:10px">
+          <div class="ratiobox"><div class="rationum tb">1 : 2</div><div class="tx3 mt4">核心 : 卫星</div></div>
+          <div class="ratiobox"><div class="rationum tp">1/3</div><div class="tx3 mt4">最大单一仓位</div></div>
+          <div class="ratiobox"><div class="rationum tg">1/2</div><div class="tx3 mt4">止损触发线</div></div>
+          <div class="ratiobox"><div class="rationum ty" id="kTarget">15~20%</div><div class="tx3 mt4">年化目标收益</div></div>
+        </div>
+        <div class="tx3 mt12" style="line-height:1.6">
+          阶段4配置公式：核心仓位 ≈ 总仓位×2/3 (≈60%)；卫星仓位 ≈ 总仓位×1/3 (30+10%)。
+          单标的上限1/3；触及止损线1/2时启动仓位减半机制。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage switch conditions -->
+  <div class="card">
+    <div class="ch"><span class="ct">阶段4 vs 阶段5/6 — 量化切换条件监控</span></div>
+    <div class="overflow">
+      <table class="mtable">
+        <thead><tr>
+          <th>切换触发条件</th><th>阶段4标准值</th><th>当前值</th><th>阶段5触发值</th><th>状态</th>
+        </tr></thead>
+        <tbody id="switchBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 </main>
 
 <!-- ═══ SCRIPT ═══ -->
@@ -828,6 +829,16 @@ const BASE = {
       {name:'胜宏科技', code:'300476', role:'HDI高密度PCB',        pe:64.3,  growth:39.9,  peg:1.61, sig:'hold'},
     ]
   },
+
+  mag7:[
+    {name:'AAPL', cname:'苹果',   pe:33, stage:4},
+    {name:'MSFT', cname:'微软',   pe:36, stage:4},
+    {name:'AMZN', cname:'亚马逊', pe:44, stage:4},
+    {name:'GOOGL',cname:'谷歌',   pe:23, stage:3},
+    {name:'META', cname:'Meta',   pe:26, stage:4},
+    {name:'NVDA', cname:'英伟达', pe:55, stage:5},
+    {name:'TSLA', cname:'特斯拉', pe:78, stage:5},
+  ],
 };
 
 // ── CHARTS ──────────────────────────────────────────────────
@@ -1294,6 +1305,30 @@ function renderStocks(){
   document.getElementById('pcbBody').innerHTML = BASE.stocks.pcb.map(row).join('');
 }
 
+function renderMag7(){
+  const el = document.getElementById('mag7List');
+  if(!el) return;
+  const stageStyle = {
+    3:'background:#dcfce7;color:#166534',
+    4:'background:#dbeafe;color:#1e40af',
+    5:'background:#fee2e2;color:#7f1d1d',
+  };
+  const stageLabel = {3:'阶段3',4:'阶段4',5:'阶段5⚠'};
+  const maxPe = 90;
+  el.innerHTML = BASE.mag7.map(s=>{
+    const pct = Math.min(s.pe/maxPe*100,100).toFixed(0);
+    const barColor = s.pe>=50?'var(--red)':s.pe>=25?'var(--yellow)':'var(--green)';
+    return `<div style="display:flex;align-items:center;gap:6px">
+      <span style="width:40px;font-size:11px;font-weight:600;color:var(--text2);flex-shrink:0">${s.name}</span>
+      <div style="flex:1;background:var(--border);border-radius:3px;height:6px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${barColor};border-radius:3px"></div>
+      </div>
+      <span style="width:30px;text-align:right;font-size:11px;font-weight:600;flex-shrink:0">${s.pe}x</span>
+      <span style="font-size:9px;padding:1px 5px;border-radius:3px;flex-shrink:0;${stageStyle[s.stage]}">${stageLabel[s.stage]}</span>
+    </div>`;
+  }).join('');
+}
+
 // ── TAB ──────────────────────────────────────────────────────
 function switchTab(idx){
   document.querySelectorAll('.tab-content').forEach((el,i)=>el.classList.toggle('active',i===idx));
@@ -1337,7 +1372,7 @@ function refreshAll(){
 document.addEventListener('DOMContentLoaded',()=>{
   mkCapex();mkTrend();mkSig();mkStageC();mkRadar();mkGauge();mkBubble();mkPort();
   mkNeoCapex();mkOptGrowth();mkPcbGrowth();mkIntlPe();mkDomStorePe();
-  renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();
+  renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();renderMag7();
   document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
 });
 </script>
