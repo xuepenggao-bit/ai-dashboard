@@ -2133,26 +2133,66 @@ function fmtMacroLabel(d){
   return m ? m[1].slice(2)+'-'+m[2] : d;
 }
 
+// 东方财富数据中心 API — 字段说明：
+// 每个 entry 的 vfs 是按优先级排列的候选字段名；若所有候选为 null，自动扫描第一个数值字段
+// 开发调试：点刷新后在浏览器控制台查看 [Macro] 输出，可看到实际返回的字段名
+const _DC='https://datacenter-web.eastmoney.com/api/data/v1/get?source=WEB&client=WEB&pageSize=24&sortColumns=REPORT_DATE&sortTypes=-1&';
 const MACRO_CFGS={
-  cpi:      {url:'https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_ECONOMY_CPI&columns=REPORT_DATE,NATIONAL_CHANGE_RATE&pageSize=20&sortColumns=REPORT_DATE&sortTypes=-1&source=WEB&client=WEB', lf:'REPORT_DATE',vf:'NATIONAL_CHANGE_RATE',name:'CPI同比'},
-  tsf:      {url:'https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_ECONOMY_CREDITLINE&columns=REPORT_DATE,YEAR_RATIO&pageSize=20&sortColumns=REPORT_DATE&sortTypes=-1&source=WEB&client=WEB',       lf:'REPORT_DATE',vf:'YEAR_RATIO',           name:'社融同比'},
-  fai:      {url:'https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_ECONOMY_INVESTCITY&columns=REPORT_DATE,BASE&pageSize=20&sortColumns=REPORT_DATE&sortTypes=-1&source=WEB&client=WEB',              lf:'REPORT_DATE',vf:'BASE',                 name:'固定资产投资'},
-  retail:   {url:'https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_ECONOMY_RETAILS&columns=REPORT_DATE,VALUE&pageSize=20&sortColumns=REPORT_DATE&sortTypes=-1&source=WEB&client=WEB',                lf:'REPORT_DATE',vf:'VALUE',                name:'社零同比'},
-  industrial:{url:'https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_ECONOMY_INDUSTVALUE&columns=REPORT_DATE,VALUE&pageSize=20&sortColumns=REPORT_DATE&sortTypes=-1&source=WEB&client=WEB',           lf:'REPORT_DATE',vf:'VALUE',                name:'工业利润'},
+  cpi:{
+    url:_DC+'reportName=RPT_ECONOMY_CPI&columns=REPORT_DATE,NATIONAL_CHANGE_RATE,CITY_CHANGE_RATE,RURAL_CHANGE_RATE',
+    lf:'REPORT_DATE', vfs:['NATIONAL_CHANGE_RATE','CITY_CHANGE_RATE'], name:'CPI同比', dsLabel:'CPI同比(%)',
+  },
+  tsf:{
+    // 社融存量同比；字段名因版本不同，多备选；也可换 RPT_ECONOMY_M2 取 M2同比
+    url:_DC+'reportName=RPT_ECONOMY_CREDITDATA&columns=REPORT_DATE,STOCK_YOY,YEAR_RATIO,GROWTHRATE,TOTAL_FINANCING_YOY',
+    lf:'REPORT_DATE', vfs:['STOCK_YOY','YEAR_RATIO','GROWTHRATE','TOTAL_FINANCING_YOY'], name:'社融同比',dsLabel:'社融存量同比(%)',
+    fallbackUrl:_DC+'reportName=RPT_ECONOMY_M2&columns=REPORT_DATE,YEAR_RATIO,GROWTHRATE,VALUE',
+    fallbackVfs:['YEAR_RATIO','GROWTHRATE','VALUE'], fallbackName:'M2同比', fallbackDsLabel:'M2同比(%)',
+  },
+  fai:{
+    url:_DC+'reportName=RPT_ECONOMY_INVESTCITY&columns=REPORT_DATE,ACCU_GROW,ACCUMULATE_GROW,GROW_RATE,YEAR_RATIO,BASE',
+    lf:'REPORT_DATE', vfs:['ACCU_GROW','ACCUMULATE_GROW','GROW_RATE','YEAR_RATIO','BASE'], name:'固投累计同比', dsLabel:'FAI累计同比(%)',
+  },
+  retail:{
+    url:_DC+'reportName=RPT_ECONOMY_RETAILS&columns=REPORT_DATE,RETAIL_TOTAL_GREW,YEAR_RATIO,GREW_RATE,TOTAL_GROW,VALUE',
+    lf:'REPORT_DATE', vfs:['RETAIL_TOTAL_GREW','YEAR_RATIO','GREW_RATE','VALUE'], name:'社零同比', dsLabel:'零售总额同比(%)',
+  },
+  industrial:{
+    url:_DC+'reportName=RPT_ECONOMY_PROFITGROW&columns=REPORT_DATE,ACCUMULATE_GROW,ACCU_GROW,YEAR_RATIO,VALUE',
+    lf:'REPORT_DATE', vfs:['ACCUMULATE_GROW','ACCU_GROW','YEAR_RATIO','VALUE'], name:'工业利润同比', dsLabel:'工业利润同比(%)',
+  },
 };
 
-async function fetchMacroApi(key){
-  const cfg=MACRO_CFGS[key];
-  const res=await fetch(cfg.url);
+async function _tryFetchMacro(url, lf, vfs){
+  const res=await fetch(url);
   if(!res.ok) throw new Error('HTTP '+res.status);
   const json=await res.json();
   const data=json.result?.data;
-  if(!data?.length) throw new Error('无数据');
-  const sorted=[...data].sort((a,b)=>a[cfg.lf]>b[cfg.lf]?1:-1);
-  return{
-    labels:sorted.map(d=>fmtMacroLabel(d[cfg.lf])),
-    vals:sorted.map(d=>d[cfg.vf]!=null?parseFloat(d[cfg.vf]):null),
-  };
+  if(!data?.length) return null;
+  const first=data[0];
+  let vf=vfs.find(f=>first[f]!=null&&first[f]!=='');
+  if(!vf){
+    // 自动扫描数值字段（排除日期、代码类字段、超大数值）
+    const auto=Object.keys(first).filter(k=>k!==lf&&k!=='SECURITY_CODE'&&typeof first[k]==='number'&&Math.abs(first[k])<500);
+    console.log('[Macro] 自动字段扫描 | URL:',url,'| 所有字段:',Object.keys(first),'| 数值候选:',auto);
+    if(auto.length) vf=auto[0]; else return null;
+  }
+  const sorted=[...data].sort((a,b)=>a[lf]>b[lf]?1:-1);
+  return{labels:sorted.map(d=>fmtMacroLabel(d[lf])),vals:sorted.map(d=>d[vf]!=null?parseFloat(d[vf]):null),usedField:vf};
+}
+
+async function fetchMacroApi(key){
+  const cfg=MACRO_CFGS[key];
+  let result=await _tryFetchMacro(cfg.url, cfg.lf, cfg.vfs);
+  let dsLabel=cfg.dsLabel, name=cfg.name;
+  // 社融 fallback → M2
+  if(!result&&cfg.fallbackUrl){
+    console.log('[Macro]',key,'主URL无数据，尝试fallback');
+    result=await _tryFetchMacro(cfg.fallbackUrl, cfg.lf, cfg.fallbackVfs);
+    if(result){dsLabel=cfg.fallbackDsLabel; name=cfg.fallbackName;}
+  }
+  if(!result) throw new Error(cfg.name+' 无数据');
+  return{...result, dsLabel, name};
 }
 
 async function refreshMacro(){
@@ -2178,16 +2218,18 @@ async function refreshMacro(){
       if(ch){
         ch.data.labels=d.labels;
         ch.data.datasets[dsIdx].data=d.vals;
+        if(d.dsLabel) ch.data.datasets[dsIdx].label=d.dsLabel;
         if(key==='industrial'){
-          ch.data.datasets[0].backgroundColor=d.vals.map(v=>v>=0?'rgba(5,150,105,.65)':'rgba(220,38,38,.55)');
-          if(ch.data.datasets[1]) ch.data.datasets[1].data=d.vals;
+          ch.data.datasets[0].backgroundColor=d.vals.map(v=>(v||0)>=0?'rgba(5,150,105,.65)':'rgba(220,38,38,.55)');
+          if(ch.data.datasets[1]){ch.data.datasets[1].data=d.vals;}
         }
         ch.update('none');
       }
       const latest=d.labels[d.labels.length-1]||'';
-      ok.push({key,latest});
+      ok.push({key, latest, name:d.name, field:d.usedField});
     }catch(e){
-      fail.push({key,err:e.message});
+      console.warn('[Macro]',key,'失败:',e.message);
+      fail.push({key, err:e.message, name:MACRO_CFGS[key].name});
     }
   }
 
@@ -2196,18 +2238,27 @@ async function refreshMacro(){
   if(ok.length>0){
     alertEl.className='alert a-info mb8';
     alertEl.style.display='block';
-    const okStr=ok.map(r=>MACRO_CFGS[r.key].name+(r.latest?'(至'+r.latest+')'  :'')).join('、');
-    const failStr=fail.length?'　⚠ 失败：'+fail.map(r=>MACRO_CFGS[r.key].name).join('、'):'';
+    const okStr=ok.map(r=>r.name+(r.latest?'(至'+r.latest+')'+(r.field?'['+r.field+']':''):'')).join('、');
+    const failStr=fail.length?'　⚠ 失败：'+fail.map(r=>r.name+'('+r.err+')').join('、'):'';
     alertEl.textContent='✓ 已更新：'+okStr+failStr;
   }else{
     alertEl.className='alert a-warn mb8';
     alertEl.style.display='block';
-    alertEl.textContent='⚠ 数据获取失败（可能受CORS限制），当前显示历史静态数据。'+fail.map(r=>r.err).join('；');
+    alertEl.textContent='⚠ 所有指标获取失败，显示历史静态数据。详情见控制台(F12)。失败：'+fail.map(r=>r.name+'→'+r.err).join('；');
   }
   btn.classList.remove('loading'); btn.disabled=false;
 }
 
 // ── PORTFOLIO PRICE REFRESH ──────────────────────────────────
+// 判断当前是否为A股交易时段（北京时间 9:30-11:30 / 13:00-15:00 工作日）
+function _isTradingNow(){
+  const bj=new Date(Date.now()+8*3600000); // UTC→北京
+  const day=bj.getUTCDay();
+  if(day===0||day===6) return false;
+  const m=bj.getUTCHours()*60+bj.getUTCMinutes();
+  return (m>=570&&m<=690)||(m>=780&&m<900);
+}
+
 async function fetchPortPrices(){
   const btn=document.getElementById('portPriceBtn');
   const ts =document.getElementById('portPriceTs');
@@ -2222,19 +2273,22 @@ async function fetchPortPrices(){
   if(!stocks.length){ts.textContent='无持仓';btn.classList.remove('loading');btn.disabled=false;return;}
   try{
     const secids=stocks.map(s=>s.secid).join(',');
-    const url=`https://push2.eastmoney.com/api/qt/ulist/get?secids=${secids}&fields=f12,f14,f43,f170&ut=fa5fd1943c7b386f172d6893dbfba10b&fltt=2&invt=2&_=${Date.now()}`;
+    // f2=最新价 f3=涨跌幅(%) f12=代码 f14=名称  fltt=2 返回浮点值
+    const url=`https://push2.eastmoney.com/api/qt/ulist/get?secids=${secids}&fields=f12,f14,f2,f3&ut=fa5fd1943c7b386f172d6893dbfba10b&fltt=2&invt=2&_=${Date.now()}`;
     const res=await fetch(url);
     if(!res.ok) throw new Error('HTTP '+res.status);
     const json=await res.json();
     const diff=json.data?.diff||[];
     _PORT_PRICES={};
     diff.forEach(item=>{
-      if(item.f12!=null){
-        _PORT_PRICES[String(item.f12)]={price:item.f43, pct:item.f170};
+      const code=String(item.f12||'').padStart(6,'0');
+      if(code&&item.f3!=null&&item.f3!=='-'){
+        _PORT_PRICES[code]={price:item.f2, pct:parseFloat(item.f3)};
       }
     });
     const count=Object.keys(_PORT_PRICES).length;
-    ts.textContent=`已更新${count}只股价 · ${new Date().toLocaleString('zh-CN')}`;
+    const label=_isTradingNow()?'实时':'收盘';
+    ts.textContent=`${label}涨跌幅 ${count}只 · ${new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}`;
   }catch(e){
     ts.textContent='获取失败：'+(e.message||'网络错误');
     _PORT_PRICES={};
