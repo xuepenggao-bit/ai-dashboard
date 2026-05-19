@@ -150,7 +150,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div class="hright">
     <div class="ts" id="tsEl">最后更新: 初始化中…</div>
     <button class="rbtn" id="rBtn" onclick="refreshAll()">
-      <span class="ricon">↻</span>刷新数据
+      <span class="ricon">↻</span>检查更新
     </button>
   </div>
 </header>
@@ -162,6 +162,19 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <button class="tab" onclick="switchTab(2)">⚠️ 2.4 风险仪表板</button>
   <button class="tab" onclick="switchTab(3)">📋 2.5 十步框架</button>
 </nav>
+
+<!-- ═══ DATA NOTICE ═══ -->
+<div style="background:#fffbeb;border-bottom:1px solid #fde68a;padding:7px 24px;font-size:11px;color:#78350f;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+  <span>⚠ 静态演示版</span>
+  <span style="color:#fde68a">|</span>
+  <span>数据截止 2026-Q1</span>
+  <span style="color:#fde68a">|</span>
+  <span><strong>永久固定：</strong>历史Capex实际值、组合配置、切换阈值</span>
+  <span style="color:#fde68a">|</span>
+  <span><strong>季度录入：</strong>Capex指引、业绩增速、PCB PE、风险评分</span>
+  <span style="color:#fde68a">|</span>
+  <span><strong>需接入API：</strong>30日动量、ETF PE/PEG（日频行情数据）</span>
+</div>
 
 <!-- ═══ MAIN ═══ -->
 <main class="main">
@@ -188,25 +201,25 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- KPI Row -->
   <div class="g4 mb16">
     <div class="card">
-      <div class="klabel">Hyperscaler总Capex 2026E</div>
+      <div class="klabel">Hyperscaler总Capex 2026E <span style="background:#dcfce7;color:#166534;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">季报指引</span></div>
       <div class="kval tb" id="kCapex26">¥7,250亿</div>
       <div class="kchange up" id="kYoy26">↑ +77.0% 同比</div>
       <div class="tx3 mt4">Alphabet/MSFT/Amazon/Meta合计</div>
     </div>
     <div class="card">
-      <div class="klabel">Hyperscaler总Capex 2025A</div>
+      <div class="klabel">Hyperscaler总Capex 2025A <span style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">历史实际值</span></div>
       <div class="kval" id="kCapex25">¥4,100亿</div>
       <div class="kchange up">↑ +45% 同比</div>
       <div class="tx3 mt4">实际完成，季报确认</div>
     </div>
     <div class="card">
-      <div class="klabel">AI-PCB 当前PE (2026)</div>
+      <div class="klabel">AI-PCB 当前PE (2026) <span style="background:#dcfce7;color:#166534;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">季度更新</span></div>
       <div class="kval ty" id="kPcbPe">20x</div>
       <div class="kchange neu">→ 2027E: <span id="kPcbPe27">10x</span></div>
       <div class="tx3 mt4">阶段4尾部，泡沫风险可控</div>
     </div>
     <div class="card">
-      <div class="klabel">AI ETF 综合PE / PEG</div>
+      <div class="klabel">AI ETF 综合PE / PEG <span style="background:#fee2e2;color:#7f1d1d;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">需接入行情API</span></div>
       <div class="kval tr" id="kEtfPe">78x</div>
       <div class="kchange down" id="kPeg">⚠ PEG > 97 · 阶段5信号</div>
       <div class="tx3 mt4">与2021科技泡沫高度类似</div>
@@ -299,7 +312,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="ch"><span class="ct">产业链全景监控表</span><span class="cbadge">10个维度</span></div>
       <table class="mtable">
         <thead><tr>
-          <th>板块/类别</th><th>核心指标</th><th>信号</th><th>阶段</th><th>30日动量</th>
+          <th>板块/类别</th><th>核心指标</th><th>信号 <span style="background:#dcfce7;color:#166534;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">月度判断</span></th><th>阶段</th><th>30日动量 <span style="background:#fee2e2;color:#7f1d1d;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">需API</span></th>
         </tr></thead>
         <tbody id="monBody"></tbody>
       </table>
@@ -745,61 +758,36 @@ function switchTab(idx){
 }
 
 // ── REFRESH ──────────────────────────────────────────────────
-// 说明：Capex 为公司公告值，不随刷新变化；
-//       PE/PEG/动量/风险评分为市场衍生指标，每次刷新更新。
-function rng(v,p=.03){return v*(1+(Math.random()-.5)*2*p);}
+// 数据更新频率说明（本页为静态演示，不接入任何实时数据源）：
+//
+//  【永久固定 — 历史实际值】
+//    Capex 2024A / 2025A（四家公司财报披露值）
+//    趋势图历史节点、2021泡沫PE历史曲线
+//    组合配置比例 60/30/10、阶段切换阈值
+//
+//  【季度更新 — 季报/公司指引发布后手动录入】
+//    Capex 2026E 各公司指引、PCB PE(2026/2027E)
+//    科技龙头营收增速、EPS增速、CPO渗透率
+//    产业链出货增速、供应商集中度
+//
+//  【月度/季度更新 — 分析师判断后手动录入】
+//    投资阶段定位、各板块买卖信号
+//    风险评分、风险等级、定性风险值（"中性"/"中高"等）
+//    AI叙事集中度、单一行业暴露度
+//
+//  【日频 — 需接入行情 API 才能实时更新】
+//    30日价格动量、AI ETF PE / PEG
+//    科技龙头远期PE（Price/Earnings 随股价日变）
+//
+// 刷新按钮：仅更新"检查时间"戳，不修改任何数据。
+// 如需实时数据，须将各字段对接相应数据源（行情API / 季报解析服务）。
 function refreshAll(){
   const btn=document.getElementById('rBtn');
   btn.classList.add('loading');btn.disabled=true;
   setTimeout(()=>{
-    // ── 市场衍生指标（随行情变化）──
-    const newEtfPe=Math.round(rng(78,.06));
-    const newPeg=Math.round(rng(97,.05));
-    document.getElementById('kEtfPe').textContent=newEtfPe+'x';
-    document.getElementById('kPeg').textContent=`⚠ PEG > ${newPeg} · 阶段5信号`;
-    // CPO渗透率：季度级别缓慢变化，每次±0.5%以内微调
-    const newCpo=Math.min(60,Math.max(40,Math.round(rng(45,.01))));
-    document.getElementById('kCpo').textContent=newCpo+'%';
-    // Capex 图表：历史实际值和2026E公告值均不变，仅保留图表重绘
-    CH.capex.update();
-    // 趋势图：仅2025A和2026E为公告值，不加噪声
-    CH.trend.update();
-
-    // 2.2 monitor
-    BASE.monitors.forEach(r=>{
-      r.mom=r.sig==='sell'
-        ?parseFloat((r.mom-(Math.random()*.4)).toFixed(1))
-        :parseFloat((r.mom+(Math.random()-.4)*.9).toFixed(1));
-    });
-    renderMon();
-    const avgMom=(BASE.monitors.reduce((a,r)=>a+r.mom,0)/BASE.monitors.length);
-    document.getElementById('sAvgMom').textContent=(avgMom>0?'+':'')+avgMom.toFixed(1)+'%';
-    // detail cards
-    document.getElementById('d-techRev').textContent='+'+(18+(Math.random()-.5)*4).toFixed(0)+'%';
-    document.getElementById('d-techPe').textContent=(24+(Math.random()-.5)*2).toFixed(0)+'x';
-    document.getElementById('d-techEps').textContent='+'+(22+(Math.random()-.5)*5).toFixed(0)+'%';
-    document.getElementById('d-appPe').textContent=newEtfPe+'x';
-    document.getElementById('d-appPeg').textContent=newPeg;
-
-    // 2.4 risks
-    BASE.risks.forEach(r=>{ r.sc=Math.min(100,Math.max(0,Math.round(r.sc+(Math.random()-.5)*5))); });
-    const avg=Math.round(BASE.risks.reduce((a,b)=>a+b.sc,0)/BASE.risks.length);
-    document.getElementById('overallRisk').textContent=avg;
-    const col=avg>70?'rgba(220,38,38,.75)':avg>50?'rgba(217,119,6,.75)':'rgba(5,150,105,.75)';
-    CH.gauge.data.datasets[0].data=[avg,100-avg];
-    CH.gauge.data.datasets[0].backgroundColor[0]=col;
-    CH.gauge.update();
-    CH.radar.data.datasets[0].data=BASE.risks.map(r=>r.sc);
-    CH.radar.update();
-    renderRisk();renderAlerts();
-    // bubble last point
-    const lastPts=CH.bubble.data.datasets[1].data;
-    lastPts[lastPts.length-1]=Math.round(rng(newEtfPe,.02));
-    CH.bubble.update();
-
-    document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
+    document.getElementById('tsEl').textContent='检查时间: '+new Date().toLocaleString('zh-CN');
     btn.classList.remove('loading');btn.disabled=false;
-  },900);
+  },500);
 }
 
 // ── INIT ──────────────────────────────────────────────────────
