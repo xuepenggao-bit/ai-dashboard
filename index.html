@@ -1755,15 +1755,22 @@ function renderPortfolio(){
   document.getElementById('pKpiWeight').textContent  = wSum.toFixed(1)+'%';
   document.getElementById('pKpiHk').textContent      = '含港股 '+hkCnt+' 只';
   document.getElementById('pTotalBadge').textContent = '合计 '+wSum.toFixed(1)+'%';
-  // Alloc chart
+  // Alloc chart（不足100%的部分显示为"现金"）
   if(CH.portAlloc){ CH.portAlloc.destroy(); CH.portAlloc=null; }
   const actx = document.getElementById('cPortAlloc');
   if(actx){
+    const cash = Math.max(0, parseFloat((100 - wSum).toFixed(1)));
+    const chartLabels = PORT.sectors.map((s,i)=>s.name+' '+secWeights[i].toFixed(1)+'%');
+    const chartData   = [...secWeights];
+    const chartColors = PORT.sectors.map(s=>s.color+'cc');
+    if(cash > 0.05){
+      chartLabels.push('现金 '+cash.toFixed(1)+'%');
+      chartData.push(cash);
+      chartColors.push('#cbd5e1cc');  // 浅灰色
+    }
     CH.portAlloc = new Chart(actx.getContext('2d'),{
       type:'doughnut',
-      data:{labels:PORT.sectors.map((s,i)=>s.name+' '+secWeights[i].toFixed(1)+'%'),
-            datasets:[{data:secWeights,
-                       backgroundColor:PORT.sectors.map(s=>s.color+'cc'),borderWidth:0}]},
+      data:{labels:chartLabels, datasets:[{data:chartData, backgroundColor:chartColors, borderWidth:0}]},
       options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
                plugins:{legend:{position:'right',labels:{color:'#64748b',font:{size:11},boxWidth:12,padding:8}}}}
     });
