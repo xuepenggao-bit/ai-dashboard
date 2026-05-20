@@ -2294,32 +2294,56 @@ async function fetchPortPrices(){
   portLoad();
   const stocks=[];
   PORT.sectors.forEach(sec=>sec.stocks.forEach(sk=>{
-    let ySym;
-    if(sk.mkt==='SH') ySym=sk.code+'.SS';
-    else if(sk.mkt==='HK') ySym=sk.code.replace(/^0+/,'')+'.HK';
-    else ySym=sk.code+'.SZ';
-    stocks.push({code:sk.code, mkt:sk.mkt, ySym});
+    const pfx=sk.mkt==='SH'?'sh':sk.mkt==='HK'?'hk':'sz';
+    stocks.push({code:sk.code, mkt:sk.mkt, sinaCode:pfx+sk.code});
   }));
   if(!stocks.length){ts.textContent='无持仓';btn.classList.remove('loading');btn.disabled=false;return;}
-  try{
-    const syms=stocks.map(s=>s.ySym).join(',');
-    const res=await fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=regularMarketPrice,regularMarketChangePercent`);
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const json=await res.json();
-    const results=json.quoteResponse?.result||[];
-    _PORT_PRICES={};
-    results.forEach(q=>{
-      const s=stocks.find(x=>x.ySym===q.symbol);
-      if(s&&q.regularMarketChangePercent!=null){
-        _PORT_PRICES[s.code]={price:q.regularMarketPrice, pct:q.regularMarketChangePercent};
+
+  // 解析新浪财经返回文本 → {code:{price,pct}}
+  function parseSina(text){
+    const out={};
+    stocks.forEach(s=>{
+      const m=text.match(new RegExp('hq_str_'+s.sinaCode+'="([^"]*)"'));
+      if(!m||!m[1]) return;
+      const p=m[1].split(',');
+      if(s.mkt==='HK'){
+        // HK格式: [0]en名,[1]cn名,[2]昨收,[3]买,[4]高,[5]低,[6]当前,[7]涨跌额,[8]涨跌%
+        const cur=parseFloat(p[6]), pct=parseFloat(p[8]);
+        if(!isNaN(cur)&&!isNaN(pct)) out[s.code]={price:cur, pct};
+      } else {
+        // A股格式: [0]名,[1]今开,[2]昨收,[3]当前,[4]高,[5]低
+        const cur=parseFloat(p[3]), prev=parseFloat(p[2]);
+        if(prev>0&&cur>0) out[s.code]={price:cur, pct:(cur-prev)/prev*100};
       }
     });
-    const count=Object.keys(_PORT_PRICES).length;
+    return out;
+  }
+
+  const sinaList=stocks.map(s=>s.sinaCode).join(',');
+  let data={};
+
+  // 方法1：新浪直连（多数情况可用）
+  try{
+    const r=await fetch(`https://hq.sinajs.cn/rn=${Date.now()}&list=${sinaList}`,{referrer:'https://finance.sina.com.cn'});
+    if(r.ok){ data=parseSina(await r.text()); }
+  }catch(e1){}
+
+  // 方法2：CORS代理兜底
+  if(!Object.keys(data).length){
+    try{
+      const sinaUrl=`https://hq.sinajs.cn/rn=${Date.now()}&list=${sinaList}`;
+      const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(sinaUrl)}`);
+      if(r.ok){ data=parseSina(await r.text()); }
+    }catch(e2){}
+  }
+
+  _PORT_PRICES=data;
+  const count=Object.keys(_PORT_PRICES).length;
+  if(count>0){
     const label=_isTradingNow()?'实时':'收盘';
     ts.textContent=`${label}涨跌幅 ${count}只 · ${new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}`;
-  }catch(e){
-    ts.textContent='获取失败：'+(e.message||'网络错误');
-    _PORT_PRICES={};
+  } else {
+    ts.textContent='获取失败，请稍后重试';
   }
   renderPortfolio();
   btn.classList.remove('loading'); btn.disabled=false;
