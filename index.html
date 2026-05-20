@@ -2297,50 +2297,44 @@ async function fetchPortPrices(){
   btn.classList.add('loading'); btn.disabled=true;
   ts.textContent='正在获取股价…';
   portLoad();
+
+  // 构建股票列表（腾讯财经代码：sh/sz/hk + 代码）
   const stocks=[];
   PORT.sectors.forEach(sec=>sec.stocks.forEach(sk=>{
     const pfx=sk.mkt==='SH'?'sh':sk.mkt==='HK'?'hk':'sz';
-    stocks.push({code:sk.code, mkt:sk.mkt, sinaCode:pfx+sk.code});
+    stocks.push({code:sk.code, mkt:sk.mkt, tenCode:pfx+sk.code});
   }));
   if(!stocks.length){ts.textContent='无持仓';btn.classList.remove('loading');btn.disabled=false;return;}
 
-  // 解析新浪财经返回文本 → {code:{price,pct}}
-  function parseSina(text){
+  // 解析腾讯财经返回文本
+  // 格式：v_sh603986="1~名称~代码~当前价~昨收~今开~...~时间戳~涨跌额~涨跌幅%~..."
+  // A股/港股 p[3]=当前价，p[32]=涨跌幅%（统一字段）
+  function parseTencent(text){
     const out={};
     stocks.forEach(s=>{
-      const m=text.match(new RegExp('hq_str_'+s.sinaCode+'="([^"]*)"'));
+      const m=text.match(new RegExp('v_'+s.tenCode+'="([^"]*)"'));
       if(!m||!m[1]) return;
-      const p=m[1].split(',');
-      if(s.mkt==='HK'){
-        // HK格式: [0]en名,[1]cn名,[2]昨收,[3]买,[4]高,[5]低,[6]当前,[7]涨跌额,[8]涨跌%
-        const cur=parseFloat(p[6]), pct=parseFloat(p[8]);
-        if(!isNaN(cur)&&!isNaN(pct)) out[s.code]={price:cur, pct};
-      } else {
-        // A股格式: [0]名,[1]今开,[2]昨收,[3]当前,[4]高,[5]低
-        const cur=parseFloat(p[3]), prev=parseFloat(p[2]);
-        if(prev>0&&cur>0) out[s.code]={price:cur, pct:(cur-prev)/prev*100};
-      }
+      const p=m[1].split('~');
+      const cur=parseFloat(p[3]);
+      const pct=parseFloat(p[32]);
+      if(!isNaN(cur)&&cur>0&&!isNaN(pct)) out[s.code]={price:cur, pct};
     });
     return out;
   }
 
-  const sinaList=stocks.map(s=>s.sinaCode).join(',');
+  const tenList=stocks.map(s=>s.tenCode).join(',');
   let data={};
 
-  // 方法1：新浪直连（多数情况可用）
+  // 腾讯财经：Access-Control-Allow-Origin: * 直接跨域可用
   try{
-    const r=await fetch(`https://hq.sinajs.cn/rn=${Date.now()}&list=${sinaList}`,{referrer:'https://finance.sina.com.cn'});
-    if(r.ok){ data=parseSina(await r.text()); }
-  }catch(e1){}
-
-  // 方法2：CORS代理兜底
-  if(!Object.keys(data).length){
-    try{
-      const sinaUrl=`https://hq.sinajs.cn/rn=${Date.now()}&list=${sinaList}`;
-      const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(sinaUrl)}`);
-      if(r.ok){ data=parseSina(await r.text()); }
-    }catch(e2){}
-  }
+    const r=await fetch(`https://qt.gtimg.cn/q=${tenList}&_=${Date.now()}`);
+    if(r.ok){
+      // 腾讯返回 GBK 编码，用 TextDecoder 解码
+      const buf=await r.arrayBuffer();
+      const text=new TextDecoder('gbk').decode(buf);
+      data=parseTencent(text);
+    }
+  }catch(e1){ console.warn('腾讯财经失败:',e1); }
 
   _PORT_PRICES=data;
   const count=Object.keys(_PORT_PRICES).length;
