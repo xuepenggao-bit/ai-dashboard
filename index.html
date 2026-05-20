@@ -1139,66 +1139,77 @@ const BASE = {
   // ── §2.2 六维风格画像矩阵 ──────────────────────────────────
   // 维度: [①盈利弹性, ②估值安全, ③产业动能, ④资金热度, ⑤上行确定, ⑥风险可控]
   // 分值0-100，分值越高越正面（②估值安全=100表示极度低估）
+  // 代表标的均为 A 股上市公司；维度 [①盈利弹性,②估值安全,③产业动能,④资金热度,⑤上行确定,⑥风险可控]
   stageMatrix:[
     {
-      name:'科技龙头', sub:'Alphabet / MSFT\nAmazon / Meta',
+      name:'AI算力/服务器',
+      sub:'浪潮信息 000977 · 中科曙光 603019\n中兴通讯 000063 · 华鲁恒升（比较）',
       stage:'4', stageN:4.0, signal:'持有/买入', sigKey:'hold',
-      dims:[75,35,90,85,70,60],
-      note:'Capex +77%，AI超级周期主引擎；估值合理偏贵，不宜追高'
+      dims:[70,45,85,80,68,58],
+      note:'国产AI服务器需求爆发；受益阿里云/字节/腾讯Capex，但估值已有溢价'
     },
     {
-      name:'AI-PCB', sub:'高速基板/AI连接器\nHDI / CCL',
+      name:'AI-PCB / CCL',
+      sub:'深南电路 002916 · 沪电股份 002463\n生益科技 600183 · 鹏鼎控股 002938',
       stage:'4', stageN:4.0, signal:'买入', sigKey:'buy',
       dims:[85,65,85,70,75,70],
-      note:'PE≈20x，最具性价比环节；订单能见度高，直接受益Capex'
+      note:'A股PCB龙头PE≈20x高性价比；AI服务器板PCB单价较普通板提升4-8倍'
     },
     {
-      name:'半导体/AI芯片', sub:'GPU / ASIC\nHBM存储芯片',
+      name:'国产AI芯片',
+      sub:'海光信息 688041 · 寒武纪 688256\n澜起科技 688008 · 龙芯中科 688047',
       stage:'3-4', stageN:3.5, signal:'买入', sigKey:'buy',
-      dims:[70,55,80,75,65,60],
-      note:'周期底部抬升中；地缘政治是核心不确定项，需分散风险'
+      dims:[65,40,80,80,60,55],
+      note:'国产替代政策逻辑强；寒武纪估值极高需警惕，海光性价比相对更优'
     },
     {
-      name:'AI存储', sub:'HBM / 高端NAND\n存储制造',
+      name:'AI存储',
+      sub:'兆易创新 603986 · 江波龙 301308\n澜起科技 688008 · 北京君正 300223',
       stage:'4+', stageN:4.3, signal:'买入+', sigKey:'buyplus',
-      dims:[80,60,85,65,75,65],
-      note:'HBM结构性需求强劲；AI训练+推理双轮驱动，弹性大'
+      dims:[78,58,82,65,72,63],
+      note:'国产替代+AI端侧需求双驱动；兆易NOR Flash受益AIoT/端侧推理爆发'
     },
     {
-      name:'电源/散热', sub:'电源管理/液冷\n散热材料/精密件',
+      name:'电源/散热/液冷',
+      sub:'高澜股份 300499 · 英维克 002837\n科华数据 002335 · 申菱环境 301018',
       stage:'3', stageN:3.0, signal:'布局', sigKey:'watch',
       dims:[55,75,60,45,60,75],
-      note:'估值便宜，催化剂滞后约2季度；数据中心建设加速后受益'
+      note:'液冷渗透率加速，A股纯正标的稀缺；高澜为国内液冷龙头，估值安全边际厚'
     },
     {
-      name:'国内AI应用层', sub:'AI大模型/Agent\nCopilot / RAG平台',
+      name:'国内AI应用层',
+      sub:'科大讯飞 002230 · 云从科技 688327\n海天瑞声 688787 · 格灵深瞳 688207',
       stage:'4', stageN:4.0, signal:'持有', sigKey:'hold',
       dims:[55,50,65,70,55,55],
-      note:'政策驱动强，盈利模式仍在验证期；标的分化显著'
+      note:'政策驱动强，盈利模式仍在验证期；科大讯飞品牌最强但盈利压力大'
     },
     {
-      name:'产业链/配件', sub:'PCB材料/精密制造\n连接器/散热组件',
+      name:'光模块 / CPO',
+      sub:'中际旭创 300308 · 天孚通信 300394\n新易盛 300502 · 华工科技 000988',
       stage:'4+', stageN:4.3, signal:'买入+', sigKey:'buyplus',
-      dims:[80,65,80,65,72,68],
-      note:'订单持续加速，毛利率扩张拉动EPS弹性；估值合理'
+      dims:[82,62,85,72,75,65],
+      note:'800G/1.6T升级+CPO国产化；中际旭创全球前三，A股光模块最优配置'
     },
     {
-      name:'AIDC数据中心', sub:'AI专用数据中心\n算力基础设施',
+      name:'AIDC数据中心',
+      sub:'润泽科技 300442 · 奥飞数据 300738\n数据港 603881 · 光环新网 300383',
       stage:'3→4', stageN:3.7, signal:'布局', sigKey:'watch',
       dims:[60,70,70,50,60,65],
-      note:'Capex拉动确定，建设周期长；早期布局价值凸显'
+      note:'AI专用IDC进入建设高峰；政策支持算力基础设施，需求能见度高'
     },
     {
-      name:'IDC传统', sub:'传统IDC改造升级\n托管/公有云',
+      name:'IDC传统',
+      sub:'光环新网 300383 · 宝信软件 600845\n鹏博士 600804 · 电信铁塔（港股参考）',
       stage:'3', stageN:3.0, signal:'观察', sigKey:'watch2',
       dims:[40,75,45,35,50,70],
-      note:'估值便宜但催化剂弱；AI改造进度决定节奏，等待信号'
+      note:'估值便宜但AI改造节奏慢；依赖云厂商采购，弹性有限，等待信号确认'
     },
     {
-      name:'AI SaaS/应用', sub:'AI应用平台\n大模型SaaS',
+      name:'AI软件 / SaaS',
+      sub:'用友网络 600588 · 金山办公 688111\n广联达 002410 · 恒生电子 600570',
       stage:'5', stageN:5.0, signal:'减仓', sigKey:'sell',
-      dims:[30,10,60,90,25,15],
-      note:'PE 78x / PEG 97+；泡沫估值+仓位极度拥挤，阶段5信号明确'
+      dims:[30,15,60,85,28,18],
+      note:'PE/PEG估值极高，仓位极度拥挤；AI收入兑现周期长，估值消化压力大'
     },
   ],
 
@@ -2392,7 +2403,7 @@ function _renderStageTable(){
         <div style="font-size:13px;font-weight:700;color:var(--text)">${s.name}</div>
         <div style="font-size:10px;color:var(--text2);margin-top:2px;line-height:1.4">${s.note}</div>
       </td>
-      <td style="font-size:11px;color:var(--text2)">${s.sub.replace(/\n/g,'<br>')}</td>
+      <td style="font-size:11px;min-width:160px">${s.sub.replace(/\n/g,'<br>').replace(/(\d{6})/g,'<span style="font-size:10px;color:#94a3b8;font-family:monospace">$1</span>')}</td>
       <td style="text-align:center">
         <span style="background:${sc.bg};color:${sc.color};font-weight:800;font-size:14px;padding:4px 12px;border-radius:7px;display:inline-block">${s.stage}</span>
       </td>
@@ -2424,7 +2435,7 @@ function _renderStageRadars(){
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
         <div>
           <div style="font-size:14px;font-weight:700;color:var(--text)">${s.name}</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:2px">${s.sub.replace(/\n/g,' / ')}</div>
+          <div style="font-size:10px;color:var(--text2);margin-top:2px;line-height:1.6">${s.sub.replace(/\n/g,'<br>').replace(/(\d{6})/g,'<span style="font-family:monospace;color:#94a3b8">$1</span>')}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;margin-left:8px">
           <span style="font-size:22px;font-weight:900;color:${sb};line-height:1">${s.stage}</span>
