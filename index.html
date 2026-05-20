@@ -2292,64 +2292,58 @@ function _isTradingNow(){
 }
 
 async function fetchPortPrices(){
-  var btn=document.getElementById('portPriceBtn');
-  var ts =document.getElementById('portPriceTs');
-  btn.classList.add('loading'); btn.disabled=true;
-  ts.textContent='正在获取股价…';
-  portLoad();
-
-  // 构建腾讯财经代码列表
-  var stocks=[];
-  PORT.sectors.forEach(function(sec){
-    sec.stocks.forEach(function(sk){
-      var pfx = sk.mkt==='SH' ? 'sh' : sk.mkt==='HK' ? 'hk' : 'sz';
-      stocks.push({code:sk.code, mkt:sk.mkt, tc:pfx+sk.code});
-    });
-  });
-
-  if(!stocks.length){
-    ts.textContent='无持仓';
-    btn.classList.remove('loading'); btn.disabled=false;
-    return;
-  }
-
-  // 腾讯财经 qt.gtimg.cn → Access-Control-Allow-Origin: *，可直接跨域
-  // 响应格式(GBK)：v_sh603986="1~名称~代码~当前价~昨收~开盘~...~涨跌额~涨跌幅%~..."
-  // A股 / 港股 均为：p[3]=当前价，p[32]=涨跌幅%
-  var qUrl = 'https://qt.gtimg.cn/q=' + stocks.map(function(s){return s.tc;}).join(',') + '&_=' + Date.now();
+  var btn = document.getElementById('portPriceBtn');
+  var ts  = document.getElementById('portPriceTs');
+  btn.classList.add('loading'); btn.disabled = true;
+  ts.textContent = '正在获取股价…';
 
   try {
+    portLoad();
+
+    // 构建腾讯财经代码列表（sh/sz/hk + 代码）
+    var stocks = [];
+    PORT.sectors.forEach(function(sec){
+      sec.stocks.forEach(function(sk){
+        var pfx = sk.mkt === 'SH' ? 'sh' : sk.mkt === 'HK' ? 'hk' : 'sz';
+        stocks.push({code: sk.code, mkt: sk.mkt, tc: pfx + sk.code});
+      });
+    });
+
+    if(!stocks.length){ ts.textContent = '无持仓'; return; }
+
+    // 腾讯财经 qt.gtimg.cn — Access-Control-Allow-Origin:* 可直接跨域
+    // 返回 GBK 编码文本，格式：v_sh603986="1~名~代码~当前价~昨收~...~涨跌额~涨跌幅%~..."
+    // A股 / 港股 统一：p[3]=当前价，p[32]=涨跌幅%
+    var qUrl = 'https://qt.gtimg.cn/q=' + stocks.map(function(s){ return s.tc; }).join(',') + '&_=' + Date.now();
     var resp = await fetch(qUrl);
     if(!resp.ok) throw new Error('HTTP ' + resp.status);
 
     var buf = await resp.arrayBuffer();
-    var txt = new TextDecoder('gbk').decode(buf);  // 腾讯返回GBK编码
+    var txt = new TextDecoder('gbk').decode(buf);
 
     _PORT_PRICES = {};
     stocks.forEach(function(s){
-      var re  = new RegExp('v_' + s.tc + '="([^"]+)"');
-      var m   = txt.match(re);
+      var m = txt.match(new RegExp('v_' + s.tc + '="([^"]+)"'));
       if(!m) return;
       var p   = m[1].split('~');
-      var cur = parseFloat(p[3]);   // 当前价（A股/港股统一）
-      var pct = parseFloat(p[32]);  // 涨跌幅%（A股/港股统一）
-      if(cur > 0 && isFinite(pct)) _PORT_PRICES[s.code] = {price:cur, pct:pct};
+      var cur = parseFloat(p[3]);
+      var pct = parseFloat(p[32]);
+      if(cur > 0 && isFinite(pct)) _PORT_PRICES[s.code] = {price: cur, pct: pct};
     });
 
-    var n   = Object.keys(_PORT_PRICES).length;
-    var lbl = _isTradingNow() ? '实时' : '收盘';
+    var n = Object.keys(_PORT_PRICES).length;
     ts.textContent = n > 0
-      ? lbl + '涨跌幅 ' + n + '只 · ' + new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})
-      : '接口正常但解析到0只，共发送' + stocks.length + '只';
+      ? (_isTradingNow() ? '实时' : '收盘') + '涨跌幅 ' + n + '只 · ' + new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})
+      : '接口正常，解析到0只（共发送' + stocks.length + '只）';
 
   } catch(err) {
     _PORT_PRICES = {};
-    ts.textContent = '获取失败: ' + (err.message || err);
+    ts.textContent = '获取失败: ' + (err.message || String(err));
     console.error('fetchPortPrices:', err);
+  } finally {
+    renderPortfolio();
+    btn.classList.remove('loading'); btn.disabled = false;
   }
-
-  renderPortfolio();
-  btn.classList.remove('loading'); btn.disabled=false;
 }
 
 // ── INIT ──────────────────────────────────────────────────────
