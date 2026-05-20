@@ -186,6 +186,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <button class="tab" onclick="switchTab(5)">🔍 产业链监控</button>
   <button class="tab" onclick="switchTab(6)">⚠️ 风险仪表板</button>
   <button class="tab" onclick="switchTab(7)">📋 十步框架</button>
+  <button class="tab" onclick="switchTab(8)">🧬 产业链阶段</button>
 </nav>
 
 <!-- ═══ DATA NOTICE ═══ -->
@@ -1036,6 +1037,91 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   </div>
 </div>
 
+<!-- ─── tStage: A股AI产业链所处阶段 ─────────────────────────── -->
+<div class="tab-content" id="tStage">
+  <div class="stitle">A股AI产业链所处阶段
+    <span class="stag">§2.2 六维风格画像矩阵</span>
+    <span class="stag" style="background:rgba(124,58,237,.08);color:var(--purple)">Bernstein Style Framework</span>
+  </div>
+
+  <!-- 维度说明卡 -->
+  <div class="card mb16" style="background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);border-color:#bfdbfe">
+    <div class="ch" style="margin-bottom:12px">
+      <span class="ct" style="color:#1e40af;font-size:14px">六维评估维度说明</span>
+      <span class="cbadge">Richard Bernstein · Earnings Expectations Life Cycle</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:12px">
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:#d1fae5;color:#059669;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px">①</span>
+        <div><strong style="color:#065f46">盈利弹性</strong><br><span style="color:var(--text2)">EPS/营收加速度，反映盈利动能强弱</span></div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:#dbeafe;color:#1e40af;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px">②</span>
+        <div><strong style="color:#1e40af">估值安全</strong><br><span style="color:var(--text2)">估值吸引力，越高表示PE/PEG越具安全边际</span></div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:#ede9fe;color:#7c3aed;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px">③</span>
+        <div><strong style="color:#6d28d9">产业动能</strong><br><span style="color:var(--text2)">行业景气/订单加速，反映产业趋势强度</span></div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:#fef3c7;color:#d97706;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px">④</span>
+        <div><strong style="color:#92400e">资金热度</strong><br><span style="color:var(--text2)">机构关注度/仓位拥挤度，反映资金流向</span></div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:#e0f2fe;color:#0891b2;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px">⑤</span>
+        <div><strong style="color:#075985">上行确定</strong><br><span style="color:var(--text2)">未来6-12M上行逻辑可见度与确定性</span></div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px">⑥</span>
+        <div><strong style="color:#991b1b">风险可控</strong><br><span style="color:var(--text2)">下行保护程度，越高表示回撤风险越低</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bernstein 生命周期轨道 -->
+  <div class="card mb16">
+    <div class="ch">
+      <span class="ct">Bernstein 盈利预期生命周期 — 各环节当前定位</span>
+      <span class="cbadge pulse">2026-Q2</span>
+    </div>
+    <div id="stageTrack" style="overflow-x:auto;padding-bottom:4px"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <span style="font-size:11px;padding:3px 10px;border-radius:5px;background:#dbeafe;color:#1e40af;font-weight:600">● 阶段3 成长加速 — 布局买入</span>
+      <span style="font-size:11px;padding:3px 10px;border-radius:5px;background:#d1fae5;color:#059669;font-weight:600">● 阶段4 峰值扩张 — 重点持仓</span>
+      <span style="font-size:11px;padding:3px 10px;border-radius:5px;background:#fef3c7;color:#d97706;font-weight:600">● 阶段4+ 强势扩张 — 买入加码</span>
+      <span style="font-size:11px;padding:3px 10px;border-radius:5px;background:#fee2e2;color:#dc2626;font-weight:600">● 阶段5 早期见顶 — 减仓防守</span>
+    </div>
+  </div>
+
+  <!-- 六维矩阵总览表 -->
+  <div class="card mb16">
+    <div class="ch">
+      <span class="ct">六维风格画像矩阵总览</span>
+      <span class="cbadge">§2.2 完整10环节</span>
+    </div>
+    <div class="overflow">
+      <table class="mtable">
+        <thead><tr>
+          <th style="min-width:120px">产业环节</th>
+          <th style="min-width:140px">代表标的</th>
+          <th style="text-align:center">阶段</th>
+          <th style="text-align:center;min-width:72px">①盈利弹性</th>
+          <th style="text-align:center;min-width:72px">②估值安全</th>
+          <th style="text-align:center;min-width:72px">③产业动能</th>
+          <th style="text-align:center;min-width:72px">④资金热度</th>
+          <th style="text-align:center;min-width:72px">⑤上行确定</th>
+          <th style="text-align:center;min-width:72px">⑥风险可控</th>
+          <th style="text-align:center;min-width:70px">操作信号</th>
+        </tr></thead>
+        <tbody id="stageMatrixBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 雷达图网格 2列×5行 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" id="stageRadarGrid"></div>
+</div>
+
 </main>
 
 <!-- ═══ SCRIPT ═══ -->
@@ -1049,6 +1135,72 @@ const BASE = {
   trendYears:['2023','2024','2025A','2026E'],
   trendCapex:[1800,2260,3460,5150],
   trendPct:[25,40,60,77],
+
+  // ── §2.2 六维风格画像矩阵 ──────────────────────────────────
+  // 维度: [①盈利弹性, ②估值安全, ③产业动能, ④资金热度, ⑤上行确定, ⑥风险可控]
+  // 分值0-100，分值越高越正面（②估值安全=100表示极度低估）
+  stageMatrix:[
+    {
+      name:'科技龙头', sub:'Alphabet / MSFT\nAmazon / Meta',
+      stage:'4', stageN:4.0, signal:'持有/买入', sigKey:'hold',
+      dims:[75,35,90,85,70,60],
+      note:'Capex +77%，AI超级周期主引擎；估值合理偏贵，不宜追高'
+    },
+    {
+      name:'AI-PCB', sub:'高速基板/AI连接器\nHDI / CCL',
+      stage:'4', stageN:4.0, signal:'买入', sigKey:'buy',
+      dims:[85,65,85,70,75,70],
+      note:'PE≈20x，最具性价比环节；订单能见度高，直接受益Capex'
+    },
+    {
+      name:'半导体/AI芯片', sub:'GPU / ASIC\nHBM存储芯片',
+      stage:'3-4', stageN:3.5, signal:'买入', sigKey:'buy',
+      dims:[70,55,80,75,65,60],
+      note:'周期底部抬升中；地缘政治是核心不确定项，需分散风险'
+    },
+    {
+      name:'AI存储', sub:'HBM / 高端NAND\n存储制造',
+      stage:'4+', stageN:4.3, signal:'买入+', sigKey:'buyplus',
+      dims:[80,60,85,65,75,65],
+      note:'HBM结构性需求强劲；AI训练+推理双轮驱动，弹性大'
+    },
+    {
+      name:'电源/散热', sub:'电源管理/液冷\n散热材料/精密件',
+      stage:'3', stageN:3.0, signal:'布局', sigKey:'watch',
+      dims:[55,75,60,45,60,75],
+      note:'估值便宜，催化剂滞后约2季度；数据中心建设加速后受益'
+    },
+    {
+      name:'国内AI应用层', sub:'AI大模型/Agent\nCopilot / RAG平台',
+      stage:'4', stageN:4.0, signal:'持有', sigKey:'hold',
+      dims:[55,50,65,70,55,55],
+      note:'政策驱动强，盈利模式仍在验证期；标的分化显著'
+    },
+    {
+      name:'产业链/配件', sub:'PCB材料/精密制造\n连接器/散热组件',
+      stage:'4+', stageN:4.3, signal:'买入+', sigKey:'buyplus',
+      dims:[80,65,80,65,72,68],
+      note:'订单持续加速，毛利率扩张拉动EPS弹性；估值合理'
+    },
+    {
+      name:'AIDC数据中心', sub:'AI专用数据中心\n算力基础设施',
+      stage:'3→4', stageN:3.7, signal:'布局', sigKey:'watch',
+      dims:[60,70,70,50,60,65],
+      note:'Capex拉动确定，建设周期长；早期布局价值凸显'
+    },
+    {
+      name:'IDC传统', sub:'传统IDC改造升级\n托管/公有云',
+      stage:'3', stageN:3.0, signal:'观察', sigKey:'watch2',
+      dims:[40,75,45,35,50,70],
+      note:'估值便宜但催化剂弱；AI改造进度决定节奏，等待信号'
+    },
+    {
+      name:'AI SaaS/应用', sub:'AI应用平台\n大模型SaaS',
+      stage:'5', stageN:5.0, signal:'减仓', sigKey:'sell',
+      dims:[30,10,60,90,25,15],
+      note:'PE 78x / PEG 97+；泡沫估值+仓位极度拥挤，阶段5信号明确'
+    },
+  ],
 
   monitors:[
     {id:'tech',   name:'科技龙头',      sub:'Alphabet/MSFT/Amazon/Meta',  metric:'营收/PE/EPS',   sig:'buy',  stage:'4',  mom:8.2},
@@ -2139,8 +2291,191 @@ function renderMag7(){
   }).join('');
 }
 
+// ── §2.2 产业链阶段矩阵 ───────────────────────────────────────
+function mkStageMatrix(){
+  _renderStageTrack();
+  _renderStageTable();
+  _renderStageRadars();
+}
+
+function _renderStageTrack(){
+  const stages=[
+    {n:1, label:'衰退底部', desc:'盈利大幅下修', bg:'#f1f5f9', col:'#94a3b8', border:'#cbd5e1'},
+    {n:2, label:'早期复苏', desc:'EPS开始好转', bg:'#f8fafc', col:'#64748b', border:'#e2e8f0'},
+    {n:3, label:'成长加速', desc:'业绩持续超预期', bg:'#eff6ff', col:'#2563eb', border:'#bfdbfe'},
+    {n:4, label:'峰值扩张', desc:'共识强力买入↑', bg:'#f0fdf4', col:'#059669', border:'#a7f3d0'},
+    {n:5, label:'早期见顶', desc:'EPS减速预期↓', bg:'#fffbeb', col:'#d97706', border:'#fcd34d'},
+    {n:6, label:'盈利衰退', desc:'全面撤退减仓', bg:'#fef2f2', col:'#dc2626', border:'#fca5a5'},
+  ];
+  const byStage={};
+  BASE.stageMatrix.forEach(s=>{
+    const sn=Math.round(s.stageN);
+    if(!byStage[sn]) byStage[sn]=[];
+    byStage[sn].push(s);
+  });
+  // 3.7 → stage 4 bucket (AIDC)，3.5 → stage 4 bucket (semi)，4.3 → stage 4+
+  // 重新按显示需要分配
+  const byDisplay={};
+  BASE.stageMatrix.forEach(s=>{
+    const key = s.stageN>=4.2?'4+': s.stageN>=3.8?'3→4': String(Math.round(s.stageN));
+    if(!byDisplay[key]) byDisplay[key]=[];
+    byDisplay[key].push(s);
+  });
+
+  // 轨道只展示3-5阶段（其余为占位）
+  let html='<div style="display:flex;gap:4px;min-width:660px">';
+  stages.forEach(st=>{
+    const key=String(st.n);
+    const plus=byDisplay['4+']||[];
+    const trans=byDisplay['3→4']||[];
+    let chips='';
+    if(st.n===4){
+      (byDisplay['4']||[]).forEach(s=>{
+        chips+=`<div style="background:${st.bg};border:1px solid ${st.border};border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:${st.col};margin:2px 0;white-space:nowrap;cursor:default" title="${s.note}">${s.name}</div>`;
+      });
+      plus.forEach(s=>{
+        chips+=`<div style="background:#ecfdf5;border:1px solid #6ee7b7;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:#047857;margin:2px 0;white-space:nowrap;cursor:default" title="${s.note}">${s.name} <span style="font-size:9px;background:#d1fae5;padding:0 4px;border-radius:3px">4+</span></div>`;
+      });
+      trans.forEach(s=>{
+        chips+=`<div style="background:#f0fdf4;border:1px dashed #6ee7b7;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;color:#059669;margin:2px 0;white-space:nowrap;cursor:default" title="${s.note}">${s.name} <span style="font-size:9px;color:#94a3b8">↗</span></div>`;
+      });
+    } else {
+      (byDisplay[key]||[]).forEach(s=>{
+        chips+=`<div style="background:${st.bg};border:1px solid ${st.border};border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:${st.col};margin:2px 0;white-space:nowrap;cursor:default" title="${s.note}">${s.name}</div>`;
+      });
+    }
+    html+=`<div style="flex:1;border:1px solid ${st.border};border-radius:10px;padding:12px 10px;min-height:130px;background:${st.bg};display:flex;flex-direction:column">
+      <div style="font-size:18px;font-weight:800;color:${st.col};line-height:1">阶段${st.n}</div>
+      <div style="font-size:12px;font-weight:700;color:${st.col};margin:4px 0 2px;opacity:.9">${st.label}</div>
+      <div style="font-size:10px;color:#94a3b8;margin-bottom:8px;line-height:1.3">${st.desc}</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px">${chips||'<div style="color:#cbd5e1;font-size:10px;font-style:italic;margin-top:4px">— 暂无 —</div>'}</div>
+    </div>`;
+  });
+  html+='</div>';
+  document.getElementById('stageTrack').innerHTML=html;
+}
+
+function _renderStageTable(){
+  const sigCfg={
+    'buyplus':{bg:'#d1fae5',color:'#065f46',text:'买入 ↑↑'},
+    'buy':    {bg:'#dbeafe',color:'#1e40af',text:'买入 ↑'},
+    'hold':   {bg:'#e0f2fe',color:'#075985',text:'持有 →'},
+    'watch':  {bg:'#fef3c7',color:'#92400e',text:'布局 ◎'},
+    'watch2': {bg:'#f3f4f6',color:'#4b5563',text:'观察 ○'},
+    'sell':   {bg:'#fee2e2',color:'#991b1b',text:'减仓 ↓↓'},
+  };
+  const stageCfg={
+    4.0:{bg:'#d1fae5',color:'#059669'},
+    4.3:{bg:'#a7f3d0',color:'#047857'},
+    3.5:{bg:'#dbeafe',color:'#1e40af'},
+    3.7:{bg:'#e0f2fe',color:'#075985'},
+    3.0:{bg:'#f0f9ff',color:'#0369a1'},
+    5.0:{bg:'#fef3c7',color:'#d97706'},
+  };
+  const dc=v=>{
+    if(v>=70) return 'background:#d1fae5;color:#065f46';
+    if(v>=50) return 'background:#fef9c3;color:#854d0e';
+    if(v>=30) return 'background:#fee2e2;color:#991b1b';
+    return 'background:#fecaca;color:#7f1d1d';
+  };
+  const bar=v=>`<div style="width:100%;background:#e2e8f0;border-radius:2px;height:3px;margin-top:3px"><div style="width:${v}%;height:100%;border-radius:2px;background:currentColor;opacity:.45"></div></div>`;
+
+  const rows=BASE.stageMatrix.map((s,i)=>{
+    const sig=sigCfg[s.sigKey]||sigCfg['hold'];
+    const sc=stageCfg[s.stageN]||{bg:'#f8fafc',color:'#64748b'};
+    const dimCells=s.dims.map(v=>`<td style="text-align:center;padding:10px 6px">
+      <span style="${dc(v)};font-size:12px;font-weight:700;padding:3px 8px;border-radius:5px;display:inline-block;min-width:32px">${v}${bar(v)}</span>
+    </td>`).join('');
+    const bg=i%2===1?'background:#fafcff':'';
+    return `<tr style="${bg}">
+      <td>
+        <div style="font-size:13px;font-weight:700;color:var(--text)">${s.name}</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:2px;line-height:1.4">${s.note}</div>
+      </td>
+      <td style="font-size:11px;color:var(--text2)">${s.sub.replace(/\n/g,'<br>')}</td>
+      <td style="text-align:center">
+        <span style="background:${sc.bg};color:${sc.color};font-weight:800;font-size:14px;padding:4px 12px;border-radius:7px;display:inline-block">${s.stage}</span>
+      </td>
+      ${dimCells}
+      <td style="text-align:center">
+        <span style="background:${sig.bg};color:${sig.color};font-weight:700;font-size:12px;padding:4px 10px;border-radius:6px;white-space:nowrap">${sig.text}</span>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('stageMatrixBody').innerHTML=rows;
+}
+
+function _renderStageRadars(){
+  const dimLabels=['盈利弹性','估值安全','产业动能','资金热度','上行确定','风险可控'];
+  const sigColor={
+    'buyplus':'#059669','buy':'#2563eb','hold':'#0891b2',
+    'watch':'#d97706','watch2':'#64748b','sell':'#dc2626'
+  };
+  const stageBadge={
+    '4+':'#047857','4':'#059669','3-4':'#2563eb',
+    '3→4':'#0891b2','3':'#0369a1','5':'#d97706'
+  };
+
+  let html='';
+  BASE.stageMatrix.forEach((s,i)=>{
+    const c=sigColor[s.sigKey]||'#2563eb';
+    const sb=stageBadge[s.stage]||'#64748b';
+    html+=`<div class="card" style="padding:16px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)">${s.name}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">${s.sub.replace(/\n/g,' / ')}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;margin-left:8px">
+          <span style="font-size:22px;font-weight:900;color:${sb};line-height:1">${s.stage}</span>
+          <span style="font-size:11px;background:${c}22;color:${c};padding:2px 8px;border-radius:5px;font-weight:700;white-space:nowrap">${s.signal}</span>
+        </div>
+      </div>
+      <div style="height:190px"><canvas id="cR${i}"></canvas></div>
+      <div style="font-size:10px;color:var(--text2);margin-top:8px;line-height:1.5;border-top:1px solid #f1f5f9;padding-top:8px">${s.note}</div>
+    </div>`;
+  });
+  document.getElementById('stageRadarGrid').innerHTML=html;
+
+  BASE.stageMatrix.forEach((s,i)=>{
+    const c=sigColor[s.sigKey]||'#2563eb';
+    const rgb=c==='#059669'?'5,150,105':c==='#dc2626'?'220,38,38':c==='#d97706'?'217,119,6':c==='#0891b2'?'8,145,178':'37,99,235';
+    new Chart(document.getElementById('cR'+i).getContext('2d'),{
+      type:'radar',
+      data:{
+        labels:dimLabels,
+        datasets:[{
+          data:s.dims,
+          backgroundColor:`rgba(${rgb},0.12)`,
+          borderColor:c,
+          borderWidth:2,
+          pointBackgroundColor:['#059669','#2563eb','#7c3aed','#d97706','#0891b2','#dc2626'],
+          pointRadius:4,
+          pointHoverRadius:6,
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        scales:{r:{
+          min:0,max:100,
+          ticks:{display:false,stepSize:25},
+          grid:{color:'rgba(226,232,240,.9)'},
+          angleLines:{color:'rgba(226,232,240,.7)'},
+          pointLabels:{color:'#64748b',font:{size:10},padding:4},
+        }},
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{
+            label(ctx){return ' '+ctx.label+': '+ctx.raw}
+          }}
+        }
+      }
+    });
+  });
+}
+
 // ── TAB ──────────────────────────────────────────────────────
-const TAB_ORDER=['t0','tPort','t4','t5','tAM','t1','t2','t3'];
+const TAB_ORDER=['t0','tPort','t4','t5','tAM','t1','t2','t3','tStage'];
 function switchTab(idx){
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
   const target=document.getElementById(TAB_ORDER[idx]);
@@ -2376,6 +2711,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderPortfolio();
   mkNewInv();mkMktPe();mkMargin();mkNorth();mkUpDown();mkConc();
   mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();
+  mkStageMatrix();
   renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();renderMag7();
   document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
 });
