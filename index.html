@@ -672,7 +672,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         </div>
         <div>
           <label class="form-label">股票代码 *</label>
-          <input id="pStkCode" class="form-input" placeholder="例如: 002594" type="text" required />
+          <input id="pStkCode" class="form-input" placeholder="例如: 002594" type="text" required oninput="autoDetectMkt(this.value)" />
         </div>
       </div>
       <div class="form-row2c">
@@ -1849,6 +1849,20 @@ function delPortSector(si){
   PORT.sectors.splice(si,1); portSave(); renderPortfolio();
 }
 
+// 根据股票代码首位自动识别交易市场
+function autoDetectMkt(code){
+  code = code.trim();
+  if(!code) return;
+  var sel = document.getElementById('pStkMkt');
+  if(code.length === 5 && /^[0-9]/.test(code)){
+    sel.value = 'HK';  // 五位数字 → 港股
+  } else if(/^[6]/.test(code)){
+    sel.value = 'SH';  // 6开头 → 沪市（600/601/603/605/688）
+  } else if(/^[0-3]/.test(code)){
+    sel.value = 'SZ';  // 0/1/2/3开头 → 深市（000/001/002/300/301）
+  }
+}
+
 let _portModalSi=-1, _portModalKi=-1, _portModalMode='add';
 function openPortModal(mode,si,ki){
   _portModalMode=mode; _portModalSi=si; _portModalKi=ki;
@@ -1889,6 +1903,8 @@ function submitPortModal(){
     else { PORT.sectors[tsi].stocks[_portModalKi]=obj; }
   }
   portSave(); closePortModal(); renderPortfolio();
+  // 保存后立即刷新股价，确保新增/编辑的股票也能取到数据
+  fetchPortPrices();
 }
 
 let _selColorEl=null;
