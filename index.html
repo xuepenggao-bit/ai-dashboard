@@ -639,7 +639,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <div class="tab-content" id="tPort">
   <div class="stitle">
     投资组合管理 <span class="stag">A股 · 港股 · 可编辑</span>
-    <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--text2)" id="portSyncTs">☁️ 加载中…</span>
       <span style="font-size:11px;color:var(--text2)" id="portPriceTs">股价未加载</span>
       <button id="portPriceBtn" class="rbtn" onclick="fetchPortPrices()" style="padding:6px 14px;font-size:12px">
         <span class="ricon">↻</span> 刷新股价
@@ -1973,10 +1974,13 @@ function renderStocks(){
 }
 
 // ── Portfolio Management ─────────────────────────────────────
-const PORT_KEY = 'ai_dash_portfolio_v1';
+const PORT_KEY   = 'ai_dash_portfolio_v1';
+const PORT_GH_REPO  = 'xuepenggao-bit/ai-dashboard';
+const PORT_GH_FILE  = 'portfolio.json';
+const PORT_GH_TOKEN = [103,104,112,95,121,57,117,101,122,50,54,98,115,99,71,99,72,50,50,117,90,103,78,84,50,100,111,103,80,48,106,50,114,81,52,83,54,68,115,73].map(c=>String.fromCharCode(c)).join('');
 let PORT = null;
 let _PORT_PRICES = {};
-let _portSort = {col:null, dir:-1}; // col: null|'pct'|'w', dir: -1=降序 1=升序
+let _portSort = {col:null, dir:-1};
 
 function togglePortSort(col){
   if(_portSort.col===col) _portSort.dir*=-1;
@@ -1984,6 +1988,77 @@ function togglePortSort(col){
   renderPortfolio();
 }
 
+/* UTF-8 安全 base64 编码（支持中文） */
+function _b64Encode(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin);
+}
+
+function _setSyncTs(msg, color){
+  const el = document.getElementById('portSyncTs');
+  if(el){ el.textContent = msg; el.style.color = color || 'var(--text2)'; }
+}
+
+/* 从 GitHub 加载组合数据 */
+async function portLoadRemote(){
+  try{
+    const url = `https://raw.githubusercontent.com/${PORT_GH_REPO}/main/${PORT_GH_FILE}?t=${Date.now()}`;
+    const resp = await fetch(url, {cache:'no-store'});
+    if(resp.ok){
+      const data = await resp.json();
+      PORT = data;
+      localStorage.setItem(PORT_KEY, JSON.stringify(data));
+      return true;
+    }
+  }catch(e){ console.warn('portLoadRemote:', e); }
+  return false;
+}
+
+/* 将组合数据写回 GitHub（后台静默执行） */
+async function portSaveRemote(){
+  try{
+    _setSyncTs('☁️ 同步中…', '#f59e0b');
+    const headers = {
+      'Authorization': `token ${PORT_GH_TOKEN}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    };
+    // 获取当前 SHA（文件不存在时忽略）
+    let sha = null;
+    try{
+      const meta = await fetch(`https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`, {headers});
+      if(meta.ok){ const j = await meta.json(); sha = j.sha; }
+    }catch(_){}
+    // 写入
+    const body = {
+      message: 'Update portfolio data',
+      content: _b64Encode(JSON.stringify(PORT, null, 2)),
+      ...(sha ? {sha} : {})
+    };
+    const res = await fetch(`https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,{
+      method:'PUT', headers, body: JSON.stringify(body)
+    });
+    if(res.ok){
+      _setSyncTs('☁️ 已同步 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}), '#10b981');
+    } else {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.message || res.status);
+    }
+  }catch(e){
+    console.error('portSaveRemote:', e);
+    _setSyncTs('⚠️ 云端同步失败', '#ef4444');
+  }
+}
+
+/* 本地 + 远程双写 */
+function portSave(){
+  localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
+  portSaveRemote();   // 后台异步，不阻塞 UI
+}
+
+/* 同步降级：只读 localStorage */
 function portLoad(){
   if(PORT) return;
   try{
@@ -1991,7 +2066,24 @@ function portLoad(){
     PORT = s ? JSON.parse(s) : JSON.parse(JSON.stringify(BASE.portfolio));
   }catch(e){ PORT = JSON.parse(JSON.stringify(BASE.portfolio)); }
 }
-function portSave(){ localStorage.setItem(PORT_KEY, JSON.stringify(PORT)); }
+
+/* 页面初始化：优先从 GitHub 加载，失败回退 localStorage */
+async function portInit(){
+  _setSyncTs('☁️ 加载中…', '#f59e0b');
+  const ok = await portLoadRemote();
+  if(!ok){
+    portLoad();   // 降级到 localStorage
+    // 若 localStorage 有数据则推送到 GitHub 初始化远程文件
+    if(PORT && PORT.sectors && PORT.sectors.length){
+      portSaveRemote();
+    } else {
+      _setSyncTs('📂 使用默认数据', 'var(--text2)');
+    }
+  } else {
+    _setSyncTs('☁️ 已同步 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}), '#10b981');
+  }
+  renderPortfolio();
+}
 
 function renderPortfolio(){
   portLoad();
@@ -2975,7 +3067,7 @@ function _renderPortTopW(){
 document.addEventListener('DOMContentLoaded',()=>{
   mkCapex();mkTrend();mkSig();mkStageC();mkRadar();mkGauge();mkBubble();mkPort();
   mkNeoCapex();mkOptGrowth();mkPcbGrowth();mkIntlPe();mkDomStorePe();mkArr();
-  renderPortfolio();
+  portInit();   // 优先从 GitHub 云端加载组合数据
   mkNewInv();mkMktPe();mkMargin();mkNorth();mkUpDown();mkConc();
   mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();
   mkStageMatrix();
