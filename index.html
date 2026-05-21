@@ -2871,13 +2871,18 @@ function _isTradingNow(){
 }
 
 // ── 主要指数实时行情 ────────────────────────────────────────
-const _INDICES = [
+// 腾讯 API 的指数（前4个，GBK解码）
+const _IDX_TENCENT = [
   {tc:'sh000001', label:'上证指数'},
   {tc:'sz399001', label:'深证成指'},
   {tc:'sz399006', label:'创业板指'},
   {tc:'sh000688', label:'科创 50'},
-  {tc:'sz399985', label:'中证全指'},
-  {tc:'sh880719', label:'A股均价'},
+];
+// 东方财富 API 的指数（后2个，需 Eastmoney secid 格式）
+// 中证全指 = 1.000985；A股均价 = 尝试 1.80005 / 0.80005
+const _IDX_EM = [
+  {secids:['1.000985'],         code:'000985', label:'中证全指'},
+  {secids:['1.80005','0.80005'],code:'80005',  label:'A股均价'},
 ];
 
 async function fetchIndexPrices(){
@@ -2887,28 +2892,48 @@ async function fetchIndexPrices(){
   if(!listEl) return;
   if(btn) btn.disabled = true;
 
+  const rows = [];   // 最终按顺序填入
+
   try{
-    const qUrl = 'https://qt.gtimg.cn/q=' + _INDICES.map(i=>i.tc).join(',') + '&_=' + Date.now();
-    const resp = await fetch(qUrl);
-    if(!resp.ok) throw new Error('HTTP ' + resp.status);
-    const buf = await resp.arrayBuffer();
-    const txt = new TextDecoder('gbk').decode(buf);
-
-    const rows = _INDICES.map(idx=>{
-      const m = txt.match(new RegExp('v_' + idx.tc + '="([^"]+)"'));
-      if(!m) return null;
-      const p     = m[1].split('~');
-      const price = parseFloat(p[3]);
-      const pct   = parseFloat(p[32]);
-      if(!isFinite(price) || price <= 0) return null;
-      return {label: idx.label, price, pct};
-    }).filter(Boolean);
-
-    if(!rows.length){
-      listEl.innerHTML = '<div style="color:var(--text2);font-size:12px;text-align:center;padding:8px">暂无数据</div>';
-      return;
+    // ── ① 腾讯 API：前4个指数 ──────────────────────────
+    const tUrl = 'https://qt.gtimg.cn/q=' + _IDX_TENCENT.map(i=>i.tc).join(',') + '&_=' + Date.now();
+    const tResp = await fetch(tUrl);
+    if(tResp.ok){
+      const buf = await tResp.arrayBuffer();
+      const txt = new TextDecoder('gbk').decode(buf);
+      _IDX_TENCENT.forEach(idx=>{
+        const m = txt.match(new RegExp('v_' + idx.tc + '="([^"]+)"'));
+        if(!m) return;
+        const p     = m[1].split('~');
+        const price = parseFloat(p[3]);
+        const pct   = parseFloat(p[32]);
+        if(isFinite(price) && price > 0) rows.push({label:idx.label, price, pct});
+      });
     }
+  }catch(e){ console.warn('腾讯指数API:', e); }
 
+  try{
+    // ── ② 东方财富 API：中证全指 + A股均价 ─────────────
+    const allSecids = _IDX_EM.flatMap(i=>i.secids);
+    const emUrl = 'https://push2.eastmoney.com/api/qt/ulist.np/get'
+                + '?secids=' + allSecids.join(',')
+                + '&fltt=2&invt=2&fields=f12,f14,f2,f3&_=' + Date.now();
+    const emResp = await fetch(emUrl);
+    if(emResp.ok){
+      const emJson = await emResp.json();
+      const diff   = (emJson?.data?.diff) || [];
+      _IDX_EM.forEach(idx=>{
+        // 取第一个 f2>0 的匹配项（覆盖多个候选 secid）
+        const hit = diff.find(d => String(d.f12) === idx.code && d.f2 > 0);
+        if(hit) rows.push({label:idx.label, price:hit.f2, pct:hit.f3});
+      });
+    }
+  }catch(e){ console.warn('东方财富指数API:', e); }
+
+  // ── 渲染 ────────────────────────────────────────────
+  if(!rows.length){
+    listEl.innerHTML = '<div style="color:var(--text2);font-size:12px;text-align:center;padding:8px">暂无数据</div>';
+  } else {
     listEl.innerHTML = rows.map(r=>{
       const up    = r.pct > 0;
       const dn    = r.pct < 0;
@@ -2923,15 +2948,10 @@ async function fetchIndexPrices(){
                      letter-spacing:-.01em">${sign}${r.pct.toFixed(2)}%</span>
       </div>`;
     }).join('');
-
     if(tsEl) tsEl.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) + ' 更新';
-
-  }catch(e){
-    if(listEl) listEl.innerHTML = `<div style="color:var(--text2);font-size:12px;text-align:center;padding:8px">获取失败</div>`;
-    console.error('fetchIndexPrices:', e);
-  }finally{
-    if(btn) btn.disabled = false;
   }
+
+  if(btn) btn.disabled = false;
 }
 
 async function fetchPortPrices(){
