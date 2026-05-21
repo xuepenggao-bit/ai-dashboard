@@ -155,6 +155,27 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .color-swatch.sel{border-color:#1e293b!important}
 .sec-header{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .mkt-badge{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600}
+
+/* ── 投资组合 专属排版优化 ─────────────────────────────── */
+#tPort .klabel{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;letter-spacing:.01em}
+#tPort .kval{font-size:36px;letter-spacing:-.02em}
+#tPort .tx3{font-size:12px}
+#tPort .ch{margin-bottom:16px}
+#tPort .ch .ct{font-size:15px;font-weight:700;color:var(--text)}
+#tPort .cbadge{font-size:12px;padding:4px 12px}
+#tPort .sec-header{
+  padding:16px 20px;
+  background:linear-gradient(90deg,#f8fafc 0%,#fff 60%);
+  border-radius:10px 10px 0 0;
+  margin:-20px -20px 0 -20px;
+  border-bottom:2px solid var(--border);
+  gap:12px;
+}
+#tPort .mtable th{font-size:12px;padding:12px 16px;letter-spacing:.04em}
+#tPort .mtable td{padding:14px 16px;font-size:14px}
+#tPort .mtable tr:hover td{background:#f0f5ff}
+#tPort .mkt-badge{font-size:11px;padding:3px 9px;border-radius:5px;font-weight:700}
+#tPort .overflow{border-radius:0 0 10px 10px;overflow:hidden}
 </style>
 </head>
 <body>
@@ -588,32 +609,32 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   <!-- KPI Row -->
   <div class="g4 mb16">
-    <div class="card">
-      <div class="klabel">持仓股票总数</div>
+    <div class="card" style="border-top:3px solid var(--blue)">
+      <div class="klabel">📌 持仓股票总数</div>
       <div class="kval tb" id="pKpiStocks">—</div>
       <div class="tx3 mt4">分布于 <span id="pKpiSectors">—</span> 个分类</div>
     </div>
-    <div class="card">
-      <div class="klabel">总仓位</div>
+    <div class="card" style="border-top:3px solid var(--green)">
+      <div class="klabel">💰 总仓位</div>
       <div class="kval tb" id="pKpiWeight">—</div>
       <div class="tx3 mt4" id="pKpiHk">—</div>
     </div>
-    <div class="card" style="min-width:0">
-      <div class="klabel" style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:15px">📈</span> 今日涨幅 TOP 3
+    <div class="card" style="min-width:0;border-top:3px solid var(--green)">
+      <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--green)">
+        📈 今日涨幅 TOP 3
       </div>
-      <div id="portTop3Up" style="margin-top:10px">
-        <div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0;letter-spacing:.02em">
+      <div id="portTop3Up" style="margin-top:8px">
+        <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
           点击「刷新股价」加载
         </div>
       </div>
     </div>
-    <div class="card" style="min-width:0">
-      <div class="klabel" style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:15px">📉</span> 今日跌幅 TOP 3
+    <div class="card" style="min-width:0;border-top:3px solid var(--red)">
+      <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--red)">
+        📉 今日跌幅 TOP 3
       </div>
-      <div id="portTop3Down" style="margin-top:10px">
-        <div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0;letter-spacing:.02em">
+      <div id="portTop3Down" style="margin-top:8px">
+        <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
           点击「刷新股价」加载
         </div>
       </div>
@@ -1966,42 +1987,47 @@ function renderPortfolio(){
       const ki=sec.stocks.indexOf(sk);
       const pi = _PORT_PRICES[sk.code];
       const priceCell = pi
-        ? `<span style="font-weight:600;font-size:13px;color:var(--text)">${sk.mkt==='HK'?Number(pi.price).toFixed(3):Number(pi.price).toFixed(2)}</span>`
-        : `<span style="color:var(--text2);font-size:11px">—</span>`;
+        ? `<span style="font-weight:700;font-size:15px;color:var(--text)">${sk.mkt==='HK'?Number(pi.price).toFixed(3):Number(pi.price).toFixed(2)}</span>`
+        : `<span style="color:var(--text2);font-size:13px">—</span>`;
+      const pctBg  = pi ? (pi.pct>0?'#d1fae5':pi.pct<0?'#fee2e2':'#f1f5f9') : '';
+      const pctCol = pi ? (pi.pct>0?'#065f46':pi.pct<0?'#991b1b':'#475569') : '';
       const pctCell = pi
-        ? `<span style="font-weight:700;font-size:13px;color:${pi.pct>0?'var(--green)':pi.pct<0?'var(--red)':'var(--text2)'}">${pi.pct>0?'+':''}${Number(pi.pct).toFixed(2)}%</span>`
-        : `<span style="color:var(--text2);font-size:11px">—</span>`;
+        ? `<span style="display:inline-block;background:${pctBg};color:${pctCol};font-weight:800;font-size:15px;padding:4px 10px;border-radius:7px;letter-spacing:-.01em">${pi.pct>0?'+':''}${Number(pi.pct).toFixed(2)}%</span>`
+        : `<span style="color:var(--text2);font-size:13px">—</span>`;
       return `<tr>
-        <td style="font-weight:600;color:var(--text)">${sk.name}</td>
-        <td style="font-family:monospace;font-size:12px;color:var(--text2)">${sk.code}</td>
+        <td style="font-weight:700;font-size:15px;color:var(--text)">${sk.name}</td>
+        <td style="font-family:monospace;font-size:13px;color:var(--text2)">${sk.code}</td>
         <td><span class="mkt-badge" style="${mktStyle[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span></td>
         <td style="text-align:right">${priceCell}</td>
         <td style="text-align:right">${pctCell}</td>
-        <td style="text-align:right">${sk.w!=null?'<strong style="color:var(--blue)">'+sk.w.toFixed(1)+'%</strong>':'<span style="color:var(--text2);font-size:11px">—</span>'}</td>
-        <td style="color:var(--text2);font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sk.note||''}</td>
+        <td style="text-align:right">${sk.w!=null?'<strong style="color:var(--blue);font-size:15px">'+sk.w.toFixed(1)+'%</strong>':'<span style="color:var(--text2);font-size:13px">—</span>'}</td>
+        <td style="color:var(--text2);font-size:13px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sk.note||''}</td>
         <td style="white-space:nowrap">
-          <button onclick="openPortModal('edit',${si},${ki})" style="background:none;border:1px solid var(--blue);color:var(--blue);border-radius:5px;padding:3px 9px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:500">编辑</button>
-          <button onclick="delPortStock(${si},${ki})" style="background:none;border:1px solid #fca5a5;color:var(--red);border-radius:5px;padding:3px 9px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:500;margin-left:4px">删除</button>
+          <button onclick="openPortModal('edit',${si},${ki})" style="background:none;border:1.5px solid var(--blue);color:var(--blue);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600">编辑</button>
+          <button onclick="delPortStock(${si},${ki})" style="background:none;border:1.5px solid #fca5a5;color:var(--red);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;margin-left:5px">删除</button>
         </td>
       </tr>`;}).join('')
     : `<tr><td colspan="8" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
     return `<div class="card mb16">
       <div class="sec-header">
-        <span style="width:14px;height:14px;border-radius:4px;background:${sec.color};display:inline-block;flex-shrink:0;box-shadow:0 1px 3px ${sec.color}66"></span>
-        <span style="font-size:14px;font-weight:700">${sec.name}</span>
-        <span style="font-size:12px;color:var(--text2);background:#f1f5f9;padding:1px 7px;border-radius:10px">${sec.stocks.length}只</span>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span style="font-size:12px;color:var(--text2)">分类仓位 <strong style="font-size:14px;color:var(--blue)">${secW.toFixed(1)}%</strong></span>
-          <button onclick="openPortModal('add',${si},-1)" class="btn-primary" style="padding:4px 12px;font-size:12px">+ 加股票</button>
-          <button onclick="delPortSector(${si})" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:4px 8px;cursor:pointer;font-size:11px;font-family:inherit">删分类</button>
+        <span style="width:20px;height:20px;border-radius:6px;background:${sec.color};display:inline-block;flex-shrink:0;box-shadow:0 2px 6px ${sec.color}55"></span>
+        <span style="font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.01em">${sec.name}</span>
+        <span style="font-size:12px;color:var(--text2);background:#e2e8f0;padding:2px 9px;border-radius:10px;font-weight:600">${sec.stocks.length} 只</span>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="text-align:right">
+            <div style="font-size:11px;color:var(--text2);font-weight:500">分类仓位</div>
+            <div style="font-size:20px;font-weight:800;color:var(--blue);letter-spacing:-.01em;line-height:1.1">${secW.toFixed(1)}<span style="font-size:13px;font-weight:600">%</span></div>
+          </div>
+          <button onclick="openPortModal('add',${si},-1)" class="btn-primary" style="padding:7px 16px;font-size:13px;font-weight:600;border-radius:8px">＋ 加股票</button>
+          <button onclick="delPortSector(${si})" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:7px;padding:6px 10px;cursor:pointer;font-size:12px;font-family:inherit">删分类</button>
         </div>
       </div>
       <div class="overflow">
         <table class="mtable"><thead><tr>
-          <th>名称</th><th>代码</th><th>市场</th>
-          <th style="text-align:right">股价</th>
-          <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right">涨跌幅 ${pctArrow}</th>
-          <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right">个股仓位 ${wArrow}</th>
+          <th>股票名称</th><th>代码</th><th>市场</th>
+          <th style="text-align:right">当前股价</th>
+          <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
+          <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
           <th>备注</th><th>操作</th>
         </tr></thead><tbody>${rows}</tbody></table>
       </div>
@@ -2717,6 +2743,9 @@ async function fetchPortPrices(){
     ts.textContent = '获取失败: ' + (err.message || String(err));
     console.error('fetchPortPrices:', err);
   } finally {
+    // 获取价格后自动按涨跌幅降序排列各分类内的股票
+    _portSort.col = 'pct';
+    _portSort.dir = -1;
     renderPortfolio();
     renderPortTop3();
     btn.classList.remove('loading'); btn.disabled = false;
@@ -2761,22 +2790,22 @@ function renderPortTop3(){
   function mkRow(item, rank, isUp){
     var color  = isUp ? 'var(--green)' : 'var(--red)';
     var bgBadge= isUp ? '#d1fae5' : '#fee2e2';
+    var bgRow  = isUp ? (rank===1?'#f0fdf4':'#fff') : (rank===1?'#fff5f5':'#fff');
     var sign   = item.pct >= 0 ? '+' : '';
     var priceStr = item.mkt==='HK'
       ? Number(item.price).toFixed(3)
       : Number(item.price).toFixed(2);
-    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;'
-         + (rank<3?'border-bottom:1px solid #f1f5f9':'')+'">'
-      + '<span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:'+bgBadge
-      + ';color:'+color+';font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center">'
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;'
+         + 'border-radius:8px;background:'+bgRow+';margin-bottom:5px">'
+      + '<span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:'+bgBadge
+      + ';color:'+color+';font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center">'
       + rank+'</span>'
-      + '<span style="flex:1;font-size:13px;font-weight:700;color:var(--text);overflow:hidden;'
+      + '<span style="flex:1;font-size:14px;font-weight:700;color:var(--text);overflow:hidden;'
       + 'text-overflow:ellipsis;white-space:nowrap" title="'+item.name+'">'+item.name+'</span>'
-      + '<span style="font-size:10px;color:var(--text2);font-family:monospace;flex-shrink:0">'+item.code+'</span>'
-      + '<div style="text-align:right;flex-shrink:0;margin-left:6px">'
-      + '<div style="font-size:15px;font-weight:800;color:'+color+';line-height:1.2">'
+      + '<div style="text-align:right;flex-shrink:0">'
+      + '<div style="font-size:20px;font-weight:900;color:'+color+';line-height:1.1;letter-spacing:-.01em">'
       + sign+Number(item.pct).toFixed(2)+'%</div>'
-      + '<div style="font-size:10px;color:var(--text2)">'+priceStr+'</div>'
+      + '<div style="font-size:11px;color:var(--text2);margin-top:1px">现价 '+priceStr+'</div>'
       + '</div>'
       + '</div>';
   }
