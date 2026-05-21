@@ -1012,19 +1012,22 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ════════════════ TAB 存储监控 ════════════════ -->
 <div class="tab-content" id="t5">
-  <div class="stitle">存储监控仪表板 <span class="stag">全球存储链 · PE / 增速 / PEG</span></div>
+  <div class="stitle">存储监控仪表板 <span class="stag">全球存储链 · PE / 增速 / PEG</span>
+    <span id="storApiTs" style="font-size:10px;color:#94a3b8;margin-left:auto;white-space:nowrap"></span>
+    <button id="storRefBtn" onclick="fetchStoreLive()" class="rbtn" style="padding:6px 14px;font-size:12px">
+      <span class="ricon">↻</span> 刷新行情
+    </button>
+  </div>
 
   <!-- Data source notice -->
   <div class="alert a-info mb16">
     <span>📡</span>
     <div>
-      <strong>数据来源：</strong>
-      美股(MU/SNDK) — Yahoo Finance &nbsp;·&nbsp;
-      韩股(海力士/三星) PE — Naver Finance，增速 — Naver &nbsp;·&nbsp;
-      铠侠(285A.T) — TSE价格，PE待补充 &nbsp;·&nbsp;
-      群联(8299.TW) — 待接入TWSE &nbsp;·&nbsp;
-      A股 — 东方财富行情+f10接口 &nbsp;·&nbsp;
-      数据抓取：<span id="storageTs">2026-05-19</span>
+      <strong>实时数据：</strong>
+      A股 — 东方财富行情API（PE/价格/涨跌） &nbsp;·&nbsp;
+      美/韩/日/台股 — Yahoo Finance v6（PE/远期PE/价格/涨跌） &nbsp;·&nbsp;
+      增速为历史季报数据（静态） &nbsp;·&nbsp;
+      最后刷新：<span id="storageTs">—</span>
     </div>
   </div>
 
@@ -1065,13 +1068,13 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="overflow">
       <table class="mtable">
         <thead><tr>
-          <th>公司</th><th>代码</th><th>交易所</th><th>地区</th>
+          <th>公司</th><th>代码</th><th>交易所</th><th>地区</th><th>现价 / 涨跌</th>
           <th>PE(TTM)</th><th>远期PE</th><th>近期增速</th><th>PEG</th><th>信号</th>
         </tr></thead>
         <tbody id="intlStoreBody"></tbody>
       </table>
     </div>
-    <div class="tx3 mt8">⚠ 铠侠(285A.T)及群联(8299.TW) PE待接入 TSE/TWSE API；韩国海力士/三星增速为 Naver Finance 最新季度净利润同比，已转负反映存储价格高位震荡</div>
+    <div class="tx3 mt8">● 现价/PE/远期PE 实时来自 Yahoo Finance；若数据缺失显示 N/A。增速为历史季报静态数据，不随刷新变化。</div>
   </div>
 
   <!-- Domestic A-share table -->
@@ -1080,7 +1083,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="overflow">
       <table class="mtable">
         <thead><tr>
-          <th>公司名称</th><th>代码</th><th>产业地位</th>
+          <th>公司名称</th><th>代码</th><th>产业地位</th><th>现价 / 涨跌</th>
           <th>PE(动态)</th><th>2026Q1归母净利润增速</th><th>PEG</th><th>信号</th>
         </tr></thead>
         <tbody id="domStoreBody"></tbody>
@@ -1841,21 +1844,42 @@ function renderIntlStore(){
     'hold':'<span class="sig s-hold">— 持有</span>',
     'watch':'<span class="sig s-watch">◎ 关注</span>',
   };
-  const na='<span style="color:#94a3b8;font-size:11px">N/A</span>';
-  const naApi='<span style="color:#94a3b8;font-size:11px">待接入</span>';
+  const na    ='<span style="color:#94a3b8;font-size:11px">N/A</span>';
+  const naApi ='<span style="color:#94a3b8;font-size:11px">—</span>';
+  const dot   ='<span style="font-size:7px;vertical-align:super;color:#10b981;margin-left:1px">●</span>';
   const regionColor={美国:'var(--blue)',韩国:'var(--green)',日本:'var(--red)',台湾:'var(--cyan)'};
   document.getElementById('intlStoreBody').innerHTML = BASE.storage.intl.map(r=>{
-    const peCell = r.pe!=null ? `<span style="font-weight:700;color:${r.pe>40?'var(--yellow)':r.pe>20?'var(--blue)':'var(--green)'}">${r.pe}x</span>` : naApi;
-    const fpeCell = r.fwdPe!=null ? `<span style="font-weight:600;color:var(--green)">${r.fwdPe}x</span>` : na;
+    const live = !!r._live;
+    // PE
+    const peCell = r.pe!=null
+      ? `<span style="font-weight:700;color:${r.pe>40?'var(--yellow)':r.pe>20?'var(--blue)':'var(--green)'}">${r.pe}x${live?dot:''}</span>`
+      : naApi;
+    // 远期PE
+    const fpeCell = r.fwdPe!=null
+      ? `<span style="font-weight:600;color:var(--green)">${r.fwdPe}x${live?dot:''}</span>`
+      : na;
+    // 增速（静态）
     const growCell = r.growth!=null
       ? `<span style="font-weight:600;color:${r.growth<0?'var(--red)':'var(--green)'}">${r.growth>0?'+':''}${r.growth}%</span>`
       : naApi;
-    const pegCell = r.peg!=null ? r.peg : (r.pe!=null&&r.growth!=null&&r.growth>0?((r.pe/r.growth).toFixed(2)):na);
+    // PEG
+    const pegCell = r.peg!=null ? r.peg : (r.pe!=null&&r.growth!=null&&r.growth>0?(r.pe/r.growth).toFixed(2):na);
+    // 现价 + 涨跌幅
+    let priceCell = naApi;
+    if(live && r.price){
+      const pctColor = (r._pct||0)>=0 ? 'var(--green)' : 'var(--red)';
+      const pctSign  = (r._pct||0)>=0 ? '+' : '';
+      const pctStr   = r._pct!=null ? `<span style="font-size:10px;color:${pctColor}"> ${pctSign}${r._pct.toFixed(2)}%</span>` : '';
+      priceCell = `<span style="font-weight:600;font-size:12px">${r.price}</span>${pctStr}`;
+    } else if(r.price && r.price!=='待接入'){
+      priceCell = `<span style="color:var(--text2);font-size:12px">${r.price}</span>`;
+    }
     return `<tr>
       <td><strong>${r.name}</strong><br><span class="tx3">${r.note}</span></td>
       <td style="font-family:monospace;font-size:12px;color:var(--text2)">${r.tkr}</td>
       <td class="tx3">${r.mkt}</td>
       <td style="font-weight:600;color:${regionColor[r.region]||'var(--text)'}">${r.region}</td>
+      <td>${priceCell}</td>
       <td>${peCell}</td>
       <td>${fpeCell}</td>
       <td>${growCell}</td>
@@ -1872,15 +1896,121 @@ function renderDomStore(){
     'hold':'<span class="sig s-hold">— 持有</span>',
   };
   const pegColor=p=>p==null?'#94a3b8':p<1?'var(--green)':p<2?'var(--blue)':'var(--red)';
-  document.getElementById('domStoreBody').innerHTML = BASE.storage.domestic.map(r=>`<tr>
-    <td><strong>${r.name}</strong></td>
-    <td style="font-family:monospace;font-size:12px;color:var(--text2)">${r.code}</td>
-    <td class="tx3">${r.role}</td>
-    <td style="font-weight:700;color:${r.pe>100?'var(--red)':r.pe>40?'var(--yellow)':'var(--green)'}">${r.pe}x</td>
-    <td style="font-weight:600;color:var(--green)">+${r.growth}%</td>
-    <td style="font-weight:600;color:${pegColor(r.peg)}">${r.peg!=null?r.peg.toFixed(2):'N/A'}</td>
-    <td>${sigHtml[r.sig]||r.sig}</td>
-  </tr>`).join('');
+  const dot='<span style="font-size:7px;vertical-align:super;color:#10b981;margin-left:1px">●</span>';
+  document.getElementById('domStoreBody').innerHTML = BASE.storage.domestic.map(r=>{
+    const live = !!r._live;
+    // 现价 + 涨跌幅
+    let priceCell = '<span style="color:#94a3b8;font-size:11px">—</span>';
+    if(live && r._price){
+      const pctColor = (r._pct||0)>=0 ? 'var(--green)' : 'var(--red)';
+      const pctSign  = (r._pct||0)>=0 ? '+' : '';
+      priceCell = `<span style="font-weight:600;font-size:13px">¥${r._price}</span>`
+                + `<br><span style="font-size:10px;color:${pctColor}">${pctSign}${(r._pct||0).toFixed(2)}%</span>`;
+    }
+    // PE
+    const peCell = `<span style="font-weight:700;color:${r.pe>100?'var(--red)':r.pe>40?'var(--yellow)':'var(--green)'}">${r.pe}x${live?dot:''}</span>`;
+    return `<tr>
+      <td><strong>${r.name}</strong></td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text2)">${r.code}</td>
+      <td class="tx3">${r.role}</td>
+      <td>${priceCell}</td>
+      <td>${peCell}</td>
+      <td style="font-weight:600;color:var(--green)">+${r.growth}%</td>
+      <td style="font-weight:600;color:${pegColor(r.peg)}">${r.peg!=null?r.peg.toFixed(2):'N/A'}</td>
+      <td>${sigHtml[r.sig]||r.sig}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── 存储监控实时行情 ──────────────────────────────────────────
+async function fetchStoreLive(){
+  const ts  = document.getElementById('storApiTs');
+  const btn = document.getElementById('storRefBtn');
+  if(ts)  ts.textContent = '加载中…';
+  if(btn) btn.disabled = true;
+
+  let aOk=false, iOk=false;
+
+  // ① A股 ← 东方财富 API
+  try{
+    const dom   = BASE.storage.domestic;
+    const secids= dom.map(s=>(s.mkt==='SH'?'1.':'0.')+s.code).join(',');
+    const url   = 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2'
+                + '&fields=f2,f3,f9,f12&secids='+secids
+                + '&ut=bd1d9ddb04089700cf9c27f6f7426281';
+    const resp  = await fetch(url);
+    const json  = await resp.json();
+    const items = (json.data&&json.data.diff)||[];
+    const cmap  = {};
+    items.forEach(it=>{ if(it.f12!=null) cmap[String(it.f12)]=it; });
+    dom.forEach(s=>{
+      const it=cmap[s.code]; if(!it) return;
+      const pe=parseFloat(it.f9);
+      if(pe>0) s.pe = Math.round(pe*10)/10;
+      s._price = parseFloat(it.f2);
+      s._pct   = parseFloat(it.f3);
+      s._live  = true;
+    });
+    aOk=true;
+  }catch(e){ console.warn('fetchStoreLive A股:',e); }
+
+  // ② 国际股 ← Yahoo Finance v6 quote（批量）
+  try{
+    const intl = BASE.storage.intl;
+    const syms = intl.map(s=>encodeURIComponent(s.tkr)).join(',');
+    const url  = 'https://query2.finance.yahoo.com/v6/finance/quote?symbols='+syms;
+    const resp = await fetch(url, {headers:{Accept:'application/json'}});
+    const json = await resp.json();
+    const res  = (json.quoteResponse&&json.quoteResponse.result)||[];
+    const rmap = {}; res.forEach(r=>{ rmap[r.symbol]=r; });
+    const csym = {USD:'$',KRW:'₩',JPY:'¥',TWD:'NT$',HKD:'HK$'};
+    intl.forEach(s=>{
+      const r=rmap[s.tkr]; if(!r) return;
+      if(r.trailingPE>0) s.pe    = Math.round(r.trailingPE*10)/10;
+      if(r.forwardPE >0) s.fwdPe = Math.round(r.forwardPE *10)/10;
+      const sym=csym[r.currency]||'';
+      const p  =r.regularMarketPrice;
+      s.price  = sym+(p>=10000?Math.round(p).toLocaleString('en'):p>=100?p.toFixed(0):p.toFixed(2));
+      s._pct   = r.regularMarketChangePercent;
+      s._live  = true;
+    });
+    iOk=true;
+  }catch(e){ console.warn('fetchStoreLive 国际:',e); }
+
+  // 重绘表格与图表
+  renderIntlStore();
+  renderDomStore();
+  _updateStorePeCharts();
+
+  // 更新时间戳
+  const now=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('storageTs').textContent=now;
+  if(ts){
+    if(aOk&&iOk)     ts.textContent='全部更新 '+now;
+    else if(aOk)     ts.textContent='A股已更新 '+now+'（Yahoo Finance 受限）';
+    else if(iOk)     ts.textContent='国际已更新 '+now+'（东方财富 受限）';
+    else             ts.textContent='⚠ 加载失败，显示静态数据';
+  }
+  if(btn) btn.disabled=false;
+}
+
+function _updateStorePeCharts(){
+  // 更新国际PE图表
+  if(CH.intlPe){
+    const d=BASE.storage.intl.filter(s=>s.pe!=null);
+    CH.intlPe.data.labels                      =d.map(s=>s.name);
+    CH.intlPe.data.datasets[0].data            =d.map(s=>s.pe);
+    CH.intlPe.data.datasets[0].backgroundColor =d.map(s=>s.pe>40?'rgba(245,158,11,.65)':s.pe>20?'rgba(37,99,235,.55)':'rgba(5,150,105,.65)');
+    CH.intlPe.data.datasets[1].data            =d.map(s=>s.fwdPe);
+    CH.intlPe.update();
+  }
+  // 更新A股PE图表
+  if(CH.domStorePe){
+    const d=BASE.storage.domestic;
+    CH.domStorePe.data.datasets[0].data            =d.map(s=>s.pe);
+    CH.domStorePe.data.datasets[0].backgroundColor =d.map(s=>s.pe>100?'rgba(220,38,38,.6)':s.pe>40?'rgba(245,158,11,.6)':'rgba(5,150,105,.6)');
+    CH.domStorePe.update();
+  }
 }
 
 function mkNeoCapex(){
@@ -3332,6 +3462,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();
   mkStageMatrix();
   renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();renderMag7();
+  fetchStoreLive();  // 异步拉取存储监控实时行情
   document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
 });
 </script>
