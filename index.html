@@ -645,6 +645,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     投资组合管理 <span class="stag">A股 · 港股 · 可编辑</span>
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span style="font-size:11px;color:var(--text2)" id="portSyncTs">☁️ 加载中…</span>
+      <button onclick="portForcePush()" title="将当前浏览器的仓位数据强制推送到云端"
+        style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:7px;
+               padding:5px 11px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">
+        📤 同步到云端
+      </button>
       <span style="font-size:11px;color:var(--text2)" id="portPriceTs">股价未加载</span>
       <button id="portPriceBtn" class="rbtn" onclick="fetchPortPrices()" style="padding:6px 14px;font-size:12px">
         <span class="ricon">↻</span> 刷新股价
@@ -2028,19 +2033,10 @@ function _setSyncTs(msg, color){
   if(el){ el.textContent = msg; el.style.color = color || 'var(--text2)'; }
 }
 
-/* 从 GitHub 加载组合数据 */
-async function portLoadRemote(){
-  try{
-    const url = `https://raw.githubusercontent.com/${PORT_GH_REPO}/main/${PORT_GH_FILE}?t=${Date.now()}`;
-    const resp = await fetch(url, {cache:'no-store'});
-    if(resp.ok){
-      const data = await resp.json();
-      PORT = data;
-      localStorage.setItem(PORT_KEY, JSON.stringify(data));
-      return true;
-    }
-  }catch(e){ console.warn('portLoadRemote:', e); }
-  return false;
+/* 计算数据"丰富度"：非 null 仓位的股票数（越多越好） */
+function _weightCount(data){
+  if(!data || !data.sectors) return -1;
+  return data.sectors.flatMap(s=>s.stocks).filter(sk=>sk.w != null && sk.w > 0).length;
 }
 
 /* 将组合数据写回 GitHub（后台静默执行） */
@@ -2085,7 +2081,7 @@ function portSave(){
   portSaveRemote();   // 后台异步，不阻塞 UI
 }
 
-/* 同步降级：只读 localStorage */
+/* 读取本地 localStorage 数据（fallback） */
 function portLoad(){
   if(PORT) return;
   try{
@@ -2094,23 +2090,66 @@ function portLoad(){
   }catch(e){ PORT = JSON.parse(JSON.stringify(BASE.portfolio)); }
 }
 
-/* 页面初始化：优先从 GitHub 加载，失败回退 localStorage */
+/**
+ * 页面初始化：同时读取本地 localStorage 和远程 GitHub，
+ * 以"有效仓位数量"为标准择优使用，本地更好则自动推送到云端修正。
+ * 这样无论哪个浏览器先打开，都能收敛到数据最完整的那份。
+ */
 async function portInit(){
   _setSyncTs('☁️ 加载中…', '#f59e0b');
-  const ok = await portLoadRemote();
-  if(!ok){
-    portLoad();   // 降级到 localStorage
-    // 若 localStorage 有数据则推送到 GitHub 初始化远程文件
-    if(PORT && PORT.sectors && PORT.sectors.length){
-      portSaveRemote();
-    } else {
-      _setSyncTs('📂 使用默认数据', 'var(--text2)');
-    }
+
+  // ① 读取本地
+  let localData = null;
+  try{
+    const s = localStorage.getItem(PORT_KEY);
+    if(s) localData = JSON.parse(s);
+  }catch(e){}
+
+  // ② 读取远程（独立 try，失败不影响本地）
+  let remoteData = null;
+  try{
+    const url = `https://raw.githubusercontent.com/${PORT_GH_REPO}/main/${PORT_GH_FILE}?t=${Date.now()}`;
+    const resp = await fetch(url, {cache:'no-store'});
+    if(resp.ok) remoteData = await resp.json();
+  }catch(e){ console.warn('portLoadRemote:', e); }
+
+  // ③ 择优：以有效仓位数量决定使用哪份数据
+  const lw = _weightCount(localData);
+  const rw = _weightCount(remoteData);
+
+  const ts = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+
+  if(lw > rw){
+    // 本地数据更完整 → 使用本地，并将本地推送到 GitHub 修正云端
+    PORT = localData;
+    _setSyncTs('☁️ 本地数据更完整，正在同步至云端…', '#f59e0b');
+    portSaveRemote();                       // 推送后会更新状态文字
+  } else if(remoteData && rw >= 0){
+    // 远程数据更完整或相等 → 使用远程，同时更新本地缓存
+    PORT = remoteData;
+    localStorage.setItem(PORT_KEY, JSON.stringify(remoteData));
+    _setSyncTs('☁️ 已从云端加载 ' + ts, '#10b981');
+  } else if(localData){
+    // 远程不可用，只有本地
+    PORT = localData;
+    portSaveRemote();
+    _setSyncTs('☁️ 云端离线，已上传本地备份', '#f59e0b');
   } else {
-    _setSyncTs('☁️ 已同步 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}), '#10b981');
+    // 全无，用默认
+    PORT = JSON.parse(JSON.stringify(BASE.portfolio));
+    _setSyncTs('📂 使用默认数据', '#94a3b8');
   }
+
   renderPortfolio();
-  fetchIndexPrices();   // 页面初始化时自动加载主要指数
+  fetchIndexPrices();
+}
+
+/* 手动强制将当前数据推送到云端（用于应急修复） */
+async function portForcePush(){
+  portLoad();
+  if(!PORT){ alert('没有数据可同步'); return; }
+  _setSyncTs('☁️ 强制同步中…', '#f59e0b');
+  await portSaveRemote();
 }
 
 function renderPortfolio(){
