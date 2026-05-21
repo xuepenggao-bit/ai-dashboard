@@ -193,6 +193,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @media(max-width:768px){
   /* KPI 4格变2列 */
   #tPort .g4{grid-template-columns:1fr 1fr}
+  /* 第二行 3格变2列 */
+  #tPort .g3{grid-template-columns:1fr 1fr}
   #tPort .kval{font-size:26px}
   #tPort .klabel{font-size:12px}
   /* 分类头部自适应 */
@@ -209,6 +211,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   #tPort .col-price,#tPort .th-price{display:none}
 }
 @media(max-width:480px){
+  /* 第二行 g3 → 单列 */
+  #tPort .g3{grid-template-columns:1fr}
   /* 再隐藏：市场标签 */
   #tPort .col-mkt,#tPort .th-mkt{display:none}
   #tPort .kval{font-size:22px}
@@ -648,20 +652,20 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- KPI Row -->
+  <!-- Row 1: 主要指数 + TOP5涨跌 + 重仓TOP5 -->
   <div class="g4 mb16">
-    <!-- 持仓概览（合并） -->
-    <div class="card" style="border-top:3px solid var(--blue)">
-      <div class="klabel">📊 持仓概览</div>
-      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
-        <span class="kval tb" id="pKpiWeight">—</span>
-        <span style="font-size:13px;color:var(--text2);font-weight:500">总仓位</span>
+    <!-- 主要指数 -->
+    <div class="card" style="min-width:0;border-top:3px solid #f59e0b">
+      <div class="klabel" style="display:flex;align-items:center;justify-content:space-between">
+        <span style="color:#b45309;font-weight:700">📊 主要指数</span>
+        <button onclick="fetchIndexPrices()" id="idxRefBtn"
+          style="background:none;border:1px solid #fde68a;color:#b45309;border-radius:6px;
+                 padding:2px 8px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">↻ 刷新</button>
       </div>
-      <div class="tx3 mt4">
-        持仓 <strong id="pKpiStocks" style="color:var(--text)">—</strong> 只 ·
-        <span id="pKpiSectors">—</span> 个分类
+      <div id="portIndexList" style="margin-top:6px">
+        <div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0">加载中…</div>
       </div>
-      <div class="tx3 mt4" id="pKpiHk">—</div>
+      <div style="font-size:10px;color:var(--text2);margin-top:6px;text-align:right" id="idxTs"></div>
     </div>
 
     <!-- 今日涨幅 TOP 5 -->
@@ -701,8 +705,23 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Allocation chart + 新增分类 -->
-  <div class="g2 mb16">
+  <!-- Row 2: 持仓概览 + 仓位分配 + 新增分类 -->
+  <div class="g3 mb16">
+    <!-- 持仓概览 -->
+    <div class="card" style="border-top:3px solid var(--blue)">
+      <div class="klabel">📂 持仓概览</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+        <span class="kval tb" id="pKpiWeight">—</span>
+        <span style="font-size:13px;color:var(--text2);font-weight:500">总仓位</span>
+      </div>
+      <div class="tx3 mt4">
+        持仓 <strong id="pKpiStocks" style="color:var(--text)">—</strong> 只 ·
+        <span id="pKpiSectors">—</span> 个分类
+      </div>
+      <div class="tx3 mt4" id="pKpiHk">—</div>
+    </div>
+
+    <!-- 仓位分配图表 -->
     <div class="card">
       <div class="ch"><span class="ct">仓位分配（按分类）</span><span class="cbadge" id="pTotalBadge">合计 —%</span></div>
       <div style="height:250px"><canvas id="cPortAlloc"></canvas></div>
@@ -2083,6 +2102,7 @@ async function portInit(){
     _setSyncTs('☁️ 已同步 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}), '#10b981');
   }
   renderPortfolio();
+  fetchIndexPrices();   // 页面初始化时自动加载主要指数
 }
 
 function renderPortfolio(){
@@ -2850,6 +2870,70 @@ function _isTradingNow(){
   return (m>=570&&m<=690)||(m>=780&&m<900);
 }
 
+// ── 主要指数实时行情 ────────────────────────────────────────
+const _INDICES = [
+  {tc:'sh000001', label:'上证指数'},
+  {tc:'sz399001', label:'深证成指'},
+  {tc:'sz399006', label:'创业板指'},
+  {tc:'sh000688', label:'科创 50'},
+  {tc:'sz399985', label:'中证全指'},
+  {tc:'sh880719', label:'A股均价'},
+];
+
+async function fetchIndexPrices(){
+  const listEl = document.getElementById('portIndexList');
+  const tsEl   = document.getElementById('idxTs');
+  const btn    = document.getElementById('idxRefBtn');
+  if(!listEl) return;
+  if(btn) btn.disabled = true;
+
+  try{
+    const qUrl = 'https://qt.gtimg.cn/q=' + _INDICES.map(i=>i.tc).join(',') + '&_=' + Date.now();
+    const resp = await fetch(qUrl);
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf = await resp.arrayBuffer();
+    const txt = new TextDecoder('gbk').decode(buf);
+
+    const rows = _INDICES.map(idx=>{
+      const m = txt.match(new RegExp('v_' + idx.tc + '="([^"]+)"'));
+      if(!m) return null;
+      const p     = m[1].split('~');
+      const price = parseFloat(p[3]);
+      const pct   = parseFloat(p[32]);
+      if(!isFinite(price) || price <= 0) return null;
+      return {label: idx.label, price, pct};
+    }).filter(Boolean);
+
+    if(!rows.length){
+      listEl.innerHTML = '<div style="color:var(--text2);font-size:12px;text-align:center;padding:8px">暂无数据</div>';
+      return;
+    }
+
+    listEl.innerHTML = rows.map(r=>{
+      const up    = r.pct > 0;
+      const dn    = r.pct < 0;
+      const color = up ? '#16a34a' : dn ? '#dc2626' : 'var(--text2)';
+      const bg    = up ? '#f0fdf4' : dn ? '#fff5f5' : '#f8fafc';
+      const sign  = up ? '+' : '';
+      return `<div style="display:flex;align-items:center;padding:5px 8px;border-radius:7px;
+                           background:${bg};margin-bottom:4px">
+        <span style="flex:1;font-size:12px;font-weight:600;color:var(--text)">${r.label}</span>
+        <span style="font-size:12px;color:var(--text2);margin-right:10px">${r.price.toFixed(2)}</span>
+        <span style="font-size:13px;font-weight:800;color:${color};min-width:54px;text-align:right;
+                     letter-spacing:-.01em">${sign}${r.pct.toFixed(2)}%</span>
+      </div>`;
+    }).join('');
+
+    if(tsEl) tsEl.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) + ' 更新';
+
+  }catch(e){
+    if(listEl) listEl.innerHTML = `<div style="color:var(--text2);font-size:12px;text-align:center;padding:8px">获取失败</div>`;
+    console.error('fetchIndexPrices:', e);
+  }finally{
+    if(btn) btn.disabled = false;
+  }
+}
+
 async function fetchPortPrices(){
   var btn = document.getElementById('portPriceBtn');
   var ts  = document.getElementById('portPriceTs');
@@ -2906,6 +2990,7 @@ async function fetchPortPrices(){
     renderPortfolio();
     renderPortTop3();
     _renderPortTopW();
+    fetchIndexPrices();   // 刷新股价时同步更新主要指数
     btn.classList.remove('loading'); btn.disabled = false;
   }
 }
