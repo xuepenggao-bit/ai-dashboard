@@ -2082,11 +2082,11 @@ async function portSaveRemote(){
   }
 }
 
-/* 本地 + 远程双写 */
+/* 只写本地，标记待同步；需用户手动点击"同步到云端"才推送 */
 function portSave(){
   localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
-  _portDirty = true;    // 标记有改动，等待定时同步
-  portSaveRemote();     // 同时立即触发一次推送
+  _portDirty = true;
+  _setSyncTs('📝 有改动未同步，点击"同步到云端"', '#f59e0b');
 }
 
 /* 读取本地 localStorage 数据（fallback） */
@@ -2151,13 +2151,6 @@ async function portInit(){
   renderPortfolio();
   fetchIndexPrices();
 
-  // ── 2分钟自动同步：有改动才推送，无改动跳过 ──────────────
-  setInterval(function(){
-    if(_portDirty && PORT){
-      console.log('[AutoSync] dirty=true, pushing to GitHub...');
-      portSaveRemote();
-    }
-  }, 2 * 60 * 1000);   // 120 000 ms = 2 分钟
 }
 
 /* 手动强制将当前数据推送到云端（用于应急修复） */
