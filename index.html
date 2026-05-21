@@ -243,15 +243,15 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ═══ TABS ═══ -->
 <nav class="tabs">
-  <button class="tab active" onclick="switchTab(0)">📈 AI趋势</button>
-  <button class="tab" onclick="switchTab(1)">💼 投资组合</button>
-  <button class="tab" onclick="switchTab(2)">📊 A股估值监控</button>
-  <button class="tab" onclick="switchTab(3)">💾 存储监控</button>
-  <button class="tab" onclick="switchTab(4)">🇨🇳 A股宏观</button>
-  <button class="tab" onclick="switchTab(5)">🔍 产业链监控</button>
-  <button class="tab" onclick="switchTab(6)">⚠️ 风险仪表板</button>
-  <button class="tab" onclick="switchTab(7)">📋 十步框架</button>
-  <button class="tab" onclick="switchTab(8)">🧬 产业链阶段</button>
+  <button class="tab active" onclick="switchTab(0)">💼 投资组合</button>
+  <button class="tab" onclick="switchTab(1)">🧬 产业链阶段</button>
+  <button class="tab" onclick="switchTab(2)">📈 AI趋势</button>
+  <button class="tab" onclick="switchTab(3)">📊 A股估值监控</button>
+  <button class="tab" onclick="switchTab(4)">💾 存储监控</button>
+  <button class="tab" onclick="switchTab(5)">🇨🇳 A股宏观</button>
+  <button class="tab" onclick="switchTab(6)">🔍 产业链监控</button>
+  <button class="tab" onclick="switchTab(7)">⚠️ 风险仪表板</button>
+  <button class="tab" onclick="switchTab(8)">📋 十步框架</button>
 </nav>
 
 <!-- ═══ DATA NOTICE ═══ -->
@@ -271,7 +271,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <main class="main">
 
 <!-- ════════════════ TAB 2.1 ════════════════ -->
-<div class="tab-content active" id="t0">
+<div class="tab-content" id="t0">
   <div class="stitle">AI"趋势"仪表板 <span class="stag">阶段定位</span></div>
 
   <!-- Stage Flow -->
@@ -640,7 +640,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 </div>
 
 <!-- ════════════════ TAB 投资组合 ════════════════ -->
-<div class="tab-content" id="tPort">
+<div class="tab-content active" id="tPort">
   <div class="stitle">
     投资组合管理 <span class="stag">A股 · 港股 · 可编辑</span>
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -1160,8 +1160,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <!-- ─── tStage: A股AI产业链所处阶段 ─────────────────────────── -->
 <div class="tab-content" id="tStage">
   <div class="stitle">A股AI产业链所处阶段
-    <span class="stag">§2.2 六维风格画像矩阵</span>
     <span class="stag" style="background:rgba(124,58,237,.08);color:var(--purple)">Bernstein Style Framework</span>
+    <button onclick="mkStageMatrix()" class="rbtn" style="margin-left:auto;padding:6px 14px;font-size:12px">
+      <span class="ricon">↻</span> 刷新
+    </button>
   </div>
 
   <!-- 维度说明卡 -->
@@ -2754,7 +2756,7 @@ function _renderStageRadars(){
 }
 
 // ── TAB ──────────────────────────────────────────────────────
-const TAB_ORDER=['t0','tPort','t4','t5','tAM','t1','t2','t3','tStage'];
+const TAB_ORDER=['tPort','tStage','t0','t4','t5','tAM','t1','t2','t3'];
 function switchTab(idx){
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
   const target=document.getElementById(TAB_ORDER[idx]);
