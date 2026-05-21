@@ -545,19 +545,41 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div class="g2 mb16">
     <div class="card">
       <div class="ch">
-        <span class="ct">融资融券余额趋势 (季末·¥亿)</span>
-        <span class="cbadge" style="background:#fee2e2;color:#991b1b">需接入API</span>
+        <span class="ct">融资融券余额趋势 (日频·¥亿)</span>
+        <span class="cbadge" id="marginBadge" style="background:#fef3c7;color:#78350f">加载中…</span>
       </div>
-      <div style="height:210px"><canvas id="cMargin"></canvas></div>
-      <div class="tx3 mt4">季末余额近似值 · 来源: 沪深交易所 · 924行情后Q4大幅攀升 · 日频需接入数据API</div>
+      <!-- Mini KPI -->
+      <div style="display:flex;align-items:flex-end;gap:20px;margin-bottom:10px;padding:10px 12px;background:#fffbeb;border-radius:8px;border:1px solid #fde68a">
+        <div>
+          <div class="tx3" style="margin-bottom:2px">最新余额</div>
+          <div style="font-size:22px;font-weight:800;color:#d97706;line-height:1" id="kMarginVal">¥26,100亿</div>
+        </div>
+        <div style="flex:1">
+          <div class="kchange neu" id="kMarginChg" style="font-size:12px">日频数据查询中…</div>
+          <div class="tx3 mt4" id="kMarginDate" style="color:#94a3b8"></div>
+        </div>
+      </div>
+      <div style="height:175px"><canvas id="cMargin"></canvas></div>
+      <div class="tx3 mt4" id="marginDesc">来源: 东方财富数据中心 · 近30个交易日余额</div>
     </div>
     <div class="card">
       <div class="ch">
-        <span class="ct">港股通北向资金 季度净流入 (¥亿)</span>
-        <span class="cbadge" style="background:#fee2e2;color:#991b1b">需接入API</span>
+        <span class="ct">沪深港通 北向资金 (日频·¥亿)</span>
+        <span class="cbadge" id="northBadge" style="background:#fef3c7;color:#78350f">加载中…</span>
       </div>
-      <div style="height:210px"><canvas id="cNorth"></canvas></div>
-      <div class="tx3 mt4">季度净买入合计 · 来源: 深交所/港交所互联互通 · 2024全年Q1-Q3净流出，Q4大幅流入</div>
+      <!-- Mini KPI -->
+      <div style="display:flex;align-items:flex-end;gap:20px;margin-bottom:10px;padding:10px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
+        <div>
+          <div class="tx3" style="margin-bottom:2px">今日净买入</div>
+          <div style="font-size:22px;font-weight:800;line-height:1" id="kNorthVal">—</div>
+        </div>
+        <div style="flex:1">
+          <div class="kchange" id="kNorthChg" style="font-size:12px;color:var(--text2)">日频数据查询中…</div>
+          <div class="tx3 mt4" id="kNorthDate" style="color:#94a3b8"></div>
+        </div>
+      </div>
+      <div style="height:175px"><canvas id="cNorth"></canvas></div>
+      <div class="tx3 mt4" id="northDesc">来源: 东方财富数据中心 · 近30个交易日沪深港通合计净流入</div>
     </div>
   </div>
 
@@ -1793,6 +1815,119 @@ async function fetchMonLive(){
 
   // 更新风险仪表板（依赖 _aiEtfPe 和 BASE.monitors）
   updateRiskDashboard();
+}
+
+// ── 融资融券 & 北向资金 实时数据 ─────────────────────────────
+async function fetchMarginNorthLive(){
+  const dot='<span style="font-size:7px;vertical-align:super;color:#10b981;margin-left:1px">●</span>';
+
+  // ① 融资融券余额 — 东方财富数据中心
+  try{
+    const url='https://datacenter-web.eastmoney.com/api/data/v1/get'
+            +'?reportName=RPT_RZRQ_MARGIN_DETAIL'
+            +'&columns=TRADE_DATE,RZRQYE'
+            +'&sortColumns=TRADE_DATE&sortTypes=-1'
+            +'&pageSize=30&pageNumber=1&source=WEB&client=WEB';
+    const resp=await fetch(url);
+    const json=await resp.json();
+    const rows=(json.result&&json.result.data)||[];
+    if(rows.length>0){
+      const sorted=[...rows].reverse();
+      // 自动判断单位: 若均值 > 1e8 → 元(÷1e8); > 1e4 → 万元(÷1e4); 否则亿元
+      const sample=parseFloat(rows[0].RZRQYE)||0;
+      const toYi = sample>1e8 ? v=>parseFloat(v)/1e8
+                  : sample>1e4 ? v=>parseFloat(v)/1e4
+                  : v=>parseFloat(v);
+      const labels=sorted.map(r=>r.TRADE_DATE.slice(5));
+      const vals=sorted.map(r=>Math.round(toYi(r.RZRQYE)*10)/10);
+
+      if(CH.margin){
+        CH.margin.data.labels=labels;
+        CH.margin.data.datasets[0].data=vals;
+        CH.margin.update('none');
+      }
+      const latest=vals[vals.length-1];
+      const prev  =vals.length>=2?vals[vals.length-2]:latest;
+      const chg   =Math.round((latest-prev)*10)/10;
+      const elV=document.getElementById('kMarginVal');
+      const elC=document.getElementById('kMarginChg');
+      const elD=document.getElementById('kMarginDate');
+      const elB=document.getElementById('marginBadge');
+      const elDesc=document.getElementById('marginDesc');
+      if(elV) elV.innerHTML='¥'+Math.round(latest).toLocaleString()+'亿'+dot;
+      if(elC){
+        elC.textContent=(chg>=0?'▲ +':'▼ ')+Math.abs(chg).toFixed(0)+'亿 日变化';
+        elC.className='kchange '+(chg>=0?'up':'down');
+      }
+      if(elD) elD.textContent='最新日期 '+sorted[sorted.length-1].TRADE_DATE;
+      if(elB){ elB.textContent='● 实时'; elB.style.background='#d1fae5'; elB.style.color='#065f46'; }
+      if(elDesc) elDesc.textContent='来源: 东方财富数据中心 · 近30交易日日频余额 ('+sorted[sorted.length-1].TRADE_DATE+')';
+    } else {
+      throw new Error('无数据');
+    }
+  }catch(e){
+    console.warn('[MarginLive]',e.message||e);
+    const elB=document.getElementById('marginBadge');
+    const elC=document.getElementById('kMarginChg');
+    if(elB){ elB.textContent='⚠ API受限'; elB.style.background='#fee2e2'; elB.style.color='#991b1b'; }
+    if(elC){ elC.textContent='无法获取实时数据，显示历史季度数据'; elC.className='kchange neu'; }
+  }
+
+  // ② 北向资金 — 东方财富数据中心 (沪深港通合计)
+  try{
+    const url='https://datacenter-web.eastmoney.com/api/data/v1/get'
+            +'?reportName=RPT_MUTUAL_FUND_SUM'
+            +'&columns=TRADE_DATE,FUND_DIRECTION,FUND_NETBUY_AMTALL'
+            +'&pageSize=30&sortColumns=TRADE_DATE&sortTypes=-1'
+            +'&filter=(FUND_DIRECTION%3D"北向")&pageNumber=1&source=WEB&client=WEB';
+    const resp=await fetch(url);
+    const json=await resp.json();
+    const rows=(json.result&&json.result.data)||[];
+    if(rows.length>0){
+      const sorted=[...rows].reverse();
+      // 自动判断单位: 预期日净买入约 ±50~200亿; >1e4 → 万元(÷1e4); >1e2 → 亿元
+      const sample=Math.abs(parseFloat(rows[0].FUND_NETBUY_AMTALL)||0);
+      const toYi = sample>1e6 ? v=>parseFloat(v)/1e4
+                  : sample>1e2 ? v=>parseFloat(v)
+                  : v=>parseFloat(v)*100;  // 极端情况兜底
+      const labels=sorted.map(r=>r.TRADE_DATE.slice(5));
+      const vals=sorted.map(r=>Math.round(toYi(r.FUND_NETBUY_AMTALL)*10)/10);
+
+      if(CH.north){
+        CH.north.data.labels=labels;
+        CH.north.data.datasets[0].data=vals;
+        CH.north.data.datasets[0].backgroundColor=vals.map(v=>v>=0?'rgba(5,150,105,.7)':'rgba(220,38,38,.6)');
+        CH.north.update('none');
+      }
+      const today=vals[vals.length-1];
+      const week =vals.slice(-5).reduce((a,b)=>a+b,0);
+      const elV=document.getElementById('kNorthVal');
+      const elC=document.getElementById('kNorthChg');
+      const elD=document.getElementById('kNorthDate');
+      const elB=document.getElementById('northBadge');
+      const elDesc=document.getElementById('northDesc');
+      if(elV){
+        elV.innerHTML=(today>=0?'+':'')+today.toFixed(0)+'亿'+dot;
+        elV.style.color=today>=0?'var(--green)':'var(--red)';
+      }
+      if(elC){
+        const ws=Math.round(week);
+        elC.textContent='近5日合计 '+(ws>=0?'+':'')+ws+'亿';
+        elC.className='kchange '+(ws>=0?'up':'down');
+      }
+      if(elD) elD.textContent='最新日期 '+sorted[sorted.length-1].TRADE_DATE;
+      if(elB){ elB.textContent='● 实时'; elB.style.background='#d1fae5'; elB.style.color='#065f46'; }
+      if(elDesc) elDesc.textContent='来源: 东方财富数据中心 · 近30交易日北向净流入 ('+sorted[sorted.length-1].TRADE_DATE+')';
+    } else {
+      throw new Error('无数据');
+    }
+  }catch(e){
+    console.warn('[NorthLive]',e.message||e);
+    const elB=document.getElementById('northBadge');
+    const elC=document.getElementById('kNorthChg');
+    if(elB){ elB.textContent='⚠ API受限'; elB.style.background='#fee2e2'; elB.style.color='#991b1b'; }
+    if(elC){ elC.textContent='无法获取实时数据，显示历史季度数据'; elC.className='kchange neu'; }
+  }
 }
 
 // ── 风险仪表盘自动计算 ────────────────────────────────────────
@@ -3406,6 +3541,9 @@ async function refreshMacro(){
     alertEl.textContent='⚠ 所有指标获取失败，显示历史静态数据。详情见控制台(F12)。失败：'+fail.map(r=>r.name+'→'+r.err).join('；');
   }
   btn.classList.remove('loading'); btn.disabled=false;
+
+  // 同步刷新融资融券 + 北向资金
+  fetchMarginNorthLive();
 }
 
 // ── PORTFOLIO PRICE REFRESH ──────────────────────────────────
@@ -3726,9 +3864,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();
   mkStageMatrix();
   renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();renderMag7();
-  fetchStoreLive();    // 异步拉取存储监控实时行情
-  fetchStocksLive();   // 异步拉取光模块&PCB实时行情
-  fetchMonLive();      // 异步拉取产业链监控20日动量
+  fetchStoreLive();         // 异步拉取存储监控实时行情
+  fetchStocksLive();        // 异步拉取光模块&PCB实时行情
+  fetchMonLive();           // 异步拉取产业链监控20日动量
+  fetchMarginNorthLive();   // 异步拉取融资融券+北向资金
   document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
 });
 </script>
