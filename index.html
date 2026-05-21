@@ -246,7 +246,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <button class="tab active" onclick="switchTab(0)">💼 投资组合</button>
   <button class="tab" onclick="switchTab(1)">🧬 产业链阶段</button>
   <button class="tab" onclick="switchTab(2)">📈 AI趋势</button>
-  <button class="tab" onclick="switchTab(3)">📊 A股估值监控</button>
+  <button class="tab" onclick="switchTab(3)">📡 光模块&amp;PCB监控</button>
   <button class="tab" onclick="switchTab(4)">💾 存储监控</button>
   <button class="tab" onclick="switchTab(5)">🇨🇳 A股宏观</button>
   <button class="tab" onclick="switchTab(6)">🔍 产业链监控</button>
@@ -937,11 +937,16 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ════════════════ TAB A股估值 ════════════════ -->
 <div class="tab-content" id="t4">
-  <div class="stitle">A股估值监控 <span class="stag">光模块 & PCB · 关键财务指标</span></div>
+  <div class="stitle">光模块&amp;PCB监控 <span class="stag">光模块 &amp; PCB · 关键财务指标</span>
+    <span id="stockApiTs" style="font-size:10px;color:#94a3b8;margin-left:auto;white-space:nowrap"></span>
+    <button id="stockRefBtn" onclick="fetchStocksLive()" class="rbtn" style="padding:6px 14px;font-size:12px">
+      <span class="ricon">↻</span> 刷新行情
+    </button>
+  </div>
 
   <div class="alert a-info mb16">
     <span>✅</span>
-    <div><strong>数据来源：东方财富 实时接口</strong> &nbsp;·&nbsp; PE(动态) 来自行情 API（价格依赖，随盘变动）&nbsp;·&nbsp; 净利润增速为 <strong>2026年一季报</strong> 归母净利润同比（东方财富 f10 接口）&nbsp;·&nbsp; PEG = PE ÷ 增速 &nbsp;·&nbsp; 数据抓取时间：<span id="stockTs">2026-05-19</span></div>
+    <div><strong>实时数据：东方财富行情 API</strong> &nbsp;·&nbsp; PE(动态)/现价/涨跌幅 随盘实时更新 &nbsp;·&nbsp; 净利润增速为 <strong>2026年一季报</strong> 归母净利润同比（静态历史值）&nbsp;·&nbsp; PEG = PE ÷ 增速 &nbsp;·&nbsp; 最后刷新：<span id="stockTs">—</span></div>
   </div>
 
   <!-- Charts -->
@@ -971,6 +976,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           <th>公司名称</th>
           <th>股票代码</th>
           <th>行业地位</th>
+          <th>现价 / 涨跌</th>
           <th>PE(动态)</th>
           <th>2026Q1 归母净利润增速</th>
           <th>PEG</th>
@@ -990,6 +996,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           <th>公司名称</th>
           <th>股票代码</th>
           <th>行业地位</th>
+          <th>现价 / 涨跌</th>
           <th>PE(动态)</th>
           <th>2026Q1 归母净利润增速</th>
           <th>PEG</th>
@@ -2055,6 +2062,60 @@ function renderNeo(){
   </tr>`).join('');
 }
 
+// ── 光模块&PCB 实时行情 ───────────────────────────────────────
+async function fetchStocksLive(){
+  const ts  = document.getElementById('stockApiTs');
+  const btn = document.getElementById('stockRefBtn');
+  if(ts)  ts.textContent='加载中…';
+  if(btn) btn.disabled=true;
+  try{
+    const all=[...BASE.stocks.optical,...BASE.stocks.pcb];
+    // 首位6→沪市(1.)，其余→深市(0.)
+    const secids=all.map(s=>(s.code[0]==='6'?'1.':'0.')+s.code).join(',');
+    const url='https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2'
+             +'&fields=f2,f3,f9,f12&secids='+secids
+             +'&ut=bd1d9ddb04089700cf9c27f6f7426281';
+    const resp=await fetch(url);
+    const json=await resp.json();
+    const items=(json.data&&json.data.diff)||[];
+    const cmap={};
+    items.forEach(it=>{ if(it.f12!=null) cmap[String(it.f12)]=it; });
+    all.forEach(s=>{
+      const it=cmap[s.code]; if(!it) return;
+      const pe=parseFloat(it.f9);
+      if(pe>0) s.pe=Math.round(pe*10)/10;
+      s._price=parseFloat(it.f2);
+      s._pct  =parseFloat(it.f3);
+      s._live =true;
+    });
+    renderStocks();
+    _updateStockCharts();
+    const now=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('stockTs').textContent=now;
+    if(ts) ts.textContent='已更新 '+now;
+  }catch(e){
+    console.warn('fetchStocksLive:',e);
+    if(ts) ts.textContent='⚠ 加载失败，显示静态数据';
+  }finally{
+    if(btn) btn.disabled=false;
+  }
+}
+
+function _updateStockCharts(){
+  if(CH.optGrowth){
+    const d=BASE.stocks.optical;
+    CH.optGrowth.data.datasets[0].data           =d.map(s=>s.pe);
+    CH.optGrowth.data.datasets[0].backgroundColor=d.map(s=>s.pe>100?'rgba(220,38,38,.6)':s.pe>60?'rgba(245,158,11,.6)':'rgba(5,150,105,.6)');
+    CH.optGrowth.update();
+  }
+  if(CH.pcbGrowth){
+    const d=BASE.stocks.pcb;
+    CH.pcbGrowth.data.datasets[0].data           =d.map(s=>s.pe);
+    CH.pcbGrowth.data.datasets[0].backgroundColor=d.map(s=>s.pe>100?'rgba(220,38,38,.6)':s.pe>60?'rgba(245,158,11,.6)':'rgba(5,150,105,.6)');
+    CH.pcbGrowth.update();
+  }
+}
+
 function mkOptGrowth(){
   const ctx = document.getElementById('cOptGrowth').getContext('2d');
   const d = BASE.stocks.optical;
@@ -2120,22 +2181,35 @@ function renderStocks(){
     'sell':'<span class="sig s-sell">▼ 减持</span>',
   };
   const pegColor=p=>p==null?'#94a3b8':p<1?'var(--green)':p<2?'var(--blue)':'var(--red)';
-  const pegText=p=>p==null?'N/A (负增长)':p.toFixed(2);
+  const pegText=p=>p==null?'N/A':p.toFixed(2);
   const growthCell=g=>{
     if(g==null) return '<span style="color:#94a3b8">—</span>';
     const c=g<0?'var(--red)':g>100?'var(--green)':'var(--blue)';
-    const pre=g>0?'+':'';
-    return `<span style="font-weight:600;color:${c}">${pre}${g}%</span>`;
+    return `<span style="font-weight:600;color:${c}">${g>0?'+':''}${g}%</span>`;
   };
-  const row=r=>`<tr>
-    <td><strong>${r.name}</strong></td>
-    <td style="font-family:monospace;font-size:12px;color:var(--text2)">${r.code}</td>
-    <td class="tx3">${r.role}</td>
-    <td style="font-weight:700;color:${r.pe>100?'var(--red)':r.pe>60?'var(--yellow)':'var(--green)'}">${r.pe}x</td>
-    <td>${growthCell(r.growth)}</td>
-    <td style="font-weight:600;color:${pegColor(r.peg)}">${pegText(r.peg)}</td>
-    <td>${sigHtml[r.sig]||r.sig}</td>
-  </tr>`;
+  const dot='<span style="font-size:7px;vertical-align:super;color:#10b981;margin-left:1px">●</span>';
+  const row=r=>{
+    const live=!!r._live;
+    // 现价 + 涨跌幅
+    let priceCell='<span style="color:#94a3b8;font-size:11px">—</span>';
+    if(live && r._price){
+      const pctColor=(r._pct||0)>=0?'var(--green)':'var(--red)';
+      const pctSign =(r._pct||0)>=0?'+':'';
+      priceCell=`<span style="font-weight:600;font-size:13px">¥${r._price}</span>`
+               +`<br><span style="font-size:10px;color:${pctColor}">${pctSign}${(r._pct||0).toFixed(2)}%</span>`;
+    }
+    const peCell=`<span style="font-weight:700;color:${r.pe>100?'var(--red)':r.pe>60?'var(--yellow)':'var(--green)'}">${r.pe}x${live?dot:''}</span>`;
+    return `<tr>
+      <td><strong>${r.name}</strong></td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text2)">${r.code}</td>
+      <td class="tx3">${r.role}</td>
+      <td>${priceCell}</td>
+      <td>${peCell}</td>
+      <td>${growthCell(r.growth)}</td>
+      <td style="font-weight:600;color:${pegColor(r.peg)}">${pegText(r.peg)}</td>
+      <td>${sigHtml[r.sig]||r.sig}</td>
+    </tr>`;
+  };
   document.getElementById('optBody').innerHTML = BASE.stocks.optical.map(row).join('');
   document.getElementById('pcbBody').innerHTML = BASE.stocks.pcb.map(row).join('');
 }
@@ -3462,7 +3536,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();
   mkStageMatrix();
   renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();renderMag7();
-  fetchStoreLive();  // 异步拉取存储监控实时行情
+  fetchStoreLive();    // 异步拉取存储监控实时行情
+  fetchStocksLive();   // 异步拉取光模块&PCB实时行情
   document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
 });
 </script>
