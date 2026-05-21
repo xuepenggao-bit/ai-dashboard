@@ -2485,6 +2485,7 @@ const PORT_GH_FILE  = 'portfolio.json';
 const PORT_GH_TOKEN = [103,104,112,95,121,57,117,101,122,50,54,98,115,99,71,99,72,50,50,117,90,103,78,84,50,100,111,103,80,48,106,50,114,81,52,83,54,68,115,73].map(c=>String.fromCharCode(c)).join('');
 let PORT = null;
 let _PORT_PRICES = {};
+let _PORT_HV     = {};   // code → 20日年化历史波动率(%)
 let _portSort = {col:null, dir:-1};
 let _portDirty = false;   // 有本地修改未同步到云端时为 true
 
@@ -2692,6 +2693,15 @@ function renderPortfolio(){
       const pctCell = pi
         ? `<span style="display:inline-block;background:${pctBg};color:${pctCol};font-weight:800;font-size:15px;padding:4px 10px;border-radius:7px;letter-spacing:-.01em">${pi.pct>0?'+':''}${Number(pi.pct).toFixed(2)}%</span>`
         : `<span style="color:var(--text2);font-size:13px">—</span>`;
+      // 历史波动率列
+      const hv = _PORT_HV[sk.code];
+      const hvCell = (hv!=null)
+        ? (()=>{
+            const c = hv>50?'#dc2626':hv>30?'#d97706':'#059669';
+            const bg= hv>50?'#fff1f2':hv>30?'#fffbeb':'#f0fdf4';
+            return `<span style="display:inline-block;background:${bg};color:${c};font-size:13px;font-weight:700;padding:3px 8px;border-radius:6px">${hv.toFixed(1)}%</span>`;
+          })()
+        : `<span style="color:var(--text2);font-size:13px">—</span>`;
       return `<tr>
         <td style="font-weight:700;font-size:15px;color:var(--text)">${sk.name}</td>
         <td class="col-code" style="font-family:monospace;font-size:13px;color:var(--text2)">${sk.code}</td>
@@ -2699,13 +2709,14 @@ function renderPortfolio(){
         <td class="col-price" style="text-align:right">${priceCell}</td>
         <td style="text-align:right">${pctCell}</td>
         <td style="text-align:right">${sk.w!=null?'<strong style="color:var(--blue);font-size:15px">'+sk.w.toFixed(1)+'%</strong>':'<span style="color:var(--text2);font-size:13px">—</span>'}</td>
+        <td style="text-align:right">${hvCell}</td>
         <td class="col-note" style="color:var(--text2);font-size:13px">${sk.note||''}</td>
         <td style="white-space:nowrap">
           <button class="btn-edit" onclick="openPortModal('edit',${si},${ki})" style="background:none;border:1.5px solid var(--blue);color:var(--blue);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600">编辑</button>
           <button class="btn-del"  onclick="delPortStock(${si},${ki})"         style="background:none;border:1.5px solid #fca5a5;color:var(--red);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;margin-left:5px">删除</button>
         </td>
       </tr>`;}).join('')
-    : `<tr><td colspan="8" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
+    : `<tr><td colspan="9" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
     return `<div class="card mb16" style="overflow:hidden">
       <div class="sec-header">
         <span style="width:20px;height:20px;border-radius:6px;background:${sec.color};display:inline-block;flex-shrink:0;box-shadow:0 2px 6px ${sec.color}55"></span>
@@ -2731,6 +2742,7 @@ function renderPortfolio(){
             <th class="th-price" style="text-align:right">当前股价</th>
             <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
             <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
+            <th style="text-align:right;white-space:nowrap;color:#7c3aed">20日波动率</th>
             <th class="th-note">备注</th>
             <th>操作</th>
           </tr></thead><tbody>${rows}</tbody></table>
@@ -3590,6 +3602,102 @@ function _isTradingNow(){
   return (m>=570&&m<=690)||(m>=780&&m<900);
 }
 
+// ── iVIX / 市场波动率 ───────────────────────────────────────
+async function fetchVixRow(listEl){
+  if(!listEl) return;
+  let vixVal=null, vixPct=null, isRV=false;
+
+  // ① 尝试东方财富 iVIX 行情 (上证波动率指数 000188)
+  try{
+    const url='https://push2.eastmoney.com/api/qt/stock/get?secid=1.000188&fields=f2,f3&_='+Date.now();
+    const j=await (await fetch(url)).json();
+    const d=j?.data;
+    if(d && d.f2>0 && d.f2<200){ vixVal=d.f2; vixPct=d.f3; }
+  }catch(e){}
+
+  // ② 备选：上证指数20日已实现波动率（年化）
+  if(!vixVal){
+    try{
+      const url='https://push2his.eastmoney.com/api/qt/stock/kline/get'
+              +'?secid=1.000001&fields1=f1,f2&fields2=f51,f52,f53&klt=101&fqt=0&beg=0&end=20500101&lmt=22';
+      const j=await (await fetch(url)).json();
+      const kl=j?.data?.klines||[];
+      if(kl.length>=12){
+        const cl=kl.map(k=>parseFloat(k.split(',')[2]));
+        const rt=[];
+        for(let i=1;i<cl.length;i++) rt.push(Math.log(cl[i]/cl[i-1]));
+        const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
+        const vr=rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1);
+        vixVal=+(Math.sqrt(vr*252)*100).toFixed(2);
+        isRV=true;
+      }
+    }catch(e){}
+  }
+
+  if(!vixVal) return;
+  const label   = isRV?'市场波动率 (20日RV)':'iVIX 波动率指数';
+  const subLbl  = isRV?'上证指数20日已实现波动率（年化）':'上证50ETF期权隐含波动率';
+  const vLevel  = vixVal>30?'高波动':vixVal>20?'中等':vixVal>12?'低波动':'极低';
+  const vLvlClr = vixVal>30?'#dc2626':vixVal>20?'#d97706':'#059669';
+
+  // 分隔线
+  const sep=document.createElement('div');
+  sep.style.cssText='height:1px;background:linear-gradient(90deg,transparent,#c4b5fd 40%,transparent);margin:8px 2px 6px';
+  listEl.appendChild(sep);
+
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;align-items:center;padding:9px 12px;border-radius:8px;'
+    +'background:linear-gradient(135deg,#faf5ff 0%,#ede9fe 100%);margin-bottom:4px;'
+    +'border-left:3px solid #7c3aed;box-shadow:0 2px 8px rgba(124,58,237,.1)';
+  row.innerHTML=`
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:700;color:#5b21b6;letter-spacing:.01em">${label}
+        <span style="font-size:9px;background:#ede9fe;color:#7c3aed;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:600">● 实时</span>
+      </div>
+      <div style="font-size:10px;color:#8b5cf6;margin-top:2px">${subLbl}</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0;margin-left:8px">
+      <div style="font-size:20px;font-weight:900;color:#5b21b6;letter-spacing:-.02em;line-height:1.1">
+        ${vixVal.toFixed(2)}<span style="font-size:11px;font-weight:600;margin-left:1px">%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:2px">
+        <span style="font-size:10px;font-weight:700;background:${vLvlClr}22;color:${vLvlClr};padding:1px 6px;border-radius:4px">${vLevel}</span>
+        ${vixPct!=null?`<span style="font-size:11px;font-weight:700;color:${vixPct>0?'#dc2626':'#16a34a'}">${vixPct>0?'+':''}${Number(vixPct).toFixed(2)}%</span>`:''}
+      </div>
+    </div>`;
+  listEl.appendChild(row);
+}
+
+// ── 个股20日历史波动率 ──────────────────────────────────────
+async function fetchPortHV(){
+  if(!PORT||!PORT.sectors) return;
+  const tasks=[];
+  PORT.sectors.forEach(sec=>sec.stocks.forEach(sk=>{
+    if(sk.mkt!=='SH'&&sk.mkt!=='SZ') return;
+    const sid=(sk.mkt==='SH'?'1':'0')+'.'+sk.code;
+    tasks.push({code:sk.code,sid});
+  }));
+  if(!tasks.length) return;
+
+  const res=await Promise.allSettled(tasks.map(async t=>{
+    const url='https://push2his.eastmoney.com/api/qt/stock/kline/get'
+             +`?secid=${t.sid}&fields1=f1,f2&fields2=f51,f52,f53&klt=101&fqt=1&beg=0&end=20500101&lmt=22`;
+    const j=await (await fetch(url)).json();
+    const kl=j?.data?.klines||[];
+    if(kl.length<10) return null;
+    const cl=kl.map(k=>parseFloat(k.split(',')[2]));
+    const rt=[];
+    for(let i=1;i<cl.length;i++) rt.push(Math.log(cl[i]/cl[i-1]));
+    const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
+    const vr=rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1);
+    return {code:t.code, hv:+(Math.sqrt(vr*252)*100).toFixed(1)};
+  }));
+
+  let updated=false;
+  res.forEach(r=>{ if(r.status==='fulfilled'&&r.value){ _PORT_HV[r.value.code]=r.value.hv; updated=true; } });
+  if(updated) renderPortfolio();
+}
+
 // ── 主要指数实时行情 ────────────────────────────────────────
 // 腾讯 API 的指数（前4个，GBK解码）
 const _IDX_TENCENT = [
@@ -3673,6 +3781,8 @@ async function fetchIndexPrices(){
   }
 
   if(btn) btn.disabled = false;
+  // 附加 iVIX / 市场波动率行
+  fetchVixRow(listEl);
 }
 
 async function fetchPortPrices(){
@@ -3732,6 +3842,7 @@ async function fetchPortPrices(){
     renderPortTop3();
     _renderPortTopW();
     fetchIndexPrices();   // 刷新股价时同步更新主要指数
+    fetchPortHV();        // 同步拉取个股20日历史波动率
     btn.classList.remove('loading'); btn.disabled = false;
   }
 }
