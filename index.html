@@ -655,17 +655,19 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- Row 1: 主要指数 + TOP5涨跌 + 重仓TOP5 -->
   <div class="g4 mb16">
     <!-- 主要指数 -->
-    <div class="card" style="min-width:0;border-top:3px solid #f59e0b">
-      <div class="klabel" style="display:flex;align-items:center;justify-content:space-between">
-        <span style="color:#b45309;font-weight:700">📊 主要指数</span>
-        <button onclick="fetchIndexPrices()" id="idxRefBtn"
-          style="background:none;border:1px solid #fde68a;color:#b45309;border-radius:6px;
-                 padding:2px 8px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">↻ 刷新</button>
+    <div class="card" style="min-width:0;border-top:3px solid #f59e0b;background:linear-gradient(135deg,#fffbeb 0%,#fff 60%)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:14px;font-weight:800;color:#92400e;letter-spacing:.02em">📊 主要指数</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:10px;color:#a16207" id="idxTs"></span>
+          <button onclick="fetchIndexPrices()" id="idxRefBtn"
+            style="background:#fef3c7;border:1px solid #fde68a;color:#b45309;border-radius:6px;
+                   padding:3px 10px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700">↻ 刷新</button>
+        </div>
       </div>
-      <div id="portIndexList" style="margin-top:6px">
+      <div id="portIndexList">
         <div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0">加载中…</div>
       </div>
-      <div style="font-size:10px;color:var(--text2);margin-top:6px;text-align:right" id="idxTs"></div>
     </div>
 
     <!-- 今日涨幅 TOP 5 -->
@@ -708,17 +710,23 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- Row 2: 持仓概览 + 仓位分配 + 新增分类 -->
   <div class="g3 mb16">
     <!-- 持仓概览 -->
-    <div class="card" style="border-top:3px solid var(--blue)">
-      <div class="klabel">📂 持仓概览</div>
-      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
-        <span class="kval tb" id="pKpiWeight">—</span>
-        <span style="font-size:13px;color:var(--text2);font-weight:500">总仓位</span>
+    <div class="card" style="border-top:3px solid var(--blue);background:linear-gradient(135deg,#eff6ff 0%,#fff 60%)">
+      <div class="klabel" style="font-size:14px;font-weight:800;color:var(--blue);letter-spacing:.02em">📂 持仓概览</div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin:8px 0 10px">
+        <span class="kval tb" id="pKpiWeight" style="font-size:42px;letter-spacing:-.03em;color:#1d4ed8">—</span>
+        <span style="font-size:15px;color:#3b82f6;font-weight:700">总仓位</span>
       </div>
-      <div class="tx3 mt4">
-        持仓 <strong id="pKpiStocks" style="color:var(--text)">—</strong> 只 ·
-        <span id="pKpiSectors">—</span> 个分类
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <div style="background:#dbeafe;border-radius:8px;padding:6px 12px;text-align:center">
+          <div style="font-size:20px;font-weight:900;color:#1d4ed8;line-height:1.1" id="pKpiStocks">—</div>
+          <div style="font-size:11px;color:#3b82f6;font-weight:600;margin-top:2px">持仓只数</div>
+        </div>
+        <div style="background:#e0f2fe;border-radius:8px;padding:6px 12px;text-align:center">
+          <div style="font-size:20px;font-weight:900;color:#0369a1;line-height:1.1" id="pKpiSectors">—</div>
+          <div style="font-size:11px;color:#0284c7;font-weight:600;margin-top:2px">分类数</div>
+        </div>
       </div>
-      <div class="tx3 mt4" id="pKpiHk">—</div>
+      <div style="font-size:12px;color:#64748b;margin-top:10px;font-weight:500" id="pKpiHk">—</div>
     </div>
 
     <!-- 仓位分配图表 -->
@@ -2112,7 +2120,7 @@ function renderPortfolio(){
   const secWeights = PORT.sectors.map(s=>s.stocks.reduce((a,sk)=>a+(sk.w||0),0));
   const wSum  = secWeights.reduce((a,w)=>a+w,0);
   const hkCnt = PORT.sectors.reduce((a,s)=>a+s.stocks.filter(sk=>sk.mkt==='HK').length,0);
-  document.getElementById('pKpiStocks').textContent  = total+'只';
+  document.getElementById('pKpiStocks').textContent  = total;
   document.getElementById('pKpiSectors').textContent = PORT.sectors.length;
   document.getElementById('pKpiWeight').textContent  = wSum.toFixed(1)+'%';
   document.getElementById('pKpiHk').textContent      = '含港股 '+hkCnt+' 只';
@@ -2878,11 +2886,11 @@ const _IDX_TENCENT = [
   {tc:'sz399006', label:'创业板指'},
   {tc:'sh000688', label:'科创 50'},
 ];
-// 东方财富 API 的指数（后2个，需 Eastmoney secid 格式）
-// 中证全指 = 1.000985；A股均价 = 尝试 1.80005 / 0.80005
+// 东方财富 API 的指数（后2个）
+// 中证全指 secid=1.000985；A股均价 secid=47.800005（code=800005）
 const _IDX_EM = [
-  {secids:['1.000985'],         code:'000985', label:'中证全指'},
-  {secids:['1.80005','0.80005'],code:'80005',  label:'A股均价'},
+  {secids:['1.000985'],  code:'000985', label:'中证全指'},
+  {secids:['47.800005'], code:'800005', label:'A股均价'},
 ];
 
 async function fetchIndexPrices(){
@@ -2939,13 +2947,14 @@ async function fetchIndexPrices(){
       const dn    = r.pct < 0;
       const color = up ? '#16a34a' : dn ? '#dc2626' : 'var(--text2)';
       const bg    = up ? '#f0fdf4' : dn ? '#fff5f5' : '#f8fafc';
+      const arrow = up ? '▲' : dn ? '▼' : '─';
       const sign  = up ? '+' : '';
-      return `<div style="display:flex;align-items:center;padding:5px 8px;border-radius:7px;
-                           background:${bg};margin-bottom:4px">
-        <span style="flex:1;font-size:12px;font-weight:600;color:var(--text)">${r.label}</span>
-        <span style="font-size:12px;color:var(--text2);margin-right:10px">${r.price.toFixed(2)}</span>
-        <span style="font-size:13px;font-weight:800;color:${color};min-width:54px;text-align:right;
-                     letter-spacing:-.01em">${sign}${r.pct.toFixed(2)}%</span>
+      return `<div style="display:flex;align-items:center;padding:7px 10px;border-radius:8px;
+                           background:${bg};margin-bottom:5px;border-left:3px solid ${color}">
+        <span style="flex:1;font-size:13px;font-weight:700;color:var(--text);letter-spacing:.01em">${r.label}</span>
+        <span style="font-size:13px;font-weight:600;color:#475569;margin-right:12px">${r.price.toFixed(2)}</span>
+        <span style="font-size:15px;font-weight:900;color:${color};min-width:62px;text-align:right;
+                     letter-spacing:-.01em">${arrow} ${sign}${r.pct.toFixed(2)}%</span>
       </div>`;
     }).join('');
     if(tsEl) tsEl.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) + ' 更新';
