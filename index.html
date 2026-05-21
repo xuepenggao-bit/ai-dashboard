@@ -175,35 +175,46 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 #tPort .mtable td{padding:14px 16px;font-size:14px}
 #tPort .mtable tr:hover td{background:#f0f5ff}
 #tPort .mkt-badge{font-size:11px;padding:3px 9px;border-radius:5px;font-weight:700}
-/* 修复移动端截断：改用 overflow-x:auto 支持横向滚动 */
-#tPort .overflow{border-radius:0 0 10px 10px;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch}
-/* 防止单元格换行导致列宽压缩 */
-#tPort .mtable th,#tPort .mtable td{white-space:nowrap}
-/* 备注列允许换行且有最大宽度 */
-#tPort .mtable td.col-note{white-space:normal;max-width:140px;word-break:break-all}
+/* 横向滚动容器 —— overflow-y必须用hidden，visible+auto在CSS规范中会互相提升 */
+#tPort .overflow{
+  border-radius:0 0 10px 10px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  display:block;          /* 确保块级宽度 */
+}
+/* 防止单元格内容换行导致列宽被压缩 */
+#tPort .mtable th,
+#tPort .mtable td{white-space:nowrap}
+/* 备注列例外：允许换行 */
+#tPort .mtable td.col-note{white-space:normal;max-width:120px;word-break:break-all}
 
 /* ── 移动端响应式：≤768px ────────────────────────────────── */
 @media(max-width:768px){
-  /* 投资组合 KPI 卡片 2列布局 */
+  /* KPI 4格变2列 */
   #tPort .g4{grid-template-columns:1fr 1fr}
-  #tPort .kval{font-size:28px}
+  #tPort .kval{font-size:26px}
   #tPort .klabel{font-size:12px}
-
-  /* 分类头部竖排 */
+  /* 分类头部自适应 */
   #tPort .sec-header{flex-wrap:wrap;gap:8px;padding:12px 14px;margin:-14px -14px 0 -14px}
-
-  /* 表格字体缩小 */
-  #tPort .mtable th{font-size:11px;padding:8px 10px}
-  #tPort .mtable td{font-size:13px;padding:10px 10px}
-
-  /* 在小屏隐藏次要列：代码、备注 */
-  #tPort .col-code,#tPort .th-code{display:none}
+  /* 表格紧凑 */
+  #tPort .mtable th{font-size:11px;padding:7px 9px}
+  #tPort .mtable td{font-size:13px;padding:9px 9px}
+  /* 隐藏：代码、备注 */
+  #tPort .col-code,#tPort .th-code,
   #tPort .col-note,#tPort .th-note{display:none}
 }
+@media(max-width:600px){
+  /* 再隐藏：当前股价 */
+  #tPort .col-price,#tPort .th-price{display:none}
+}
 @media(max-width:480px){
-  /* 极小屏再隐藏市场列 */
+  /* 再隐藏：市场标签 */
   #tPort .col-mkt,#tPort .th-mkt{display:none}
-  #tPort .kval{font-size:24px}
+  #tPort .kval{font-size:22px}
+  /* 操作按钮缩短 */
+  #tPort .btn-edit{font-size:11px;padding:4px 8px}
+  #tPort .btn-del {font-size:11px;padding:4px 8px;margin-left:3px}
 }
 </style>
 </head>
@@ -2046,13 +2057,13 @@ function renderPortfolio(){
         <td style="font-weight:700;font-size:15px;color:var(--text)">${sk.name}</td>
         <td class="col-code" style="font-family:monospace;font-size:13px;color:var(--text2)">${sk.code}</td>
         <td class="col-mkt"><span class="mkt-badge" style="${mktStyle[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span></td>
-        <td style="text-align:right">${priceCell}</td>
+        <td class="col-price" style="text-align:right">${priceCell}</td>
         <td style="text-align:right">${pctCell}</td>
         <td style="text-align:right">${sk.w!=null?'<strong style="color:var(--blue);font-size:15px">'+sk.w.toFixed(1)+'%</strong>':'<span style="color:var(--text2);font-size:13px">—</span>'}</td>
         <td class="col-note" style="color:var(--text2);font-size:13px">${sk.note||''}</td>
         <td style="white-space:nowrap">
-          <button onclick="openPortModal('edit',${si},${ki})" style="background:none;border:1.5px solid var(--blue);color:var(--blue);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600">编辑</button>
-          <button onclick="delPortStock(${si},${ki})" style="background:none;border:1.5px solid #fca5a5;color:var(--red);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;margin-left:5px">删除</button>
+          <button class="btn-edit" onclick="openPortModal('edit',${si},${ki})" style="background:none;border:1.5px solid var(--blue);color:var(--blue);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600">编辑</button>
+          <button class="btn-del"  onclick="delPortStock(${si},${ki})"         style="background:none;border:1.5px solid #fca5a5;color:var(--red);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;margin-left:5px">删除</button>
         </td>
       </tr>`;}).join('')
     : `<tr><td colspan="8" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
@@ -2075,7 +2086,7 @@ function renderPortfolio(){
           <th>股票名称</th>
           <th class="th-code">代码</th>
           <th class="th-mkt">市场</th>
-          <th style="text-align:right">当前股价</th>
+          <th class="th-price" style="text-align:right">当前股价</th>
           <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
           <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
           <th class="th-note">备注</th>
@@ -2879,48 +2890,68 @@ function renderPortTop3(){
   downEl.innerHTML = bot5.map(function(s,i){ return mkRow(s,i+1,false); }).join('');
 }
 
-// ── 重仓 TOP5（独立函数，页面初始即可渲染，刷新股价后联动更新）──
+// ── 重仓 TOP5（与今日涨幅TOP5逻辑一致：依赖 _PORT_PRICES，刷新后展示）──
 function _renderPortTopW(){
   var wEl = document.getElementById('portTop5W');
   if(!wEl) return;
 
-  // 收集所有有仓位记录的股票（不要求已有价格）
+  // 没有价格数据时保持占位提示，等待用户点击"刷新股价"
+  if(!_PORT_PRICES || !Object.keys(_PORT_PRICES).length){
+    // 如果仍是初始状态（未刷新过），保留 HTML 中的默认提示不动
+    return;
+  }
+
+  // 建立 code→w 的快查表（从 PORT 持仓数据读取各股仓位）
+  var codeW = {};
+  if(typeof PORT !== 'undefined' && PORT && PORT.sectors){
+    PORT.sectors.forEach(function(sec){
+      sec.stocks.forEach(function(sk){
+        codeW[sk.code] = (sk.w != null) ? sk.w : null;
+      });
+    });
+  }
+
+  // 收集已获取到股价的持仓（与今日涨幅TOP5完全一致的数据源）
   var wEntries = [];
   if(typeof PORT !== 'undefined' && PORT && PORT.sectors){
     PORT.sectors.forEach(function(sec){
       sec.stocks.forEach(function(sk){
-        if(sk.w != null && sk.w > 0){
-          var pi = _PORT_PRICES[sk.code];
+        var pi = _PORT_PRICES[sk.code];
+        if(pi && isFinite(pi.pct)){
           wEntries.push({
-            name:  (pi && pi.name) || sk.name,
-            mkt:   (pi && pi.mkt)  || sk.mkt,
-            w:     sk.w,
-            pct:   pi ? pi.pct   : null,
-            price: pi ? pi.price : null
+            name:  pi.name || sk.name,
+            mkt:   pi.mkt  || sk.mkt,
+            w:     codeW[sk.code],   // null 表示未设置
+            pct:   pi.pct,
+            price: pi.price
           });
         }
       });
     });
   }
-  // 按仓位降序
-  wEntries.sort(function(a,b){ return b.w - a.w; });
-  var topW = wEntries.slice(0, 5);
 
-  if(!topW.length){
-    wEl.innerHTML = '<div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0">暂无仓位数据</div>';
+  if(!wEntries.length){
+    wEl.innerHTML = '<div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0">暂无数据</div>';
     return;
   }
 
+  // 按仓位降序；未设置仓位的排最后
+  wEntries.sort(function(a,b){
+    var wa = a.w != null ? a.w : -1;
+    var wb = b.w != null ? b.w : -1;
+    return wb - wa;
+  });
+  var topW = wEntries.slice(0, 5);
+
   wEl.innerHTML = topW.map(function(item, i){
-    var rank = i + 1;
-    var hasPct = item.pct != null && isFinite(item.pct);
-    var pctColor = hasPct ? (item.pct > 0 ? 'var(--green)' : item.pct < 0 ? 'var(--red)' : 'var(--text2)') : '#94a3b8';
-    var bgRow    = hasPct ? (item.pct > 0 ? (rank===1?'#f0fdf4':'#fff') : item.pct < 0 ? (rank===1?'#fff5f5':'#fff') : '#fff') : '#fff';
-    var sign     = hasPct && item.pct >= 0 ? '+' : '';
-    var pctText  = hasPct ? sign+Number(item.pct).toFixed(2)+'%' : '—';
-    var priceText= (hasPct && item.price != null)
-      ? '现价 '+(item.mkt==='HK' ? Number(item.price).toFixed(3) : Number(item.price).toFixed(2))
-      : '股价未加载';
+    var rank     = i + 1;
+    var pctColor = item.pct > 0 ? 'var(--green)' : item.pct < 0 ? 'var(--red)' : 'var(--text2)';
+    var bgRow    = item.pct > 0 ? (rank===1?'#f0fdf4':'#fff') : item.pct < 0 ? (rank===1?'#fff5f5':'#fff') : '#fff';
+    var sign     = item.pct >= 0 ? '+' : '';
+    var priceStr = item.mkt==='HK' ? Number(item.price).toFixed(3) : Number(item.price).toFixed(2);
+    var wLine    = item.w != null
+      ? '<div style="font-size:11px;color:var(--blue);font-weight:700;margin-top:2px">仓位 '+Number(item.w).toFixed(1)+'%</div>'
+      : '<div style="font-size:11px;color:var(--text2);margin-top:2px">仓位未设置</div>';
     return '<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;'
          + 'border-radius:8px;background:'+bgRow+';margin-bottom:5px">'
       + '<span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:#dbeafe;'
@@ -2929,11 +2960,12 @@ function _renderPortTopW(){
       + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:14px;font-weight:700;color:var(--text);overflow:hidden;'
       + 'text-overflow:ellipsis;white-space:nowrap" title="'+item.name+'">'+item.name+'</div>'
-      + '<div style="font-size:11px;color:var(--blue);font-weight:700;margin-top:2px">仓位 '+Number(item.w).toFixed(1)+'%</div>'
+      + wLine
       + '</div>'
       + '<div style="text-align:right;flex-shrink:0">'
-      + '<div style="font-size:20px;font-weight:900;color:'+pctColor+';line-height:1.1;letter-spacing:-.01em">'+pctText+'</div>'
-      + '<div style="font-size:11px;color:var(--text2);margin-top:1px">'+priceText+'</div>'
+      + '<div style="font-size:20px;font-weight:900;color:'+pctColor+';line-height:1.1;letter-spacing:-.01em">'
+      + sign+Number(item.pct).toFixed(2)+'%</div>'
+      + '<div style="font-size:11px;color:var(--text2);margin-top:1px">现价 '+priceStr+'</div>'
       + '</div>'
       + '</div>';
   }).join('');
