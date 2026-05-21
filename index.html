@@ -1161,7 +1161,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <div class="tab-content" id="tStage">
   <div class="stitle">A股AI产业链所处阶段
     <span class="stag" style="background:rgba(124,58,237,.08);color:var(--purple)">Bernstein Style Framework</span>
-    <button onclick="mkStageMatrix()" class="rbtn" style="margin-left:auto;padding:6px 14px;font-size:12px">
+    <span id="stageApiTs" style="font-size:10px;color:#94a3b8;margin-left:auto;white-space:nowrap"></span>
+    <button onclick="mkStageMatrix()" id="stageFreshBtn" class="rbtn" style="padding:6px 14px;font-size:12px">
       <span class="ricon">↻</span> 刷新
     </button>
   </div>
@@ -1217,9 +1218,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   <!-- 六维矩阵总览表 -->
   <div class="card mb16">
-    <div class="ch">
+    <div class="ch" style="flex-wrap:wrap;gap:6px">
       <span class="ct">六维风格画像矩阵总览</span>
       <span class="cbadge">§2.2 完整10环节</span>
+      <span style="font-size:10px;color:#10b981;font-weight:600;white-space:nowrap">● 实时API: ②估值安全 ④资金热度 ⑤上行确定</span>
+      <span style="font-size:10px;color:#94a3b8;white-space:nowrap">○ 人工基准: ①盈利弹性 ③产业动能 ⑥风险可控</span>
     </div>
     <div class="overflow">
       <table class="mtable">
@@ -2573,10 +2576,90 @@ function renderMag7(){
 }
 
 // ── §2.2 产业链阶段矩阵 ───────────────────────────────────────
-function mkStageMatrix(){
+// 每行的代表标的（取第一只A股，用于实时拉取PE/换手率/20日涨跌幅）
+const STAGE_SECIDS=[
+  '0.000977',  // 浪潮信息  — AI算力/服务器
+  '0.002916',  // 深南电路  — AI-PCB/CCL
+  '1.688041',  // 海光信息  — 国产AI芯片
+  '1.603986',  // 兆易创新  — AI存储
+  '0.300499',  // 高澜股份  — 电源/散热/液冷
+  '0.002230',  // 科大讯飞  — 国内AI应用层
+  '0.300308',  // 中际旭创  — 光模块/CPO
+  '0.300442',  // 润泽科技  — AIDC数据中心
+  '0.300383',  // 光环新网  — IDC传统
+  '1.600588',  // 用友网络  — AI软件/SaaS
+];
+
+// ② PE(动态) → 估值安全分（PE越低越安全，越高越危险）
+function _peToSafety(pe){
+  const v=parseFloat(pe);
+  if(!v||v<=0) return 8;                              // 亏损
+  if(v<20)  return 90;
+  if(v<35)  return Math.round(90-(v-20)*1.47);        // 90→68
+  if(v<55)  return Math.round(68-(v-35)*1.25);        // 68→43
+  if(v<100) return Math.round(43-(v-55)*0.51);        // 43→20
+  return Math.max(5, Math.round(20-(v-100)*0.1));
+}
+// ④ 换手率% → 资金热度分
+function _trToHeat(tr){
+  const v=parseFloat(tr);
+  if(!v||v<0) return 20;
+  return Math.min(95,Math.max(10,Math.round(10+v*17)));
+}
+// ⑤ 20日涨跌幅% → 上行确定分（动量代理）
+function _pct20ToUpside(pct){
+  const v=parseFloat(pct);
+  if(isNaN(v)) return 50;
+  return Math.min(95,Math.max(10,Math.round(55+v*1.5)));
+}
+
+// 拉取实时数据并更新 dims[1] dims[3] dims[4]
+async function fetchStageData(){
+  const ts =document.getElementById('stageApiTs');
+  const btn=document.getElementById('stageFreshBtn');
+  if(ts)  ts.textContent='② ④ ⑤ 加载中…';
+  if(btn) btn.disabled=true;
+  try{
+    const url='https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2'
+            + '&fields=f2,f9,f22,f25,f12'
+            + '&secids='+STAGE_SECIDS.join(',')
+            + '&ut=bd1d9ddb04089700cf9c27f6f7426281';
+    const resp=await fetch(url);
+    const json=await resp.json();
+    const items=(json.data&&json.data.diff)||[];
+    // code → item 映射
+    const codeMap={};
+    items.forEach(it=>{ if(it.f12!=null) codeMap[String(it.f12)]=it; });
+    let updated=0;
+    STAGE_SECIDS.forEach((sid,i)=>{
+      const code=sid.split('.')[1];
+      const it=codeMap[code];
+      if(!it) return;
+      const s=BASE.stageMatrix[i];
+      const pe=it.f9, tr=it.f22, p20=it.f25;
+      if(pe!=null&&pe!=='-'&&parseFloat(pe)!==0) s.dims[1]=_peToSafety(pe);
+      if(tr!=null&&tr!=='-')                      s.dims[3]=_trToHeat(tr);
+      if(p20!=null&&p20!=='-')                    s.dims[4]=_pct20ToUpside(p20);
+      s._live={pe,tr,p20};
+      updated++;
+    });
+    const now=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    if(ts) ts.textContent='实时更新 '+now+' ('+updated+'/10)';
+  }catch(e){
+    console.warn('fetchStageData:',e);
+    if(ts) ts.textContent='API离线，显示基准值';
+  }finally{
+    if(btn) btn.disabled=false;
+  }
+}
+
+async function mkStageMatrix(){
   _renderStageTrack();
   _renderStageTable();
   _renderStageRadars();
+  await fetchStageData();
+  _renderStageTable();   // 用实时数据重绘表格
+  _renderStageRadars();  // 用实时数据重绘雷达图
 }
 
 function _renderStageTrack(){
@@ -2661,12 +2744,30 @@ function _renderStageTable(){
   };
   const bar=v=>`<div style="width:100%;background:#e2e8f0;border-radius:2px;height:3px;margin-top:3px"><div style="width:${v}%;height:100%;border-radius:2px;background:currentColor;opacity:.45"></div></div>`;
 
+  // 实时维度索引 及对应原始值标签
+  const LIVE_IDX=[1,3,4];
+  const LIVE_KEY=['pe','tr','p20'];
+  const LIVE_LBL=['PE','换手率%','20日%'];
+
   const rows=BASE.stageMatrix.map((s,i)=>{
     const sig=sigCfg[s.sigKey]||sigCfg['hold'];
     const sc=stageCfg[s.stageN]||{bg:'#f8fafc',color:'#64748b'};
-    const dimCells=s.dims.map(v=>`<td style="text-align:center;padding:10px 6px">
-      <span style="${dc(v)};font-size:12px;font-weight:700;padding:3px 8px;border-radius:5px;display:inline-block;min-width:32px">${v}${bar(v)}</span>
-    </td>`).join('');
+    const dimCells=s.dims.map((v,di)=>{
+      const li=LIVE_IDX.indexOf(di);
+      const isLive=li>=0 && s._live;
+      let rawHtml='';
+      if(isLive){
+        const rv=s._live[LIVE_KEY[li]];
+        if(rv!=null&&rv!=='-'){
+          rawHtml=`<div style="font-size:9px;color:#94a3b8;margin-top:2px;line-height:1.2">${LIVE_LBL[li]} ${parseFloat(rv).toFixed(1)}</div>`;
+        }
+      }
+      const dot=isLive?'<span style="font-size:7px;vertical-align:super;color:#10b981;margin-left:1px">●</span>':'';
+      return `<td style="text-align:center;padding:10px 6px">
+        <span style="${dc(v)};font-size:12px;font-weight:700;padding:3px 8px;border-radius:5px;display:inline-block;min-width:32px">${v}${dot}${bar(v)}</span>
+        ${rawHtml}
+      </td>`;
+    }).join('');
     const bg=i%2===1?'background:#fafcff':'';
     return `<tr style="${bg}">
       <td>
