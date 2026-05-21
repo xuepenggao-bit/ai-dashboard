@@ -2013,6 +2013,7 @@ const PORT_GH_TOKEN = [103,104,112,95,121,57,117,101,122,50,54,98,115,99,71,99,7
 let PORT = null;
 let _PORT_PRICES = {};
 let _portSort = {col:null, dir:-1};
+let _portDirty = false;   // 有本地修改未同步到云端时为 true
 
 function togglePortSort(col){
   if(_portSort.col===col) _portSort.dir*=-1;
@@ -2064,6 +2065,7 @@ async function portSaveRemote(){
       method:'PUT', headers, body: JSON.stringify(body)
     });
     if(res.ok){
+      _portDirty = false;   // 同步成功，清除 dirty 标志
       _setSyncTs('☁️ 已同步 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}), '#10b981');
     } else {
       const err = await res.json().catch(()=>({}));
@@ -2078,7 +2080,8 @@ async function portSaveRemote(){
 /* 本地 + 远程双写 */
 function portSave(){
   localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
-  portSaveRemote();   // 后台异步，不阻塞 UI
+  _portDirty = true;    // 标记有改动，等待定时同步
+  portSaveRemote();     // 同时立即触发一次推送
 }
 
 /* 读取本地 localStorage 数据（fallback） */
@@ -2142,6 +2145,14 @@ async function portInit(){
 
   renderPortfolio();
   fetchIndexPrices();
+
+  // ── 2分钟自动同步：有改动才推送，无改动跳过 ──────────────
+  setInterval(function(){
+    if(_portDirty && PORT){
+      console.log('[AutoSync] dirty=true, pushing to GitHub...');
+      portSaveRemote();
+    }
+  }, 2 * 60 * 1000);   // 120 000 ms = 2 分钟
 }
 
 /* 手动强制将当前数据推送到云端（用于应急修复） */
