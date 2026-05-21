@@ -175,7 +175,36 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 #tPort .mtable td{padding:14px 16px;font-size:14px}
 #tPort .mtable tr:hover td{background:#f0f5ff}
 #tPort .mkt-badge{font-size:11px;padding:3px 9px;border-radius:5px;font-weight:700}
-#tPort .overflow{border-radius:0 0 10px 10px;overflow:hidden}
+/* 修复移动端截断：改用 overflow-x:auto 支持横向滚动 */
+#tPort .overflow{border-radius:0 0 10px 10px;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch}
+/* 防止单元格换行导致列宽压缩 */
+#tPort .mtable th,#tPort .mtable td{white-space:nowrap}
+/* 备注列允许换行且有最大宽度 */
+#tPort .mtable td.col-note{white-space:normal;max-width:140px;word-break:break-all}
+
+/* ── 移动端响应式：≤768px ────────────────────────────────── */
+@media(max-width:768px){
+  /* 投资组合 KPI 卡片 2列布局 */
+  #tPort .g4{grid-template-columns:1fr 1fr}
+  #tPort .kval{font-size:28px}
+  #tPort .klabel{font-size:12px}
+
+  /* 分类头部竖排 */
+  #tPort .sec-header{flex-wrap:wrap;gap:8px;padding:12px 14px;margin:-14px -14px 0 -14px}
+
+  /* 表格字体缩小 */
+  #tPort .mtable th{font-size:11px;padding:8px 10px}
+  #tPort .mtable td{font-size:13px;padding:10px 10px}
+
+  /* 在小屏隐藏次要列：代码、备注 */
+  #tPort .col-code,#tPort .th-code{display:none}
+  #tPort .col-note,#tPort .th-note{display:none}
+}
+@media(max-width:480px){
+  /* 极小屏再隐藏市场列 */
+  #tPort .col-mkt,#tPort .th-mkt{display:none}
+  #tPort .kval{font-size:24px}
+}
 </style>
 </head>
 <body>
@@ -1996,12 +2025,12 @@ function renderPortfolio(){
         : `<span style="color:var(--text2);font-size:13px">—</span>`;
       return `<tr>
         <td style="font-weight:700;font-size:15px;color:var(--text)">${sk.name}</td>
-        <td style="font-family:monospace;font-size:13px;color:var(--text2)">${sk.code}</td>
-        <td><span class="mkt-badge" style="${mktStyle[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span></td>
+        <td class="col-code" style="font-family:monospace;font-size:13px;color:var(--text2)">${sk.code}</td>
+        <td class="col-mkt"><span class="mkt-badge" style="${mktStyle[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span></td>
         <td style="text-align:right">${priceCell}</td>
         <td style="text-align:right">${pctCell}</td>
         <td style="text-align:right">${sk.w!=null?'<strong style="color:var(--blue);font-size:15px">'+sk.w.toFixed(1)+'%</strong>':'<span style="color:var(--text2);font-size:13px">—</span>'}</td>
-        <td style="color:var(--text2);font-size:13px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sk.note||''}</td>
+        <td class="col-note" style="color:var(--text2);font-size:13px">${sk.note||''}</td>
         <td style="white-space:nowrap">
           <button onclick="openPortModal('edit',${si},${ki})" style="background:none;border:1.5px solid var(--blue);color:var(--blue);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600">编辑</button>
           <button onclick="delPortStock(${si},${ki})" style="background:none;border:1.5px solid #fca5a5;color:var(--red);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;margin-left:5px">删除</button>
@@ -2024,11 +2053,14 @@ function renderPortfolio(){
       </div>
       <div class="overflow">
         <table class="mtable"><thead><tr>
-          <th>股票名称</th><th>代码</th><th>市场</th>
+          <th>股票名称</th>
+          <th class="th-code">代码</th>
+          <th class="th-mkt">市场</th>
           <th style="text-align:right">当前股价</th>
           <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
           <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
-          <th>备注</th><th>操作</th>
+          <th class="th-note">备注</th>
+          <th>操作</th>
         </tr></thead><tbody>${rows}</tbody></table>
       </div>
     </div>`;
