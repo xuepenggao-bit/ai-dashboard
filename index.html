@@ -598,18 +598,25 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="kval tb" id="pKpiWeight">—</div>
       <div class="tx3 mt4" id="pKpiHk">—</div>
     </div>
-    <div class="card">
-      <div class="klabel">投资策略</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
-        <span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600">动量投资</span>
-        <span style="background:#dbeafe;color:#1e40af;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600">成长投资</span>
-        <span style="background:#ede9fe;color:#5b21b6;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600">品质投资</span>
+    <div class="card" style="min-width:0">
+      <div class="klabel" style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:15px">📈</span> 今日涨幅 TOP 3
       </div>
-      <div class="tx3 mt8">综合三重投资风格</div>
+      <div id="portTop3Up" style="margin-top:10px">
+        <div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0;letter-spacing:.02em">
+          点击「刷新股价」加载
+        </div>
+      </div>
     </div>
-    <div class="card">
-      <div class="klabel">数据存储</div>
-      <div class="tx2 mt6" style="font-size:12px;line-height:1.7">保存于浏览器本地存储（localStorage），刷新后保留。支持A股沪深及港股，个股仓位可选填。</div>
+    <div class="card" style="min-width:0">
+      <div class="klabel" style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:15px">📉</span> 今日跌幅 TOP 3
+      </div>
+      <div id="portTop3Down" style="margin-top:10px">
+        <div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0;letter-spacing:.02em">
+          点击「刷新股价」加载
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2674,7 +2681,7 @@ async function fetchPortPrices(){
     PORT.sectors.forEach(function(sec){
       sec.stocks.forEach(function(sk){
         var pfx = sk.mkt === 'SH' ? 'sh' : sk.mkt === 'HK' ? 'hk' : 'sz';
-        stocks.push({code: sk.code, mkt: sk.mkt, tc: pfx + sk.code});
+        stocks.push({code: sk.code, name: sk.name, mkt: sk.mkt, tc: pfx + sk.code});
       });
     });
 
@@ -2697,7 +2704,7 @@ async function fetchPortPrices(){
       var p   = m[1].split('~');
       var cur = parseFloat(p[3]);
       var pct = parseFloat(p[32]);
-      if(cur > 0 && isFinite(pct)) _PORT_PRICES[s.code] = {price: cur, pct: pct};
+      if(cur > 0 && isFinite(pct)) _PORT_PRICES[s.code] = {price: cur, pct: pct, name: s.name, mkt: s.mkt};
     });
 
     var n = Object.keys(_PORT_PRICES).length;
@@ -2711,8 +2718,71 @@ async function fetchPortPrices(){
     console.error('fetchPortPrices:', err);
   } finally {
     renderPortfolio();
+    renderPortTop3();
     btn.classList.remove('loading'); btn.disabled = false;
   }
+}
+
+function renderPortTop3(){
+  var upEl   = document.getElementById('portTop3Up');
+  var downEl = document.getElementById('portTop3Down');
+  if(!upEl || !downEl) return;
+
+  // 收集所有已有价格的持仓
+  var entries = [];
+  if(typeof PORT !== 'undefined' && PORT && PORT.sectors){
+    PORT.sectors.forEach(function(sec){
+      sec.stocks.forEach(function(sk){
+        var pi = _PORT_PRICES[sk.code];
+        if(pi && isFinite(pi.pct)){
+          entries.push({
+            name:  pi.name || sk.name,
+            code:  sk.code,
+            mkt:   pi.mkt  || sk.mkt,
+            pct:   pi.pct,
+            price: pi.price
+          });
+        }
+      });
+    });
+  }
+
+  if(!entries.length){
+    var msg='<div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0">暂无股价数据</div>';
+    upEl.innerHTML = downEl.innerHTML = msg;
+    return;
+  }
+
+  // 排序
+  entries.sort(function(a,b){ return b.pct - a.pct; });
+  var top3 = entries.slice(0, 3);
+  var bot3 = entries.slice(-3).reverse();
+
+  function mkRow(item, rank, isUp){
+    var color  = isUp ? 'var(--green)' : 'var(--red)';
+    var bgBadge= isUp ? '#d1fae5' : '#fee2e2';
+    var sign   = item.pct >= 0 ? '+' : '';
+    var priceStr = item.mkt==='HK'
+      ? Number(item.price).toFixed(3)
+      : Number(item.price).toFixed(2);
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;'
+         + (rank<3?'border-bottom:1px solid #f1f5f9':'')+'">'
+      + '<span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:'+bgBadge
+      + ';color:'+color+';font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center">'
+      + rank+'</span>'
+      + '<span style="flex:1;font-size:13px;font-weight:700;color:var(--text);overflow:hidden;'
+      + 'text-overflow:ellipsis;white-space:nowrap" title="'+item.name+'">'+item.name+'</span>'
+      + '<span style="font-size:10px;color:var(--text2);font-family:monospace;flex-shrink:0">'+item.code+'</span>'
+      + '<div style="text-align:right;flex-shrink:0;margin-left:6px">'
+      + '<div style="font-size:15px;font-weight:800;color:'+color+';line-height:1.2">'
+      + sign+Number(item.pct).toFixed(2)+'%</div>'
+      + '<div style="font-size:10px;color:var(--text2)">'+priceStr+'</div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  upEl.innerHTML   = top3.map(function(s,i){ return mkRow(s,i+1,true);  }).join('');
+  downEl.innerHTML = bot3.map(function(s,i){ return mkRow(s,i+1,false); }).join('');
 }
 
 // ── INIT ──────────────────────────────────────────────────────
