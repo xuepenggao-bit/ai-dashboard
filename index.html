@@ -621,7 +621,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
     <div class="card" style="min-width:0;border-top:3px solid var(--green)">
       <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--green)">
-        📈 今日涨幅 TOP 3
+        📈 今日涨幅 TOP 5
       </div>
       <div id="portTop3Up" style="margin-top:8px">
         <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
@@ -631,7 +631,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
     <div class="card" style="min-width:0;border-top:3px solid var(--red)">
       <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--red)">
-        📉 今日跌幅 TOP 3
+        📉 今日跌幅 TOP 5
       </div>
       <div id="portTop3Down" style="margin-top:8px">
         <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
@@ -645,7 +645,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div class="g2 mb16">
     <div class="card">
       <div class="ch"><span class="ct">仓位分配（按分类）</span><span class="cbadge" id="pTotalBadge">合计 —%</span></div>
-      <div style="height:210px"><canvas id="cPortAlloc"></canvas></div>
+      <div style="height:250px"><canvas id="cPortAlloc"></canvas></div>
     </div>
     <div class="card">
       <div class="ch"><span class="ct">新增分类</span></div>
@@ -1963,7 +1963,7 @@ function renderPortfolio(){
       type:'doughnut',
       data:{labels:chartLabels, datasets:[{data:chartData, backgroundColor:chartColors, borderWidth:0}]},
       options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
-               plugins:{legend:{position:'right',labels:{color:'#64748b',font:{size:11},boxWidth:12,padding:8}}}}
+               plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:14,weight:'600'},boxWidth:14,padding:12}}}}
     });
   }
   // Sectors
@@ -2707,7 +2707,7 @@ async function fetchPortPrices(){
     PORT.sectors.forEach(function(sec){
       sec.stocks.forEach(function(sk){
         var pfx = sk.mkt === 'SH' ? 'sh' : sk.mkt === 'HK' ? 'hk' : 'sz';
-        stocks.push({code: sk.code, name: sk.name, mkt: sk.mkt, tc: pfx + sk.code});
+        stocks.push({code: sk.code, name: sk.name, mkt: sk.mkt, w: sk.w, tc: pfx + sk.code});
       });
     });
 
@@ -2730,7 +2730,7 @@ async function fetchPortPrices(){
       var p   = m[1].split('~');
       var cur = parseFloat(p[3]);
       var pct = parseFloat(p[32]);
-      if(cur > 0 && isFinite(pct)) _PORT_PRICES[s.code] = {price: cur, pct: pct, name: s.name, mkt: s.mkt};
+      if(cur > 0 && isFinite(pct)) _PORT_PRICES[s.code] = {price: cur, pct: pct, name: s.name, mkt: s.mkt, w: s.w};
     });
 
     var n = Object.keys(_PORT_PRICES).length;
@@ -2745,7 +2745,7 @@ async function fetchPortPrices(){
   } finally {
     // 获取价格后自动按涨跌幅降序排列各分类内的股票
     _portSort.col = 'pct';
-    _portSort.dir = -1;
+    _portSort.dir = 1;   // 1 = 降序（涨幅从高到低）
     renderPortfolio();
     renderPortTop3();
     btn.classList.remove('loading'); btn.disabled = false;
@@ -2769,7 +2769,8 @@ function renderPortTop3(){
             code:  sk.code,
             mkt:   pi.mkt  || sk.mkt,
             pct:   pi.pct,
-            price: pi.price
+            price: pi.price,
+            w:     (pi.w != null ? pi.w : sk.w)
           });
         }
       });
@@ -2784,8 +2785,8 @@ function renderPortTop3(){
 
   // 排序
   entries.sort(function(a,b){ return b.pct - a.pct; });
-  var top3 = entries.slice(0, 3);
-  var bot3 = entries.slice(-3).reverse();
+  var top5 = entries.slice(0, 5);
+  var bot5 = entries.slice(-5).reverse();
 
   function mkRow(item, rank, isUp){
     var color  = isUp ? 'var(--green)' : 'var(--red)';
@@ -2795,13 +2796,19 @@ function renderPortTop3(){
     var priceStr = item.mkt==='HK'
       ? Number(item.price).toFixed(3)
       : Number(item.price).toFixed(2);
+    var wStr = (item.w != null && item.w > 0)
+      ? '<div style="font-size:11px;color:var(--text2);margin-top:2px">仓位 '+Number(item.w).toFixed(1)+'%</div>'
+      : '';
     return '<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;'
          + 'border-radius:8px;background:'+bgRow+';margin-bottom:5px">'
       + '<span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:'+bgBadge
       + ';color:'+color+';font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center">'
       + rank+'</span>'
-      + '<span style="flex:1;font-size:14px;font-weight:700;color:var(--text);overflow:hidden;'
-      + 'text-overflow:ellipsis;white-space:nowrap" title="'+item.name+'">'+item.name+'</span>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:14px;font-weight:700;color:var(--text);overflow:hidden;'
+      + 'text-overflow:ellipsis;white-space:nowrap" title="'+item.name+'">'+item.name+'</div>'
+      + wStr
+      + '</div>'
       + '<div style="text-align:right;flex-shrink:0">'
       + '<div style="font-size:20px;font-weight:900;color:'+color+';line-height:1.1;letter-spacing:-.01em">'
       + sign+Number(item.pct).toFixed(2)+'%</div>'
@@ -2810,8 +2817,8 @@ function renderPortTop3(){
       + '</div>';
   }
 
-  upEl.innerHTML   = top3.map(function(s,i){ return mkRow(s,i+1,true);  }).join('');
-  downEl.innerHTML = bot3.map(function(s,i){ return mkRow(s,i+1,false); }).join('');
+  upEl.innerHTML   = top5.map(function(s,i){ return mkRow(s,i+1,true);  }).join('');
+  downEl.innerHTML = bot5.map(function(s,i){ return mkRow(s,i+1,false); }).join('');
 }
 
 // ── INIT ──────────────────────────────────────────────────────
