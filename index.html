@@ -1738,15 +1738,21 @@ async function fetchMonLive(){
       Object.values(MON_STOCKS).filter(c=>c.em).flatMap(c=>c.em)
     )];
     const url='https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2'
-             +'&fields=f25,f12&secids='+allSids.join(',')
+             +'&fields=f25,f9,f12&secids='+allSids.join(',')
              +'&ut=bd1d9ddb04089700cf9c27f6f7426281';
     const resp=await fetch(url);
     const json=await resp.json();
     const items=(json.data&&json.data.diff)||[];
-    const cmap={};
+    const cmap={};    // code → f25(20日涨跌幅)
+    const pemap={};   // code → f9(动态PE)
     items.forEach(it=>{
-      if(it.f12!=null){ const v=parseFloat(it.f25); if(!isNaN(v)) cmap[String(it.f12)]=v; }
+      if(it.f12!=null){
+        const v=parseFloat(it.f25); if(!isNaN(v)) cmap[String(it.f12)]=v;
+        const pe=parseFloat(it.f9);  if(!isNaN(pe)&&pe>0) pemap[String(it.f12)]=pe;
+      }
     });
+    // 存入 ETF 515980 PE（华夏AI ETF）
+    if(pemap['515980']) _aiEtfPe=pemap['515980'];
     BASE.monitors.forEach(mon=>{
       const cfg=MON_STOCKS[mon.id]; if(!cfg||!cfg.em) return;
       const vals=cfg.em.map(sid=>cmap[sid.split('.')[1]]).filter(v=>v!=null&&!isNaN(v));
@@ -1784,6 +1790,87 @@ async function fetchMonLive(){
     else            ts.textContent='⚠ 加载失败，显示静态数据';
   }
   if(btn) btn.disabled=false;
+
+  // 更新风险仪表板（依赖 _aiEtfPe 和 BASE.monitors）
+  updateRiskDashboard();
+}
+
+// ── 风险仪表盘自动计算 ────────────────────────────────────────
+let _aiEtfPe = null;  // 由 fetchMonLive 写入，AI ETF 515980 的 PE(动态)
+
+function updateRiskDashboard(){
+  // ① 泡沫估值 → AI ETF PE
+  if(_aiEtfPe && _aiEtfPe > 0){
+    const pe=_aiEtfPe;
+    const sc=Math.min(95,Math.max(5,Math.round(pe*0.97)));
+    BASE.risks[1].val=pe.toFixed(1)+'x PE';
+    BASE.risks[1].sc =sc;
+    BASE.risks[1].lvl=sc>=65?'high':sc>=35?'med':'low';
+    BASE.risks[1]._live=true;
+    BASE.switchConds[0].curr=pe.toFixed(0)+'x';
+    BASE.switchConds[0].ok  =pe<70;
+    BASE.switchConds[0]._live=true;
+  }
+
+  // ② 估值/资金配置 → PCB 平均动态PE
+  const pcbPes=BASE.stocks.pcb.map(s=>s.pe).filter(p=>p>0&&p<500);
+  if(pcbPes.length>0){
+    const avg=Math.round(pcbPes.reduce((a,b)=>a+b,0)/pcbPes.length*10)/10;
+    const sc=Math.min(95,Math.max(5,Math.round(avg*0.77)));
+    BASE.risks[3].metric='PCB均值PE(动态)';
+    BASE.risks[3].val=avg+'x';
+    BASE.risks[3].thr='80x';
+    BASE.risks[3].sc =sc;
+    BASE.risks[3].lvl=sc>=65?'high':sc>=35?'med':'low';
+    BASE.risks[3]._live=true;
+    BASE.switchConds[3].cond='PCB均值PE(动态)';
+    BASE.switchConds[3].curr=avg+'x';
+    BASE.switchConds[3].s4='< 50x';
+    BASE.switchConds[3].s5='> 80x';
+    BASE.switchConds[3].ok =avg<80;
+    BASE.switchConds[3]._live=true;
+  }
+
+  // ③ 综合动量 → 产业链监控有效板块均值
+  const liveMons=BASE.monitors.filter(m=>m._live);
+  if(liveMons.length>0){
+    const avg=liveMons.reduce((s,m)=>s+m.mom,0)/liveMons.length;
+    BASE.switchConds[5].curr=(avg>=0?'+':'')+avg.toFixed(1)+'%';
+    BASE.switchConds[5].ok  =avg>0;
+    BASE.switchConds[5]._live=true;
+  }
+
+  // ④ 组合分散度 → 最大单一板块仓位占比
+  if(typeof PORT!=='undefined'&&PORT&&PORT.sectors){
+    const totalW=PORT.sectors.reduce((s,sec)=>s+sec.stocks.reduce((ss,sk)=>ss+(sk.w||0),0),0);
+    const maxW  =Math.max(0,...PORT.sectors.map(sec=>sec.stocks.reduce((ss,sk)=>ss+(sk.w||0),0)));
+    if(totalW>5){
+      const exp=Math.round(maxW/totalW*100);
+      const sc =Math.min(95,Math.max(5,Math.round(exp*1.4)));
+      BASE.risks[6].val=exp+'%';
+      BASE.risks[6].sc =sc;
+      BASE.risks[6].lvl=sc>=65?'high':sc>=35?'med':'low';
+      BASE.risks[6]._live=true;
+    }
+  }
+
+  // ⑤ 综合风险评分 = 所有 sc 均值，更新仪表盘
+  const avgSc=Math.round(BASE.risks.reduce((s,r)=>s+r.sc,0)/BASE.risks.length);
+  const elSc=document.getElementById('overallRisk');
+  if(elSc) elSc.textContent=avgSc;
+  const badge=document.getElementById('riskBadge');
+  if(badge) badge.textContent=avgSc>70?'高风险':avgSc>50?'中高风险':avgSc>30?'中等风险':'低风险';
+  if(CH.gauge){
+    const col=avgSc>70?'rgba(220,38,38,.75)':avgSc>50?'rgba(217,119,6,.75)':'rgba(5,150,105,.75)';
+    CH.gauge.data.datasets[0].data=[avgSc,100-avgSc];
+    CH.gauge.data.datasets[0].backgroundColor=[col,'rgba(226,232,240,.7)'];
+    CH.gauge.update();
+  }
+
+  // 重绘
+  renderRisk();
+  renderAlerts();
+  renderSwitch();
 }
 
 // ── RENDER ──────────────────────────────────────────────────
@@ -1821,8 +1908,9 @@ function renderMon(){
 function renderRisk(){
   const lvlC={low:'s-buy',med:'s-hold',high:'s-sell'};
   const lvlT={low:'低',med:'中',high:'高'};
+  const dot='<span style="font-size:7px;vertical-align:super;color:#10b981;margin-left:2px">●</span>';
   document.getElementById('riskBody').innerHTML = BASE.risks.map(r=>`<tr>
-    <td><strong>${r.name}</strong></td>
+    <td><strong>${r.name}</strong>${r._live?dot:''}</td>
     <td class="tx3">${r.metric}</td>
     <td style="font-weight:600">${r.val}</td>
     <td class="tx3" style="color:var(--text2)">${r.thr}</td>
@@ -1867,8 +1955,9 @@ function renderSteps(){
 }
 
 function renderSwitch(){
+  const dot='<span style="font-size:7px;vertical-align:super;color:#10b981;margin-left:2px">●</span>';
   document.getElementById('switchBody').innerHTML = BASE.switchConds.map(c=>`<tr>
-    <td><strong>${c.cond}</strong></td>
+    <td><strong>${c.cond}</strong>${c._live?dot:''}</td>
     <td class="tg tx2">${c.s4}</td>
     <td style="font-weight:600;color:${c.ok?'var(--green)':'var(--red)'}">${c.curr}</td>
     <td class="tr tx2">${c.s5}</td>
@@ -2191,6 +2280,8 @@ async function fetchStocksLive(){
     const now=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('stockTs').textContent=now;
     if(ts) ts.textContent='已更新 '+now;
+    // 更新风险仪表板（依赖 BASE.stocks.pcb PE）
+    updateRiskDashboard();
   }catch(e){
     console.warn('fetchStocksLive:',e);
     if(ts) ts.textContent='⚠ 加载失败，显示静态数据';
@@ -2452,7 +2543,8 @@ async function portInit(){
 
   renderPortfolio();
   fetchIndexPrices();
-
+  // 更新风险仪表板（依赖 PORT.sectors 仓位分散度）
+  updateRiskDashboard();
 }
 
 /* 手动强制将当前数据推送到云端（用于应急修复） */
