@@ -824,7 +824,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ════════════════ TAB 2.2 ════════════════ -->
 <div class="tab-content" id="t1">
-  <div class="stitle">AI产业链监控仪表板 <span class="stag">全链条信号</span></div>
+  <div class="stitle">AI产业链监控仪表板 <span class="stag">全链条信号</span>
+    <span id="monApiTs" style="font-size:10px;color:#94a3b8;margin-left:auto;white-space:nowrap"></span>
+    <button id="monRefBtn" onclick="fetchMonLive()" class="rbtn" style="padding:6px 14px;font-size:12px">
+      <span class="ricon">↻</span> 刷新动量
+    </button>
+  </div>
 
   <!-- Summary stats -->
   <div class="sumrow">
@@ -842,7 +847,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="ch"><span class="ct">产业链全景监控表</span><span class="cbadge">10个维度</span></div>
       <table class="mtable">
         <thead><tr>
-          <th>板块/类别</th><th>核心指标</th><th>信号 <span style="background:#dcfce7;color:#166534;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">月度判断</span></th><th>阶段</th><th>30日动量 <span style="background:#fee2e2;color:#7f1d1d;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">需API</span></th>
+          <th>板块/类别</th><th>核心指标</th><th>信号 <span style="background:#dcfce7;color:#166534;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">月度判断</span></th><th>阶段</th><th>20日动量 <span style="background:#dcfce7;color:#166534;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">● 实时</span></th>
         </tr></thead>
         <tbody id="monBody"></tbody>
       </table>
@@ -1691,6 +1696,96 @@ function mkPort(){
   });
 }
 
+// ── 产业链监控 各板块代表标的 ─────────────────────────────────
+// em:  东方财富 secid，f25=20日涨跌幅
+// yf:  Yahoo Finance ticker，通过 chart API 计算20日收益率
+const MON_STOCKS = {
+  tech:  { yf:['GOOGL','MSFT','META'],                        names:['Alphabet','Microsoft','Meta']   },
+  pcb:   { em:['0.002916','0.002463','1.600183'],              names:['深南电路','沪电股份','生益科技'] },
+  semi:  { em:['1.688041','1.688256','1.688008'],              names:['海光信息','寒武纪','澜起科技']   },
+  supply:{ em:['0.300499','0.002837','0.002335'],              names:['高澜股份','英维克','科华数据']   },
+  aidc:  { em:['0.300442','0.300738','1.603881'],              names:['润泽科技','奥飞数据','数据港']   },
+  idc:   { em:['0.300383','1.600845','0.300017'],              names:['光环新网','宝信软件','网宿科技'] },
+  macro: { em:['1.000300','1.000001','0.399001'],              names:['沪深300','上证综指','深证成指']  },
+  kc:    { em:['1.000688','0.399006','0.399102'],              names:['科创50','创业板指','创业板综']   },
+  etf:   { em:['1.515980','1.512760','1.588000'],              names:['华夏AI','国泰芯片','科创50ETF'] },
+  apps:  { em:['1.600588','1.688111','0.002230'],              names:['用友网络','金山办公','科大讯飞'] },
+};
+
+// Yahoo Finance chart API → 计算20日收益率
+async function _fetchYFMom20(ticker){
+  const url=`https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1mo`;
+  const resp=await fetch(url);
+  const json=await resp.json();
+  const r=json.chart&&json.chart.result&&json.chart.result[0];
+  if(!r) return null;
+  const closes=(r.indicators.quote[0].close||[]).filter(v=>v!=null);
+  if(closes.length<2) return null;
+  return (closes[closes.length-1]-closes[0])/closes[0]*100;
+}
+
+// 拉取实时20日动量，更新 BASE.monitors[i].mom
+async function fetchMonLive(){
+  const ts =document.getElementById('monApiTs');
+  const btn=document.getElementById('monRefBtn');
+  if(ts)  ts.textContent='加载中…';
+  if(btn) btn.disabled=true;
+  let emOk=false, yfOk=false;
+
+  // ① 东方财富 (A股/指数/ETF)
+  try{
+    const allSids=[...new Set(
+      Object.values(MON_STOCKS).filter(c=>c.em).flatMap(c=>c.em)
+    )];
+    const url='https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2'
+             +'&fields=f25,f12&secids='+allSids.join(',')
+             +'&ut=bd1d9ddb04089700cf9c27f6f7426281';
+    const resp=await fetch(url);
+    const json=await resp.json();
+    const items=(json.data&&json.data.diff)||[];
+    const cmap={};
+    items.forEach(it=>{
+      if(it.f12!=null){ const v=parseFloat(it.f25); if(!isNaN(v)) cmap[String(it.f12)]=v; }
+    });
+    BASE.monitors.forEach(mon=>{
+      const cfg=MON_STOCKS[mon.id]; if(!cfg||!cfg.em) return;
+      const vals=cfg.em.map(sid=>cmap[sid.split('.')[1]]).filter(v=>v!=null&&!isNaN(v));
+      if(vals.length>0){
+        mon.mom=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10;
+        mon._liveNames=cfg.names; mon._live=true;
+      }
+    });
+    emOk=true;
+  }catch(e){ console.warn('fetchMonLive EM:',e); }
+
+  // ② Yahoo Finance (科技龙头: GOOGL/MSFT/META)
+  try{
+    const techMon=BASE.monitors.find(m=>m.id==='tech');
+    if(techMon){
+      const results=await Promise.allSettled(MON_STOCKS.tech.yf.map(t=>_fetchYFMom20(t)));
+      const vals=results.filter(r=>r.status==='fulfilled'&&r.value!=null).map(r=>r.value);
+      if(vals.length>0){
+        techMon.mom=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10;
+        techMon._liveNames=MON_STOCKS.tech.names; techMon._live=true; yfOk=true;
+      }
+    }
+  }catch(e){ console.warn('fetchMonLive YF:',e); }
+
+  // 重绘 & 更新平均动量
+  renderMon();
+  const avg=BASE.monitors.reduce((s,m)=>s+m.mom,0)/BASE.monitors.length;
+  document.getElementById('sAvgMom').textContent=(avg>=0?'+':'')+avg.toFixed(1)+'%';
+
+  const live=BASE.monitors.filter(m=>m._live).length;
+  const now=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  if(ts){
+    if(emOk&&yfOk)  ts.textContent=`20日动量已更新 ${now}（${live}/10）`;
+    else if(emOk)   ts.textContent=`A股/指数已更新 ${now}（Yahoo受限）`;
+    else            ts.textContent='⚠ 加载失败，显示静态数据';
+  }
+  if(btn) btn.disabled=false;
+}
+
 // ── RENDER ──────────────────────────────────────────────────
 function renderMon(){
   const sigHtml={
@@ -1708,14 +1803,17 @@ function renderMon(){
     if(s==='5') return '<span class="sbadge s5">5</span>';
     return s;
   };
+  const dot='<span style="font-size:7px;vertical-align:super;color:#10b981;margin-left:1px">●</span>';
   document.getElementById('monBody').innerHTML = BASE.monitors.map(r=>{
     const m=r.mom, mc=m>5?'var(--green)':m>0?'var(--yellow)':'var(--red)';
+    const liveNames=r._live&&r._liveNames
+      ?`<div style="font-size:9px;color:#94a3b8;margin-top:1px;line-height:1.3">${r._liveNames.join(' / ')}</div>`:'';
     return `<tr>
       <td><strong style="font-size:12px">${r.name}</strong><br><span class="tx3">${r.sub}</span></td>
       <td class="tx3">${r.metric}</td>
       <td>${sigHtml[r.sig]||r.sig}</td>
       <td>${stgHtml(r.stage)}</td>
-      <td style="color:${mc};font-weight:600">${m>0?'+':''}${m.toFixed(1)}%</td>
+      <td style="color:${mc};font-weight:600">${m>0?'+':''}${m.toFixed(1)}%${r._live?dot:''}${liveNames}</td>
     </tr>`;
   }).join('');
 }
@@ -3538,6 +3636,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();renderMag7();
   fetchStoreLive();    // 异步拉取存储监控实时行情
   fetchStocksLive();   // 异步拉取光模块&PCB实时行情
+  fetchMonLive();      // 异步拉取产业链监控20日动量
   document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
 });
 </script>
