@@ -189,6 +189,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 /* 备注列例外：允许换行 */
 #tPort .mtable td.col-note{white-space:normal;max-width:120px;word-break:break-all}
 
+/* ── 分类饼图面板 ─────────────────────────────────────────── */
+.sec-pie-panel{transition:opacity .3s}
+@media(max-width:640px){.sec-pie-panel{display:none!important}}
+
 /* ── 移动端响应式：≤768px ────────────────────────────────── */
 @media(max-width:768px){
   /* KPI 4格变2列 */
@@ -2680,6 +2684,8 @@ async function portInit(){
   fetchIndexPrices();
   // 更新风险仪表板（依赖 PORT.sectors 仓位分散度）
   updateRiskDashboard();
+  // 首次打开时自动刷新一次股价
+  fetchPortPrices();
 }
 
 /* 手动强制将当前数据推送到云端（用于应急修复） */
@@ -2764,7 +2770,7 @@ function renderPortfolio(){
         </td>
       </tr>`;}).join('')
     : `<tr><td colspan="8" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
-    return `<div class="card mb16">
+    return `<div class="card mb16" style="overflow:hidden">
       <div class="sec-header">
         <span style="width:20px;height:20px;border-radius:6px;background:${sec.color};display:inline-block;flex-shrink:0;box-shadow:0 2px 6px ${sec.color}55"></span>
         <span style="font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.01em">${sec.name}</span>
@@ -2778,25 +2784,117 @@ function renderPortfolio(){
           <button onclick="delPortSector(${si})" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:7px;padding:6px 10px;cursor:pointer;font-size:12px;font-family:inherit">删分类</button>
         </div>
       </div>
-      <div class="overflow">
-        <table class="mtable"><thead><tr>
-          <th>股票名称</th>
-          <th class="th-code">代码</th>
-          <th class="th-mkt">市场</th>
-          <th class="th-price" style="text-align:right">当前股价</th>
-          <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
-          <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
-          <th class="th-note">备注</th>
-          <th>操作</th>
-        </tr></thead><tbody>${rows}</tbody></table>
+      <!-- 卡片主体：表格 + 饼图并排 -->
+      <div style="display:flex;align-items:stretch;margin:0 -20px -20px -20px">
+        <!-- 表格区域 -->
+        <div style="flex:1;min-width:0;overflow-x:auto;overflow-y:hidden">
+          <table class="mtable"><thead><tr>
+            <th>股票名称</th>
+            <th class="th-code">代码</th>
+            <th class="th-mkt">市场</th>
+            <th class="th-price" style="text-align:right">当前股价</th>
+            <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
+            <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
+            <th class="th-note">备注</th>
+            <th>操作</th>
+          </tr></thead><tbody>${rows}</tbody></table>
+        </div>
+        <!-- 饼图面板 -->
+        <div class="sec-pie-panel" style="width:195px;flex-shrink:0;padding:14px 10px 10px 12px;border-left:1px solid var(--border);background:#f8fafc;display:flex;flex-direction:column;align-items:center">
+          <div style="font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.04em;margin-bottom:6px">仓位分布</div>
+          <div style="flex:1;width:100%;min-height:180px;position:relative">
+            <canvas id="cSecPie_${si}"></canvas>
+          </div>
+        </div>
       </div>
     </div>`;
   }).join('');
 
   // 每次渲染都刷新重仓TOP5（仓位数据不依赖股价）
   _renderPortTopW();
+  // 渲染各分类饼图
+  _renderSecPies();
 }
 
+// ── 各分类仓位饼图 ─────────────────────────────────────────
+function _renderSecPies(){
+  // 销毁旧 charts
+  (CH.secPies||[]).forEach(ch=>{ try{ ch.destroy(); }catch(e){} });
+  CH.secPies=[];
+
+  // 颜色库（16色循环，保证视觉区分度）
+  const PAL=[
+    '#2563eb','#059669','#d97706','#7c3aed','#dc2626',
+    '#0891b2','#16a34a','#ea580c','#9333ea','#be123c',
+    '#1d4ed8','#047857','#b45309','#6d28d9','#b91c1c','#0e7490',
+  ];
+
+  PORT.sectors.forEach((sec,si)=>{
+    const canvas=document.getElementById('cSecPie_'+si);
+    if(!canvas) return;
+
+    // 只统计有仓位的股票
+    const stks=sec.stocks.filter(sk=>(sk.w||0)>0);
+    if(stks.length===0){
+      // 无仓位 → 文字占位
+      const wrap=canvas.parentElement;
+      wrap.innerHTML='<div style="display:flex;height:100%;align-items:center;justify-content:center;text-align:center;color:#94a3b8;font-size:11px;line-height:1.6">请在编辑中<br>设置个股仓位</div>';
+      return;
+    }
+
+    const colors=stks.map((_,i)=>PAL[i%PAL.length]);
+    // 标签：缩短名称 + 仓位%（显示完整名让图例清晰）
+    const labels=stks.map(sk=>sk.name);
+    const data  =stks.map(sk=>+(sk.w||0));
+
+    const chart=new Chart(canvas.getContext('2d'),{
+      type:'doughnut',
+      data:{
+        labels,
+        datasets:[{
+          data,
+          backgroundColor:colors,
+          borderWidth:2,
+          borderColor:'#fff',
+          hoverOffset:5,
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        cutout:'38%',
+        plugins:{
+          legend:{
+            position:'bottom',
+            labels:{
+              color:'#334155',
+              font:{size:9,weight:'600'},
+              boxWidth:9,
+              padding:4,
+              generateLabels:(ch)=>{
+                const ds=ch.data.datasets[0];
+                return ch.data.labels.map((lbl,i)=>({
+                  text:lbl+' '+ds.data[i].toFixed(1)+'%',
+                  fillStyle:ds.backgroundColor[i],
+                  strokeStyle:'#fff',
+                  lineWidth:1,
+                  hidden:false,
+                  index:i,
+                }));
+              }
+            }
+          },
+          tooltip:{
+            callbacks:{
+              label:(ctx)=>ctx.label+': '+ctx.raw.toFixed(1)+'%'
+            }
+          }
+        }
+      }
+    });
+    CH.secPies.push(chart);
+  });
+}
 
 function delPortStock(si,ki){
   if(!confirm('删除 '+PORT.sectors[si].stocks[ki].name+' ？')) return;
