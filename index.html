@@ -638,16 +638,21 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   <!-- KPI Row -->
   <div class="g4 mb16">
+    <!-- 持仓概览（合并） -->
     <div class="card" style="border-top:3px solid var(--blue)">
-      <div class="klabel">📌 持仓股票总数</div>
-      <div class="kval tb" id="pKpiStocks">—</div>
-      <div class="tx3 mt4">分布于 <span id="pKpiSectors">—</span> 个分类</div>
-    </div>
-    <div class="card" style="border-top:3px solid var(--green)">
-      <div class="klabel">💰 总仓位</div>
-      <div class="kval tb" id="pKpiWeight">—</div>
+      <div class="klabel">📊 持仓概览</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+        <span class="kval tb" id="pKpiWeight">—</span>
+        <span style="font-size:13px;color:var(--text2);font-weight:500">总仓位</span>
+      </div>
+      <div class="tx3 mt4">
+        持仓 <strong id="pKpiStocks" style="color:var(--text)">—</strong> 只 ·
+        <span id="pKpiSectors">—</span> 个分类
+      </div>
       <div class="tx3 mt4" id="pKpiHk">—</div>
     </div>
+
+    <!-- 今日涨幅 TOP 5 -->
     <div class="card" style="min-width:0;border-top:3px solid var(--green)">
       <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--green)">
         📈 今日涨幅 TOP 5
@@ -658,11 +663,25 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         </div>
       </div>
     </div>
+
+    <!-- 今日跌幅 TOP 5 -->
     <div class="card" style="min-width:0;border-top:3px solid var(--red)">
       <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--red)">
         📉 今日跌幅 TOP 5
       </div>
       <div id="portTop3Down" style="margin-top:8px">
+        <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
+          点击「刷新股价」加载
+        </div>
+      </div>
+    </div>
+
+    <!-- 重仓 TOP 5（按仓位高低） -->
+    <div class="card" style="min-width:0;border-top:3px solid var(--blue)">
+      <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--blue)">
+        🏋️ 重仓 TOP 5
+      </div>
+      <div id="portTop5W" style="margin-top:8px">
         <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
           点击「刷新股价」加载
         </div>
@@ -2065,6 +2084,9 @@ function renderPortfolio(){
       </div>
     </div>`;
   }).join('');
+
+  // 每次渲染都刷新重仓TOP5（仓位数据不依赖股价）
+  _renderPortTopW();
 }
 
 
@@ -2780,6 +2802,7 @@ async function fetchPortPrices(){
     _portSort.dir = 1;   // 1 = 降序（涨幅从高到低）
     renderPortfolio();
     renderPortTop3();
+    _renderPortTopW();
     btn.classList.remove('loading'); btn.disabled = false;
   }
 }
@@ -2808,6 +2831,9 @@ function renderPortTop3(){
       });
     });
   }
+
+  // 先渲染重仓TOP5（不依赖股价，页面加载即可显示）
+  _renderPortTopW();
 
   if(!entries.length){
     var msg='<div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0">暂无股价数据</div>';
@@ -2851,6 +2877,66 @@ function renderPortTop3(){
 
   upEl.innerHTML   = top5.map(function(s,i){ return mkRow(s,i+1,true);  }).join('');
   downEl.innerHTML = bot5.map(function(s,i){ return mkRow(s,i+1,false); }).join('');
+}
+
+// ── 重仓 TOP5（独立函数，页面初始即可渲染，刷新股价后联动更新）──
+function _renderPortTopW(){
+  var wEl = document.getElementById('portTop5W');
+  if(!wEl) return;
+
+  // 收集所有有仓位记录的股票（不要求已有价格）
+  var wEntries = [];
+  if(typeof PORT !== 'undefined' && PORT && PORT.sectors){
+    PORT.sectors.forEach(function(sec){
+      sec.stocks.forEach(function(sk){
+        if(sk.w != null && sk.w > 0){
+          var pi = _PORT_PRICES[sk.code];
+          wEntries.push({
+            name:  (pi && pi.name) || sk.name,
+            mkt:   (pi && pi.mkt)  || sk.mkt,
+            w:     sk.w,
+            pct:   pi ? pi.pct   : null,
+            price: pi ? pi.price : null
+          });
+        }
+      });
+    });
+  }
+  // 按仓位降序
+  wEntries.sort(function(a,b){ return b.w - a.w; });
+  var topW = wEntries.slice(0, 5);
+
+  if(!topW.length){
+    wEl.innerHTML = '<div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0">暂无仓位数据</div>';
+    return;
+  }
+
+  wEl.innerHTML = topW.map(function(item, i){
+    var rank = i + 1;
+    var hasPct = item.pct != null && isFinite(item.pct);
+    var pctColor = hasPct ? (item.pct > 0 ? 'var(--green)' : item.pct < 0 ? 'var(--red)' : 'var(--text2)') : '#94a3b8';
+    var bgRow    = hasPct ? (item.pct > 0 ? (rank===1?'#f0fdf4':'#fff') : item.pct < 0 ? (rank===1?'#fff5f5':'#fff') : '#fff') : '#fff';
+    var sign     = hasPct && item.pct >= 0 ? '+' : '';
+    var pctText  = hasPct ? sign+Number(item.pct).toFixed(2)+'%' : '—';
+    var priceText= (hasPct && item.price != null)
+      ? '现价 '+(item.mkt==='HK' ? Number(item.price).toFixed(3) : Number(item.price).toFixed(2))
+      : '股价未加载';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;'
+         + 'border-radius:8px;background:'+bgRow+';margin-bottom:5px">'
+      + '<span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:#dbeafe;'
+      + 'color:var(--blue);font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center">'
+      + rank+'</span>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:14px;font-weight:700;color:var(--text);overflow:hidden;'
+      + 'text-overflow:ellipsis;white-space:nowrap" title="'+item.name+'">'+item.name+'</div>'
+      + '<div style="font-size:11px;color:var(--blue);font-weight:700;margin-top:2px">仓位 '+Number(item.w).toFixed(1)+'%</div>'
+      + '</div>'
+      + '<div style="text-align:right;flex-shrink:0">'
+      + '<div style="font-size:20px;font-weight:900;color:'+pctColor+';line-height:1.1;letter-spacing:-.01em">'+pctText+'</div>'
+      + '<div style="font-size:11px;color:var(--text2);margin-top:1px">'+priceText+'</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
 }
 
 // ── INIT ──────────────────────────────────────────────────────
