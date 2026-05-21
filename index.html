@@ -489,28 +489,28 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- KPI Row -->
   <div class="g4 mb16">
     <div class="card">
-      <div class="klabel">沪深A股总市值 <span style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05 参考</span></div>
-      <div class="kval tb">¥107万亿</div>
-      <div class="kchange up">↑ YoY +22% · 2025全年+18.4%</div>
-      <div class="tx3 mt4">沪市+深市，含科创/创业板</div>
+      <div class="klabel">沪深A股总市值 <span style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
+      <div class="kval tb">¥109万亿</div>
+      <div class="kchange up">↑ YoY +24% · 较年初+7.2%</div>
+      <div class="tx3 mt4">沪市+深市，含科创/创业板 · 日频估算</div>
     </div>
     <div class="card">
-      <div class="klabel">上证综指 PE(TTM) <span style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-04</span></div>
-      <div class="kval" id="kSsePe">16.6x</div>
+      <div class="klabel">上证综指 PE(TTM) <span style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
+      <div class="kval" id="kSsePe">16.8x</div>
       <div class="kchange neu">历史均值 ~12x · 偏高区间</div>
       <div class="tx3 mt4">来源: 乐咕乐股/东方财富估值中心</div>
     </div>
     <div class="card">
-      <div class="klabel">深证成指 PE(TTM) <span style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-04</span></div>
-      <div class="kval ty" id="kSzePe">30.5x</div>
+      <div class="klabel">深证成指 PE(TTM) <span style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
+      <div class="kval ty" id="kSzePe">31.5x</div>
       <div class="kchange neu">含成长溢价 · 偏高区间</div>
       <div class="tx3 mt4">来源: 乐咕乐股/东方财富估值中心</div>
     </div>
     <div class="card">
-      <div class="klabel">两融余额 <span style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-Q1</span></div>
-      <div class="kval tb" id="kAvgVol">¥2.61万亿</div>
-      <div class="kchange up">↑ 历史高位 · Q3 2025起突破2.3万亿</div>
-      <div class="tx3 mt4">来源: 沪深交易所 / 东方财富数据中心</div>
+      <div class="klabel">两融余额 <span style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
+      <div class="kval tb" id="kAvgVol">¥2.85万亿</div>
+      <div class="kchange up">↑ 历史新高 · 较年初+9.3%</div>
+      <div class="tx3 mt4">来源: 沪深交易所 · 最新日频余额 28,520亿</div>
     </div>
   </div>
 
@@ -534,14 +534,33 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 2: 融资融券 + 北向资金 -->
+  <!-- Row 2: iVIX + 融资融券 -->
   <div class="g2 mb16">
+    <!-- iVIX 波动率指数历史走势 -->
+    <div class="card" style="border-top:3px solid #7c3aed">
+      <div class="ch">
+        <span class="ct">iVIX 上证波动率指数 (历史趋势)</span>
+        <span class="cbadge" id="vixBadge" style="background:#ede9fe;color:#5b21b6">加载中…</span>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:16px;margin-bottom:10px;padding:9px 12px;background:linear-gradient(135deg,#faf5ff,#ede9fe);border-radius:8px;border:1px solid #c4b5fd">
+        <div>
+          <div class="tx3" style="margin-bottom:2px">最新 iVIX</div>
+          <div style="font-size:22px;font-weight:800;line-height:1;color:#5b21b6" id="kVixVal">—</div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700" id="kVixLevel"></div>
+          <div class="tx3 mt4;color:#8b5cf6" id="kVixDate"></div>
+        </div>
+      </div>
+      <div style="height:175px"><canvas id="cVix"></canvas></div>
+      <div class="tx3 mt4">来源: 新浪财经 · 上证50ETF期权隐含波动率指数 · VIX&gt;30 高波动 · VIX&lt;12 低波动</div>
+    </div>
+    <!-- 融资融券 -->
     <div class="card">
       <div class="ch">
         <span class="ct">融资融券余额趋势 (日频·¥亿)</span>
         <span class="cbadge" style="background:#d1fae5;color:#065f46">沪深交易所 · 日频</span>
       </div>
-      <!-- 静态最新数据条 -->
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;padding:8px 12px;background:#fffbeb;border-radius:8px;border:1px solid #fde68a">
         <div>
           <span class="tx3">最新余额&nbsp;</span>
@@ -552,25 +571,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
       <div style="height:175px"><canvas id="cMargin"></canvas></div>
       <div class="tx3 mt4">来源: 沪深交易所 · 日频余额数据 · 数据截至2026-05-21 · 趋势参考</div>
-    </div>
-    <div class="card">
-      <div class="ch">
-        <span class="ct">沪深港通 北向资金 (日频·¥亿)</span>
-        <span class="cbadge" id="northBadge" style="background:#fef3c7;color:#78350f">加载中…</span>
-      </div>
-      <!-- Mini KPI -->
-      <div style="display:flex;align-items:flex-end;gap:20px;margin-bottom:10px;padding:10px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
-        <div>
-          <div class="tx3" style="margin-bottom:2px">今日净买入</div>
-          <div style="font-size:22px;font-weight:800;line-height:1" id="kNorthVal">—</div>
-        </div>
-        <div style="flex:1">
-          <div class="kchange" id="kNorthChg" style="font-size:12px;color:var(--text2)">日频数据查询中…</div>
-          <div class="tx3 mt4" id="kNorthDate" style="color:#94a3b8"></div>
-        </div>
-      </div>
-      <div style="height:175px"><canvas id="cNorth"></canvas></div>
-      <div class="tx3 mt4" id="northDesc">来源: 东方财富数据中心 · 近30个交易日沪深港通合计净流入</div>
     </div>
   </div>
 
@@ -591,6 +591,28 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
       <div style="height:210px"><canvas id="cConc"></canvas></div>
       <div class="tx3 mt4">来源: 沪深交易所 · 近48交易日(2026-03-10至2026-05-21) · 成交集中度越高代表龙头效应越强 · 趋势参考</div>
+    </div>
+  </div>
+
+  <!-- Row 4: 沪深港通北向资金（移至最后）-->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">沪深港通 北向资金 (日频·¥亿)</span>
+        <span class="cbadge" id="northBadge" style="background:#fef3c7;color:#78350f">加载中…</span>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:20px;margin-bottom:10px;padding:10px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
+        <div>
+          <div class="tx3" style="margin-bottom:2px">今日净买入</div>
+          <div style="font-size:22px;font-weight:800;line-height:1" id="kNorthVal">—</div>
+        </div>
+        <div style="flex:1">
+          <div class="kchange" id="kNorthChg" style="font-size:12px;color:var(--text2)">日频数据查询中…</div>
+          <div class="tx3 mt4" id="kNorthDate" style="color:#94a3b8"></div>
+        </div>
+      </div>
+      <div style="height:175px"><canvas id="cNorth"></canvas></div>
+      <div class="tx3 mt4" id="northDesc">来源: 东方财富数据中心 · 近30个交易日沪深港通合计净流入</div>
     </div>
   </div>
 
@@ -625,10 +647,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="card">
       <div class="ch">
         <span class="ct">固定资产投资 累计同比增速 (%)</span>
-        <span class="cbadge" style="background:#dbeafe;color:#1e40af">国家统计局</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">国家统计局 · 最新2026-04</span>
       </div>
       <div style="height:210px"><canvas id="cFai"></canvas></div>
-      <div class="tx3 mt4">全社会固定资产投资累计同比 · 2024年 · 来源: 国家统计局月度数据</div>
+      <div class="tx3 mt4">全社会固定资产投资累计同比 · 2024-01至2026-04（最新）· 来源: 国家统计局月度数据</div>
     </div>
     <div class="card">
       <div class="ch">
@@ -644,10 +666,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div class="card mb16">
     <div class="ch">
       <span class="ct">规模以上工业企业利润 当月同比增速 (%)</span>
-      <span class="cbadge" style="background:#dbeafe;color:#1e40af">国家统计局</span>
+      <span class="cbadge" style="background:#dbeafe;color:#1e40af">国家统计局 · 最新2026-03</span>
     </div>
     <div style="height:220px"><canvas id="cIndustrial"></canvas></div>
-    <div class="tx3 mt4">规模以上工业企业利润总额当月同比 · 2024-01-02合并至2024-12 · 来源: 国家统计局 · 注: 数据波动较大，建议结合累计值综合判断</div>
+    <div class="tx3 mt4">规模以上工业企业利润总额当月同比 · 2024-01至2026-03（最新）· 来源: 国家统计局 · 注: 数据波动较大，建议结合累计值综合判断</div>
   </div>
 
 </div>
@@ -1520,9 +1542,9 @@ const BASE = {
       vals:  [293, 268, 311, 327, 338, 292, 382, 476, 318, 258, 375, 452, 296],
     },
     mktPe:{
-      labels:['24-01','24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02','26-03','26-04'],
-      sse:   [11.2,11.8,12.0,11.5,11.8,11.2,12.1,12.8,12.8,16.2,15.4,14.5,15.0,15.2,13.8,14.5,14.8,15.0,15.3,15.9,16.5,17.0,16.8,16.5,16.8,16.9,16.5,16.6],
-      sze:   [23.5,24.6,25.1,23.8,24.5,22.8,24.0,25.6,25.8,32.1,30.2,28.5,29.0,28.8,25.6,27.0,27.5,28.0,28.5,29.5,31.0,31.0,30.5,29.8,31.0,32.2,31.0,30.5],
+      labels:['24-01','24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02','26-03','26-04','26-05'],
+      sse:   [11.2,11.8,12.0,11.5,11.8,11.2,12.1,12.8,12.8,16.2,15.4,14.5,15.0,15.2,13.8,14.5,14.8,15.0,15.3,15.9,16.5,17.0,16.8,16.5,16.8,16.9,16.5,16.6,16.8],
+      sze:   [23.5,24.6,25.1,23.8,24.5,22.8,24.0,25.6,25.8,32.1,30.2,28.5,29.0,28.8,25.6,27.0,27.5,28.0,28.5,29.5,31.0,31.0,30.5,29.8,31.0,32.2,31.0,30.5,31.5],
     },
     // ── 融资融券余额 (日频·亿元) 2026-03-10→2026-05-21 · 来源:沪深交易所 ──
     margin:{
@@ -1809,6 +1831,93 @@ async function fetchMonLive(){
 
   // 更新风险仪表板（依赖 _aiEtfPe 和 BASE.monitors）
   updateRiskDashboard();
+}
+
+// ── iVIX 历史数据 (新浪财经) ────────────────────────────────
+async function fetchVixChart(){
+  const badge = document.getElementById('vixBadge');
+  const valEl  = document.getElementById('kVixVal');
+  const lvlEl  = document.getElementById('kVixLevel');
+  const dateEl = document.getElementById('kVixDate');
+  try{
+    // 新浪财经 VIX 接口
+    const url='https://stock.finance.sina.com.cn/futures/api/openapi.php?type=VIX&count=120';
+    const resp=await fetch(url);
+    const json=await resp.json();
+
+    // 尝试多种响应结构
+    let arr=json?.result?.data?.data
+          || json?.result?.data
+          || json?.data?.data
+          || json?.data
+          || [];
+    if(!Array.isArray(arr)||arr.length===0) throw new Error('空数据');
+
+    // 统一字段: d=日期 p=收盘价
+    arr=arr.filter(x=>(x.d||x.date)&&(x.p||x.close||x.c))
+           .sort((a,b)=>new Date(a.d||a.date)-new Date(b.d||b.date));
+    if(arr.length===0) throw new Error('过滤后空');
+
+    const getDate =x=>x.d||x.date;
+    const getPrice=x=>parseFloat(x.p||x.close||x.c);
+    const labels=arr.map(x=>getDate(x).slice(5));        // MM-DD
+    const vals  =arr.map(getPrice);
+    const latest=vals[vals.length-1];
+    const prev  =vals.length>1?vals[vals.length-2]:latest;
+    const chg   =latest-prev;
+    const lastDt=getDate(arr[arr.length-1]);
+
+    // KPI 更新
+    const vColor=latest>30?'#dc2626':latest>20?'#d97706':'#059669';
+    const vLevel=latest>30?'🔴 高波动区间':latest>20?'🟡 中等波动':latest>12?'🟢 低波动区间':'🟢 极低波动';
+    if(valEl){valEl.textContent=latest.toFixed(2);valEl.style.color=vColor;}
+    if(lvlEl){lvlEl.textContent=vLevel+' · '+(chg>=0?'+':'')+chg.toFixed(2)+' 变动';lvlEl.style.color=vColor;}
+    if(dateEl){dateEl.textContent='数据日期: '+lastDt;}
+    if(badge){badge.textContent='实时 · 新浪财经';badge.style.background='#ede9fe';badge.style.color='#5b21b6';}
+
+    // 绘制图表
+    if(CH.vix){try{CH.vix.destroy();}catch(e){}}
+    const canvas=document.getElementById('cVix');
+    if(!canvas) return;
+    // 参考线数据（水平线用 plugin-annotation 不可用时，用额外 dataset 代替）
+    const refHigh=Array(vals.length).fill(30);
+    const refLow =Array(vals.length).fill(12);
+    CH.vix=new Chart(canvas.getContext('2d'),{
+      type:'line',
+      data:{
+        labels,
+        datasets:[
+          {label:'iVIX',data:vals,borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.1)',
+           borderWidth:2.5,pointRadius:0,pointHoverRadius:4,fill:true,tension:0.3,order:1},
+          {label:'警戒线30',data:refHigh,borderColor:'#dc262660',borderWidth:1,borderDash:[5,3],
+           pointRadius:0,fill:false,tension:0,order:2},
+          {label:'低波线12',data:refLow,borderColor:'#05966960',borderWidth:1,borderDash:[5,3],
+           pointRadius:0,fill:false,tension:0,order:3},
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}`}},
+        },
+        scales:{
+          x:{ticks:{color:'#94a3b8',font:{size:11},maxTicksLimit:10,maxRotation:0},
+             grid:{color:'rgba(226,232,240,1)'}},
+          y:{ticks:{color:'#94a3b8',font:{size:11},callback:v=>v.toFixed(0)},
+             grid:{color:'rgba(226,232,240,.8)'},
+             suggestedMin:0,suggestedMax:40},
+        }
+      }
+    });
+  }catch(e){
+    console.warn('iVIX 加载失败:',e);
+    if(badge){badge.textContent='加载失败';badge.style.background='#fee2e2';badge.style.color='#991b1b';}
+    if(valEl) valEl.textContent='—';
+    if(lvlEl) lvlEl.textContent='可能因 CORS 限制无法直连，请稍后重试';
+    if(lvlEl) lvlEl.style.color='#94a3b8';
+  }
 }
 
 // ── 北向资金 实时数据 (融资融券/涨跌/成交集中度为静态日频) ─────
@@ -4007,6 +4116,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   portInit();   // 优先从 GitHub 云端加载组合数据
   mkNewInv();mkMktPe();mkMargin();mkNorth();mkUpDown();mkConc();
   mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();
+  fetchVixChart();   // 异步拉取 iVIX 历史数据
   mkStageMatrix();
   renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();renderMag7();
   fetchStoreLive();         // 异步拉取存储监控实时行情
