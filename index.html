@@ -29,9 +29,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* ── Tabs ── */
-.tabs{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:1px;overflow-x:auto;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.tab{padding:13px 18px;border:none;background:none;color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;letter-spacing:.01em}
-.tab:hover{color:var(--text);background:rgba(0,0,0,.02)}.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+.tabs{background:linear-gradient(180deg,#f0f4ff 0%,#eef2fb 100%);border-bottom:2px solid #c7d7f7;padding:10px 20px 0;display:flex;gap:5px;overflow-x:auto;box-shadow:0 3px 12px rgba(37,99,235,.1)}
+.tab{padding:9px 17px;border:1.5px solid #dde6f5;background:linear-gradient(180deg,#fff 0%,#f5f8ff 100%);color:#64748b;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;border-radius:8px 8px 0 0;border-bottom:2px solid #dde6f5;transition:all .18s ease;white-space:nowrap;letter-spacing:.01em;position:relative;margin-bottom:-2px;box-shadow:0 2px 5px rgba(0,0,0,.08),0 1px 0 rgba(255,255,255,.95) inset}
+.tab:hover{color:#1e293b;background:linear-gradient(180deg,#fff 0%,#e8efff 100%);border-color:#93c5fd #93c5fd #93c5fd;box-shadow:0 3px 8px rgba(37,99,235,.18),0 1px 0 rgba(255,255,255,.9) inset;transform:translateY(-2px)}
+.tab.active{color:#fff;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);border-color:#1d4ed8 #1d4ed8 #1d4ed8;font-weight:700;box-shadow:0 4px 14px rgba(37,99,235,.4),0 1px 0 rgba(255,255,255,.2) inset;transform:translateY(-3px);z-index:2}
 
 /* ── Layout ── */
 .main{padding:20px;max-width:1400px;margin:0 auto}
@@ -258,18 +259,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <button class="tab" onclick="switchTab(8)">📋 十步框架</button>
 </nav>
 
-<!-- ═══ DATA NOTICE ═══ -->
-<div style="background:#fffbeb;border-bottom:1px solid #fde68a;padding:7px 24px;font-size:11px;color:#78350f;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-  <span>⚠ 静态演示版</span>
-  <span style="color:#fde68a">|</span>
-  <span>数据截止 2026-Q1</span>
-  <span style="color:#fde68a">|</span>
-  <span><strong>永久固定：</strong>历史Capex实际值、组合配置、切换阈值</span>
-  <span style="color:#fde68a">|</span>
-  <span><strong>季度录入：</strong>Capex指引、业绩增速、PCB PE、风险评分</span>
-  <span style="color:#fde68a">|</span>
-  <span><strong>需接入API：</strong>30日动量、ETF PE/PEG（日频行情数据）</span>
-</div>
 
 <!-- ═══ MAIN ═══ -->
 <main class="main">
@@ -2747,9 +2736,9 @@ function renderPortfolio(){
           </tr></thead><tbody>${rows}</tbody></table>
         </div>
         <!-- 饼图面板 -->
-        <div class="sec-pie-panel" style="width:195px;flex-shrink:0;padding:14px 10px 10px 12px;border-left:1px solid var(--border);background:#f8fafc;display:flex;flex-direction:column;align-items:center">
-          <div style="font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.04em;margin-bottom:6px">仓位分布</div>
-          <div style="flex:1;width:100%;min-height:180px;position:relative">
+        <div class="sec-pie-panel" style="width:260px;flex-shrink:0;padding:14px 12px 10px 14px;border-left:1px solid var(--border);background:#f8fafc;display:flex;flex-direction:column;align-items:center">
+          <div style="font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.04em;margin-bottom:8px">仓位分布</div>
+          <div style="flex:1;width:100%;min-height:240px;position:relative">
             <canvas id="cSecPie_${si}"></canvas>
           </div>
         </div>
@@ -2815,9 +2804,9 @@ function _renderSecPies(){
             position:'bottom',
             labels:{
               color:'#334155',
-              font:{size:9,weight:'600'},
-              boxWidth:9,
-              padding:4,
+              font:{size:11,weight:'600'},
+              boxWidth:12,
+              padding:6,
               generateLabels:(ch)=>{
                 const ds=ch.data.datasets[0];
                 return ch.data.labels.map((lbl,i)=>({
