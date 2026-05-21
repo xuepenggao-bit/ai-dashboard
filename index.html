@@ -549,11 +549,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         </div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:700" id="kVixLevel"></div>
-          <div class="tx3 mt4;color:#8b5cf6" id="kVixDate"></div>
+          <div class="tx3 mt4" style="color:#8b5cf6" id="kVixDate"></div>
         </div>
       </div>
       <div style="height:175px"><canvas id="cVix"></canvas></div>
-      <div class="tx3 mt4">来源: 新浪财经 · 上证50ETF期权隐含波动率指数 · VIX&gt;30 高波动 · VIX&lt;12 低波动</div>
+      <div class="tx3 mt4">来源: 腾讯财经 · 基于上证50ETF(510050)日线计算20日滚动已实现波动率（年化）· VIX&gt;30 高波动 · VIX&lt;12 低波动</div>
     </div>
     <!-- 融资融券 -->
     <div class="card">
@@ -594,8 +594,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 4: 沪深港通北向资金（移至最后）-->
-  <div class="g2 mb16">
+  <!-- Row 4: 沪深港通北向资金（全宽，移至最后）-->
+  <div class="mb16">
     <div class="card">
       <div class="ch">
         <span class="ct">沪深港通 北向资金 (日频·¥亿)</span>
@@ -611,7 +611,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           <div class="tx3 mt4" id="kNorthDate" style="color:#94a3b8"></div>
         </div>
       </div>
-      <div style="height:175px"><canvas id="cNorth"></canvas></div>
+      <div style="height:200px"><canvas id="cNorth"></canvas></div>
       <div class="tx3 mt4" id="northDesc">来源: 东方财富数据中心 · 近30个交易日沪深港通合计净流入</div>
     </div>
   </div>
@@ -1835,88 +1835,88 @@ async function fetchMonLive(){
 
 // ── iVIX 历史数据 (新浪财经) ────────────────────────────────
 async function fetchVixChart(){
-  const badge = document.getElementById('vixBadge');
-  const valEl  = document.getElementById('kVixVal');
-  const lvlEl  = document.getElementById('kVixLevel');
-  const dateEl = document.getElementById('kVixDate');
+  const badge=document.getElementById('vixBadge');
+  const valEl =document.getElementById('kVixVal');
+  const lvlEl =document.getElementById('kVixLevel');
+  const dateEl=document.getElementById('kVixDate');
   try{
-    // 新浪财经 VIX 接口
-    const url='https://stock.finance.sina.com.cn/futures/api/openapi.php?type=VIX&count=120';
-    const resp=await fetch(url);
-    const json=await resp.json();
+    // 腾讯财经 K线 — 上证50ETF (sh510050), 250 交易日前复权
+    // 格式: data[symbol].day = [[日期,开,收,高,低,量,额],...]
+    const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
+             +'?param=sh510050,day,,,,250,qfq&_='+Date.now();
+    const j=await (await fetch(url)).json();
+    const d=j?.data?.['sh510050']||j?.['sh510050'];
+    const days=d?.day||[];
+    if(days.length<25) throw new Error('K线不足('+days.length+')');
 
-    // 尝试多种响应结构
-    let arr=json?.result?.data?.data
-          || json?.result?.data
-          || json?.data?.data
-          || json?.data
-          || [];
-    if(!Array.isArray(arr)||arr.length===0) throw new Error('空数据');
+    const closes=days.map(x=>parseFloat(x[2]));  // index 2 = 收盘价
+    const dates =days.map(x=>x[0]);
 
-    // 统一字段: d=日期 p=收盘价
-    arr=arr.filter(x=>(x.d||x.date)&&(x.p||x.close||x.c))
-           .sort((a,b)=>new Date(a.d||a.date)-new Date(b.d||b.date));
-    if(arr.length===0) throw new Error('过滤后空');
+    // 滚动 20 日年化已实现波动率
+    const W=20;
+    const rvLabels=[],rvVals=[];
+    for(let i=W;i<closes.length;i++){
+      const sl=closes.slice(i-W,i+1);
+      const rt=[];
+      for(let k=1;k<sl.length;k++) rt.push(Math.log(sl[k]/sl[k-1]));
+      const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
+      const vr=rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1);
+      rvVals.push(+(Math.sqrt(vr*252)*100).toFixed(2));
+      rvLabels.push(dates[i].slice(5));
+    }
+    if(!rvVals.length) throw new Error('RV计算结果为空');
 
-    const getDate =x=>x.d||x.date;
-    const getPrice=x=>parseFloat(x.p||x.close||x.c);
-    const labels=arr.map(x=>getDate(x).slice(5));        // MM-DD
-    const vals  =arr.map(getPrice);
-    const latest=vals[vals.length-1];
-    const prev  =vals.length>1?vals[vals.length-2]:latest;
+    const latest=rvVals[rvVals.length-1];
+    const prev  =rvVals.length>1?rvVals[rvVals.length-2]:latest;
     const chg   =latest-prev;
-    const lastDt=getDate(arr[arr.length-1]);
+    const lastDt=dates[dates.length-1];
 
-    // KPI 更新
     const vColor=latest>30?'#dc2626':latest>20?'#d97706':'#059669';
     const vLevel=latest>30?'🔴 高波动区间':latest>20?'🟡 中等波动':latest>12?'🟢 低波动区间':'🟢 极低波动';
     if(valEl){valEl.textContent=latest.toFixed(2);valEl.style.color=vColor;}
-    if(lvlEl){lvlEl.textContent=vLevel+' · '+(chg>=0?'+':'')+chg.toFixed(2)+' 变动';lvlEl.style.color=vColor;}
-    if(dateEl){dateEl.textContent='数据日期: '+lastDt;}
-    if(badge){badge.textContent='实时 · 新浪财经';badge.style.background='#ede9fe';badge.style.color='#5b21b6';}
+    if(lvlEl){lvlEl.textContent=vLevel+' · '+(chg>=0?'+':'')+chg.toFixed(2)+' 日变动';lvlEl.style.color=vColor;}
+    if(dateEl){dateEl.textContent='截至 '+lastDt+' · 上证50ETF 20日RV（年化）';}
+    if(badge){badge.textContent='实时计算 · 腾讯财经';badge.style.background='#ede9fe';badge.style.color='#5b21b6';}
 
-    // 绘制图表
     if(CH.vix){try{CH.vix.destroy();}catch(e){}}
     const canvas=document.getElementById('cVix');
     if(!canvas) return;
-    // 参考线数据（水平线用 plugin-annotation 不可用时，用额外 dataset 代替）
-    const refHigh=Array(vals.length).fill(30);
-    const refLow =Array(vals.length).fill(12);
+    const ref30=Array(rvVals.length).fill(30);
+    const ref12=Array(rvVals.length).fill(12);
     CH.vix=new Chart(canvas.getContext('2d'),{
       type:'line',
       data:{
-        labels,
+        labels:rvLabels,
         datasets:[
-          {label:'iVIX',data:vals,borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.1)',
-           borderWidth:2.5,pointRadius:0,pointHoverRadius:4,fill:true,tension:0.3,order:1},
-          {label:'警戒线30',data:refHigh,borderColor:'#dc262660',borderWidth:1,borderDash:[5,3],
-           pointRadius:0,fill:false,tension:0,order:2},
-          {label:'低波线12',data:refLow,borderColor:'#05966960',borderWidth:1,borderDash:[5,3],
-           pointRadius:0,fill:false,tension:0,order:3},
+          {label:'iVIX参考(20日RV)',data:rvVals,borderColor:'#7c3aed',
+           backgroundColor:'rgba(124,58,237,.08)',borderWidth:2,
+           pointRadius:0,pointHoverRadius:4,fill:true,tension:0.3,order:1},
+          {label:'警戒30%',data:ref30,borderColor:'rgba(220,38,38,.55)',
+           borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false,tension:0,order:2},
+          {label:'低波12%',data:ref12,borderColor:'rgba(5,150,105,.55)',
+           borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false,tension:0,order:3},
         ]
       },
       options:{
         responsive:true,maintainAspectRatio:false,
-        interaction:{mode:'index',intersect:false},
         plugins:{
           legend:{display:false},
-          tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}`}},
+          tooltip:{mode:'index',intersect:false,
+            callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y.toFixed(2)+'%'}},
         },
         scales:{
-          x:{ticks:{color:'#94a3b8',font:{size:11},maxTicksLimit:10,maxRotation:0},
+          x:{ticks:{color:'#94a3b8',font:{size:11},maxTicksLimit:12,maxRotation:0},
              grid:{color:'rgba(226,232,240,1)'}},
-          y:{ticks:{color:'#94a3b8',font:{size:11},callback:v=>v.toFixed(0)},
-             grid:{color:'rgba(226,232,240,.8)'},
-             suggestedMin:0,suggestedMax:40},
+          y:{ticks:{color:'#94a3b8',font:{size:11},callback:v=>v.toFixed(0)+'%'},
+             grid:{color:'rgba(226,232,240,.8)'},suggestedMin:0,suggestedMax:50},
         }
       }
     });
   }catch(e){
-    console.warn('iVIX 加载失败:',e);
+    console.warn('iVIX chart:',e);
     if(badge){badge.textContent='加载失败';badge.style.background='#fee2e2';badge.style.color='#991b1b';}
     if(valEl) valEl.textContent='—';
-    if(lvlEl) lvlEl.textContent='可能因 CORS 限制无法直连，请稍后重试';
-    if(lvlEl) lvlEl.style.color='#94a3b8';
+    if(lvlEl){lvlEl.textContent='加载失败: '+e.message;lvlEl.style.color='#94a3b8';}
   }
 }
 
@@ -3697,8 +3697,9 @@ async function refreshMacro(){
   }
   btn.classList.remove('loading'); btn.disabled=false;
 
-  // 同步刷新融资融券 + 北向资金
+  // 同步刷新融资融券 + 北向资金 + iVIX
   fetchMarginNorthLive();
+  fetchVixChart();
 }
 
 // ── PORTFOLIO PRICE REFRESH ──────────────────────────────────
@@ -3714,38 +3715,26 @@ function _isTradingNow(){
 // ── iVIX / 市场波动率 ───────────────────────────────────────
 async function fetchVixRow(listEl){
   if(!listEl) return;
-  let vixVal=null, vixPct=null, isRV=false;
+  let vixVal=null;
 
-  // ① 尝试东方财富 iVIX 行情 (上证波动率指数 000188)
+  // 腾讯财经 K线 — 上证50ETF (510050), 25 交易日前复权
   try{
-    const url='https://push2.eastmoney.com/api/qt/stock/get?secid=1.000188&fields=f2,f3&_='+Date.now();
+    const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
+             +'?param=sh510050,day,,,,25,qfq&_='+Date.now();
     const j=await (await fetch(url)).json();
-    const d=j?.data;
-    if(d && d.f2>0 && d.f2<200){ vixVal=d.f2; vixPct=d.f3; }
-  }catch(e){}
-
-  // ② 备选：上证指数20日已实现波动率（年化）
-  if(!vixVal){
-    try{
-      const url='https://push2his.eastmoney.com/api/qt/stock/kline/get'
-              +'?secid=1.000001&fields1=f1,f2&fields2=f51,f52,f53&klt=101&fqt=0&beg=0&end=20500101&lmt=22';
-      const j=await (await fetch(url)).json();
-      const kl=j?.data?.klines||[];
-      if(kl.length>=12){
-        const cl=kl.map(k=>parseFloat(k.split(',')[2]));
-        const rt=[];
-        for(let i=1;i<cl.length;i++) rt.push(Math.log(cl[i]/cl[i-1]));
-        const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
-        const vr=rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1);
-        vixVal=+(Math.sqrt(vr*252)*100).toFixed(2);
-        isRV=true;
-      }
-    }catch(e){}
-  }
+    const d=j?.data?.['sh510050']||j?.['sh510050'];
+    const days=d?.day||[];
+    if(days.length>=12){
+      const cl=days.map(x=>parseFloat(x[2]));
+      const rt=[];
+      for(let i=1;i<cl.length;i++) rt.push(Math.log(cl[i]/cl[i-1]));
+      const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
+      const vr=rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1);
+      vixVal=+(Math.sqrt(vr*252)*100).toFixed(2);
+    }
+  }catch(e){ console.warn('fetchVixRow:',e); }
 
   if(!vixVal) return;
-  const label   = isRV?'市场波动率 (20日RV)':'iVIX 波动率指数';
-  const subLbl  = isRV?'上证指数20日已实现波动率（年化）':'上证50ETF期权隐含波动率';
   const vLevel  = vixVal>30?'高波动':vixVal>20?'中等':vixVal>12?'低波动':'极低';
   const vLvlClr = vixVal>30?'#dc2626':vixVal>20?'#d97706':'#059669';
 
@@ -3760,10 +3749,10 @@ async function fetchVixRow(listEl){
     +'border-left:3px solid #7c3aed;box-shadow:0 2px 8px rgba(124,58,237,.1)';
   row.innerHTML=`
     <div style="flex:1;min-width:0">
-      <div style="font-size:13px;font-weight:700;color:#5b21b6;letter-spacing:.01em">${label}
+      <div style="font-size:13px;font-weight:700;color:#5b21b6;letter-spacing:.01em">iVIX参考 (20日RV)
         <span style="font-size:9px;background:#ede9fe;color:#7c3aed;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:600">● 实时</span>
       </div>
-      <div style="font-size:10px;color:#8b5cf6;margin-top:2px">${subLbl}</div>
+      <div style="font-size:10px;color:#8b5cf6;margin-top:2px">上证50ETF 20日已实现波动率（年化）</div>
     </div>
     <div style="text-align:right;flex-shrink:0;margin-left:8px">
       <div style="font-size:20px;font-weight:900;color:#5b21b6;letter-spacing:-.02em;line-height:1.1">
@@ -3771,32 +3760,34 @@ async function fetchVixRow(listEl){
       </div>
       <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:2px">
         <span style="font-size:10px;font-weight:700;background:${vLvlClr}22;color:${vLvlClr};padding:1px 6px;border-radius:4px">${vLevel}</span>
-        ${vixPct!=null?`<span style="font-size:11px;font-weight:700;color:${vixPct>0?'#dc2626':'#16a34a'}">${vixPct>0?'+':''}${Number(vixPct).toFixed(2)}%</span>`:''}
       </div>
     </div>`;
   listEl.appendChild(row);
 }
 
-// ── 个股20日历史波动率 ──────────────────────────────────────
+// ── 个股20日历史波动率 (腾讯财经 K线) ─────────────────────
 async function fetchPortHV(){
   if(!PORT||!PORT.sectors) return;
   const tasks=[];
   PORT.sectors.forEach(sec=>sec.stocks.forEach(sk=>{
     if(sk.mkt!=='SH'&&sk.mkt!=='SZ') return;
-    const sid=(sk.mkt==='SH'?'1':'0')+'.'+sk.code;
-    tasks.push({code:sk.code,sid});
+    const tc=(sk.mkt==='SH'?'sh':'sz')+sk.code;
+    tasks.push({code:sk.code, tc});
   }));
   if(!tasks.length) return;
 
   const res=await Promise.allSettled(tasks.map(async t=>{
-    const url='https://push2his.eastmoney.com/api/qt/stock/kline/get'
-             +`?secid=${t.sid}&fields1=f1,f2&fields2=f51,f52,f53&klt=101&fqt=1&beg=0&end=20500101&lmt=22`;
+    // 腾讯财经前复权日K: data[symbol].day = [[日期,开,收,高,低,量,额],...]
+    const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
+             +'?param='+t.tc+',day,,,,25,qfq&_='+Date.now();
     const j=await (await fetch(url)).json();
-    const kl=j?.data?.klines||[];
-    if(kl.length<10) return null;
-    const cl=kl.map(k=>parseFloat(k.split(',')[2]));
+    const d=j?.data?.[t.tc]||j?.[t.tc];
+    const days=d?.day||[];
+    if(days.length<10) return null;
+    const cl=days.map(x=>parseFloat(x[2]));  // index 2 = 收盘价
     const rt=[];
     for(let i=1;i<cl.length;i++) rt.push(Math.log(cl[i]/cl[i-1]));
+    if(rt.length<5) return null;
     const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
     const vr=rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1);
     return {code:t.code, hv:+(Math.sqrt(vr*252)*100).toFixed(1)};
