@@ -29,7 +29,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* ── Tabs ── */
-.tabs{background:#fff;border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;height:50px}
+.tabs{background:#fff;border-bottom:1px solid var(--border);height:50px}
+.tabs-inner{max-width:1400px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:2px;height:100%;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 .tab{padding:0 14px;height:36px;border:none;border-radius:7px;background:transparent;color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;white-space:nowrap;flex-shrink:0;transition:color .15s,background .15s;display:inline-flex;align-items:center;gap:6px}
 .tab:hover{background:#f1f5f9;color:var(--text)}
 .tab.active{background:var(--blue);color:#fff;font-weight:600}
@@ -248,15 +249,17 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ═══ TABS ═══ -->
 <nav class="tabs">
-  <button class="tab active" onclick="switchTab(0)">🗂 投资组合</button>
-  <button class="tab" onclick="switchTab(1)">🔗 产业链阶段</button>
-  <button class="tab" onclick="switchTab(2)">🇨🇳 A股宏观</button>
-  <button class="tab" onclick="switchTab(3)">📈 AI 趋势</button>
-  <button class="tab" onclick="switchTab(4)">🔬 光模块&amp;PCB</button>
-  <button class="tab" onclick="switchTab(5)">💾 存储监控</button>
-  <button class="tab" onclick="switchTab(6)">🔍 产业链监控</button>
-  <button class="tab" onclick="switchTab(7)">⚠️ 风险仪表板</button>
-  <button class="tab" onclick="switchTab(8)">📋 十步框架</button>
+  <div class="tabs-inner">
+    <button class="tab active" onclick="switchTab(0)">🗂 投资组合</button>
+    <button class="tab" onclick="switchTab(1)">🔗 产业链阶段</button>
+    <button class="tab" onclick="switchTab(2)">🇨🇳 A股宏观</button>
+    <button class="tab" onclick="switchTab(3)">📈 AI 趋势</button>
+    <button class="tab" onclick="switchTab(4)">🔬 光模块&amp;PCB</button>
+    <button class="tab" onclick="switchTab(5)">💾 存储监控</button>
+    <button class="tab" onclick="switchTab(6)">🔍 产业链监控</button>
+    <button class="tab" onclick="switchTab(7)">⚠️ 风险仪表板</button>
+    <button class="tab" onclick="switchTab(8)">📋 十步框架</button>
+  </div>
 </nav>
 
 
