@@ -250,10 +250,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <nav class="tabs">
   <button class="tab active" onclick="switchTab(0)">🗂 投资组合</button>
   <button class="tab" onclick="switchTab(1)">🔗 产业链阶段</button>
-  <button class="tab" onclick="switchTab(2)">📈 AI 趋势</button>
-  <button class="tab" onclick="switchTab(3)">🔬 光模块&amp;PCB</button>
-  <button class="tab" onclick="switchTab(4)">💾 存储监控</button>
-  <button class="tab" onclick="switchTab(5)">🇨🇳 A股宏观</button>
+  <button class="tab" onclick="switchTab(2)">🇨🇳 A股宏观</button>
+  <button class="tab" onclick="switchTab(3)">📈 AI 趋势</button>
+  <button class="tab" onclick="switchTab(4)">🔬 光模块&amp;PCB</button>
+  <button class="tab" onclick="switchTab(5)">💾 存储监控</button>
   <button class="tab" onclick="switchTab(6)">🔍 产业链监控</button>
   <button class="tab" onclick="switchTab(7)">⚠️ 风险仪表板</button>
   <button class="tab" onclick="switchTab(8)">📋 十步框架</button>
@@ -481,7 +481,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   <div class="alert a-info mb16">
     <span>ℹ</span>
-    <div><strong>上半部分</strong>：A股市场动态指标（沪深交易所 · 中国证监会）&nbsp;·&nbsp; <strong>下半部分</strong>：中国宏观经济月度数据（国家统计局 · 中国人民银行）&nbsp;·&nbsp; 带 <span style="background:#fee2e2;color:#991b1b;font-size:10px;padding:1px 4px;border-radius:3px">实时行情</span> 标签的指标随盘自动更新</div>
+    <div><strong>上部分</strong>：A股市场<strong>日频</strong>动态指标（融资融券 · 涨跌家数 · 北向资金 · iVIX）&nbsp;·&nbsp; <strong>下部分</strong>：月度/季度指标（新增投资者 · 主要指数PE · 国家统计局 · 中国人民银行）</div>
   </div>
 
   <!-- ── 上部分：A股市场监控 ── -->
@@ -514,27 +514,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 1: 新增投资者 + 市场估值PE走势 -->
-  <div class="g2 mb16">
-    <div class="card">
-      <div class="ch">
-        <span class="ct">新增A股投资者人数 (万人·季度)</span>
-        <span class="cbadge" style="background:#dbeafe;color:#1e40af">中国证监会</span>
-      </div>
-      <div style="height:210px"><canvas id="cNewInv"></canvas></div>
-      <div class="tx3 mt4">2023Q1—2024Q4 · 来源: 中国证监会投资者季度报告 · 2024Q4受924行情驱动大幅增加</div>
-    </div>
-    <div class="card">
-      <div class="ch">
-        <span class="ct">A股主要指数PE(TTM)走势 (月末)</span>
-        <span class="cbadge" style="background:#dbeafe;color:#1e40af">Wind/交易所</span>
-      </div>
-      <div style="height:210px"><canvas id="cMktPe"></canvas></div>
-      <div class="tx3 mt4">蓝=上证综指 · 绿=深证成指 · 2024-01至2025-03 · 来源: Wind/沪深交易所</div>
-    </div>
-  </div>
-
-  <!-- Row 2: iVIX + 融资融券 -->
+  <!-- 日频：iVIX + 融资融券 -->
   <div class="g2 mb16">
     <!-- iVIX 波动率指数历史走势 -->
     <div class="card" style="border-top:3px solid #7c3aed">
@@ -574,7 +554,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 3: 涨跌家数 + 前10成交占比 -->
+  <!-- 日频：涨跌家数 + 前10成交占比 -->
   <div class="g2 mb16">
     <div class="card">
       <div class="ch">
@@ -594,7 +574,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 4: 沪深港通北向资金（全宽，移至最后）-->
+  <!-- 日频：北向资金（全宽）-->
   <div class="mb16">
     <div class="card">
       <div class="ch">
@@ -616,13 +596,33 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- ── 分隔线：下半宏观 ── -->
+  <!-- ── 分隔线：月度/季度宏观数据 ── -->
   <div style="margin:4px 0 20px;padding:12px 0 0;border-top:2px solid var(--border);display:flex;align-items:center;gap:12px">
-    <span style="font-size:15px;font-weight:700">📊 中国宏观经济指标</span>
-    <span class="stag">来源: 国家统计局 · 中国人民银行 · 月度数据 2024—2025</span>
+    <span style="font-size:15px;font-weight:700">📊 月度 / 季度宏观指标</span>
+    <span class="stag">中国证监会 · 国家统计局 · 中国人民银行 · 月度/季度数据</span>
   </div>
 
-  <!-- Row 1: CPI + 社会融资 -->
+  <!-- 季度/月度：新增A股投资者 + 主要指数PE走势 -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">新增A股投资者人数 (万人·季度)</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">中国证监会</span>
+      </div>
+      <div style="height:210px"><canvas id="cNewInv"></canvas></div>
+      <div class="tx3 mt4">2023Q1—2024Q4 · 来源: 中国证监会投资者季度报告 · 2024Q4受924行情驱动大幅增加</div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">A股主要指数PE(TTM)走势 (月末)</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">Wind/交易所</span>
+      </div>
+      <div style="height:210px"><canvas id="cMktPe"></canvas></div>
+      <div class="tx3 mt4">蓝=上证综指 · 绿=深证成指 · 2024-01至2025-03 · 来源: Wind/沪深交易所</div>
+    </div>
+  </div>
+
+  <!-- 月度：CPI + 社会融资 -->
   <div class="g2 mb16">
     <div class="card">
       <div class="ch">
@@ -3712,7 +3712,7 @@ function _renderStageRadars(){
 }
 
 // ── TAB ──────────────────────────────────────────────────────
-const TAB_ORDER=['tPort','tStage','t0','t4','t5','tAM','t1','t2','t3'];
+const TAB_ORDER=['tPort','tStage','tAM','t0','t4','t5','t1','t2','t3'];
 let _macroAutoFetched=false;
 function switchTab(idx){
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
@@ -4294,8 +4294,6 @@ async function fetchIndexPrices(){
     if(tsEl) tsEl.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) + ' 更新';
   }
 
-  // 附加 iVIX / 市场波动率行（先 await，防止后续重置 innerHTML 覆盖）
-  await fetchVixRow(listEl);
   if(btn) btn.disabled = false;
 }
 
