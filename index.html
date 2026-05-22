@@ -3022,11 +3022,12 @@ function renderPortfolio(){
           </tr></thead><tbody>${rows}</tbody></table>
         </div>
         <!-- 饼图面板 -->
-        <div class="sec-pie-panel" style="width:260px;flex-shrink:0;padding:14px 12px 10px 14px;border-left:1px solid var(--border);background:#f8fafc;display:flex;flex-direction:column;align-items:center">
-          <div style="font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.04em;margin-bottom:8px">仓位分布</div>
-          <div style="flex:1;width:100%;min-height:240px;position:relative">
+        <div class="sec-pie-panel" style="width:220px;flex-shrink:0;padding:14px 12px 10px 14px;border-left:1px solid var(--border);background:#f8fafc;display:flex;flex-direction:column">
+          <div style="font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.04em;margin-bottom:8px;text-align:center">仓位分布</div>
+          <div style="height:140px;width:100%;position:relative;flex-shrink:0">
             <canvas id="cSecPie_${si}"></canvas>
           </div>
+          <div id="cSecLegend_${si}" style="margin-top:10px;flex:1;overflow-y:auto"></div>
         </div>
       </div>
     </div>`;
@@ -3084,37 +3085,25 @@ function _renderSecPies(){
       options:{
         responsive:true,
         maintainAspectRatio:false,
-        cutout:'38%',
+        cutout:'48%',
         plugins:{
-          legend:{
-            position:'bottom',
-            labels:{
-              color:'#334155',
-              font:{size:11,weight:'600'},
-              boxWidth:12,
-              padding:6,
-              generateLabels:(ch)=>{
-                const ds=ch.data.datasets[0];
-                return ch.data.labels.map((lbl,i)=>({
-                  text:lbl+' '+ds.data[i].toFixed(1)+'%',
-                  fillStyle:ds.backgroundColor[i],
-                  strokeStyle:'#fff',
-                  lineWidth:1,
-                  hidden:false,
-                  index:i,
-                }));
-              }
-            }
-          },
-          tooltip:{
-            callbacks:{
-              label:(ctx)=>ctx.label+': '+ctx.raw.toFixed(1)+'%'
-            }
-          }
+          legend:{display:false},
+          tooltip:{callbacks:{label:(ctx)=>ctx.label+': '+ctx.raw.toFixed(1)+'%'}}
         }
       }
     });
     CH.secPies.push(chart);
+
+    // 自定义图例：一行一只股票，名称 + 仓位
+    const legendEl=document.getElementById('cSecLegend_'+si);
+    if(legendEl){
+      legendEl.innerHTML=stks.map((sk,i)=>`
+        <div style="display:flex;align-items:center;gap:7px;padding:3px 0;border-bottom:1px solid #e2e8f0">
+          <span style="width:9px;height:9px;border-radius:2px;flex-shrink:0;background:${colors[i]}"></span>
+          <span style="font-size:11.5px;font-weight:600;color:#334155;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sk.name}</span>
+          <span style="font-size:11.5px;font-weight:700;color:#475569;flex-shrink:0">${(sk.w||0).toFixed(1)}%</span>
+        </div>`).join('');
+    }
   });
 }
 
