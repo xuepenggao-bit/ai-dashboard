@@ -605,6 +605,26 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <span class="stag">中国证监会 · 国家统计局 · 中国人民银行 · 月度/季度数据</span>
   </div>
 
+  <!-- 月度：工业企业营业利润累计 + 计算机通信电子营业利润累计（前置，最直接反映AI产业景气度）-->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">工业企业营业利润 累计同比增速 (%)</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">国家统计局 · 最新2026-03</span>
+      </div>
+      <div style="height:210px"><canvas id="cProfitAccum"></canvas></div>
+      <div class="tx3 mt4">规模以上工业企业营业利润累计同比增速 · 2024-01至2026-03 · 来源: 国家统计局月度数据 · 红虚线=零轴</div>
+    </div>
+    <div class="card" style="border-top:3px solid #7c3aed">
+      <div class="ch">
+        <span class="ct">计算机、通信和其他电子设备制造业 营业利润 累计同比增速 (%)</span>
+        <span class="cbadge" style="background:#ede9fe;color:#5b21b6">国家统计局 · 最新2026-03</span>
+      </div>
+      <div style="height:210px"><canvas id="cElectronicProfit"></canvas></div>
+      <div class="tx3 mt4">规模以上计算机、通信和其他电子设备制造业营业利润累计同比 · 2024-01至2026-03 · 来源: 国家统计局 · 注: 2024年上半年及2026年初受低基数效应影响增速偏高</div>
+    </div>
+  </div>
+
   <!-- 季度/月度：新增A股投资者 + 主要指数PE走势 -->
   <div class="g2 mb16">
     <div class="card">
@@ -642,26 +662,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
       <div style="height:210px"><canvas id="cTsf"></canvas></div>
       <div class="tx3 mt4">月末社融存量同比增速 · 2024-01至2024-12 · 来源: 中国人民银行月度数据</div>
-    </div>
-  </div>
-
-  <!-- Row 2: 工业企业营业利润累计 + 计算机通信电子营业利润累计 -->
-  <div class="g2 mb16">
-    <div class="card">
-      <div class="ch">
-        <span class="ct">工业企业营业利润 累计同比增速 (%)</span>
-        <span class="cbadge" style="background:#dbeafe;color:#1e40af">国家统计局 · 最新2026-03</span>
-      </div>
-      <div style="height:210px"><canvas id="cProfitAccum"></canvas></div>
-      <div class="tx3 mt4">规模以上工业企业营业利润累计同比增速 · 2024-01至2026-03 · 来源: 国家统计局月度数据 · 红虚线=零轴</div>
-    </div>
-    <div class="card" style="border-top:3px solid #7c3aed">
-      <div class="ch">
-        <span class="ct">计算机、通信和其他电子设备制造业 营业利润 累计同比增速 (%)</span>
-        <span class="cbadge" style="background:#ede9fe;color:#5b21b6">国家统计局 · 最新2026-03</span>
-      </div>
-      <div style="height:210px"><canvas id="cElectronicProfit"></canvas></div>
-      <div class="tx3 mt4">规模以上计算机、通信和其他电子设备制造业营业利润累计同比 · 2024-01至2026-03 · 来源: 国家统计局 · 注: 2024年上半年及2026年初受低基数效应影响增速偏高</div>
     </div>
   </div>
 
@@ -4653,6 +4653,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   fetchMonLive();           // 异步拉取产业链监控20日动量
   // 北向资金使用静态日频数据（BASE.ashare.north），无需远程拉取
   document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
+  // 页面加载时自动拉取A股宏观最新数据（无需等待切换到宏观标签页）
+  _macroAutoFetched = true;   // 防止切换到宏观标签页时重复拉取
+  setTimeout(refreshMacro, 800);  // 延迟800ms，等各图表初始化完成后再拉取
 });
 </script>
 </body>
