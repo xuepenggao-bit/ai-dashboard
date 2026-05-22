@@ -946,7 +946,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- Table + charts -->
   <div class="g2 mb16">
     <div class="card overflow">
-      <div class="ch"><span class="ct">产业链全景监控表</span><span class="cbadge">10个维度</span></div>
+      <div class="ch"><span class="ct">产业链全景监控表</span><span class="cbadge">12个维度</span></div>
       <table class="mtable">
         <thead><tr>
           <th>板块/类别</th><th>核心指标</th><th>信号 <span style="background:#dcfce7;color:#166534;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">月度判断</span></th><th>阶段</th><th>20日动量 <span style="background:#dcfce7;color:#166534;font-weight:400;font-size:10px;padding:1px 4px;border-radius:3px">● 实时</span></th>
@@ -995,6 +995,32 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="fjb mb4"><span class="tx3">2021对比</span><span class="tr">⚠ 高度类似</span></div>
       <div class="rbar mt8"><div class="rfill rh" style="width:85%"></div></div>
       <div class="tx3 mt4">综合风险: 高 · 阶段5，逐步减仓</div>
+    </div>
+  </div>
+
+  <!-- 存储 + 光模块 详情卡片 -->
+  <div class="g2 mt16">
+    <div class="card">
+      <div class="ch"><span class="ct">💾 HBM/DRAM存储</span><span class="sig s-buy">▲ 买入</span></div>
+      <div class="tx2 mb8">Micron (MU) · SK Hynix · Samsung · Western Digital · Seagate</div>
+      <div class="fjb mb4"><span class="tx3">HBM市场规模</span><span class="tg">2025E $35B → 2026E $60B</span></div>
+      <div class="fjb mb4"><span class="tx3">Micron PE(TTM)</span><span class="tg">~16x · 历史低位</span></div>
+      <div class="fjb mb4"><span class="tx3">SK Hynix PE</span><span class="tg">~10x · 周期低估</span></div>
+      <div class="fjb mb4"><span class="tx3">HBM3E ASP趋势</span><span class="tg">↑ 供不应求</span></div>
+      <div class="fjb mb4"><span class="tx3">20日动量</span><span class="tg" id="d-storMom">+7.5%</span></div>
+      <div class="rbar mt8"><div class="rfill rm" style="width:42%"></div></div>
+      <div class="tx3 mt4">HBM供需紧张 · AI服务器内存带宽持续扩容 · Micron/Hynix双龙头受益 · 风险: DRAM传统需求软化</div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">🔆 光模块/光器件</span><span class="sig s-buy">▲▲ 强买</span></div>
+      <div class="tx2 mb8">中际旭创 (300308) · 天孚通信 (300394) · 新易盛 (300502) · 华工科技 · 太辰光</div>
+      <div class="fjb mb4"><span class="tx3">800G模块出货</span><span class="tg">快速放量 · 价格稳定</span></div>
+      <div class="fjb mb4"><span class="tx3">1.6T模块进展</span><span class="tg">2025H2 量产预期</span></div>
+      <div class="fjb mb4"><span class="tx3">中际旭创 PE</span><span id="d-optPe1">~35x</span></div>
+      <div class="fjb mb4"><span class="tx3">天孚通信 PE</span><span id="d-optPe2">~42x</span></div>
+      <div class="fjb mb4"><span class="tx3">20日动量</span><span class="tg" id="d-optMom">+15.2%</span></div>
+      <div class="rbar mt8"><div class="rfill rm" style="width:30%"></div></div>
+      <div class="tx3 mt4">超级互联需求驱动 · A股核心受益赛道 · 毛利率持续改善 · 风险: 客户集中度高、汇率波动</div>
     </div>
   </div>
 </div>
@@ -1464,8 +1490,10 @@ const BASE = {
     {id:'idc',    name:'IDC传统数据中心',sub:'传统IDC改造升级',           metric:'租赁率/改造比例',sig:'watch',stage:'3', mom:3.2},
     {id:'macro',  name:'宏观经济',      sub:'PMI/通胀/利率/M2',           metric:'PMI/CPI/M2',   sig:'hold', stage:'3',  mom:1.1},
     {id:'kc',     name:'科创/创业板',   sub:'科创50/创业板综合',          metric:'市场Beta/PE',  sig:'hold', stage:'3-4',mom:4.7},
-    {id:'etf',    name:'AI综合指数ETF', sub:'AI主题ETF/宽基AI',           metric:'ETF流量/PE/PEG',sig:'hold',stage:'4+', mom:6.9},
-    {id:'apps',   name:'AI应用/SaaS',  sub:'AI应用平台/AI Agent/大模型', metric:'PE/PEG/泡沫风险',sig:'sell',stage:'5', mom:-2.3},
+    {id:'etf',     name:'AI综合指数ETF', sub:'AI主题ETF/宽基AI',              metric:'ETF流量/PE/PEG',   sig:'hold', stage:'4+',mom:6.9},
+    {id:'apps',    name:'AI应用/SaaS',  sub:'AI应用平台/AI Agent/大模型',    metric:'PE/PEG/泡沫风险',  sig:'sell', stage:'5', mom:-2.3},
+    {id:'storage', name:'HBM/DRAM存储', sub:'Micron/SK Hynix/Samsung/WDC',   metric:'HBM出货/ASP/库存', sig:'buy',  stage:'4', mom:7.5},
+    {id:'optical', name:'光模块/光器件',sub:'中际旭创/天孚通信/新易盛',       metric:'出货量/ASP/毛利率',sig:'buy+', stage:'4', mom:15.2},
   ],
 
   risks:[
@@ -1819,16 +1847,19 @@ function mkPort(){
 // em:  东方财富 secid，f25=20日涨跌幅
 // yf:  Yahoo Finance ticker，通过 chart API 计算20日收益率
 const MON_STOCKS = {
-  tech:  { yf:['GOOGL','MSFT','META'],                        names:['Alphabet','Microsoft','Meta']   },
-  pcb:   { em:['0.002916','0.002463','1.600183'],              names:['深南电路','沪电股份','生益科技'] },
-  semi:  { em:['1.688041','1.688256','1.688008'],              names:['海光信息','寒武纪','澜起科技']   },
-  supply:{ em:['0.300499','0.002837','0.002335'],              names:['高澜股份','英维克','科华数据']   },
-  aidc:  { em:['0.300442','0.300738','1.603881'],              names:['润泽科技','奥飞数据','数据港']   },
-  idc:   { em:['0.300383','1.600845','0.300017'],              names:['光环新网','宝信软件','网宿科技'] },
-  macro: { em:['1.000300','1.000001','0.399001'],              names:['沪深300','上证综指','深证成指']  },
-  kc:    { em:['1.000688','0.399006','0.399102'],              names:['科创50','创业板指','创业板综']   },
-  etf:   { em:['1.515980','1.512760','1.588000'],              names:['华夏AI','国泰芯片','科创50ETF'] },
-  apps:  { em:['1.600588','1.688111','0.002230'],              names:['用友网络','金山办公','科大讯飞'] },
+  tech:    { yf:['GOOGL','MSFT','META'],                        names:['Alphabet','Microsoft','Meta']       },
+  pcb:     { em:['0.002916','0.002463','1.600183'],              names:['深南电路','沪电股份','生益科技']   },
+  semi:    { em:['1.688041','1.688256','1.688008'],              names:['海光信息','寒武纪','澜起科技']     },
+  supply:  { em:['0.300499','0.002837','0.002335'],              names:['高澜股份','英维克','科华数据']     },
+  aidc:    { em:['0.300442','0.300738','1.603881'],              names:['润泽科技','奥飞数据','数据港']     },
+  idc:     { em:['0.300383','1.600845','0.300017'],              names:['光环新网','宝信软件','网宿科技']   },
+  macro:   { em:['1.000300','1.000001','0.399001'],              names:['沪深300','上证综指','深证成指']    },
+  kc:      { em:['1.000688','0.399006','0.399102'],              names:['科创50','创业板指','创业板综']     },
+  etf:     { em:['1.515980','1.512760','1.588000'],              names:['华夏AI','国泰芯片','科创50ETF']   },
+  apps:    { em:['1.600588','1.688111','0.002230'],              names:['用友网络','金山办公','科大讯飞']   },
+  // ── 新增 ──
+  storage: { yf:['MU','WDC','STX','000660.KS'],                 names:['Micron','Western Digital','Seagate','SK Hynix'] },
+  optical: { em:['0.300308','0.300394','0.300502'],              names:['中际旭创','天孚通信','新易盛']     },
 };
 
 // Yahoo Finance chart API → 计算20日收益率
@@ -1894,17 +1925,51 @@ async function fetchMonLive(){
         techMon._liveNames=MON_STOCKS.tech.names; techMon._live=true; yfOk=true;
       }
     }
-  }catch(e){ console.warn('fetchMonLive YF:',e); }
+  }catch(e){ console.warn('fetchMonLive YF tech:',e); }
+
+  // ③ Yahoo Finance (存储: MU/WDC/STX/SK Hynix)
+  try{
+    const storMon=BASE.monitors.find(m=>m.id==='storage');
+    if(storMon){
+      const results=await Promise.allSettled(MON_STOCKS.storage.yf.map(t=>_fetchYFMom20(t)));
+      const vals=results.filter(r=>r.status==='fulfilled'&&r.value!=null).map(r=>r.value);
+      if(vals.length>0){
+        storMon.mom=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10;
+        storMon._liveNames=MON_STOCKS.storage.names; storMon._live=true; yfOk=true;
+      }
+    }
+  }catch(e){ console.warn('fetchMonLive YF storage:',e); }
 
   // 重绘 & 更新平均动量
   renderMon();
   const avg=BASE.monitors.reduce((s,m)=>s+m.mom,0)/BASE.monitors.length;
   document.getElementById('sAvgMom').textContent=(avg>=0?'+':'')+avg.toFixed(1)+'%';
 
+  // 更新信号统计
+  const buyCnt  = BASE.monitors.filter(m=>m.sig==='buy'||m.sig==='buy+').length;
+  const holdCnt = BASE.monitors.filter(m=>m.sig==='hold'||m.sig==='watch').length;
+  const sellCnt = BASE.monitors.filter(m=>m.sig==='sell').length;
+  const s4Cnt   = BASE.monitors.filter(m=>m.stage.startsWith('4')).length;
+  const s5Cnt   = BASE.monitors.filter(m=>m.stage==='5').length;
+  const sBuy=document.getElementById('sBuy'); if(sBuy) sBuy.textContent=buyCnt;
+  const sHold=document.getElementById('sHold'); if(sHold) sHold.textContent=holdCnt;
+  const sSell=document.getElementById('sSell'); if(sSell) sSell.textContent=sellCnt;
+  const sS4=document.getElementById('sS4'); if(sS4) sS4.textContent=s4Cnt;
+  const sS5=document.getElementById('sS5'); if(sS5) sS5.textContent=s5Cnt;
+
+  // 更新存储/光模块详情卡动量
+  const storM=BASE.monitors.find(m=>m.id==='storage');
+  const optM =BASE.monitors.find(m=>m.id==='optical');
+  const el_stor=document.getElementById('d-storMom');
+  const el_opt =document.getElementById('d-optMom');
+  if(el_stor&&storM) el_stor.textContent=(storM.mom>=0?'+':'')+storM.mom.toFixed(1)+'%';
+  if(el_opt &&optM)  el_opt.textContent =(optM.mom>=0?'+':'')+optM.mom.toFixed(1)+'%';
+
   const live=BASE.monitors.filter(m=>m._live).length;
+  const total=BASE.monitors.length;
   const now=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
   if(ts){
-    if(emOk&&yfOk)  ts.textContent=`20日动量已更新 ${now}（${live}/10）`;
+    if(emOk&&yfOk)  ts.textContent=`20日动量已更新 ${now}（${live}/${total}）`;
     else if(emOk)   ts.textContent=`A股/指数已更新 ${now}（Yahoo受限）`;
     else            ts.textContent='⚠ 加载失败，显示静态数据';
   }
