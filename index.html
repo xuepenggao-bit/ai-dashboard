@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>风格投资 · AI产业监控仪表板</title>
+<title>投资组合 · AI产业监控仪表板</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -29,10 +29,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* ── Tabs ── */
-.tabs{background:linear-gradient(180deg,#f0f4ff 0%,#eef2fb 100%);border-bottom:2px solid #c7d7f7;padding:10px 20px 0;display:flex;gap:5px;overflow-x:auto;box-shadow:0 3px 12px rgba(37,99,235,.1)}
-.tab{padding:9px 17px;border:1.5px solid #dde6f5;background:linear-gradient(180deg,#fff 0%,#f5f8ff 100%);color:#64748b;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;border-radius:8px 8px 0 0;border-bottom:2px solid #dde6f5;transition:all .18s ease;white-space:nowrap;letter-spacing:.01em;position:relative;margin-bottom:-2px;box-shadow:0 2px 5px rgba(0,0,0,.08),0 1px 0 rgba(255,255,255,.95) inset}
-.tab:hover{color:#1e293b;background:linear-gradient(180deg,#fff 0%,#e8efff 100%);border-color:#93c5fd #93c5fd #93c5fd;box-shadow:0 3px 8px rgba(37,99,235,.18),0 1px 0 rgba(255,255,255,.9) inset;transform:translateY(-2px)}
-.tab.active{color:#fff;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);border-color:#1d4ed8 #1d4ed8 #1d4ed8;font-weight:700;box-shadow:0 4px 14px rgba(37,99,235,.4),0 1px 0 rgba(255,255,255,.2) inset;transform:translateY(-3px);z-index:2}
+.tabs{background:linear-gradient(to bottom,#0c1a32 0%,#08112a 100%);border-bottom:2px solid #1e3a8a;padding:0 16px;display:flex;gap:0;overflow-x:auto;box-shadow:0 6px 28px rgba(0,0,0,.35);scrollbar-width:thin;scrollbar-color:#1e3a6e transparent}
+.tab{padding:0 20px;height:46px;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;background:transparent;color:#5b7da6;cursor:pointer;font-size:12.5px;font-family:inherit;font-weight:600;white-space:nowrap;letter-spacing:.05em;position:relative;flex-shrink:0;transition:color .15s,background .15s,border-color .15s;display:inline-flex;align-items:center;gap:6px}
+.tab:hover{color:#93c5fd;background:rgba(59,130,246,.09)}
+.tab.active{color:#eff6ff;font-weight:800;background:rgba(59,130,246,.18);border-bottom-color:#3b82f6;text-shadow:0 0 18px rgba(147,197,253,.45)}
 
 /* ── Layout ── */
 .main{padding:20px;max-width:1400px;margin:0 auto}
@@ -234,7 +234,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div style="display:flex;align-items:center;gap:12px">
     <div class="hlogo">📊</div>
     <div>
-      <div class="htitle">风格投资 · AI产业监控仪表板</div>
+      <div class="htitle">投资组合 · AI产业监控仪表板</div>
       <div class="hsub">基于Richard Bernstein风格投资方法论 · 阶段4→5实时追踪</div>
     </div>
   </div>
@@ -248,15 +248,15 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ═══ TABS ═══ -->
 <nav class="tabs">
-  <button class="tab active" onclick="switchTab(0)">💼 投资组合</button>
-  <button class="tab" onclick="switchTab(1)">🧬 产业链阶段</button>
-  <button class="tab" onclick="switchTab(2)">📈 AI趋势</button>
-  <button class="tab" onclick="switchTab(3)">📡 光模块&amp;PCB监控</button>
-  <button class="tab" onclick="switchTab(4)">💾 存储监控</button>
-  <button class="tab" onclick="switchTab(5)">🇨🇳 A股宏观</button>
-  <button class="tab" onclick="switchTab(6)">🔍 产业链监控</button>
-  <button class="tab" onclick="switchTab(7)">⚠️ 风险仪表板</button>
-  <button class="tab" onclick="switchTab(8)">📋 十步框架</button>
+  <button class="tab active" onclick="switchTab(0)"><span style="font-size:14px">▣</span> 投资组合</button>
+  <button class="tab" onclick="switchTab(1)"><span style="font-size:14px">◈</span> 产业链阶段</button>
+  <button class="tab" onclick="switchTab(2)"><span style="font-size:13px">▲</span> AI&nbsp;趋势</button>
+  <button class="tab" onclick="switchTab(3)"><span style="font-size:13px">◉</span> 光模块&amp;PCB</button>
+  <button class="tab" onclick="switchTab(4)"><span style="font-size:13px">◉</span> 存储监控</button>
+  <button class="tab" onclick="switchTab(5)"><span style="font-size:13px">▦</span> A股宏观</button>
+  <button class="tab" onclick="switchTab(6)"><span style="font-size:13px">◎</span> 产业链监控</button>
+  <button class="tab" onclick="switchTab(7)"><span style="font-size:12px;color:#f87171">⬡</span> 风险仪表板</button>
+  <button class="tab" onclick="switchTab(8)"><span style="font-size:12px">≡</span> 十步框架</button>
 </nav>
 
 
@@ -622,7 +622,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <span class="stag">来源: 国家统计局 · 中国人民银行 · 月度数据 2024—2025</span>
   </div>
 
-  <!-- Row 4: CPI + 社会融资 -->
+  <!-- Row 1: CPI + 社会融资 -->
   <div class="g2 mb16">
     <div class="card">
       <div class="ch">
@@ -642,7 +642,27 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 5: FAI + 零售 -->
+  <!-- Row 2: 工业企业营业利润累计 + 计算机通信电子营业利润累计 -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">工业企业营业利润 累计同比增速 (%)</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">国家统计局 · 最新2026-03</span>
+      </div>
+      <div style="height:210px"><canvas id="cProfitAccum"></canvas></div>
+      <div class="tx3 mt4">规模以上工业企业营业利润累计同比增速 · 2024-01至2026-03 · 来源: 国家统计局月度数据 · 红虚线=零轴</div>
+    </div>
+    <div class="card" style="border-top:3px solid #7c3aed">
+      <div class="ch">
+        <span class="ct">计算机、通信和其他电子设备制造业 营业利润 累计同比增速 (%)</span>
+        <span class="cbadge" style="background:#ede9fe;color:#5b21b6">国家统计局 · 最新2026-03</span>
+      </div>
+      <div style="height:210px"><canvas id="cElectronicProfit"></canvas></div>
+      <div class="tx3 mt4">规模以上计算机、通信和其他电子设备制造业营业利润累计同比 · 2024-01至2026-03 · 来源: 国家统计局 · 注: 2024年上半年及2026年初受低基数效应影响增速偏高</div>
+    </div>
+  </div>
+
+  <!-- Row 3: FAI + 零售 -->
   <div class="g2 mb16">
     <div class="card">
       <div class="ch">
@@ -662,7 +682,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 6: 工业利润 full width -->
+  <!-- Row 4: 工业利润当月 full width -->
   <div class="card mb16">
     <div class="ch">
       <span class="ct">规模以上工业企业利润 当月同比增速 (%)</span>
@@ -670,26 +690,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
     <div style="height:220px"><canvas id="cIndustrial"></canvas></div>
     <div class="tx3 mt4">规模以上工业企业利润总额当月同比 · 2024-01至2026-03（最新）· 来源: 国家统计局 · 注: 数据波动较大，建议结合累计值综合判断</div>
-  </div>
-
-  <!-- Row 7: 工业企业营业利润累计 + 计算机通信电子营业利润累计 -->
-  <div class="g2 mb16">
-    <div class="card">
-      <div class="ch">
-        <span class="ct">工业企业营业利润 累计同比增速 (%)</span>
-        <span class="cbadge" style="background:#dbeafe;color:#1e40af">国家统计局 · 最新2026-03</span>
-      </div>
-      <div style="height:210px"><canvas id="cProfitAccum"></canvas></div>
-      <div class="tx3 mt4">规模以上工业企业营业利润累计同比增速 · 2024-01至2026-03 · 来源: 国家统计局月度数据 · 红虚线=零轴</div>
-    </div>
-    <div class="card" style="border-top:3px solid #7c3aed">
-      <div class="ch">
-        <span class="ct">计算机、通信和其他电子设备制造业 营业利润 累计同比增速 (%)</span>
-        <span class="cbadge" style="background:#ede9fe;color:#5b21b6">国家统计局 · 最新2026-03</span>
-      </div>
-      <div style="height:210px"><canvas id="cElectronicProfit"></canvas></div>
-      <div class="tx3 mt4">规模以上计算机、通信和其他电子设备制造业营业利润累计同比 · 2024-01至2026-03 · 来源: 国家统计局 · 注: 2024年上半年及2026年初受低基数效应影响增速偏高</div>
-    </div>
   </div>
 
 </div>
