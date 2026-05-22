@@ -553,7 +553,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         </div>
       </div>
       <div style="height:175px"><canvas id="cVix"></canvas></div>
-      <div class="tx3 mt4">来源: 腾讯财经 · 基于上证50ETF(510050)日线计算20日滚动已实现波动率（年化）· VIX&gt;30 高波动 · VIX&lt;12 低波动</div>
+      <div class="tx3 mt4">来源: 东方财富 · 基于上证50ETF(510050)日线计算20日滚动已实现波动率（年化）· VIX&gt;30 高波动 · VIX&lt;12 低波动</div>
     </div>
     <!-- 融资融券 -->
     <div class="card">
@@ -678,34 +678,59 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <div class="tab-content active" id="tPort">
   <div class="stitle">
     投资组合管理 <span class="stag">A股 · 港股 · 可编辑</span>
-    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <span style="font-size:11px;color:var(--text2)" id="portSyncTs">☁️ 加载中…</span>
-      <button onclick="portForcePush()" title="将当前浏览器的仓位数据强制推送到云端"
-        style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:7px;
-               padding:5px 11px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">
-        📤 同步到云端
-      </button>
-      <span style="font-size:11px;color:var(--text2)" id="portPriceTs">股价未加载</span>
-      <button id="portPriceBtn" class="rbtn" onclick="fetchPortPrices()" style="padding:6px 14px;font-size:12px">
-        <span class="ricon">↻</span> 刷新股价
-      </button>
-      <!-- 自动刷新周期 -->
-      <div id="autoRefreshBox" style="display:flex;align-items:center;gap:5px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:4px 10px;white-space:nowrap">
-        <span style="font-size:11px;color:#0369a1;font-weight:700">⏱ 周期</span>
-        <select id="autoRefreshSel" onchange="setAutoRefresh(this.value)"
-          style="font-size:11px;font-family:inherit;border:1px solid #bae6fd;border-radius:5px;
-                 background:#fff;color:#0369a1;font-weight:600;padding:2px 4px;cursor:pointer;outline:none">
-          <option value="0">手动</option>
-          <option value="1">1分钟</option>
-          <option value="2">2分钟</option>
-          <option value="3">3分钟</option>
-          <option value="5">5分钟</option>
-          <option value="10">10分钟</option>
-          <option value="15">15分钟</option>
-          <option value="30">30分钟</option>
-        </select>
-        <span id="autoRefreshCd" style="font-size:10px;color:#0284c7;font-weight:600;min-width:42px"></span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:5px;flex-wrap:nowrap">
+
+      <!-- ① 云同步区 -->
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+        <span id="portSyncTs" style="font-size:10px;color:var(--text2);white-space:nowrap;
+              max-width:170px;overflow:hidden;text-overflow:ellipsis">☁️ 加载中…</span>
+        <button onclick="portForcePush()" title="将当前浏览器的仓位数据推送到云端"
+          style="background:linear-gradient(135deg,#5b21b6 0%,#7c3aed 100%);color:#fff;
+                 border:none;border-radius:8px;padding:6px 16px;cursor:pointer;font-size:12px;
+                 font-family:inherit;font-weight:700;white-space:nowrap;letter-spacing:.03em;
+                 box-shadow:0 2px 10px rgba(109,40,217,.4);transition:opacity .18s,transform .1s"
+          onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'"
+          onmousedown="this.style.transform='scale(.96)'" onmouseup="this.style.transform='scale(1)'">
+          ☁ 同步到云端
+        </button>
       </div>
+
+      <!-- 分割线 -->
+      <div style="width:1px;height:44px;background:var(--border);flex-shrink:0;margin:0 4px"></div>
+
+      <!-- ② 股价刷新区 -->
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+        <span style="font-size:10px;color:var(--text2);white-space:nowrap" id="portPriceTs">股价未加载</span>
+        <button id="portPriceBtn" class="rbtn" onclick="fetchPortPrices()" style="padding:6px 14px;font-size:12px">
+          <span class="ricon">↻</span> 刷新股价
+        </button>
+      </div>
+
+      <!-- 分割线 -->
+      <div style="width:1px;height:44px;background:var(--border);flex-shrink:0;margin:0 4px"></div>
+
+      <!-- ③ 自动刷新周期 -->
+      <div id="autoRefreshBox" style="display:flex;flex-direction:column;align-items:center;gap:2px;
+           background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:5px 10px;flex-shrink:0">
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:11px;color:#0369a1;font-weight:700">⏱ 周期</span>
+          <select id="autoRefreshSel" onchange="setAutoRefresh(this.value)"
+            style="font-size:11px;font-family:inherit;border:1px solid #bae6fd;border-radius:5px;
+                   background:#fff;color:#0369a1;font-weight:600;padding:2px 4px;cursor:pointer;outline:none">
+            <option value="0">手动</option>
+            <option value="1">1分钟</option>
+            <option value="2">2分钟</option>
+            <option value="3">3分钟</option>
+            <option value="5">5分钟</option>
+            <option value="10">10分钟</option>
+            <option value="15">15分钟</option>
+            <option value="30">30分钟</option>
+          </select>
+        </div>
+        <span id="autoRefreshCd" style="font-size:10px;color:#0284c7;font-weight:600;
+              min-width:50px;text-align:center;height:13px"></span>
+      </div>
+
     </div>
   </div>
 
@@ -1863,49 +1888,44 @@ async function fetchVixChart(){
     let closes=[], dates=[];
     const errs2=[];
 
-    // ① 腾讯 JSONP（日期在 x[0]，收盘在 x[2]）
+    // ① 东方财富 push2his（主源，无 CORS 问题）
     try{
-      const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
-               +'?_var=kl&param=sh510050,day,,,,250,qfq&_='+Date.now();
-      const text=await (await fetch(url)).text();
-      const st=text.indexOf('{');
-      if(st<0) throw new Error('无JSON');
-      const j=JSON.parse(text.slice(st));
-      const days=(j?.['sh510050']||j?.['sh510050qfq'])?.day||[];
-      if(days.length<25) throw new Error('天数不足('+days.length+')');
-      closes=days.map(x=>parseFloat(x[2]));
-      dates =days.map(x=>x[0]);
+      const url='https://push2his.eastmoney.com/api/qt/stock/kline/get'
+               +'?secid=1.510050&fields1=f1,f2,f3,f4,f5,f6'
+               +'&fields2=f51,f52,f53,f54,f55,f56&klt=101&fqt=1'
+               +'&beg=0&end=20500101&lmt=280&_='+Date.now();
+      const j=await (await fetch(url,{cache:'no-store'})).json();
+      const kl=j?.data?.klines||[];
+      if(kl.length<25) throw new Error('天数不足('+kl.length+')');
+      closes=kl.map(k=>parseFloat(k.split(',')[2]));
+      dates =kl.map(k=>k.split(',')[0]);
       if(closes.some(v=>isNaN(v)||v<=0)) throw new Error('含无效价格');
-    }catch(e){ errs2.push('腾讯:'+e.message); }
+    }catch(e){ errs2.push('东方财富:'+e.message); }
 
-    // ② 东方财富 push2his 备源（kline 字符串含日期）
+    // ② 腾讯 fqkline 备源（URL 格式：code,day,,,lmt,qfq）
     if(!closes.length){
       try{
-        const url='https://push2his.eastmoney.com/api/qt/stock/kline/get'
-                 +'?secid=1.510050&fields1=f1,f2,f3,f4,f5,f6'
-                 +'&fields2=f51,f52,f53,f54,f55,f56&klt=101&fqt=1'
-                 +'&beg=0&end=20500101&lmt=250&_='+Date.now();
-        const j=await (await fetch(url)).json();
-        const kl=j?.data?.klines||[];
-        if(kl.length<25) throw new Error('天数不足('+kl.length+')');
-        closes=kl.map(k=>parseFloat(k.split(',')[2]));
-        dates =kl.map(k=>k.split(',')[0]);
+        const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
+                 +'?_var=kl&param=sh510050,day,,,280,qfq&_='+Date.now();
+        const text=await (await fetch(url,{cache:'no-store'})).text();
+        const st=text.indexOf('{');
+        if(st<0) throw new Error('无JSON');
+        const j=JSON.parse(text.slice(st));
+        const days=(j?.['sh510050']||j?.['sh510050qfq'])?.day||[];
+        if(days.length<25) throw new Error('天数不足('+days.length+')');
+        closes=days.map(x=>parseFloat(x[2]));
+        dates =days.map(x=>x[0]);
         if(closes.some(v=>isNaN(v)||v<=0)) throw new Error('含无效价格');
-      }catch(e){ errs2.push('东方财富:'+e.message); }
+      }catch(e){ errs2.push('腾讯:'+e.message); }
     }
 
     if(!closes.length) throw new Error(errs2.join(' | '));
 
-    // 滚动 20 日年化已实现波动率
+    // 滚动 20 日年化已实现波动率（复用 _rvCalc）
     const W=20;
     const rvLabels=[],rvVals=[];
     for(let i=W;i<closes.length;i++){
-      const sl=closes.slice(i-W,i+1);
-      const rt=[];
-      for(let k=1;k<sl.length;k++) rt.push(Math.log(sl[k]/sl[k-1]));
-      const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
-      const vr=rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1);
-      rvVals.push(+(Math.sqrt(vr*252)*100).toFixed(2));
+      rvVals.push(+_rvCalc(closes.slice(i-W,i+1)).toFixed(2));
       rvLabels.push(dates[i].slice(5));
     }
     if(!rvVals.length) throw new Error('RV计算结果为空');
@@ -1920,7 +1940,7 @@ async function fetchVixChart(){
     if(valEl){valEl.textContent=latest.toFixed(2);valEl.style.color=vColor;}
     if(lvlEl){lvlEl.textContent=vLevel+' · '+(chg>=0?'+':'')+chg.toFixed(2)+' 日变动';lvlEl.style.color=vColor;}
     if(dateEl){dateEl.textContent='截至 '+lastDt+' · 上证50ETF 20日RV（年化）';}
-    if(badge){badge.textContent='实时计算 · 腾讯财经';badge.style.background='#ede9fe';badge.style.color='#5b21b6';}
+    if(badge){badge.textContent='实时计算 · 东方财富';badge.style.background='#ede9fe';badge.style.color='#5b21b6';}
 
     if(CH.vix){try{CH.vix.destroy();}catch(e){}}
     const canvas=document.getElementById('cVix');
@@ -3886,39 +3906,33 @@ async function _getKlineClose(tcSym, lmt){
 }
 
 // ── iVIX 市场恐慌指数 ───────────────────────────────────────
-// 数据源：东方财富 push2his K线（ETF 510050 / 510300），计算 20 日年化已实现波动率
-// 腾讯 fqkline 作为备源（URL 格式：code,day,,,lmt,qfq，共 5 个逗号）
-async function fetchVixRow(listEl){
-  if(!listEl) return;
+// 数据源：东方财富 push2his（主源）→ 腾讯 fqkline（备源）
+// ETF 优先级：上证50ETF(510050) → 沪深300ETF(510300)
+// 使用模块级缓存：保证 fetchIndexPrices 每次重置 innerHTML 后立即能显示卡片
 
-  // 清除同一 listEl 内已有的 iVIX 行（避免并发刷新产生重复）
-  listEl.querySelector('#vixPortRow')?.remove();
-  listEl.querySelector('#vixPortSep')?.remove();
+let _vixCache = null;  // {val, chg, src} — 最近一次成功获取的数据
 
-  let vixVal=null, vixChg=null, vixSrc='';
+// 年化已实现波动率：内部复用
+function _rvCalc(cl){
+  const rt=[];
+  for(let i=1;i<cl.length;i++) rt.push(Math.log(cl[i]/cl[i-1]));
+  const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
+  return Math.sqrt(rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1)*252)*100;
+}
 
-  // 年化已实现波动率计算（对数收益率标准差 × √252 × 100）
-  const rvCalc=(cl)=>{
-    const rt=[];
-    for(let i=1;i<cl.length;i++) rt.push(Math.log(cl[i]/cl[i-1]));
-    const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
-    const vr=rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1);
-    return Math.sqrt(vr*252)*100;
-  };
-
-  // 尝试 ETF：先 510050（上证50），再 510300（沪深300）
-  for(const [secid, tcSym, label] of [
+// 仅获取数据，不操作 DOM；供 fetchVixRow 和 fetchVixChart 共用
+async function _fetchVixData(){
+  for(const [secid,tcSym,label] of [
     ['1.510050','sh510050','上证50ETF'],
     ['1.510300','sh510300','沪深300ETF'],
   ]){
     try{
       let cl=null;
 
-      // ① 优先：东方财富 push2his（直接用 secid，无 CORS 问题）
+      // ① 东方财富 push2his（主源）
       try{
         const url='https://push2his.eastmoney.com/api/qt/stock/kline/get'
-                 +'?secid='+secid
-                 +'&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56'
+                 +'?secid='+secid+'&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56'
                  +'&klt=101&fqt=1&beg=0&end=20500101&lmt=30&_='+Date.now();
         const j=await (await fetch(url,{cache:'no-store'})).json();
         const kl=j?.data?.klines||[];
@@ -3928,7 +3942,7 @@ async function fetchVixRow(listEl){
         }
       }catch(e1){ console.warn('[iVIX] EM',label,e1.message); }
 
-      // ② 备源：腾讯 fqkline（格式 code,day,,,lmt,qfq，注意只有5个逗号）
+      // ② 腾讯 fqkline（备源，格式：code,day,,,lmt,qfq）
       if(!cl){
         try{
           const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
@@ -3949,32 +3963,23 @@ async function fetchVixRow(listEl){
 
       if(!cl) continue;
 
-      const rv    =rvCalc(cl.slice(-21));     // 最近 20 个对数收益率
-      const rvPrev=rvCalc(cl.slice(-22,-1));  // 前一日的 20 日窗口
-      if(rv>0&&rv<300){
-        vixVal=+rv.toFixed(2);
-        vixChg=+(rv-rvPrev).toFixed(2);
-        vixSrc=label+' 20日RV';
-        break;
-      }
+      const rv    =_rvCalc(cl.slice(-21));    // 最近 20 日
+      const rvPrev=_rvCalc(cl.slice(-22,-1)); // 前一日窗口
+      if(rv>0&&rv<300) return {val:+rv.toFixed(2), chg:+(rv-rvPrev).toFixed(2), src:label+' 20日RV'};
     }catch(e){ console.warn('[iVIX]',label,e.message); }
   }
+  return null;
+}
 
-  // 分隔线
-  const sep=document.createElement('div');
-  sep.id='vixPortSep';
-  sep.style.cssText='height:1px;background:linear-gradient(90deg,transparent,#c4b5fd 50%,transparent);margin:8px 0 6px';
-  listEl.appendChild(sep);
+// iVIX 卡片渲染（data=null 时显示 loading 占位）
+function _renderVixCard(row, data){
+  const cardBase='padding:10px 12px;border-radius:10px;'
+    +'background:linear-gradient(135deg,#faf5ff 0%,#ede9fe 50%,#faf5ff 100%);'
+    +'border-left:3px solid #7c3aed;box-shadow:0 2px 10px rgba(124,58,237,.12);'
+    +'border:1px solid #ddd6fe';
+  row.style.cssText=cardBase;
 
-  const row=document.createElement('div');
-  row.id='vixPortRow';
-
-  // 数据获取失败：显示占位卡片（始终渲染，保证布局完整）
-  if(vixVal===null){
-    row.style.cssText='padding:10px 12px;border-radius:10px;'
-      +'background:linear-gradient(135deg,#faf5ff 0%,#ede9fe 50%,#faf5ff 100%);'
-      +'border-left:3px solid #7c3aed;box-shadow:0 2px 10px rgba(124,58,237,.12);'
-      +'border:1px solid #ddd6fe';
+  if(!data){
     row.innerHTML=`
       <div style="display:flex;align-items:center;gap:8px">
         <div style="flex:1">
@@ -3983,30 +3988,25 @@ async function fetchVixRow(listEl){
           </div>
           <div style="font-size:10px;color:#8b5cf6;margin-top:2px">
             <span style="background:#e0e7ff;color:#3730a3;padding:1px 5px;border-radius:4px;font-weight:700;font-size:9px">历史波动率</span>
-            &nbsp;数据加载中，请稍后刷新
+            &nbsp;数据加载中…
           </div>
         </div>
-        <div style="font-size:22px;font-weight:900;color:#94a3b8">—</div>
+        <div style="font-size:22px;font-weight:900;color:#c4b5fd">—</div>
       </div>`;
-    listEl.appendChild(row);
     return;
   }
 
-  // 正常渲染
-  const vLevel = vixVal>35?'极高警戒':vixVal>25?'高波动':vixVal>15?'中等':vixVal>10?'低波动':'极低';
-  const vColor = vixVal>35?'#be123c':vixVal>25?'#dc2626':vixVal>15?'#d97706':vixVal>10?'#059669':'#0891b2';
-  const vBg    = vixVal>35?'rgba(190,18,60,.08)':vixVal>25?'rgba(220,38,38,.07)':
-                 vixVal>15?'rgba(217,119,6,.07)':vixVal>10?'rgba(5,150,105,.07)':'rgba(8,145,178,.07)';
-  const chgStr = vixChg!=null
-    ? (vixChg>0?`<span style="font-size:11px;color:#dc2626;font-weight:700">↑ +${vixChg.toFixed(2)}</span>`
-              :`<span style="font-size:11px;color:#059669;font-weight:700">↓ ${vixChg.toFixed(2)}</span>`)
-    : '';
-  const barW=Math.min(100,Math.round(vixVal/50*100));
+  const {val,chg,src}=data;
+  const vLevel=val>35?'极高警戒':val>25?'高波动':val>15?'中等':val>10?'低波动':'极低';
+  const vColor=val>35?'#be123c':val>25?'#dc2626':val>15?'#d97706':val>10?'#059669':'#0891b2';
+  const vBg   =val>35?'rgba(190,18,60,.08)':val>25?'rgba(220,38,38,.07)':
+                val>15?'rgba(217,119,6,.07)':val>10?'rgba(5,150,105,.07)':'rgba(8,145,178,.07)';
+  const chgStr=chg!=null
+    ?(chg>0?`<span style="font-size:11px;color:#dc2626;font-weight:700">↑ +${chg.toFixed(2)}</span>`
+           :`<span style="font-size:11px;color:#059669;font-weight:700">↓ ${chg.toFixed(2)}</span>`)
+    :'';
+  const barW=Math.min(100,Math.round(val/50*100));
 
-  row.style.cssText='padding:10px 12px;border-radius:10px;'
-    +'background:linear-gradient(135deg,#faf5ff 0%,#ede9fe 50%,#faf5ff 100%);'
-    +'border-left:3px solid #7c3aed;box-shadow:0 2px 10px rgba(124,58,237,.12);'
-    +'border:1px solid #ddd6fe';
   row.innerHTML=`
     <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:6px">
       <div style="flex:1;min-width:0">
@@ -4015,12 +4015,12 @@ async function fetchVixRow(listEl){
         </div>
         <div style="font-size:10px;color:#8b5cf6;margin-top:1px;display:flex;align-items:center;gap:4px">
           <span style="font-size:9px;background:#e0e7ff;color:#3730a3;padding:1px 5px;border-radius:4px;font-weight:700">历史波动率</span>
-          &nbsp;${vixSrc}
+          &nbsp;${src}
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:22px;font-weight:900;color:${vColor};letter-spacing:-.03em;line-height:1">
-          ${vixVal.toFixed(2)}<span style="font-size:12px;font-weight:600;opacity:.85">%</span>
+          ${val.toFixed(2)}<span style="font-size:12px;font-weight:600;opacity:.85">%</span>
         </div>
         <div style="margin-top:1px">${chgStr}</div>
       </div>
@@ -4031,7 +4031,39 @@ async function fetchVixRow(listEl){
       </div>
       <span style="font-size:10px;font-weight:700;color:${vColor};background:${vBg};padding:1px 8px;border-radius:4px;white-space:nowrap">${vLevel}</span>
     </div>`;
+}
+
+// 主入口：立即用缓存渲染（零等待），再后台刷新
+async function fetchVixRow(listEl){
+  if(!listEl) return;
+
+  // 清除旧节点（防止并发重入产生重复）
+  listEl.querySelector('#vixPortSep')?.remove();
+  listEl.querySelector('#vixPortRow')?.remove();
+
+  // 分隔线
+  const sep=document.createElement('div');
+  sep.id='vixPortSep';
+  sep.style.cssText='height:1px;background:linear-gradient(90deg,transparent,#c4b5fd 50%,transparent);margin:8px 0 6px';
+  listEl.appendChild(sep);
+
+  // 卡片节点
+  const row=document.createElement('div');
+  row.id='vixPortRow';
   listEl.appendChild(row);
+
+  // 立即渲染（有缓存用缓存，无则 loading）
+  _renderVixCard(row, _vixCache);
+
+  // 后台获取最新值
+  try{
+    const data=await _fetchVixData();
+    if(data){
+      _vixCache=data;
+      // 只在节点仍在 DOM 中时更新，避免过期回调污染新的 listEl
+      if(row.isConnected) _renderVixCard(row, data);
+    }
+  }catch(e){ console.warn('[iVIX] background update failed:', e); }
 }
 
 // ── 主要指数实时行情 ────────────────────────────────────────
