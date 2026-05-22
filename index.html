@@ -2927,7 +2927,7 @@ function renderPortfolio(){
       type:'doughnut',
       data:{labels:chartLabels, datasets:[{data:chartData, backgroundColor:chartColors, borderWidth:0}]},
       options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
-               plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:14,weight:'600'},boxWidth:14,padding:12}}}}
+               plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:11,weight:'600'},boxWidth:10,padding:8}}}}
     });
   }
   // Sectors
@@ -4196,16 +4196,19 @@ async function fetchVixRow(listEl){
 // ── 主要指数实时行情 ────────────────────────────────────────
 // 腾讯 API 的指数（前4个，GBK解码）
 const _IDX_TENCENT = [
-  {tc:'sh000001', label:'上证指数'},
-  {tc:'sz399001', label:'深证成指'},
-  {tc:'sz399006', label:'创业板指'},
-  {tc:'sh000688', label:'科创 50'},
+  {tc:'sh000001', label:'上证指数', region:'a'},
+  {tc:'sz399001', label:'深证成指', region:'a'},
+  {tc:'sz399006', label:'创业板指', region:'a'},
+  {tc:'sh000688', label:'科创 50',  region:'a'},
 ];
-// 东方财富 API 的指数（后2个）
-// 中证全指 secid=1.000985；A股均价 secid=47.800005（code=800005）
+// 东方财富 API 的指数（A股 + 港股 + A/H溢价）
+// 中证全指 secid=1.000985；A股均价 secid=47.800005；恒生 100.HSI；恒生科技 100.HSTECH；A/H溢价 1.000061
 const _IDX_EM = [
-  {secids:['1.000985'],  code:'000985', label:'中证全指'},
-  {secids:['47.800005'], code:'800005', label:'A股均价'},
+  {secids:['1.000985'],   code:'000985', label:'中证全指', region:'a'},
+  {secids:['47.800005'],  code:'800005', label:'A股均价',  region:'a'},
+  {secids:['100.HSI'],    code:'HSI',    label:'恒生指数', region:'hk'},
+  {secids:['100.HSTECH'], code:'HSTECH', label:'恒生科技', region:'hk'},
+  {secids:['1.000061'],   code:'000061', label:'A/H溢价',  region:'ah'},
 ];
 
 async function fetchIndexPrices(){
@@ -4230,13 +4233,13 @@ async function fetchIndexPrices(){
         const p     = m[1].split('~');
         const price = parseFloat(p[3]);
         const pct   = parseFloat(p[32]);
-        if(isFinite(price) && price > 0) rows.push({label:idx.label, price, pct});
+        if(isFinite(price) && price > 0) rows.push({label:idx.label, price, pct, region:idx.region||'a'});
       });
     }
   }catch(e){ console.warn('腾讯指数API:', e); }
 
   try{
-    // ── ② 东方财富 API：中证全指 + A股均价 ─────────────
+    // ── ② 东方财富 API：A股指数 + 港股指数 + A/H溢价 ─────
     const allSecids = _IDX_EM.flatMap(i=>i.secids);
     const emUrl = 'https://push2.eastmoney.com/api/qt/ulist.np/get'
                 + '?secids=' + allSecids.join(',')
@@ -4246,9 +4249,12 @@ async function fetchIndexPrices(){
       const emJson = await emResp.json();
       const diff   = (emJson?.data?.diff) || [];
       _IDX_EM.forEach(idx=>{
-        // 取第一个 f2>0 的匹配项（覆盖多个候选 secid）
-        const hit = diff.find(d => String(d.f12) === idx.code && d.f2 > 0);
-        if(hit) rows.push({label:idx.label, price:hit.f2, pct:hit.f3});
+        // 匹配：直接比较，或补零后比较（A股代码）
+        const hit = diff.find(d=>{
+          const c = String(d.f12);
+          return (c === idx.code || c.padStart(6,'0') === idx.code) && d.f2 > 0;
+        });
+        if(hit) rows.push({label:idx.label, price:hit.f2, pct:hit.f3, region:idx.region||'a'});
       });
     }
   }catch(e){ console.warn('东方财富指数API:', e); }
@@ -4261,13 +4267,26 @@ async function fetchIndexPrices(){
       const up    = r.pct > 0;
       const dn    = r.pct < 0;
       const color = up ? '#16a34a' : dn ? '#dc2626' : 'var(--text2)';
-      const bg    = up ? '#f0fdf4' : dn ? '#fff5f5' : '#f8fafc';
       const arrow = up ? '▲' : dn ? '▼' : '─';
       const sign  = up ? '+' : '';
+      // 港股和A/H溢价指数使用不同的边框和背景颜色，与A股指数区分
+      let accent = color;
+      let bg     = up ? '#f0fdf4' : dn ? '#fff5f5' : '#f8fafc';
+      let badge  = '';
+      if(r.region === 'hk'){
+        accent = '#e11d48';
+        bg     = '#fff5f7';
+        badge  = ' <span style="font-size:9px;background:#fee2e2;color:#9f1239;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">港</span>';
+      } else if(r.region === 'ah'){
+        accent = '#d97706';
+        bg     = '#fffbeb';
+        badge  = ' <span style="font-size:9px;background:#fef3c7;color:#92400e;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">溢价</span>';
+      }
+      const priceStr = (r.region === 'hk') ? r.price.toFixed(0) : r.price.toFixed(2);
       return `<div style="display:flex;align-items:center;padding:7px 10px;border-radius:8px;
-                           background:${bg};margin-bottom:5px;border-left:3px solid ${color}">
-        <span style="flex:1;font-size:13px;font-weight:700;color:var(--text);letter-spacing:.01em">${r.label}</span>
-        <span style="font-size:13px;font-weight:600;color:#475569;margin-right:12px">${r.price.toFixed(2)}</span>
+                           background:${bg};margin-bottom:5px;border-left:3px solid ${accent}">
+        <span style="flex:1;font-size:13px;font-weight:700;color:var(--text);letter-spacing:.01em">${r.label}${badge}</span>
+        <span style="font-size:13px;font-weight:600;color:#475569;margin-right:12px">${priceStr}</span>
         <span style="font-size:15px;font-weight:900;color:${color};min-width:62px;text-align:right;
                      letter-spacing:-.01em">${arrow} ${sign}${r.pct.toFixed(2)}%</span>
       </div>`;
@@ -4382,7 +4401,7 @@ async function fetchPortPrices(){
     console.error('fetchPortPrices:', err);
   } finally {
     _portSort.col = 'pct';
-    _portSort.dir = 1;
+    _portSort.dir = -1;   // 默认降序（涨幅最高在前）
     renderPortfolio();
     renderPortTop3();
     _renderPortTopW();
