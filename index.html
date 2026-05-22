@@ -838,6 +838,43 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         </div>
       </div>
       <div style="font-size:12px;color:#64748b;margin-top:10px;font-weight:500" id="pKpiHk">—</div>
+
+      <!-- 涨跌分布 —— 由 _renderPortBreadth() 填充 -->
+      <div id="portBreadth" style="display:none;margin-top:13px;padding-top:12px;border-top:1px solid #bfdbfe">
+        <!-- 小标题 + 计数 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+          <span style="font-size:11px;color:#3b82f6;font-weight:700;letter-spacing:.04em">今日涨跌分布</span>
+          <span id="pBreadthLabel" style="font-size:11px;color:var(--text2);font-weight:600"></span>
+        </div>
+        <!-- 热力点阵：每只股票一个圆角方块，按涨跌幅排序，深浅代表幅度，大小代表仓位 -->
+        <div id="portBreadthDots" style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:9px;min-height:10px"></div>
+        <!-- 涨跌比例条 -->
+        <div style="height:7px;border-radius:4px;overflow:hidden;background:#fecaca;margin-bottom:11px">
+          <div id="pBreadthBar" style="height:100%;background:linear-gradient(90deg,#10b981,#4ade80);border-radius:4px;transition:width .7s ease;width:0%"></div>
+        </div>
+        <!-- 上涨 / 下跌 两栏卡片 -->
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;background:linear-gradient(150deg,#f0fdf4 0%,#dcfce7 100%);border:1.5px solid #86efac;border-radius:10px;padding:9px 11px">
+            <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:900;color:#16a34a;line-height:1">▲</span>
+              <span id="pUpCount" style="font-size:28px;font-weight:900;color:#14532d;line-height:1;letter-spacing:-.03em">—</span>
+              <span style="font-size:11px;color:#16a34a;font-weight:700">只</span>
+            </div>
+            <div id="pUpAvg" style="font-size:14px;font-weight:800;color:#15803d;letter-spacing:-.01em">—</div>
+            <div style="font-size:10px;color:#86efac;font-weight:600;margin-top:2px;letter-spacing:.02em">平均涨幅</div>
+          </div>
+          <div style="flex:1;background:linear-gradient(150deg,#fff1f2 0%,#ffe4e6 100%);border:1.5px solid #fda4af;border-radius:10px;padding:9px 11px">
+            <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:900;color:#dc2626;line-height:1">▼</span>
+              <span id="pDownCount" style="font-size:28px;font-weight:900;color:#7f1d1d;line-height:1;letter-spacing:-.03em">—</span>
+              <span style="font-size:11px;color:#dc2626;font-weight:700">只</span>
+            </div>
+            <div id="pDownAvg" style="font-size:14px;font-weight:800;color:#b91c1c;letter-spacing:-.01em">—</div>
+            <div style="font-size:10px;color:#fda4af;font-weight:600;margin-top:2px;letter-spacing:.02em">平均跌幅</div>
+          </div>
+        </div>
+        <div id="pFlatInfo" style="display:none;font-size:10px;color:#94a3b8;text-align:center;margin-top:7px;font-weight:500"></div>
+      </div>
     </div>
 
     <!-- 仓位分配图表 -->
@@ -3084,6 +3121,7 @@ function renderPortfolio(){
   document.getElementById('pKpiWeight').textContent  = wSum.toFixed(1)+'%';
   document.getElementById('pKpiHk').textContent      = '含港股 '+hkCnt+' 只';
   document.getElementById('pTotalBadge').textContent = '合计 '+wSum.toFixed(1)+'%';
+  _renderPortBreadth();  // 刷新涨跌分布热力图
   // Alloc chart（不足100%的部分显示为"现金"）
   if(CH.portAlloc){ CH.portAlloc.destroy(); CH.portAlloc=null; }
   const actx = document.getElementById('cPortAlloc');
@@ -4693,6 +4731,76 @@ function renderPortTop3(){
 
   upEl.innerHTML   = top5.map(function(s,i){ return mkRow(s,i+1,true);  }).join('');
   downEl.innerHTML = bot5.map(function(s,i){ return mkRow(s,i+1,false); }).join('');
+}
+
+// ── 持仓涨跌分布热力图（持仓概览卡片底部）──────────────────────
+function _renderPortBreadth(){
+  var el = document.getElementById('portBreadth');
+  if(!el) return;
+
+  // 收集所有有价格的股票
+  var allStocks = [];
+  if(typeof PORT !== 'undefined' && PORT && PORT.sectors){
+    PORT.sectors.forEach(function(sec){
+      sec.stocks.forEach(function(sk){ allStocks.push(sk); });
+    });
+  }
+  var withPrice = allStocks.filter(function(sk){ return _PORT_PRICES[sk.code]; });
+  if(!withPrice.length){ el.style.display='none'; return; }
+
+  var up   = withPrice.filter(function(sk){ return _PORT_PRICES[sk.code].pct > 0; });
+  var down = withPrice.filter(function(sk){ return _PORT_PRICES[sk.code].pct < 0; });
+  var flat = withPrice.filter(function(sk){ return _PORT_PRICES[sk.code].pct === 0; });
+
+  var avgUp   = up.length   ? up.reduce(function(s,sk){  return s+_PORT_PRICES[sk.code].pct; },0)/up.length   : 0;
+  var avgDown = down.length ? down.reduce(function(s,sk){ return s+_PORT_PRICES[sk.code].pct; },0)/down.length : 0;
+  var upRatio = withPrice.length > 0 ? up.length/withPrice.length : 0;
+
+  // 热力点阵：按涨幅从高到低排序，大小代表仓位，颜色深浅代表幅度
+  var sorted = withPrice.slice().sort(function(a,b){
+    return _PORT_PRICES[b.code].pct - _PORT_PRICES[a.code].pct;
+  });
+  var dotsHtml = sorted.map(function(sk){
+    var p   = _PORT_PRICES[sk.code].pct;
+    var mag = Math.min(1, Math.abs(p) / 5);   // 5% 以上饱和
+    // 大小：有仓位则按权重缩放（8-16px），否则统一 9px
+    var sz  = (sk.w > 0) ? Math.max(8, Math.min(16, 6 + sk.w * 0.65)) : 9;
+    var bg;
+    if(p > 0){
+      // 绿色：浅绿 → 深绿
+      var l = Math.round(48 - 18 * mag);
+      bg = 'hsl(150,' + Math.round(55 + 35 * mag) + '%,' + l + '%)';
+    } else if(p < 0){
+      // 红色：浅红 → 深红
+      var l2 = Math.round(46 - 18 * mag);
+      bg = 'hsl(4,' + Math.round(60 + 30 * mag) + '%,' + l2 + '%)';
+    } else {
+      bg = '#94a3b8';
+    }
+    var tip = sk.name + '  ' + (p >= 0 ? '+' : '') + p.toFixed(2) + '%'
+            + (sk.w > 0 ? '  仓位' + sk.w.toFixed(1) + '%' : '');
+    return '<div title="' + tip + '" style="width:' + sz + 'px;height:' + sz + 'px;'
+         + 'border-radius:3px;background:' + bg + ';flex-shrink:0;cursor:default"></div>';
+  }).join('');
+
+  document.getElementById('portBreadthDots').innerHTML = dotsHtml;
+  document.getElementById('pBreadthBar').style.width   = (upRatio * 100).toFixed(1) + '%';
+  document.getElementById('pBreadthLabel').textContent =
+    (up.length ? up.length + '↑ ' : '') +
+    (down.length ? down.length + '↓' : '') +
+    (flat.length ? ' ' + flat.length + '平' : '');
+  document.getElementById('pUpCount').textContent   = up.length;
+  document.getElementById('pDownCount').textContent  = down.length;
+  document.getElementById('pUpAvg').textContent =
+    up.length   ? '+' + avgUp.toFixed(2)   + '%' : '—';
+  document.getElementById('pDownAvg').textContent =
+    down.length ? avgDown.toFixed(2) + '%' : '—';
+
+  var flatEl = document.getElementById('pFlatInfo');
+  if(flat.length){ flatEl.textContent='平盘 '+flat.length+' 只'; flatEl.style.display='block'; }
+  else { flatEl.style.display='none'; }
+
+  el.style.display = 'block';
 }
 
 // ── 重仓 TOP5（与今日涨幅TOP5逻辑一致：依赖 _PORT_PRICES，刷新后展示）──
