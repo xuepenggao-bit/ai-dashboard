@@ -3873,51 +3873,110 @@ async function _getKlineClose(tcSym, lmt){
   throw new Error(errs.join(' | '));
 }
 
-// ── iVIX / 市场波动率 ───────────────────────────────────────
+// ── iVIX 市场恐慌指数 ───────────────────────────────────────
+// 三级备源：① 新浪财经 50ETF期权隐含VIX（最实时，盘中实时报价）
+//           ② 沪深300ETF (510300) 20日年化已实现波动率（全市场代表性更强）
+//           ③ 上证50ETF (510050) 20日RV（传统备源）
 async function fetchVixRow(listEl){
   if(!listEl) return;
-  let vixVal=null;
+  let vixVal=null, vixChg=null, vixSrc='', vixType='';
 
-  // 上证50ETF (510050) 25日收盘价 → 20日年化RV
+  // ① 新浪财经 50ETF期权隐含波动率（期权市场定价，最具前瞻性）
   try{
-    const cl=await _getKlineClose('sh510050',25);
-    if(cl.length>=12){
+    const url='https://stock.finance.sina.com.cn/futures/api/openapi.php'
+             +'?type=VIX&_='+Date.now();
+    const resp=await fetch(url,{cache:'no-store'});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const json=await resp.json();
+    const raw=json?.result?.data;
+    const item=Array.isArray(raw)?raw[0]:raw;
+    if(item){
+      const cur=parseFloat(item.current||item.close);
+      const pre=parseFloat(item.pre_close||item.pre_settle||item.settlement);
+      if(isFinite(cur)&&cur>2&&cur<200){
+        vixVal=+cur.toFixed(2);
+        if(isFinite(pre)&&pre>0) vixChg=+(cur-pre).toFixed(2);
+        vixSrc='50ETF期权隐含VIX';
+        vixType='implied';
+      }
+    }
+  }catch(e){ console.warn('[iVIX] Sina期权:',e.message); }
+
+  // ② 沪深300ETF / ③ 上证50ETF —— 20日年化已实现波动率
+  if(!vixVal){
+    const rvCalc=(slice)=>{
       const rt=[];
-      for(let i=1;i<cl.length;i++) rt.push(Math.log(cl[i]/cl[i-1]));
+      for(let i=1;i<slice.length;i++) rt.push(Math.log(slice[i]/slice[i-1]));
       const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
       const vr=rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1);
-      const rv=Math.sqrt(vr*252)*100;
-      if(rv>0&&rv<300) vixVal=+rv.toFixed(2);
+      return Math.sqrt(vr*252)*100;
+    };
+    for(const [sym,label] of [['sh510300','沪深300ETF'],['sh510050','上证50ETF']]){
+      try{
+        const cl=await _getKlineClose(sym,27);        // 取27日：算两个20日窗口+缓冲
+        if(cl.length<22) continue;
+        const rv    =rvCalc(cl.slice(-21));            // 最新20日
+        const rvPrev=rvCalc(cl.slice(-22,-1));         // 前一日20日（对比用）
+        if(rv>0&&rv<300){
+          vixVal=+rv.toFixed(2);
+          vixChg=+(rv-rvPrev).toFixed(2);
+          vixSrc=label+' 20日RV';
+          vixType='rv';
+          break;
+        }
+      }catch(e){ console.warn('[iVIX] RV '+sym+':',e.message); }
     }
-  }catch(e){ console.warn('fetchVixRow:',e.message); }
+  }
 
   if(!vixVal) return;
-  const vLevel  = vixVal>30?'高波动':vixVal>20?'中等':vixVal>12?'低波动':'极低';
-  const vLvlClr = vixVal>30?'#dc2626':vixVal>20?'#d97706':'#059669';
+
+  // 颜色 & 文字定义
+  const vLevel = vixVal>35?'极高警戒':vixVal>25?'高波动':vixVal>15?'中等':vixVal>10?'低波动':'极低';
+  const vColor = vixVal>35?'#be123c':vixVal>25?'#dc2626':vixVal>15?'#d97706':vixVal>10?'#059669':'#0891b2';
+  const vBg    = vixVal>35?'rgba(190,18,60,.08)':vixVal>25?'rgba(220,38,38,.07)':
+                 vixVal>15?'rgba(217,119,6,.07)':vixVal>10?'rgba(5,150,105,.07)':'rgba(8,145,178,.07)';
+  const chgStr = vixChg!=null
+    ? (vixChg>0?`<span style="font-size:11px;color:#dc2626;font-weight:700">↑ +${vixChg.toFixed(2)}</span>`
+              :`<span style="font-size:11px;color:#059669;font-weight:700">↓ ${vixChg.toFixed(2)}</span>`)
+    : '';
+  const barW   = Math.min(100, Math.round(vixVal / 50 * 100));
+  const srcTag = vixType==='implied'
+    ? `<span style="font-size:9px;background:#d1fae5;color:#065f46;padding:1px 5px;border-radius:4px;font-weight:700">期权</span>`
+    : `<span style="font-size:9px;background:#e0e7ff;color:#3730a3;padding:1px 5px;border-radius:4px;font-weight:700">历史波动率</span>`;
 
   // 分隔线
   const sep=document.createElement('div');
-  sep.style.cssText='height:1px;background:linear-gradient(90deg,transparent,#c4b5fd 40%,transparent);margin:8px 2px 6px';
+  sep.style.cssText='height:1px;background:linear-gradient(90deg,transparent,#c4b5fd 50%,transparent);margin:8px 0 6px';
   listEl.appendChild(sep);
 
   const row=document.createElement('div');
-  row.style.cssText='display:flex;align-items:center;padding:9px 12px;border-radius:8px;'
-    +'background:linear-gradient(135deg,#faf5ff 0%,#ede9fe 100%);margin-bottom:4px;'
-    +'border-left:3px solid #7c3aed;box-shadow:0 2px 8px rgba(124,58,237,.1)';
+  row.id='vixPortRow';
+  row.style.cssText='padding:10px 12px;border-radius:10px;'
+    +'background:linear-gradient(135deg,#faf5ff 0%,#ede9fe 50%,#faf5ff 100%);'
+    +'border-left:3px solid #7c3aed;box-shadow:0 2px 10px rgba(124,58,237,.12);'
+    +'border:1px solid #ddd6fe';
   row.innerHTML=`
-    <div style="flex:1;min-width:0">
-      <div style="font-size:13px;font-weight:700;color:#5b21b6;letter-spacing:.01em">iVIX参考 (20日RV)
-        <span style="font-size:9px;background:#ede9fe;color:#7c3aed;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:600">● 实时</span>
+    <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:6px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:800;color:#4c1d95;letter-spacing:.02em">
+          iVIX &nbsp;<span style="font-weight:500;color:#7c3aed;font-size:12px">市场恐慌指数</span>
+        </div>
+        <div style="font-size:10px;color:#8b5cf6;margin-top:1px;display:flex;align-items:center;gap:4px">
+          ${srcTag}&nbsp;${vixSrc}
+        </div>
       </div>
-      <div style="font-size:10px;color:#8b5cf6;margin-top:2px">上证50ETF 20日已实现波动率（年化）</div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:22px;font-weight:900;color:${vColor};letter-spacing:-.03em;line-height:1">
+          ${vixVal.toFixed(2)}<span style="font-size:12px;font-weight:600;opacity:.85">%</span>
+        </div>
+        <div style="margin-top:1px">${chgStr}</div>
+      </div>
     </div>
-    <div style="text-align:right;flex-shrink:0;margin-left:8px">
-      <div style="font-size:20px;font-weight:900;color:#5b21b6;letter-spacing:-.02em;line-height:1.1">
-        ${vixVal.toFixed(2)}<span style="font-size:11px;font-weight:600;margin-left:1px">%</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="flex:1;height:5px;background:rgba(139,92,246,.15);border-radius:3px;overflow:hidden">
+        <div style="width:${barW}%;height:100%;background:linear-gradient(90deg,#7c3aed,${vColor});border-radius:3px;transition:width .6s ease"></div>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:2px">
-        <span style="font-size:10px;font-weight:700;background:${vLvlClr}22;color:${vLvlClr};padding:1px 6px;border-radius:4px">${vLevel}</span>
-      </div>
+      <span style="font-size:10px;font-weight:700;color:${vColor};background:${vBg};padding:1px 8px;border-radius:4px;white-space:nowrap">${vLevel}</span>
     </div>`;
   listEl.appendChild(row);
 }
