@@ -3121,8 +3121,8 @@ function _renderSecPies(){
     const canvas=document.getElementById('cSecPie_'+si);
     if(!canvas) return;
 
-    // 只统计有仓位的股票
-    const stks=sec.stocks.filter(sk=>(sk.w||0)>0);
+    // 只统计有仓位的股票，按仓位从高到低排序
+    const stks=sec.stocks.filter(sk=>(sk.w||0)>0).sort((a,b)=>(b.w||0)-(a.w||0));
     if(stks.length===0){
       // 无仓位 → 文字占位
       const wrap=canvas.parentElement;
@@ -4268,20 +4268,20 @@ async function fetchVixRow(listEl){
 }
 
 // ── 主要指数实时行情 ────────────────────────────────────────
-// 腾讯 API 的指数（前4个，GBK解码）
+// 腾讯 API 的指数（A股指数 + 港股指数，GBK解码）
 const _IDX_TENCENT = [
   {tc:'sh000001', label:'上证指数', region:'a'},
   {tc:'sz399001', label:'深证成指', region:'a'},
   {tc:'sz399006', label:'创业板指', region:'a'},
   {tc:'sh000688', label:'科创 50',  region:'a'},
+  {tc:'hk800000', label:'恒生指数', region:'hk'},
+  {tc:'hk800700', label:'恒生科技', region:'hk'},
 ];
-// 东方财富 API 的指数（A股 + 港股 + A/H溢价）
-// 中证全指 secid=1.000985；A股均价 secid=47.800005；恒生 100.HSI；恒生科技 100.HSTECH；A/H溢价 1.000061
+// 东方财富 API 的指数（A股 + A/H溢价，港股改用腾讯API）
+// 中证全指 secid=1.000985；A股均价 secid=47.800005；A/H溢价 1.000061
 const _IDX_EM = [
   {secids:['1.000985'],   code:'000985', label:'中证全指', region:'a'},
   {secids:['47.800005'],  code:'800005', label:'A股均价',  region:'a'},
-  {secids:['100.HSI'],    code:'HSI',    label:'恒生指数', region:'hk'},
-  {secids:['100.HSTECH'], code:'HSTECH', label:'恒生科技', region:'hk'},
   {secids:['1.000061'],   code:'000061', label:'A/H溢价',  region:'ah'},
 ];
 
@@ -4304,9 +4304,12 @@ async function fetchIndexPrices(){
       _IDX_TENCENT.forEach(idx=>{
         const m = txt.match(new RegExp('v_' + idx.tc + '="([^"]+)"'));
         if(!m) return;
-        const p     = m[1].split('~');
-        const price = parseFloat(p[3]);
-        const pct   = parseFloat(p[32]);
+        const p      = m[1].split('~');
+        const price  = parseFloat(p[3]);
+        const prev   = parseFloat(p[4]);   // 昨收（港股也在p[4]）
+        let   pct    = parseFloat(p[32]);
+        // 港股指数 p[32] 有时为空或异常，则从当前价/昨收推算
+        if(!isFinite(pct) && isFinite(prev) && prev > 0) pct = (price - prev) / prev * 100;
         if(isFinite(price) && price > 0) rows.push({label:idx.label, price, pct, region:idx.region||'a'});
       });
     }
