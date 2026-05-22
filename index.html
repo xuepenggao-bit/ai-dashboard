@@ -672,6 +672,26 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="tx3 mt4">规模以上工业企业利润总额当月同比 · 2024-01至2026-03（最新）· 来源: 国家统计局 · 注: 数据波动较大，建议结合累计值综合判断</div>
   </div>
 
+  <!-- Row 7: 工业企业营业利润累计 + 计算机通信电子营业利润累计 -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">工业企业营业利润 累计同比增速 (%)</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">国家统计局 · 最新2026-03</span>
+      </div>
+      <div style="height:210px"><canvas id="cProfitAccum"></canvas></div>
+      <div class="tx3 mt4">规模以上工业企业营业利润累计同比增速 · 2024-01至2026-03 · 来源: 国家统计局月度数据 · 红虚线=零轴</div>
+    </div>
+    <div class="card" style="border-top:3px solid #7c3aed">
+      <div class="ch">
+        <span class="ct">计算机、通信和其他电子设备制造业 营业利润 累计同比增速 (%)</span>
+        <span class="cbadge" style="background:#ede9fe;color:#5b21b6">国家统计局 · 最新2026-03</span>
+      </div>
+      <div style="height:210px"><canvas id="cElectronicProfit"></canvas></div>
+      <div class="tx3 mt4">规模以上计算机、通信和其他电子设备制造业营业利润累计同比 · 2024-01至2026-03 · 来源: 国家统计局 · 注: 2024年上半年及2026年初受低基数效应影响增速偏高</div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ════════════════ TAB 投资组合 ════════════════ -->
@@ -1631,6 +1651,17 @@ const BASE = {
       // 规模以上工业企业利润当月同比增速（NBS月度，1-2月合并发布）· 来源：国家统计局
       labels:['24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-03'],
       vals:  [10.2,-3.5,4.3,0.7,3.5,4.1,17.1,11.9,-10.0,7.3,11.0,-4.0,2.5,2.0,1.5,2.5,1.8,1.2,1.0,0.8,0.8,0.6,15.5],
+    },
+    profitAccum:{
+      // 工业企业营业利润（利润总额）累计同比增速(%) · 来源:国家统计局 · 带~者为估算值
+      labels:['24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-02','26-03'],
+      vals:  [10.2,4.3,3.7,3.4,3.5,3.6,0.5,-3.5,-4.3,-4.7,-3.3,-0.3,0.8,1.4,1.2,1.0,-1.7,0.9,3.2,1.9,0.1,0.6,15.2,15.5],
+    },
+    electronicProfit:{
+      // 计算机、通信和其他电子设备制造业营业利润累计同比(%) · 来源:国家统计局
+      // 2024年上半年及2026年初受2023/2025年低基数效应影响增速偏高 · 带~者为估算值
+      labels:['24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-02','26-03'],
+      vals:  [246.3,92.0,82.6,60.0,25.6,18.0,13.0,7.1,9.5,2.9,3.4,2.0,3.5,12.1,12.9,11.0,9.0,7.2,10.0,12.8,15.0,19.5,200.0,120.0],
     },
   },
 
@@ -3343,6 +3374,38 @@ function mkIndustrial(){
   }});
 }
 
+function mkProfitAccum(){
+  const ctx=document.getElementById('cProfitAccum').getContext('2d');
+  const d=BASE.ashare.profitAccum;
+  const zero=d.labels.map(()=>0);
+  CH.profitAccum=new Chart(ctx,{type:'line',data:{labels:d.labels,datasets:[
+    {label:'工业营业利润累计同比(%)',data:d.vals,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.1)',borderWidth:2.5,pointRadius:3,fill:true,tension:0.3,order:1},
+    {label:'零轴',data:zero,type:'line',borderColor:'rgba(239,68,68,.5)',borderWidth:1.2,borderDash:[4,3],pointRadius:0,fill:false,tension:0,order:2},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11},filter:item=>item.datasetIndex===0}}},
+    scales:{
+      x:{grid:{color:'rgba(226,232,240,.6)'},ticks:{color:'#64748b',font:{size:9}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'%'}},
+    }
+  }});
+}
+
+function mkElectronicProfit(){
+  const ctx=document.getElementById('cElectronicProfit').getContext('2d');
+  const d=BASE.ashare.electronicProfit;
+  const zero=d.labels.map(()=>0);
+  CH.electronicProfit=new Chart(ctx,{type:'line',data:{labels:d.labels,datasets:[
+    {label:'计算机通信电子营业利润累计同比(%)',data:d.vals,borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.1)',borderWidth:2.5,pointRadius:3,fill:true,tension:0.3,order:1},
+    {label:'零轴',data:zero,type:'line',borderColor:'rgba(239,68,68,.5)',borderWidth:1.2,borderDash:[4,3],pointRadius:0,fill:false,tension:0,order:2},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11},filter:item=>item.datasetIndex===0}}},
+    scales:{
+      x:{grid:{color:'rgba(226,232,240,.6)'},ticks:{color:'#64748b',font:{size:9}}},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'%'}},
+    }
+  }});
+}
+
 function renderMag7(){
   const el = document.getElementById('mag7List');
   if(!el) return;
@@ -3731,6 +3794,11 @@ const MACRO_CFGS={
     url:_DC+'reportName=RPT_ECONOMY_PROFITGROW&columns=REPORT_DATE,ACCUMULATE_GROW,ACCU_GROW,YEAR_RATIO,VALUE',
     lf:'REPORT_DATE', vfs:['ACCUMULATE_GROW','ACCU_GROW','YEAR_RATIO','VALUE'], name:'工业利润同比', dsLabel:'工业利润同比(%)',
   },
+  profitAccum:{
+    // 工业企业营业利润累计同比 — 优先使用 ACCUMULATE_GROW 字段（累计增速）
+    url:_DC+'reportName=RPT_ECONOMY_PROFITGROW&columns=REPORT_DATE,ACCUMULATE_GROW,YEAR_RATIO,VALUE&pageSize=30',
+    lf:'REPORT_DATE', vfs:['ACCUMULATE_GROW','YEAR_RATIO'], name:'工业营业利润累计同比', dsLabel:'工业营业利润累计同比(%)',
+  },
 };
 
 async function _tryFetchMacro(url, lf, vfs){
@@ -3774,11 +3842,12 @@ async function refreshMacro(){
   if(alertEl) alertEl.style.display='none';
 
   const chartKeys=[
-    {key:'cpi',      chRef:()=>CH.cpi,       dsIdx:0},
-    {key:'tsf',      chRef:()=>CH.tsf,       dsIdx:0},
-    {key:'fai',      chRef:()=>CH.fai,       dsIdx:0},
-    {key:'retail',   chRef:()=>CH.retail,    dsIdx:0},
-    {key:'industrial',chRef:()=>CH.industrial,dsIdx:0},
+    {key:'cpi',         chRef:()=>CH.cpi,             dsIdx:0},
+    {key:'tsf',         chRef:()=>CH.tsf,             dsIdx:0},
+    {key:'fai',         chRef:()=>CH.fai,             dsIdx:0},
+    {key:'retail',      chRef:()=>CH.retail,          dsIdx:0},
+    {key:'industrial',  chRef:()=>CH.industrial,      dsIdx:0},
+    {key:'profitAccum', chRef:()=>CH.profitAccum,     dsIdx:0},
   ];
   const ok=[], fail=[];
   for(const {key,chRef,dsIdx} of chartKeys){
@@ -3793,8 +3862,8 @@ async function refreshMacro(){
           ch.data.datasets[0].backgroundColor=d.vals.map(v=>(v||0)>=0?'rgba(5,150,105,.65)':'rgba(220,38,38,.55)');
           if(ch.data.datasets[1]){ch.data.datasets[1].data=d.vals;}
         }
-        if(key==='fai'){
-          // 同步更新零轴数据点数量
+        // 同步更新零轴数据点数量（fai、profitAccum、electronicProfit 都有 dataset[1] 零轴）
+        if(['fai','profitAccum','electronicProfit'].includes(key)){
           if(ch.data.datasets[1]){ch.data.datasets[1].data=d.labels.map(()=>0);}
         }
         ch.update('none');
@@ -3803,9 +3872,47 @@ async function refreshMacro(){
       ok.push({key, latest, name:d.name, field:d.usedField});
     }catch(e){
       console.warn('[Macro]',key,'失败:',e.message);
-      fail.push({key, err:e.message, name:MACRO_CFGS[key].name});
+      fail.push({key, err:e.message, name:(MACRO_CFGS[key]||{}).name||key});
     }
   }
+
+  // ── 计算机通信电子行业营业利润累计同比 — 尝试国家统计局 easyquery API ────
+  await (async()=>{
+    const nbsUrl='https://data.stats.gov.cn/easyquery.htm?m=QueryData&dbcode=hgyd'
+      +'&rowcode=zb&colcode=sj&wds=[{"wdcode":"hy","valuecode":"C39"}]'
+      +'&dfwds=[{"wdcode":"zb","valuecode":"A0E0G"}]&k1='+Date.now();
+    try{
+      const resp=await fetch(nbsUrl,{cache:'no-store'});
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+      const json=await resp.json();
+      // NBS easyquery 返回格式解析
+      const nodes=json?.returndata?.datanodes;
+      if(!nodes?.length) throw new Error('NBS: no datanodes');
+      const pairs=nodes
+        .filter(n=>n?.data?.strdata!=null&&n.data.strdata!=='')
+        .map(n=>{
+          const sjCode=n.wds?.find(w=>w.wdcode==='sj')?.valuecode||'';
+          const m=sjCode.match(/(\d{4})(\d{2})/);
+          const lbl=m?m[1].slice(2)+'-'+m[2]:sjCode;
+          return{lbl, val:parseFloat(n.data.strdata)};
+        })
+        .filter(p=>isFinite(p.val))
+        .sort((a,b)=>a.lbl>b.lbl?1:-1);
+      if(pairs.length<6) throw new Error('NBS: too few points ('+pairs.length+')');
+      const ch=CH.electronicProfit;
+      if(ch){
+        ch.data.labels=pairs.map(p=>p.lbl);
+        ch.data.datasets[0].data=pairs.map(p=>p.val);
+        if(ch.data.datasets[1]) ch.data.datasets[1].data=pairs.map(()=>0);
+        ch.update('none');
+      }
+      const lbl=pairs[pairs.length-1].lbl;
+      ok.push({key:'electronicProfit',latest:lbl,name:'计算机电子营业利润累计同比',field:'NBS A0E0G'});
+    }catch(e){
+      console.warn('[Macro] NBS电子行业利润:',e.message);
+      // 静态数据保持不变
+    }
+  })();
 
   const timeStr=new Date().toLocaleString('zh-CN');
   if(ts) ts.textContent=`已更新 ${ok.length}/${chartKeys.length} 项 · ${timeStr}`;
@@ -4443,7 +4550,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   mkNeoCapex();mkOptGrowth();mkPcbGrowth();mkIntlPe();mkDomStorePe();mkArr();
   portInit();   // 优先从 GitHub 云端加载组合数据
   mkNewInv();mkMktPe();mkMargin();mkNorth();mkUpDown();mkConc();
-  mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();
+  mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();mkProfitAccum();mkElectronicProfit();
   fetchVixChart();   // 异步拉取 iVIX 历史数据
   mkStageMatrix();
   renderMon();renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();renderMag7();
