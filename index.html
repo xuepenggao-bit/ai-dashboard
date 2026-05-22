@@ -835,7 +835,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <!-- 仓位分配图表 -->
     <div class="card">
       <div class="ch"><span class="ct">仓位分配（按分类）</span><span class="cbadge" id="pTotalBadge">合计 —%</span></div>
-      <div style="height:250px"><canvas id="cPortAlloc"></canvas></div>
+      <div style="height:200px"><canvas id="cPortAlloc"></canvas></div>
+      <div id="portAllocLegend" style="margin-top:10px"></div>
     </div>
     <div class="card">
       <div class="ch"><span class="ct">新增分类</span></div>
@@ -2743,7 +2744,9 @@ let _portSort = {col:null, dir:-1};
 let _portDirty = false;   // 有本地修改未同步到云端时为 true
 
 function togglePortSort(col){
-  if(_portSort.col===col) _portSort.dir*=-1;
+  // 首次点击某列，或从升序再次点击：重置为降序（从大到小）
+  // 只有当前列已是降序时，再次点击才切换为升序
+  if(_portSort.col===col && _portSort.dir===-1) _portSort.dir=1;
   else{ _portSort.col=col; _portSort.dir=-1; }
   renderPortfolio();
 }
@@ -2915,20 +2918,34 @@ function renderPortfolio(){
   const actx = document.getElementById('cPortAlloc');
   if(actx){
     const cash = Math.max(0, parseFloat((100 - wSum).toFixed(1)));
-    const chartLabels = PORT.sectors.map((s,i)=>s.name+' '+secWeights[i].toFixed(1)+'%');
+    const chartLabels = PORT.sectors.map((s,i)=>s.name);
     const chartData   = [...secWeights];
     const chartColors = PORT.sectors.map(s=>s.color+'cc');
+    const allWeights  = [...secWeights];
+    const allColors   = [...chartColors];
+    const allNames    = [...chartLabels];
     if(cash > 0.05){
-      chartLabels.push('现金 '+cash.toFixed(1)+'%');
+      chartLabels.push('现金');
       chartData.push(cash);
-      chartColors.push('#cbd5e1cc');  // 浅灰色
+      chartColors.push('#cbd5e1cc');
+      allWeights.push(cash); allColors.push('#cbd5e1cc'); allNames.push('现金');
     }
     CH.portAlloc = new Chart(actx.getContext('2d'),{
       type:'doughnut',
-      data:{labels:chartLabels, datasets:[{data:chartData, backgroundColor:chartColors, borderWidth:0}]},
-      options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
-               plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:11,weight:'600'},boxWidth:10,padding:8}}}}
+      data:{labels:allNames, datasets:[{data:chartData, backgroundColor:chartColors, borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+               plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.label+' '+ctx.parsed.toFixed(1)+'%'}}}}
     });
+    // 自定义图例：一行一个分类，显示仓位
+    const legendEl = document.getElementById('portAllocLegend');
+    if(legendEl){
+      legendEl.innerHTML = allNames.map((name,i)=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid #f1f5f9">
+          <span style="width:10px;height:10px;border-radius:2px;flex-shrink:0;background:${allColors[i]}"></span>
+          <span style="font-size:12px;font-weight:600;color:#334155;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</span>
+          <span style="font-size:12px;font-weight:700;color:#475569;flex-shrink:0">${allWeights[i].toFixed(1)}%</span>
+        </div>`).join('');
+    }
   }
   // Sectors
   const mktStyle = {SH:'background:#dbeafe;color:#1e40af',SZ:'background:#ede9fe;color:#5b21b6',HK:'background:#fee2e2;color:#991b1b'};
