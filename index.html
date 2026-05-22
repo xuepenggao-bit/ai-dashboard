@@ -29,11 +29,44 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* ── Tabs ── */
-.tabs{background:#fff;border-bottom:2px solid var(--border);height:54px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.tabs{
+  background:linear-gradient(180deg,#ffffff 0%,#f4f6fa 100%);
+  border-bottom:2px solid #cdd4df;
+  height:54px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06)
+}
 .tabs-inner{max-width:1400px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:4px;height:100%}
-.tab{flex:1;min-width:0;height:40px;border:none;border-radius:8px;background:transparent;color:var(--text2);cursor:pointer;font-size:13.5px;font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;font-weight:500;white-space:nowrap;overflow:hidden;transition:color .18s,background .18s,box-shadow .18s;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 4px;letter-spacing:.015em}
-.tab:hover{background:#f1f5f9;color:var(--text)}
-.tab.active{background:var(--blue);color:#fff;font-weight:700;box-shadow:0 2px 8px rgba(37,99,235,.25)}
+.tab{
+  flex:1;min-width:0;height:40px;
+  border:1px solid #dde3ec;
+  border-bottom:2px solid #b6c2d4;          /* 底边加深 → 立体感 */
+  border-radius:8px;
+  background:linear-gradient(180deg,#fbfcfd 0%,#eaeff6 100%);  /* 顶亮底暗 */
+  color:var(--text2);cursor:pointer;
+  font-size:13.5px;font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;
+  font-weight:500;white-space:nowrap;overflow:hidden;
+  transition:background .16s,box-shadow .16s,transform .13s,border-color .16s,color .16s;
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 4px;letter-spacing:.015em;
+  box-shadow:0 1px 4px rgba(0,0,0,.07),       /* 底部浅阴影 */
+             inset 0 1px 0 rgba(255,255,255,.9) /* 顶部高光线 */
+}
+.tab:hover{
+  background:linear-gradient(180deg,#ffffff 0%,#dde4ef 100%);
+  color:var(--text);
+  border-color:#c3cedf;border-bottom-color:#8fa4be;
+  box-shadow:0 3px 9px rgba(0,0,0,.11),
+             inset 0 1px 0 rgba(255,255,255,1);
+  transform:translateY(-1px)
+}
+.tab.active{
+  background:linear-gradient(180deg,#5b9cf6 0%,#1d4ed8 100%);  /* 顶浅蓝 → 底深蓝 */
+  color:#fff;font-weight:700;
+  border-color:#1e40af;border-bottom-color:#1e3a8a;
+  box-shadow:0 4px 14px rgba(37,99,235,.4),
+             inset 0 1px 0 rgba(255,255,255,.28);
+  transform:translateY(-2px)
+}
+.tab.active:hover{transform:translateY(-2px)}
 /* 小屏恢复横向滚动 */
 @media(max-width:1023px){
   .tabs-inner{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
