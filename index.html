@@ -29,10 +29,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* ── Tabs ── */
-.tabs{background:linear-gradient(to bottom,#0c1a32 0%,#08112a 100%);border-bottom:2px solid #1e3a8a;padding:0 16px;display:flex;gap:0;overflow-x:auto;box-shadow:0 6px 28px rgba(0,0,0,.35);scrollbar-width:thin;scrollbar-color:#1e3a6e transparent}
-.tab{padding:0 20px;height:46px;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;background:transparent;color:#5b7da6;cursor:pointer;font-size:12.5px;font-family:inherit;font-weight:600;white-space:nowrap;letter-spacing:.05em;position:relative;flex-shrink:0;transition:color .15s,background .15s,border-color .15s;display:inline-flex;align-items:center;gap:6px}
-.tab:hover{color:#93c5fd;background:rgba(59,130,246,.09)}
-.tab.active{color:#eff6ff;font-weight:800;background:rgba(59,130,246,.18);border-bottom-color:#3b82f6;text-shadow:0 0 18px rgba(147,197,253,.45)}
+.tabs{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:0;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.tab{padding:0 16px;height:42px;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;background:transparent;color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit;font-weight:600;white-space:nowrap;flex-shrink:0;transition:color .15s,border-color .15s;display:inline-flex;align-items:center}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 
 /* ── Layout ── */
 .main{padding:20px;max-width:1400px;margin:0 auto}
@@ -248,15 +248,15 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ═══ TABS ═══ -->
 <nav class="tabs">
-  <button class="tab active" onclick="switchTab(0)"><span style="font-size:14px">▣</span> 投资组合</button>
-  <button class="tab" onclick="switchTab(1)"><span style="font-size:14px">◈</span> 产业链阶段</button>
-  <button class="tab" onclick="switchTab(2)"><span style="font-size:13px">▲</span> AI&nbsp;趋势</button>
-  <button class="tab" onclick="switchTab(3)"><span style="font-size:13px">◉</span> 光模块&amp;PCB</button>
-  <button class="tab" onclick="switchTab(4)"><span style="font-size:13px">◉</span> 存储监控</button>
-  <button class="tab" onclick="switchTab(5)"><span style="font-size:13px">▦</span> A股宏观</button>
-  <button class="tab" onclick="switchTab(6)"><span style="font-size:13px">◎</span> 产业链监控</button>
-  <button class="tab" onclick="switchTab(7)"><span style="font-size:12px;color:#f87171">⬡</span> 风险仪表板</button>
-  <button class="tab" onclick="switchTab(8)"><span style="font-size:12px">≡</span> 十步框架</button>
+  <button class="tab active" onclick="switchTab(0)">投资组合</button>
+  <button class="tab" onclick="switchTab(1)">产业链阶段</button>
+  <button class="tab" onclick="switchTab(2)">AI 趋势</button>
+  <button class="tab" onclick="switchTab(3)">光模块&amp;PCB</button>
+  <button class="tab" onclick="switchTab(4)">存储监控</button>
+  <button class="tab" onclick="switchTab(5)">A股宏观</button>
+  <button class="tab" onclick="switchTab(6)">产业链监控</button>
+  <button class="tab" onclick="switchTab(7)">风险仪表板</button>
+  <button class="tab" onclick="switchTab(8)">十步框架</button>
 </nav>
 
 
