@@ -2038,6 +2038,7 @@ async function fetchVixChart(){
     const rvLabels=rvLabelsAll.slice(-DISP);
 
     const latest=rvVals[rvVals.length-1];
+    _iVix = latest;   // 保存供风险仪表板宏观/货币政策指标使用
     const prev  =rvVals.length>1?rvVals[rvVals.length-2]:latest;
     const chg   =latest-prev;
     const lastDt=dates[dates.length-1];
@@ -2094,10 +2095,16 @@ async function fetchVixChart(){
 // 北向资金：使用 BASE.ashare.north 静态日频数据，无需远程接口
 
 // ── 风险仪表盘自动计算 ────────────────────────────────────────
-let _aiEtfPe = null;  // 由 fetchMonLive 写入，AI ETF 515980 的 PE(动态)
+let _aiEtfPe = null;  // 由 fetchMonLive    写入：AI ETF 515980 PE
+let _iVix    = null;  // 由 fetchVixChart   写入：上证50ETF 20日RV（年化%）
+let _cn10y   = null;  // 由 fetchMacroRates 写入：中国10年期国债收益率（%）
+let _us10y   = null;  // 由 fetchMacroRates 写入：美国10年期国债收益率（%）
+let _ahPrem  = null;  // 由 fetchIndexPrices写入：A/H溢价指数最新价
 
 function updateRiskDashboard(){
-  // ① 泡沫估值 → AI ETF PE
+  const liveMons = BASE.monitors.filter(m=>m._live);
+
+  // ① 泡沫估值 → AI ETF PE（华夏AI ETF 515980）
   if(_aiEtfPe && _aiEtfPe > 0){
     const pe=_aiEtfPe;
     const sc=Math.min(95,Math.max(5,Math.round(pe*0.97)));
@@ -2110,7 +2117,7 @@ function updateRiskDashboard(){
     BASE.switchConds[0]._live=true;
   }
 
-  // ② 估值/资金配置 → PCB 平均动态PE
+  // ② 估值/资金配置 → PCB 平均动态PE（深南/沪电/生益）
   const pcbPes=BASE.stocks.pcb.map(s=>s.pe).filter(p=>p>0&&p<500);
   if(pcbPes.length>0){
     const avg=Math.round(pcbPes.reduce((a,b)=>a+b,0)/pcbPes.length*10)/10;
@@ -2129,8 +2136,7 @@ function updateRiskDashboard(){
     BASE.switchConds[3]._live=true;
   }
 
-  // ③ 综合动量 → 产业链监控有效板块均值
-  const liveMons=BASE.monitors.filter(m=>m._live);
+  // ③ 综合动量 switchCond → 产业链监控有效板块均值
   if(liveMons.length>0){
     const avg=liveMons.reduce((s,m)=>s+m.mom,0)/liveMons.length;
     BASE.switchConds[5].curr=(avg>=0?'+':'')+avg.toFixed(1)+'%';
@@ -2152,7 +2158,95 @@ function updateRiskDashboard(){
     }
   }
 
-  // ⑤ 综合风险评分 = 所有 sc 均值，更新仪表盘
+  // ──── 以下为新增动态指标 ─────────────────────────────────────
+
+  // ⑤ 趋势/共识集中度 → 全部活跃板块20日均值动量（过热=拥挤交易风险上升）
+  if(liveMons.length >= 3){
+    const avgMom=liveMons.reduce((s,m)=>s+m.mom,0)/liveMons.length;
+    const sc=avgMom>15?85:avgMom>8?68:avgMom>3?48:avgMom>-3?28:15;
+    BASE.risks[0].metric='产业链均值动量(20日)';
+    BASE.risks[0].val=(avgMom>=0?'+':'')+avgMom.toFixed(1)+'%';
+    BASE.risks[0].thr='+8%';
+    BASE.risks[0].sc =sc;
+    BASE.risks[0].lvl=sc>=65?'high':sc>=35?'med':'low';
+    BASE.risks[0]._live=true;
+    // 同步 AI叙事集中度 switchCond
+    BASE.switchConds[4].curr=(avgMom>=0?'+':'')+avgMom.toFixed(1)+'%';
+    BASE.switchConds[4].ok  =avgMom<8;
+    BASE.switchConds[4].s4  ='< +8%';
+    BASE.switchConds[4].s5  ='> +15%';
+    BASE.switchConds[4]._live=true;
+  }
+
+  // ⑥ 宏观/货币政策 → CN10Y + 中美利差 + iVIX 三因子综合评分
+  if(_cn10y!==null || _iVix!==null){
+    let sc=40;
+    const parts=[];
+    if(_cn10y!==null && _cn10y>0){
+      // 低利率=宽松=低风险；高利率=收紧=高风险
+      const cnSc=_cn10y<1.5?18:_cn10y<2.0?30:_cn10y<2.5?48:_cn10y<3.0?64:76;
+      sc=cnSc;
+      parts.push('CN'+_cn10y.toFixed(2)+'%');
+      if(_us10y!==null && _us10y>0){
+        const spd=_us10y-_cn10y;
+        if(spd>3.0) sc=Math.min(90,sc+12);   // 利差>3%=资本外流压力上升
+        parts.push('↕'+(spd>=0?'+':'')+spd.toFixed(2)+'%');
+      }
+    }
+    if(_iVix!==null && _iVix>0){
+      const vSc=_iVix>28?74:_iVix>20?52:_iVix>14?32:15;
+      sc=Math.round(sc*0.65+vSc*0.35);       // 国债利率权重65% + VIX权重35%
+      parts.push('VIX '+_iVix.toFixed(1)+'%');
+    }
+    BASE.risks[2].metric='CN10Y/利差/VIX';
+    BASE.risks[2].val=parts.join(' · ');
+    BASE.risks[2].thr='CN10Y>2.5% / 利差>3%';
+    BASE.risks[2].sc =Math.min(95,Math.max(5,sc));
+    BASE.risks[2].lvl=sc>=65?'high':sc>=35?'med':'low';
+    BASE.risks[2]._live=true;
+  }
+
+  // ⑦ 产业链供应集中 → TOP2板块正向动量占全部正向动量比（越高=越集中=反转风险越大）
+  if(liveMons.length >= 3){
+    const posMoms=liveMons.map(m=>Math.max(0,m.mom)).sort((a,b)=>b-a);
+    const totalPos=posMoms.reduce((s,v)=>s+v,0);
+    const top2Sum =posMoms.slice(0,2).reduce((s,v)=>s+v,0);
+    const concRat =totalPos>0?top2Sum/totalPos:0;
+    const sc=concRat>0.72?72:concRat>0.55?52:28;
+    BASE.risks[4].metric='TOP2板块动量占比';
+    BASE.risks[4].val=Math.round(concRat*100)+'%';
+    BASE.risks[4].thr='72%';
+    BASE.risks[4].sc =sc;
+    BASE.risks[4].lvl=sc>=65?'high':sc>=35?'med':'low';
+    BASE.risks[4]._live=true;
+  }
+
+  // ⑧ AI技术进展 → AI ETF(515980)20日动量（过热=叙事透支风险；过冷=技术路线切换）
+  const etfMon=BASE.monitors.find(m=>m.id==='etf');
+  if(etfMon && etfMon._live){
+    const mom=etfMon.mom;
+    const sc=mom>22?68:mom>12?46:mom>0?26:mom>-10?20:15;
+    BASE.risks[5].metric='AI ETF(515980)20日动量';
+    BASE.risks[5].val=(mom>=0?'+':'')+mom.toFixed(1)+'%';
+    BASE.risks[5].thr='+22%';
+    BASE.risks[5].sc =sc;
+    BASE.risks[5].lvl=sc>=65?'high':sc>=35?'med':'low';
+    BASE.risks[5]._live=true;
+  }
+
+  // ⑨ 监管/地缘政治 → A/H溢价指数（溢价越高=港股折价越深=地缘/监管风险越高）
+  if(_ahPrem!==null && _ahPrem>0){
+    const p=_ahPrem;
+    const sc=p>135?75:p>128?55:p>120?35:20;
+    BASE.risks[7].metric='A/H溢价指数';
+    BASE.risks[7].val=p.toFixed(0);
+    BASE.risks[7].thr='135';
+    BASE.risks[7].sc =sc;
+    BASE.risks[7].lvl=sc>=65?'high':sc>=35?'med':'low';
+    BASE.risks[7]._live=true;
+  }
+
+  // ── 综合风险评分 = 所有 sc 均值，更新仪表盘 ───────────────────
   const avgSc=Math.round(BASE.risks.reduce((s,r)=>s+r.sc,0)/BASE.risks.length);
   const elSc=document.getElementById('overallRisk');
   if(elSc) elSc.textContent=avgSc;
@@ -2164,8 +2258,12 @@ function updateRiskDashboard(){
     CH.gauge.data.datasets[0].backgroundColor=[col,'rgba(226,232,240,.7)'];
     CH.gauge.update();
   }
+  // 同步雷达图数据
+  if(CH.radar){
+    CH.radar.data.datasets[0].data=BASE.risks.map(r=>r.sc);
+    CH.radar.update();
+  }
 
-  // 重绘
   renderRisk();
   renderAlerts();
   renderSwitch();
@@ -4370,7 +4468,28 @@ async function fetchIndexPrices(){
     }).join('');
     if(tsEl) tsEl.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) + ' 更新';
   }
+  // 保存 A/H溢价 供风险仪表板监管/地缘政治指标使用
+  if(rowMap['A/H溢价'] && rowMap['A/H溢价'].price > 0){
+    _ahPrem = rowMap['A/H溢价'].price;
+    updateRiskDashboard();
+  }
   if(btn) btn.disabled = false;
+}
+
+// ── 国债收益率（实时：中国10年/美国10年）────────────────────────
+async function fetchMacroRates(){
+  try{
+    const r = await fetch('https://push2.eastmoney.com/api/qt/ulist.np/get'
+      +'?secids=171.CN10Y,171.US10Y&fltt=2&invt=2&fields=f12,f14,f2,f3&_='+Date.now());
+    if(!r.ok) return;
+    const diff = (await r.json())?.data?.diff || [];
+    diff.forEach(d=>{
+      const c=String(d.f12);
+      if(c==='CN10Y' && parseFloat(d.f2)>0) _cn10y = parseFloat(d.f2);
+      if(c==='US10Y' && parseFloat(d.f2)>0) _us10y = parseFloat(d.f2);
+    });
+    updateRiskDashboard();
+  }catch(e){ console.warn('[MacroRates]:', e); }
 }
 
 async function fetchPortPrices(){
@@ -4650,6 +4769,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   fetchStoreLive();         // 异步拉取存储监控实时行情
   fetchStocksLive();        // 异步拉取光模块&PCB实时行情
   fetchMonLive();           // 异步拉取产业链监控20日动量
+  fetchMacroRates();        // 异步拉取中美10年国债收益率（风险仪表板宏观指标）
   // 北向资金使用静态日频数据（BASE.ashare.north），无需远程拉取
   document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
   // 页面加载时自动拉取A股宏观最新数据（无需等待切换到宏观标签页）
