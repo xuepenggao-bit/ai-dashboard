@@ -289,13 +289,13 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <nav class="tabs">
   <div class="tabs-inner">
     <button class="tab active" onclick="switchTab(0)">🗂 投资组合</button>
-    <button class="tab" onclick="switchTab(1)">🔗 产业链阶段</button>
+    <button class="tab" onclick="switchTab(1)">⚠️ 风险仪表板</button>
     <button class="tab" onclick="switchTab(2)">🇨🇳 A股宏观</button>
     <button class="tab" onclick="switchTab(3)">📈 AI 趋势</button>
     <button class="tab" onclick="switchTab(4)">🔬 光模块&amp;PCB</button>
     <button class="tab" onclick="switchTab(5)">💾 存储监控</button>
-    <button class="tab" onclick="switchTab(6)">🔍 产业链监控</button>
-    <button class="tab" onclick="switchTab(7)">⚠️ 风险仪表板</button>
+    <button class="tab" onclick="switchTab(6)">🔗 产业链阶段</button>
+    <button class="tab" onclick="switchTab(7)">🔍 产业链监控</button>
     <button class="tab" onclick="switchTab(8)">📋 十步框架</button>
   </div>
 </nav>
@@ -3960,7 +3960,7 @@ function _renderStageRadars(){
 }
 
 // ── TAB ──────────────────────────────────────────────────────
-const TAB_ORDER=['tPort','tStage','tAM','t0','t4','t5','t1','t2','t3'];
+const TAB_ORDER=['tPort','t2','tAM','t0','t4','t5','tStage','t1','t3'];
 let _macroAutoFetched=false;
 const _TAB_TS={};  // 各标签页最近一次动态刷新的时间戳（用于节流）
 const _TAB_THROTTLE=30000; // 30秒内不重复刷新
@@ -4475,9 +4475,10 @@ const _IDX_EM = [
   {secids:['100.HSI'],    code:'HSI',    altCodes:['800000'],label:'恒生指数', region:'hk'},
   {secids:['124.HSTECH'], code:'HSTECH', altCodes:[],        label:'恒生科技', region:'hk'},
   {secids:['100.HSAHP'],  code:'HSAHP',  altCodes:[],        label:'A/H溢价',  region:'ah'},
+  {secids:['113.CN00Y'],  code:'CN00Y',  altCodes:[],        label:'A50期指',  region:'fut'},
 ];
-// 渲染顺序固定（港股始终在 A/H溢价前）
-const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股均价','恒生指数','恒生科技','A/H溢价'];
+// 渲染顺序固定（港股始终在 A/H溢价前，期指置底）
+const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股均价','恒生指数','恒生科技','A/H溢价','A50期指'];
 
 async function fetchIndexPrices(){
   const listEl = document.getElementById('portIndexList');
@@ -4547,8 +4548,13 @@ async function fetchIndexPrices(){
       } else if(r.region === 'ah'){
         accent = '#d97706'; bg = '#fffbeb';
         badge = ' <span style="font-size:9px;background:#fef3c7;color:#92400e;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">溢价</span>';
+      } else if(r.region === 'fut'){
+        accent = '#7c3aed'; bg = '#f5f3ff';
+        badge = ' <span style="font-size:9px;background:#ede9fe;color:#5b21b6;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">期</span>';
       }
-      const priceStr = (r.region === 'hk') ? r.price.toFixed(0) : r.price.toFixed(2);
+      const priceStr = (r.region === 'hk') ? r.price.toFixed(0)
+                     : (r.region === 'fut') ? r.price.toFixed(2)
+                     : r.price.toFixed(2);
       return `<div style="display:flex;align-items:center;padding:7px 10px;border-radius:8px;
                            background:${bg};margin-bottom:5px;border-left:3px solid ${accent}">
         <span style="flex:1;font-size:13px;font-weight:700;color:var(--text);letter-spacing:.01em">${r.label}${badge}</span>
