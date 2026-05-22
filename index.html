@@ -4269,25 +4269,24 @@ async function fetchVixRow(listEl){
 
 // ── 主要指数实时行情 ────────────────────────────────────────
 // ── 主要指数配置 ──────────────────────────────────────────────
-// 腾讯 API：A股四大指数（GBK解码）+ 港股指数（先尝试，不保证可用）
+// 腾讯 API：A股四大指数（GBK解码）+ 尝试港股指数
 const _IDX_TENCENT = [
   {tc:'sh000001', label:'上证指数', region:'a'},
   {tc:'sz399001', label:'深证成指', region:'a'},
   {tc:'sz399006', label:'创业板指', region:'a'},
   {tc:'sh000688', label:'科创 50',  region:'a'},
-  {tc:'hk800000', label:'恒生指数', region:'hk'},  // HK index 第一优先（腾讯）
-  {tc:'hk800700', label:'恒生科技', region:'hk'},  // HK index 第一优先（腾讯）
+  {tc:'hk800000', label:'恒生指数', region:'hk'},
+  {tc:'hk800700', label:'恒生科技', region:'hk'},
 ];
-// 东方财富 API：A股补充指数 + 港股指数（腾讯失败时兜底）+ A/H溢价
-// altCode 为港股指数在 EM 中 f12 可能返回的数字码，双重匹配保证命中
+// 东方财富 ulist API：A股补充 + 港股兜底（多 secid、多 code 尽可能命中）
 const _IDX_EM = [
-  {secids:['1.000985'],   code:'000985', label:'中证全指', region:'a'},
-  {secids:['47.800005'],  code:'800005', label:'A股均价',  region:'a'},
-  {secids:['100.HSI'],    code:'HSI',    altCode:'800000', label:'恒生指数', region:'hk'},
-  {secids:['100.HSTECH'], code:'HSTECH', altCode:'800700', label:'恒生科技', region:'hk'},
-  {secids:['1.000061'],   code:'000061', label:'A/H溢价',  region:'ah'},
+  {secids:['1.000985'],                code:'000985', altCodes:[],                           label:'中证全指', region:'a'},
+  {secids:['47.800005'],               code:'800005', altCodes:[],                           label:'A股均价',  region:'a'},
+  {secids:['100.HSI'],                 code:'HSI',    altCodes:['800000'],                   label:'恒生指数', region:'hk'},
+  {secids:['100.HSTECH','100.800700'], code:'HSTECH', altCodes:['800700','HSTECH','HSTEC'],  label:'恒生科技', region:'hk'},
+  {secids:['1.000061'],                code:'000061', altCodes:[],                           label:'A/H溢价',  region:'ah'},
 ];
-// 最终渲染顺序（确保港股始终在 A/H溢价前）
+// 渲染顺序固定（港股始终在 A/H溢价前）
 const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股均价','恒生指数','恒生科技','A/H溢价'];
 
 async function fetchIndexPrices(){
@@ -4297,16 +4296,14 @@ async function fetchIndexPrices(){
   if(!listEl) return;
   if(btn) btn.disabled = true;
 
-  // rowMap 以标签为 key，腾讯先填，EM 只补空缺，避免重复且保证顺序
-  const rowMap = {};
+  const rowMap = {};   // label → {label, price, pct, region}
 
+  // ── ① 腾讯 GBK API ──────────────────────────────────────
   try{
-    // ── ① 腾讯 API（GBK）──────────────────────────────
     const tUrl = 'https://qt.gtimg.cn/q=' + _IDX_TENCENT.map(i=>i.tc).join(',') + '&_=' + Date.now();
     const tResp = await fetch(tUrl);
     if(tResp.ok){
-      const buf = await tResp.arrayBuffer();
-      const txt = new TextDecoder('gbk').decode(buf);
+      const txt = new TextDecoder('gbk').decode(await tResp.arrayBuffer());
       _IDX_TENCENT.forEach(idx=>{
         const m = txt.match(new RegExp('v_' + idx.tc + '="([^"]+)"'));
         if(!m) return;
@@ -4316,37 +4313,54 @@ async function fetchIndexPrices(){
         let   pct   = parseFloat(p[32]);
         if(!isFinite(pct) && isFinite(prev) && prev > 0) pct = (price - prev) / prev * 100;
         if(isFinite(price) && price > 0)
-          rowMap[idx.label] = {label:idx.label, price, pct, region:idx.region||'a'};
+          rowMap[idx.label] = {label:idx.label, price, pct:isFinite(pct)?pct:0, region:idx.region||'a'};
       });
     }
-  }catch(e){ console.warn('腾讯指数API:', e); }
+  }catch(e){ console.warn('[IDX] 腾讯API:', e); }
 
+  // ── ② 东方财富 ulist API（补空缺）────────────────────────
   try{
-    // ── ② 东方财富 API（兜底补充）────────────────────────
     const allSecids = _IDX_EM.flatMap(i=>i.secids);
     const emUrl = 'https://push2.eastmoney.com/api/qt/ulist.np/get'
                 + '?secids=' + allSecids.join(',')
                 + '&fltt=2&invt=2&fields=f12,f14,f2,f3&_=' + Date.now();
     const emResp = await fetch(emUrl);
     if(emResp.ok){
-      const emJson = await emResp.json();
-      const diff   = (emJson?.data?.diff) || [];
+      const diff = (await emResp.json())?.data?.diff || [];
       _IDX_EM.forEach(idx=>{
-        if(rowMap[idx.label]) return;  // 腾讯已有数据则跳过
+        if(rowMap[idx.label]) return;
+        const allCodes = [idx.code, ...idx.altCodes].map(c=>c.toUpperCase());
         const hit = diff.find(d=>{
-          const c = String(d.f12);
-          // 多策略匹配：精确 / 补零 / altCode（港股数字码兜底）
-          return (c === idx.code || c.padStart(6,'0') === idx.code ||
-                  (idx.altCode && c === idx.altCode)) && d.f2 > 0;
+          const c = String(d.f12).toUpperCase();
+          return (allCodes.includes(c) || allCodes.includes(c.padStart(6,'0'))) && parseFloat(d.f2) > 0;
         });
-        if(hit) rowMap[idx.label] = {label:idx.label, price:hit.f2, pct:hit.f3, region:idx.region||'a'};
+        if(hit) rowMap[idx.label] = {label:idx.label, price:parseFloat(hit.f2), pct:parseFloat(hit.f3)||0, region:idx.region||'a'};
       });
     }
-  }catch(e){ console.warn('东方财富指数API:', e); }
+  }catch(e){ console.warn('[IDX] 东方财富ulist:', e); }
 
-  // ── 按固定顺序渲染 ──────────────────────────────────────
+  // ── ③ 恒生科技专项兜底：东方财富 stock/get 单只查询 ────────
+  if(!rowMap['恒生科技']){
+    try{
+      // 同时尝试两个 secid，哪个先返回有效价格就用哪个
+      const candidates = ['100.HSTECH','100.800700'];
+      for(const secid of candidates){
+        const r = await fetch('https://push2.eastmoney.com/api/qt/stock/get?secid='+secid
+                             +'&fltt=2&invt=2&fields=f43,f57,f58,f107,f170&_='+Date.now());
+        if(!r.ok) continue;
+        const d = (await r.json())?.data;
+        const price = parseFloat(d?.f43);
+        const pct   = parseFloat(d?.f170);
+        if(isFinite(price) && price > 0){
+          rowMap['恒生科技'] = {label:'恒生科技', price, pct:isFinite(pct)?pct:0, region:'hk'};
+          break;
+        }
+      }
+    }catch(e){ console.warn('[IDX] HSTECH单股兜底:', e); }
+  }
+
+  // ── 按固定顺序渲染 ────────────────────────────────────────
   const rows = _IDX_ORDER.map(lbl => rowMap[lbl]).filter(Boolean);
-
   if(!rows.length){
     listEl.innerHTML = '<div style="color:var(--text2);font-size:12px;text-align:center;padding:8px">暂无数据</div>';
   } else {
@@ -4356,17 +4370,13 @@ async function fetchIndexPrices(){
       const color = up ? '#16a34a' : dn ? '#dc2626' : 'var(--text2)';
       const arrow = up ? '▲' : dn ? '▼' : '─';
       const sign  = up ? '+' : '';
-      let accent = color;
-      let bg     = up ? '#f0fdf4' : dn ? '#fff5f5' : '#f8fafc';
-      let badge  = '';
+      let accent = color, bg = up ? '#f0fdf4' : dn ? '#fff5f5' : '#f8fafc', badge = '';
       if(r.region === 'hk'){
-        accent = '#e11d48';
-        bg     = '#fff5f7';
-        badge  = ' <span style="font-size:9px;background:#fee2e2;color:#9f1239;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">港</span>';
+        accent = '#e11d48'; bg = '#fff5f7';
+        badge = ' <span style="font-size:9px;background:#fee2e2;color:#9f1239;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">港</span>';
       } else if(r.region === 'ah'){
-        accent = '#d97706';
-        bg     = '#fffbeb';
-        badge  = ' <span style="font-size:9px;background:#fef3c7;color:#92400e;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">溢价</span>';
+        accent = '#d97706'; bg = '#fffbeb';
+        badge = ' <span style="font-size:9px;background:#fef3c7;color:#92400e;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">溢价</span>';
       }
       const priceStr = (r.region === 'hk') ? r.price.toFixed(0) : r.price.toFixed(2);
       return `<div style="display:flex;align-items:center;padding:7px 10px;border-radius:8px;
@@ -4379,7 +4389,6 @@ async function fetchIndexPrices(){
     }).join('');
     if(tsEl) tsEl.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) + ' 更新';
   }
-
   if(btn) btn.disabled = false;
 }
 
