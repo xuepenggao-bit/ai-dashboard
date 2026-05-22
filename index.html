@@ -1840,17 +1840,43 @@ async function fetchVixChart(){
   const lvlEl =document.getElementById('kVixLevel');
   const dateEl=document.getElementById('kVixDate');
   try{
-    // 腾讯财经 K线 — 上证50ETF (sh510050), 250 交易日前复权
-    // 格式: data[symbol].day = [[日期,开,收,高,低,量,额],...]
-    const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
-             +'?param=sh510050,day,,,,250,qfq&_='+Date.now();
-    const j=await (await fetch(url)).json();
-    const d=j?.data?.['sh510050']||j?.['sh510050'];
-    const days=d?.day||[];
-    if(days.length<25) throw new Error('K线不足('+days.length+')');
+    // 上证50ETF (510050) 250日收盘价（双备源）
+    // 需要同时获取日期标签，先用 push2his（返回完整字符串含日期）
+    let closes=[], dates=[];
+    const errs2=[];
 
-    const closes=days.map(x=>parseFloat(x[2]));  // index 2 = 收盘价
-    const dates =days.map(x=>x[0]);
+    // ① 腾讯 JSONP（日期在 x[0]，收盘在 x[2]）
+    try{
+      const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
+               +'?_var=kl&param=sh510050,day,,,,250,qfq&_='+Date.now();
+      const text=await (await fetch(url)).text();
+      const st=text.indexOf('{');
+      if(st<0) throw new Error('无JSON');
+      const j=JSON.parse(text.slice(st));
+      const days=(j?.['sh510050']||j?.['sh510050qfq'])?.day||[];
+      if(days.length<25) throw new Error('天数不足('+days.length+')');
+      closes=days.map(x=>parseFloat(x[2]));
+      dates =days.map(x=>x[0]);
+      if(closes.some(v=>isNaN(v)||v<=0)) throw new Error('含无效价格');
+    }catch(e){ errs2.push('腾讯:'+e.message); }
+
+    // ② 东方财富 push2his 备源（kline 字符串含日期）
+    if(!closes.length){
+      try{
+        const url='https://push2his.eastmoney.com/api/qt/stock/kline/get'
+                 +'?secid=1.510050&fields1=f1,f2,f3,f4,f5,f6'
+                 +'&fields2=f51,f52,f53,f54,f55,f56&klt=101&fqt=1'
+                 +'&beg=0&end=20500101&lmt=250&_='+Date.now();
+        const j=await (await fetch(url)).json();
+        const kl=j?.data?.klines||[];
+        if(kl.length<25) throw new Error('天数不足('+kl.length+')');
+        closes=kl.map(k=>parseFloat(k.split(',')[2]));
+        dates =kl.map(k=>k.split(',')[0]);
+        if(closes.some(v=>isNaN(v)||v<=0)) throw new Error('含无效价格');
+      }catch(e){ errs2.push('东方财富:'+e.message); }
+    }
+
+    if(!closes.length) throw new Error(errs2.join(' | '));
 
     // 滚动 20 日年化已实现波动率
     const W=20;
@@ -3712,27 +3738,68 @@ function _isTradingNow(){
   return (m>=570&&m<=690)||(m>=780&&m<900);
 }
 
+// ── K线通用助手（腾讯 JSONP → 东方财富 push2his 双备源）──────
+// tcSym: 'sh510050' | 'sh600519' | 'sz300750' 等
+// 返回按时间正序排列的收盘价数组（长度 ≤ lmt）
+async function _getKlineClose(tcSym, lmt){
+  const errs=[];
+
+  // ① 腾讯财经 fqkline（使用 _var 触发 JSONP，然后文本解析）
+  try{
+    const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
+             +'?_var=kl&param='+tcSym+',day,,,,'+lmt+',qfq&_='+Date.now();
+    const text=await (await fetch(url)).text();
+    // 响应: 'kl={"sh510050":{"day":[[...],...]},...}'  截取第一个 '{'
+    const st=text.indexOf('{');
+    if(st<0) throw new Error('无JSON('+text.slice(0,50)+')');
+    const j=JSON.parse(text.slice(st));
+    // 可能的 key: sh510050 / sh510050qfq
+    const d=j?.[tcSym]||j?.[tcSym+'qfq'];
+    const days=d?.day||[];
+    if(days.length<5) throw new Error('天数不足('+days.length+')');
+    // Tencent kline 格式: [日期, 开盘, 收盘, 最高, 最低, 成交量, ...]
+    const cl=days.map(x=>parseFloat(x[2]));
+    if(cl.some(v=>isNaN(v)||v<=0)) throw new Error('含无效价格');
+    return cl;
+  }catch(e){ errs.push('腾讯:'+e.message); }
+
+  // ② 东方财富 push2his（备源）
+  try{
+    const mkt=tcSym.startsWith('sh')?'1':'0';
+    const code=tcSym.slice(2);
+    const url='https://push2his.eastmoney.com/api/qt/stock/kline/get'
+             +'?secid='+mkt+'.'+code
+             +'&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56'
+             +'&klt=101&fqt=1&beg=0&end=20500101&lmt='+lmt+'&_='+Date.now();
+    const j=await (await fetch(url)).json();
+    const kl=j?.data?.klines||[];
+    if(kl.length<5) throw new Error('天数不足('+kl.length+')');
+    // EM kline 格式: "日期,开盘,收盘,最高,最低,成交量,..."
+    const cl=kl.map(k=>parseFloat(k.split(',')[2]));
+    if(cl.some(v=>isNaN(v)||v<=0)) throw new Error('含无效价格');
+    return cl;
+  }catch(e){ errs.push('东方财富:'+e.message); }
+
+  throw new Error(errs.join(' | '));
+}
+
 // ── iVIX / 市场波动率 ───────────────────────────────────────
 async function fetchVixRow(listEl){
   if(!listEl) return;
   let vixVal=null;
 
-  // 腾讯财经 K线 — 上证50ETF (510050), 25 交易日前复权
+  // 上证50ETF (510050) 25日收盘价 → 20日年化RV
   try{
-    const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
-             +'?param=sh510050,day,,,,25,qfq&_='+Date.now();
-    const j=await (await fetch(url)).json();
-    const d=j?.data?.['sh510050']||j?.['sh510050'];
-    const days=d?.day||[];
-    if(days.length>=12){
-      const cl=days.map(x=>parseFloat(x[2]));
+    const cl=await _getKlineClose('sh510050',25);
+    if(cl.length>=12){
       const rt=[];
       for(let i=1;i<cl.length;i++) rt.push(Math.log(cl[i]/cl[i-1]));
       const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
       const vr=rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1);
-      vixVal=+(Math.sqrt(vr*252)*100).toFixed(2);
+      const rv=Math.sqrt(vr*252)*100;
+      if(rv>0&&rv<300) vixVal=+rv.toFixed(2);
     }
-  }catch(e){ console.warn('fetchVixRow:',e); }
+  }catch(e){ console.warn('fetchVixRow:',e.message); }
 
   if(!vixVal) return;
   const vLevel  = vixVal>30?'高波动':vixVal>20?'中等':vixVal>12?'低波动':'极低';
@@ -3765,7 +3832,7 @@ async function fetchVixRow(listEl){
   listEl.appendChild(row);
 }
 
-// ── 个股20日历史波动率 (腾讯财经 K线) ─────────────────────
+// ── 个股20日历史波动率（双备源 K线）─────────────────────────
 async function fetchPortHV(){
   if(!PORT||!PORT.sectors) return;
   const tasks=[];
@@ -3777,20 +3844,16 @@ async function fetchPortHV(){
   if(!tasks.length) return;
 
   const res=await Promise.allSettled(tasks.map(async t=>{
-    // 腾讯财经前复权日K: data[symbol].day = [[日期,开,收,高,低,量,额],...]
-    const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
-             +'?param='+t.tc+',day,,,,25,qfq&_='+Date.now();
-    const j=await (await fetch(url)).json();
-    const d=j?.data?.[t.tc]||j?.[t.tc];
-    const days=d?.day||[];
-    if(days.length<10) return null;
-    const cl=days.map(x=>parseFloat(x[2]));  // index 2 = 收盘价
+    const cl=await _getKlineClose(t.tc, 25);
+    if(cl.length<10) return null;
     const rt=[];
     for(let i=1;i<cl.length;i++) rt.push(Math.log(cl[i]/cl[i-1]));
     if(rt.length<5) return null;
     const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
     const vr=rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1);
-    return {code:t.code, hv:+(Math.sqrt(vr*252)*100).toFixed(1)};
+    const rv=Math.sqrt(vr*252)*100;
+    if(rv<=0||rv>=300) return null;
+    return {code:t.code, hv:+rv.toFixed(1)};
   }));
 
   let updated=false;
