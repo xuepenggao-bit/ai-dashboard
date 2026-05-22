@@ -29,11 +29,16 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* ── Tabs ── */
-.tabs{background:#fff;border-bottom:1px solid var(--border);height:50px}
-.tabs-inner{max-width:1400px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:2px;height:100%;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
-.tab{padding:0 14px;height:36px;border:none;border-radius:7px;background:transparent;color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;white-space:nowrap;flex-shrink:0;transition:color .15s,background .15s;display:inline-flex;align-items:center;gap:6px}
+.tabs{background:#fff;border-bottom:2px solid var(--border);height:54px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.tabs-inner{max-width:1400px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:4px;height:100%}
+.tab{flex:1;min-width:0;height:40px;border:none;border-radius:8px;background:transparent;color:var(--text2);cursor:pointer;font-size:13.5px;font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;font-weight:500;white-space:nowrap;overflow:hidden;transition:color .18s,background .18s,box-shadow .18s;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 4px;letter-spacing:.015em}
 .tab:hover{background:#f1f5f9;color:var(--text)}
-.tab.active{background:var(--blue);color:#fff;font-weight:600}
+.tab.active{background:var(--blue);color:#fff;font-weight:700;box-shadow:0 2px 8px rgba(37,99,235,.25)}
+/* 小屏恢复横向滚动 */
+@media(max-width:1023px){
+  .tabs-inner{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+  .tab{flex:0 0 auto;padding:0 12px;font-size:13px}
+}
 
 /* ── Layout ── */
 .main{padding:20px;max-width:1400px;margin:0 auto}
@@ -3886,16 +3891,31 @@ function _renderStageRadars(){
 // ── TAB ──────────────────────────────────────────────────────
 const TAB_ORDER=['tPort','tStage','tAM','t0','t4','t5','t1','t2','t3'];
 let _macroAutoFetched=false;
+const _TAB_TS={};  // 各标签页最近一次动态刷新的时间戳（用于节流）
+const _TAB_THROTTLE=30000; // 30秒内不重复刷新
+
+function _tabRefresh(idx){
+  const tab=TAB_ORDER[idx];
+  const now=Date.now();
+  if(_TAB_TS[idx] && now-_TAB_TS[idx]<_TAB_THROTTLE) return; // 节流
+  _TAB_TS[idx]=now;
+  // 按标签页类型调用对应的动态数据刷新函数
+  if(tab==='tPort')  fetchPortPrices();           // finally 内会链式调用 fetchIndexPrices
+  else if(tab==='tStage') fetchStageData();
+  else if(tab==='tAM')    refreshMacro();
+  else if(tab==='t4')     fetchStocksLive();
+  else if(tab==='t5')     fetchStoreLive();
+  else if(tab==='t1')     fetchMonLive();
+  else if(tab==='t2')  { fetchVixChart(); fetchMacroRates(); fetchMonLive(); }
+  // t0(AI趋势) / t3(十步框架) 为静态内容，无需刷新
+}
+
 function switchTab(idx){
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
   const target=document.getElementById(TAB_ORDER[idx]);
   if(target) target.classList.add('active');
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===idx));
-  // 首次打开"A股宏观"标签页时自动拉取最新NBS数据
-  if(TAB_ORDER[idx]==='tAM' && !_macroAutoFetched){
-    _macroAutoFetched=true;
-    setTimeout(refreshMacro, 300);
-  }
+  _tabRefresh(idx); // 切换时刷新该标签页动态数据
 }
 
 // ── REFRESH ──────────────────────────────────────────────────
@@ -4775,6 +4795,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 页面加载时自动拉取A股宏观最新数据（无需等待切换到宏观标签页）
   _macroAutoFetched = true;   // 防止切换到宏观标签页时重复拉取
   setTimeout(refreshMacro, 800);  // 延迟800ms，等各图表初始化完成后再拉取
+  // 页面加载时已主动拉取所有动态数据，为各标签页初始化节流时间戳，
+  // 避免30秒内切换标签时立即重复请求（t0/t3为静态，不需要节流记录）
+  const _initTs=Date.now();
+  [0,1,2,4,5,6,7].forEach(i=>_TAB_TS[i]=_initTs);
 });
 </script>
 </body>
