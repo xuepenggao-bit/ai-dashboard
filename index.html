@@ -4167,54 +4167,104 @@ async function fetchPortPrices(){
   try {
     portLoad();
 
-    // 构建腾讯财经代码列表（sh/sz/hk + 代码）
-    var stocks = [];
+    // 拆分 A 股 和 港股
+    var aStocks = [], hkStocks = [];
     PORT.sectors.forEach(function(sec){
       sec.stocks.forEach(function(sk){
         var pfx = sk.mkt === 'SH' ? 'sh' : sk.mkt === 'HK' ? 'hk' : 'sz';
-        stocks.push({code: sk.code, name: sk.name, mkt: sk.mkt, w: sk.w, tc: pfx + sk.code});
+        var entry = {code: sk.code, name: sk.name, mkt: sk.mkt, w: sk.w, tc: pfx + sk.code};
+        if(sk.mkt === 'HK') hkStocks.push(entry);
+        else                aStocks.push(entry);
       });
     });
 
-    if(!stocks.length){ ts.textContent = '无持仓'; return; }
-
-    // 腾讯财经 qt.gtimg.cn — Access-Control-Allow-Origin:* 可直接跨域
-    // 返回 GBK 编码文本，格式：v_sh603986="1~名~代码~当前价~昨收~...~涨跌额~涨跌幅%~..."
-    // A股 / 港股 统一：p[3]=当前价，p[32]=涨跌幅%
-    var qUrl = 'https://qt.gtimg.cn/q=' + stocks.map(function(s){ return s.tc; }).join(',') + '&_=' + Date.now();
-    var resp = await fetch(qUrl);
-    if(!resp.ok) throw new Error('HTTP ' + resp.status);
-
-    var buf = await resp.arrayBuffer();
-    var txt = new TextDecoder('gbk').decode(buf);
+    if(!aStocks.length && !hkStocks.length){ ts.textContent = '无持仓'; return; }
 
     _PORT_PRICES = {};
-    stocks.forEach(function(s){
-      var m = txt.match(new RegExp('v_' + s.tc + '="([^"]+)"'));
-      if(!m) return;
-      var p   = m[1].split('~');
-      var cur = parseFloat(p[3]);
-      var pct = parseFloat(p[32]);
-      if(cur > 0 && isFinite(pct)) _PORT_PRICES[s.code] = {price: cur, pct: pct, name: s.name, mkt: s.mkt, w: s.w};
-    });
+
+    // ── A 股：腾讯 qt.gtimg.cn（实时）────────────────────────
+    if(aStocks.length){
+      try{
+        var qUrl = 'https://qt.gtimg.cn/q=' + aStocks.map(function(s){ return s.tc; }).join(',') + '&_=' + Date.now();
+        var resp = await fetch(qUrl);
+        if(!resp.ok) throw new Error('HTTP ' + resp.status);
+        var txt = new TextDecoder('gbk').decode(await resp.arrayBuffer());
+        aStocks.forEach(function(s){
+          var m = txt.match(new RegExp('v_' + s.tc + '="([^"]+)"'));
+          if(!m) return;
+          var p = m[1].split('~');
+          var cur = parseFloat(p[3]), pct = parseFloat(p[32]);
+          if(cur > 0 && isFinite(pct))
+            _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w};
+        });
+      }catch(e){ console.warn('[价格] A股:', e.message); }
+    }
+
+    // ── 港股：东方财富 push2（约30秒延迟）→ 腾讯备源（15分钟延迟）──
+    // 东方财富港股 secid 格式：116.XXXXX（5位代码带前导零，如 116.00700）
+    if(hkStocks.length){
+      var hkDone = {};   // code → true，记录已取到价格的港股
+
+      // ① 东方财富 push2.eastmoney.com（主源，约30s更新频率）
+      try{
+        var secids = hkStocks.map(function(s){ return '116.' + s.code; }).join(',');
+        var emUrl  = 'https://push2.eastmoney.com/api/qt/ulist.np/get'
+                   + '?secids=' + secids + '&fltt=2&invt=2&fields=f12,f14,f2,f3&_=' + Date.now();
+        var emJson = await (await fetch(emUrl)).json();
+        var diff   = emJson?.data?.diff || [];
+        diff.forEach(function(d){
+          var price = parseFloat(d.f2);
+          var pct   = parseFloat(d.f3);
+          if(!isFinite(price) || price <= 0 || !isFinite(pct)) return;
+          // f12 为数字（东方财富剥除前导零），需补回5位与 sk.code 匹配
+          var emCode = String(d.f12 || '').padStart(5, '0');
+          var matched = hkStocks.find(function(s){ return s.code === emCode || s.code === String(d.f12); });
+          if(matched){
+            _PORT_PRICES[matched.code] = {price:price, pct:pct, name:matched.name, mkt:matched.mkt, w:matched.w, src:'em'};
+            hkDone[matched.code] = true;
+          }
+        });
+        console.log('[HK] 东方财富 获取', Object.keys(hkDone).length, '/', hkStocks.length, '只');
+      }catch(e){ console.warn('[HK] 东方财富:', e.message); }
+
+      // ② 腾讯 qt.gtimg.cn 备源（补齐东方财富未能返回的港股）
+      var hkMissed = hkStocks.filter(function(s){ return !hkDone[s.code]; });
+      if(hkMissed.length){
+        try{
+          var qUrl2 = 'https://qt.gtimg.cn/q=' + hkMissed.map(function(s){ return s.tc; }).join(',') + '&_=' + Date.now();
+          var resp2 = await fetch(qUrl2);
+          var txt2  = new TextDecoder('gbk').decode(await resp2.arrayBuffer());
+          hkMissed.forEach(function(s){
+            var m = txt2.match(new RegExp('v_' + s.tc + '="([^"]+)"'));
+            if(!m) return;
+            var p = m[1].split('~');
+            var cur = parseFloat(p[3]), pct = parseFloat(p[32]);
+            if(cur > 0 && isFinite(pct))
+              _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w, src:'tc'};
+          });
+          console.log('[HK] 腾讯备源 补齐', hkMissed.length, '只');
+        }catch(e){ console.warn('[HK] 腾讯备源:', e.message); }
+      }
+    }
 
     var n = Object.keys(_PORT_PRICES).length;
+    var total = aStocks.length + hkStocks.length;
     ts.textContent = n > 0
-      ? (_isTradingNow() ? '实时' : '收盘') + '涨跌幅 ' + n + '只 · ' + new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})
-      : '接口正常，解析到0只（共发送' + stocks.length + '只）';
+      ? (_isTradingNow() ? '实时' : '收盘') + '涨跌幅 ' + n + '只 · '
+        + new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})
+      : '接口正常，解析到0只（共发送' + total + '只）';
 
   } catch(err) {
     _PORT_PRICES = {};
     ts.textContent = '获取失败: ' + (err.message || String(err));
     console.error('fetchPortPrices:', err);
   } finally {
-    // 获取价格后自动按涨跌幅降序排列各分类内的股票
     _portSort.col = 'pct';
-    _portSort.dir = 1;   // 1 = 降序（涨幅从高到低）
+    _portSort.dir = 1;
     renderPortfolio();
     renderPortTop3();
     _renderPortTopW();
-    fetchIndexPrices();   // 刷新股价时同步更新主要指数
+    fetchIndexPrices();
     btn.classList.remove('loading'); btn.disabled = false;
   }
 }
