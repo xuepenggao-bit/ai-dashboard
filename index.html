@@ -30,48 +30,60 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 /* ── Tabs ── */
 .tabs{
-  background:linear-gradient(180deg,#ffffff 0%,#f4f6fa 100%);
-  border-bottom:2px solid #cdd4df;
+  background:rgba(255,255,255,.82);
+  backdrop-filter:blur(12px) saturate(160%);
+  -webkit-backdrop-filter:blur(12px) saturate(160%);
+  border-bottom:2px solid rgba(200,210,224,.7);
   height:54px;
-  box-shadow:0 2px 8px rgba(0,0,0,.06)
+  box-shadow:0 2px 10px rgba(0,0,0,.07)
 }
 .tabs-inner{max-width:1400px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:4px;height:100%}
 .tab{
   flex:1;min-width:0;height:40px;
-  border:1px solid rgba(0,0,0,.07);
+  border:1px solid rgba(255,255,255,.7);
   border-bottom:2px solid var(--tab-bdr,#b6c2d4);
   border-radius:8px;
-  background:linear-gradient(180deg,var(--tab-top,#fbfcfd) 0%,var(--tab-bot,#eaeff6) 100%);
+  /* 双层渐变：顶部白色半透明玻璃光 + 底部纯色 */
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,0) 58%),
+    linear-gradient(180deg,var(--tab-top,#dbeafe) 0%,var(--tab-bot,#bfdbfe) 100%);
   color:var(--text2);cursor:pointer;
   font-size:13.5px;font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;
   font-weight:500;white-space:nowrap;overflow:hidden;
   transition:filter .15s,box-shadow .15s,transform .13s,color .13s;
   display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 4px;letter-spacing:.015em;
-  box-shadow:0 1px 4px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.88)
+  box-shadow:0 1px 5px rgba(0,0,0,.08),
+             inset 0 1px 0 rgba(255,255,255,.95),
+             inset 0 -1px 0 rgba(0,0,0,.04)
 }
 .tab:hover{
-  filter:brightness(.91);color:var(--text);
-  box-shadow:0 3px 9px rgba(0,0,0,.1),inset 0 1px 0 rgba(255,255,255,.95);
+  filter:brightness(.9);color:var(--text);
+  box-shadow:0 3px 10px rgba(0,0,0,.11),
+             inset 0 1px 0 rgba(255,255,255,1);
   transform:translateY(-1px)
 }
 .tab.active{
-  background:linear-gradient(180deg,#5b9cf6 0%,#1d4ed8 100%);
+  /* 玻璃高光叠加在蓝色渐变上 */
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.26) 0%,rgba(255,255,255,0) 48%),
+    linear-gradient(180deg,#5b9cf6 0%,#1d4ed8 100%);
   color:#fff;font-weight:700;
-  border-color:#1e40af;border-bottom-color:#1e3a8a;
-  box-shadow:0 4px 14px rgba(37,99,235,.4),inset 0 1px 0 rgba(255,255,255,.28);
+  border-color:rgba(255,255,255,.35);border-bottom-color:#1e3a8a;
+  box-shadow:0 4px 16px rgba(37,99,235,.42),
+             inset 0 1px 0 rgba(255,255,255,.4);
   transform:translateY(-2px);filter:none
 }
 .tab.active:hover{transform:translateY(-2px);filter:none}
-/* 各标签浅色主题 — nth-child 对应 HTML 中按钮位置 */
-.tabs-inner .tab:nth-child(1){--tab-top:#eef4ff;--tab-bot:#dbeafe;--tab-bdr:#93c5fd}  /* 蓝  投资组合 */
-.tabs-inner .tab:nth-child(2){--tab-top:#fff4f4;--tab-bot:#fde8e8;--tab-bdr:#fca5a5}  /* 红  风险仪表板 */
-.tabs-inner .tab:nth-child(3){--tab-top:#f0fdf5;--tab-bot:#dcfce7;--tab-bdr:#86efac}  /* 绿  A股宏观 */
-.tabs-inner .tab:nth-child(4){--tab-top:#faf5ff;--tab-bot:#ede9fe;--tab-bdr:#c4b5fd}  /* 紫  AI趋势 */
-.tabs-inner .tab:nth-child(5){--tab-top:#ecfeff;--tab-bot:#cffafe;--tab-bdr:#67e8f9}  /* 青  光模块&PCB */
-.tabs-inner .tab:nth-child(6){--tab-top:#fff8ed;--tab-bot:#fed7aa;--tab-bdr:#fdba74}  /* 橙  存储监控 */
-.tabs-inner .tab:nth-child(7){--tab-top:#f0fdfa;--tab-bot:#ccfbf1;--tab-bdr:#5eead4}  /* 青绿 产业链阶段 */
-.tabs-inner .tab:nth-child(8){--tab-top:#f3fef5;--tab-bot:#d1fae5;--tab-bdr:#6ee7b7}  /* 绿  产业链监控 */
-.tabs-inner .tab:nth-child(9){--tab-top:#f8fafc;--tab-bot:#e2e8f0;--tab-bdr:#94a3b8}  /* 灰  十步框架 */
+/* 各标签色系（比之前稍深，补偿玻璃层的提亮） */
+.tabs-inner .tab:nth-child(1){--tab-top:#dbeafe;--tab-bot:#bfdbfe;--tab-bdr:#93c5fd}  /* 蓝  投资组合 */
+.tabs-inner .tab:nth-child(2){--tab-top:#fee2e2;--tab-bot:#fecaca;--tab-bdr:#fca5a5}  /* 红  风险仪表板 */
+.tabs-inner .tab:nth-child(3){--tab-top:#dcfce7;--tab-bot:#bbf7d0;--tab-bdr:#86efac}  /* 绿  A股宏观 */
+.tabs-inner .tab:nth-child(4){--tab-top:#ede9fe;--tab-bot:#ddd6fe;--tab-bdr:#c4b5fd}  /* 紫  AI趋势 */
+.tabs-inner .tab:nth-child(5){--tab-top:#cffafe;--tab-bot:#a5f3fc;--tab-bdr:#67e8f9}  /* 青  光模块&PCB */
+.tabs-inner .tab:nth-child(6){--tab-top:#ffedd5;--tab-bot:#fed7aa;--tab-bdr:#fdba74}  /* 橙  存储监控 */
+.tabs-inner .tab:nth-child(7){--tab-top:#ccfbf1;--tab-bot:#99f6e4;--tab-bdr:#5eead4}  /* 青绿 产业链阶段 */
+.tabs-inner .tab:nth-child(8){--tab-top:#d1fae5;--tab-bot:#a7f3d0;--tab-bdr:#6ee7b7}  /* 绿  产业链监控 */
+.tabs-inner .tab:nth-child(9){--tab-top:#e2e8f0;--tab-bot:#cbd5e1;--tab-bdr:#94a3b8}  /* 灰  十步框架 */
 /* 小屏恢复横向滚动 */
 @media(max-width:1023px){
   .tabs-inner{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
