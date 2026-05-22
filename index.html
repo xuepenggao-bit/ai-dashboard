@@ -689,6 +689,23 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <button id="portPriceBtn" class="rbtn" onclick="fetchPortPrices()" style="padding:6px 14px;font-size:12px">
         <span class="ricon">↻</span> 刷新股价
       </button>
+      <!-- 自动刷新周期 -->
+      <div id="autoRefreshBox" style="display:flex;align-items:center;gap:5px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:4px 10px;white-space:nowrap">
+        <span style="font-size:11px;color:#0369a1;font-weight:700">⏱ 周期</span>
+        <select id="autoRefreshSel" onchange="setAutoRefresh(this.value)"
+          style="font-size:11px;font-family:inherit;border:1px solid #bae6fd;border-radius:5px;
+                 background:#fff;color:#0369a1;font-weight:600;padding:2px 4px;cursor:pointer;outline:none">
+          <option value="0">手动</option>
+          <option value="1">1分钟</option>
+          <option value="2">2分钟</option>
+          <option value="3">3分钟</option>
+          <option value="5">5分钟</option>
+          <option value="10">10分钟</option>
+          <option value="15">15分钟</option>
+          <option value="30">30分钟</option>
+        </select>
+        <span id="autoRefreshCd" style="font-size:10px;color:#0284c7;font-weight:600;min-width:42px"></span>
+      </div>
     </div>
   </div>
 
@@ -3757,6 +3774,48 @@ async function refreshMacro(){
 
   // 同步刷新 iVIX
   fetchVixChart();
+}
+
+// ── 自动刷新周期控制 ─────────────────────────────────────────
+let _arTimer   = null;   // setInterval 句柄
+let _arCdTimer = null;   // 倒计时 setInterval 句柄
+let _arNext    = 0;      // 下次刷新的 timestamp (ms)
+
+function setAutoRefresh(val){
+  // 清理旧定时器
+  if(_arTimer)   { clearInterval(_arTimer);   _arTimer=null; }
+  if(_arCdTimer) { clearInterval(_arCdTimer); _arCdTimer=null; }
+  const cdEl = document.getElementById('autoRefreshCd');
+  const box  = document.getElementById('autoRefreshBox');
+  const min  = parseInt(val)||0;
+
+  if(!min){
+    if(cdEl) cdEl.textContent='';
+    if(box)  box.style.background='#f0f9ff';
+    return;
+  }
+
+  const ms = min * 60 * 1000;
+  if(box) box.style.background='#e0f2fe';   // 激活态：稍深的蓝
+
+  // 立刻刷一次，然后按周期持续刷
+  fetchPortPrices();
+  _arNext = Date.now() + ms;
+  _arTimer = setInterval(()=>{
+    fetchPortPrices();
+    _arNext = Date.now() + ms;
+  }, ms);
+
+  // 每秒更新倒计时文字
+  function tick(){
+    if(!cdEl) return;
+    const sec = Math.max(0, Math.ceil((_arNext - Date.now()) / 1000));
+    const m   = Math.floor(sec / 60);
+    const s   = sec % 60;
+    cdEl.textContent = m + ':' + String(s).padStart(2,'0');
+  }
+  tick();
+  _arCdTimer = setInterval(tick, 1000);
 }
 
 // ── PORTFOLIO PRICE REFRESH ──────────────────────────────────
