@@ -38,35 +38,40 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .tabs-inner{max-width:1400px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:4px;height:100%}
 .tab{
   flex:1;min-width:0;height:40px;
-  border:1px solid #dde3ec;
-  border-bottom:2px solid #b6c2d4;          /* 底边加深 → 立体感 */
+  border:1px solid rgba(0,0,0,.07);
+  border-bottom:2px solid var(--tab-bdr,#b6c2d4);
   border-radius:8px;
-  background:linear-gradient(180deg,#fbfcfd 0%,#eaeff6 100%);  /* 顶亮底暗 */
+  background:linear-gradient(180deg,var(--tab-top,#fbfcfd) 0%,var(--tab-bot,#eaeff6) 100%);
   color:var(--text2);cursor:pointer;
   font-size:13.5px;font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;
   font-weight:500;white-space:nowrap;overflow:hidden;
-  transition:background .16s,box-shadow .16s,transform .13s,border-color .16s,color .16s;
+  transition:filter .15s,box-shadow .15s,transform .13s,color .13s;
   display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 4px;letter-spacing:.015em;
-  box-shadow:0 1px 4px rgba(0,0,0,.07),       /* 底部浅阴影 */
-             inset 0 1px 0 rgba(255,255,255,.9) /* 顶部高光线 */
+  box-shadow:0 1px 4px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.88)
 }
 .tab:hover{
-  background:linear-gradient(180deg,#ffffff 0%,#dde4ef 100%);
-  color:var(--text);
-  border-color:#c3cedf;border-bottom-color:#8fa4be;
-  box-shadow:0 3px 9px rgba(0,0,0,.11),
-             inset 0 1px 0 rgba(255,255,255,1);
+  filter:brightness(.91);color:var(--text);
+  box-shadow:0 3px 9px rgba(0,0,0,.1),inset 0 1px 0 rgba(255,255,255,.95);
   transform:translateY(-1px)
 }
 .tab.active{
-  background:linear-gradient(180deg,#5b9cf6 0%,#1d4ed8 100%);  /* 顶浅蓝 → 底深蓝 */
+  background:linear-gradient(180deg,#5b9cf6 0%,#1d4ed8 100%);
   color:#fff;font-weight:700;
   border-color:#1e40af;border-bottom-color:#1e3a8a;
-  box-shadow:0 4px 14px rgba(37,99,235,.4),
-             inset 0 1px 0 rgba(255,255,255,.28);
-  transform:translateY(-2px)
+  box-shadow:0 4px 14px rgba(37,99,235,.4),inset 0 1px 0 rgba(255,255,255,.28);
+  transform:translateY(-2px);filter:none
 }
-.tab.active:hover{transform:translateY(-2px)}
+.tab.active:hover{transform:translateY(-2px);filter:none}
+/* 各标签浅色主题 — nth-child 对应 HTML 中按钮位置 */
+.tabs-inner .tab:nth-child(1){--tab-top:#eef4ff;--tab-bot:#dbeafe;--tab-bdr:#93c5fd}  /* 蓝  投资组合 */
+.tabs-inner .tab:nth-child(2){--tab-top:#fff4f4;--tab-bot:#fde8e8;--tab-bdr:#fca5a5}  /* 红  风险仪表板 */
+.tabs-inner .tab:nth-child(3){--tab-top:#f0fdf5;--tab-bot:#dcfce7;--tab-bdr:#86efac}  /* 绿  A股宏观 */
+.tabs-inner .tab:nth-child(4){--tab-top:#faf5ff;--tab-bot:#ede9fe;--tab-bdr:#c4b5fd}  /* 紫  AI趋势 */
+.tabs-inner .tab:nth-child(5){--tab-top:#ecfeff;--tab-bot:#cffafe;--tab-bdr:#67e8f9}  /* 青  光模块&PCB */
+.tabs-inner .tab:nth-child(6){--tab-top:#fff8ed;--tab-bot:#fed7aa;--tab-bdr:#fdba74}  /* 橙  存储监控 */
+.tabs-inner .tab:nth-child(7){--tab-top:#f0fdfa;--tab-bot:#ccfbf1;--tab-bdr:#5eead4}  /* 青绿 产业链阶段 */
+.tabs-inner .tab:nth-child(8){--tab-top:#f3fef5;--tab-bot:#d1fae5;--tab-bdr:#6ee7b7}  /* 绿  产业链监控 */
+.tabs-inner .tab:nth-child(9){--tab-top:#f8fafc;--tab-bot:#e2e8f0;--tab-bdr:#94a3b8}  /* 灰  十步框架 */
 /* 小屏恢复横向滚动 */
 @media(max-width:1023px){
   .tabs-inner{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
@@ -267,23 +272,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 </style>
 </head>
 <body>
-
-<!-- ═══ HEADER ═══ -->
-<header class="header">
-  <div style="display:flex;align-items:center;gap:12px">
-    <div class="hlogo">📊</div>
-    <div>
-      <div class="htitle">投资组合 · AI产业监控仪表板</div>
-      <div class="hsub">基于Richard Bernstein风格投资方法论 · 阶段4→5实时追踪</div>
-    </div>
-  </div>
-  <div class="hright">
-    <div class="ts" id="tsEl">最后更新: 初始化中…</div>
-    <button class="rbtn" id="rBtn" onclick="refreshAll()">
-      <span class="ricon">↻</span>检查更新
-    </button>
-  </div>
-</header>
 
 <!-- ═══ TABS ═══ -->
 <nav class="tabs">
@@ -4015,9 +4003,11 @@ function switchTab(idx){
 // 如需实时数据，须将各字段对接相应数据源（行情API / 季报解析服务）。
 function refreshAll(){
   const btn=document.getElementById('rBtn');
+  if(!btn) return;
   btn.classList.add('loading');btn.disabled=true;
   setTimeout(()=>{
-    document.getElementById('tsEl').textContent='检查时间: '+new Date().toLocaleString('zh-CN');
+    const ts=document.getElementById('tsEl');
+    if(ts) ts.textContent='检查时间: '+new Date().toLocaleString('zh-CN');
     btn.classList.remove('loading');btn.disabled=false;
   },500);
 }
@@ -4475,7 +4465,7 @@ const _IDX_EM = [
   {secids:['100.HSI'],    code:'HSI',    altCodes:['800000'],label:'恒生指数', region:'hk'},
   {secids:['124.HSTECH'], code:'HSTECH', altCodes:[],        label:'恒生科技', region:'hk'},
   {secids:['100.HSAHP'],  code:'HSAHP',  altCodes:[],        label:'A/H溢价',  region:'ah'},
-  {secids:['113.CN00Y'],  code:'CN00Y',  altCodes:[],        label:'A50期指',  region:'fut'},
+  {secids:['104.CN00Y'],  code:'CN00Y',  altCodes:[],        label:'A50期指',  region:'fut'},  // SGX A50期指当月连续
 ];
 // 渲染顺序固定（港股始终在 A/H溢价前，期指置底）
 const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股均价','恒生指数','恒生科技','A/H溢价','A50期指'];
@@ -4938,7 +4928,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   fetchMonLive();           // 异步拉取产业链监控20日动量
   fetchMacroRates();        // 异步拉取中美10年国债收益率（风险仪表板宏观指标）
   // 北向资金使用静态日频数据（BASE.ashare.north），无需远程拉取
-  document.getElementById('tsEl').textContent='最后更新: '+new Date().toLocaleString('zh-CN');
+  const _tsEl=document.getElementById('tsEl'); if(_tsEl) _tsEl.textContent='最后更新: '+new Date().toLocaleString('zh-CN');
   // 页面加载时自动拉取A股宏观最新数据（无需等待切换到宏观标签页）
   _macroAutoFetched = true;   // 防止切换到宏观标签页时重复拉取
   setTimeout(refreshMacro, 800);  // 延迟800ms，等各图表初始化完成后再拉取
