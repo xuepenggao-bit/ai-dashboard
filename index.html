@@ -2777,12 +2777,24 @@ async function portInit(){
     if(s) localData = JSON.parse(s);
   }catch(e){}
 
-  // ② 读取远程（独立 try，失败不影响本地）
+  // ② 读取远程（使用 GitHub Contents API，不受 CDN 缓存影响，始终返回最新数据）
   let remoteData = null;
   try{
-    const url = `https://raw.githubusercontent.com/${PORT_GH_REPO}/main/${PORT_GH_FILE}?t=${Date.now()}`;
-    const resp = await fetch(url, {cache:'no-store'});
-    if(resp.ok) remoteData = await resp.json();
+    const ghHeaders = {
+      'Authorization': `token ${PORT_GH_TOKEN}`,
+      'Accept': 'application/vnd.github.v3+json'
+    };
+    const metaResp = await fetch(
+      `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,
+      {headers: ghHeaders, cache:'no-store'}
+    );
+    if(metaResp.ok){
+      const metaJson = await metaResp.json();
+      // GitHub API 返回 base64 编码内容（含换行符），用 TextDecoder 正确还原 UTF-8
+      const b64 = metaJson.content.replace(/\n/g,'');
+      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+      remoteData = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+    }
   }catch(e){ console.warn('portLoadRemote:', e); }
 
   // ③ 择优：以有效仓位数量决定使用哪份数据
@@ -3837,7 +3849,7 @@ async function _getKlineClose(tcSym, lmt){
   // ① 腾讯财经 fqkline（使用 _var 触发 JSONP，然后文本解析）
   try{
     const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
-             +'?_var=kl&param='+tcSym+',day,,,,'+lmt+',qfq&_='+Date.now();
+             +'?_var=kl&param='+tcSym+',day,,,'+lmt+',qfq&_='+Date.now();
     const text=await (await fetch(url)).text();
     // 响应: 'kl={"sh510050":{"day":[[...],...]},...}'  截取第一个 '{'
     const st=text.indexOf('{');
@@ -3874,63 +3886,113 @@ async function _getKlineClose(tcSym, lmt){
 }
 
 // ── iVIX 市场恐慌指数 ───────────────────────────────────────
-// 三级备源：① 新浪财经 50ETF期权隐含VIX（最实时，盘中实时报价）
-//           ② 沪深300ETF (510300) 20日年化已实现波动率（全市场代表性更强）
-//           ③ 上证50ETF (510050) 20日RV（传统备源）
+// 数据源：东方财富 push2his K线（ETF 510050 / 510300），计算 20 日年化已实现波动率
+// 腾讯 fqkline 作为备源（URL 格式：code,day,,,lmt,qfq，共 5 个逗号）
 async function fetchVixRow(listEl){
   if(!listEl) return;
-  let vixVal=null, vixChg=null, vixSrc='', vixType='';
 
-  // ① 新浪财经 50ETF期权隐含波动率（期权市场定价，最具前瞻性）
-  try{
-    const url='https://stock.finance.sina.com.cn/futures/api/openapi.php'
-             +'?type=VIX&_='+Date.now();
-    const resp=await fetch(url,{cache:'no-store'});
-    if(!resp.ok) throw new Error('HTTP '+resp.status);
-    const json=await resp.json();
-    const raw=json?.result?.data;
-    const item=Array.isArray(raw)?raw[0]:raw;
-    if(item){
-      const cur=parseFloat(item.current||item.close);
-      const pre=parseFloat(item.pre_close||item.pre_settle||item.settlement);
-      if(isFinite(cur)&&cur>2&&cur<200){
-        vixVal=+cur.toFixed(2);
-        if(isFinite(pre)&&pre>0) vixChg=+(cur-pre).toFixed(2);
-        vixSrc='50ETF期权隐含VIX';
-        vixType='implied';
-      }
-    }
-  }catch(e){ console.warn('[iVIX] Sina期权:',e.message); }
+  // 清除同一 listEl 内已有的 iVIX 行（避免并发刷新产生重复）
+  listEl.querySelector('#vixPortRow')?.remove();
+  listEl.querySelector('#vixPortSep')?.remove();
 
-  // ② 沪深300ETF / ③ 上证50ETF —— 20日年化已实现波动率
-  if(!vixVal){
-    const rvCalc=(slice)=>{
-      const rt=[];
-      for(let i=1;i<slice.length;i++) rt.push(Math.log(slice[i]/slice[i-1]));
-      const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
-      const vr=rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1);
-      return Math.sqrt(vr*252)*100;
-    };
-    for(const [sym,label] of [['sh510300','沪深300ETF'],['sh510050','上证50ETF']]){
+  let vixVal=null, vixChg=null, vixSrc='';
+
+  // 年化已实现波动率计算（对数收益率标准差 × √252 × 100）
+  const rvCalc=(cl)=>{
+    const rt=[];
+    for(let i=1;i<cl.length;i++) rt.push(Math.log(cl[i]/cl[i-1]));
+    const mn=rt.reduce((a,b)=>a+b,0)/rt.length;
+    const vr=rt.reduce((a,b)=>a+(b-mn)**2,0)/(rt.length-1);
+    return Math.sqrt(vr*252)*100;
+  };
+
+  // 尝试 ETF：先 510050（上证50），再 510300（沪深300）
+  for(const [secid, tcSym, label] of [
+    ['1.510050','sh510050','上证50ETF'],
+    ['1.510300','sh510300','沪深300ETF'],
+  ]){
+    try{
+      let cl=null;
+
+      // ① 优先：东方财富 push2his（直接用 secid，无 CORS 问题）
       try{
-        const cl=await _getKlineClose(sym,27);        // 取27日：算两个20日窗口+缓冲
-        if(cl.length<22) continue;
-        const rv    =rvCalc(cl.slice(-21));            // 最新20日
-        const rvPrev=rvCalc(cl.slice(-22,-1));         // 前一日20日（对比用）
-        if(rv>0&&rv<300){
-          vixVal=+rv.toFixed(2);
-          vixChg=+(rv-rvPrev).toFixed(2);
-          vixSrc=label+' 20日RV';
-          vixType='rv';
-          break;
+        const url='https://push2his.eastmoney.com/api/qt/stock/kline/get'
+                 +'?secid='+secid
+                 +'&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56'
+                 +'&klt=101&fqt=1&beg=0&end=20500101&lmt=30&_='+Date.now();
+        const j=await (await fetch(url,{cache:'no-store'})).json();
+        const kl=j?.data?.klines||[];
+        if(kl.length>=22){
+          const arr=kl.map(k=>parseFloat(k.split(',')[2]));
+          if(!arr.some(v=>isNaN(v)||v<=0)) cl=arr;
         }
-      }catch(e){ console.warn('[iVIX] RV '+sym+':',e.message); }
-    }
+      }catch(e1){ console.warn('[iVIX] EM',label,e1.message); }
+
+      // ② 备源：腾讯 fqkline（格式 code,day,,,lmt,qfq，注意只有5个逗号）
+      if(!cl){
+        try{
+          const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
+                   +'?_var=kl&param='+tcSym+',day,,,30,qfq&_='+Date.now();
+          const text=await (await fetch(url,{cache:'no-store'})).text();
+          const st=text.indexOf('{');
+          if(st>=0){
+            const j=JSON.parse(text.slice(st));
+            const d=j?.[tcSym]||j?.[tcSym+'qfq'];
+            const days=d?.day||[];
+            if(days.length>=22){
+              const arr=days.map(x=>parseFloat(x[2]));
+              if(!arr.some(v=>isNaN(v)||v<=0)) cl=arr;
+            }
+          }
+        }catch(e2){ console.warn('[iVIX] TC',label,e2.message); }
+      }
+
+      if(!cl) continue;
+
+      const rv    =rvCalc(cl.slice(-21));     // 最近 20 个对数收益率
+      const rvPrev=rvCalc(cl.slice(-22,-1));  // 前一日的 20 日窗口
+      if(rv>0&&rv<300){
+        vixVal=+rv.toFixed(2);
+        vixChg=+(rv-rvPrev).toFixed(2);
+        vixSrc=label+' 20日RV';
+        break;
+      }
+    }catch(e){ console.warn('[iVIX]',label,e.message); }
   }
 
-  if(!vixVal) return;
+  // 分隔线
+  const sep=document.createElement('div');
+  sep.id='vixPortSep';
+  sep.style.cssText='height:1px;background:linear-gradient(90deg,transparent,#c4b5fd 50%,transparent);margin:8px 0 6px';
+  listEl.appendChild(sep);
 
-  // 颜色 & 文字定义
+  const row=document.createElement('div');
+  row.id='vixPortRow';
+
+  // 数据获取失败：显示占位卡片（始终渲染，保证布局完整）
+  if(vixVal===null){
+    row.style.cssText='padding:10px 12px;border-radius:10px;'
+      +'background:linear-gradient(135deg,#faf5ff 0%,#ede9fe 50%,#faf5ff 100%);'
+      +'border-left:3px solid #7c3aed;box-shadow:0 2px 10px rgba(124,58,237,.12);'
+      +'border:1px solid #ddd6fe';
+    row.innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:800;color:#4c1d95">
+            iVIX &nbsp;<span style="font-weight:500;color:#7c3aed;font-size:12px">市场恐慌指数</span>
+          </div>
+          <div style="font-size:10px;color:#8b5cf6;margin-top:2px">
+            <span style="background:#e0e7ff;color:#3730a3;padding:1px 5px;border-radius:4px;font-weight:700;font-size:9px">历史波动率</span>
+            &nbsp;数据加载中，请稍后刷新
+          </div>
+        </div>
+        <div style="font-size:22px;font-weight:900;color:#94a3b8">—</div>
+      </div>`;
+    listEl.appendChild(row);
+    return;
+  }
+
+  // 正常渲染
   const vLevel = vixVal>35?'极高警戒':vixVal>25?'高波动':vixVal>15?'中等':vixVal>10?'低波动':'极低';
   const vColor = vixVal>35?'#be123c':vixVal>25?'#dc2626':vixVal>15?'#d97706':vixVal>10?'#059669':'#0891b2';
   const vBg    = vixVal>35?'rgba(190,18,60,.08)':vixVal>25?'rgba(220,38,38,.07)':
@@ -3939,18 +4001,8 @@ async function fetchVixRow(listEl){
     ? (vixChg>0?`<span style="font-size:11px;color:#dc2626;font-weight:700">↑ +${vixChg.toFixed(2)}</span>`
               :`<span style="font-size:11px;color:#059669;font-weight:700">↓ ${vixChg.toFixed(2)}</span>`)
     : '';
-  const barW   = Math.min(100, Math.round(vixVal / 50 * 100));
-  const srcTag = vixType==='implied'
-    ? `<span style="font-size:9px;background:#d1fae5;color:#065f46;padding:1px 5px;border-radius:4px;font-weight:700">期权</span>`
-    : `<span style="font-size:9px;background:#e0e7ff;color:#3730a3;padding:1px 5px;border-radius:4px;font-weight:700">历史波动率</span>`;
+  const barW=Math.min(100,Math.round(vixVal/50*100));
 
-  // 分隔线
-  const sep=document.createElement('div');
-  sep.style.cssText='height:1px;background:linear-gradient(90deg,transparent,#c4b5fd 50%,transparent);margin:8px 0 6px';
-  listEl.appendChild(sep);
-
-  const row=document.createElement('div');
-  row.id='vixPortRow';
   row.style.cssText='padding:10px 12px;border-radius:10px;'
     +'background:linear-gradient(135deg,#faf5ff 0%,#ede9fe 50%,#faf5ff 100%);'
     +'border-left:3px solid #7c3aed;box-shadow:0 2px 10px rgba(124,58,237,.12);'
@@ -3962,7 +4014,8 @@ async function fetchVixRow(listEl){
           iVIX &nbsp;<span style="font-weight:500;color:#7c3aed;font-size:12px">市场恐慌指数</span>
         </div>
         <div style="font-size:10px;color:#8b5cf6;margin-top:1px;display:flex;align-items:center;gap:4px">
-          ${srcTag}&nbsp;${vixSrc}
+          <span style="font-size:9px;background:#e0e7ff;color:#3730a3;padding:1px 5px;border-radius:4px;font-weight:700">历史波动率</span>
+          &nbsp;${vixSrc}
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0">
