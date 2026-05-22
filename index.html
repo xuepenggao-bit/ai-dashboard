@@ -1619,7 +1619,8 @@ const BASE = {
       vals:  [9.5,9.0,8.7,8.3,8.4,8.1,8.2,8.1,8.0,7.8,7.8,8.0,8.0,8.2,8.5,8.7,8.7,8.9,9.0,8.8,8.7,8.5,8.5,8.3,8.1,8.0,7.9,7.8],
     },
     fai:{
-      labels:['24-01-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-01-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01-04'],
+      // 固定资产投资累计同比增速（NBS月度，1-2月合并发布）· 来源：国家统计局
+      labels:['24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-04'],
       vals:  [4.2,4.5,4.2,4.0,3.9,3.6,3.4,3.4,3.4,3.3,3.2,4.2,4.0,3.7,2.8,1.6,0.5,-0.5,-1.7,-2.6,-3.8,-1.6],
     },
     retail:{
@@ -1627,7 +1628,8 @@ const BASE = {
       vals:  [5.5,3.1,2.3,3.7,2.0,2.7,2.1,3.2,4.8,3.0,3.5,4.0,5.9,5.1,6.4,4.8,3.7,3.4,3.0,2.9,1.3,0.9,1.7,0.2],
     },
     industrial:{
-      labels:['24-01-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-01-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01-03'],
+      // 规模以上工业企业利润当月同比增速（NBS月度，1-2月合并发布）· 来源：国家统计局
+      labels:['24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-03'],
       vals:  [10.2,-3.5,4.3,0.7,3.5,4.1,17.1,11.9,-10.0,7.3,11.0,-4.0,2.5,2.0,1.5,2.5,1.8,1.2,1.0,0.8,0.8,0.6,15.5],
     },
   },
@@ -3297,14 +3299,15 @@ function mkTsf(){
 function mkFai(){
   const ctx=document.getElementById('cFai').getContext('2d');
   const d=BASE.ashare.fai;
+  const zeroLine=d.labels.map(()=>0);
   CH.fai=new Chart(ctx,{type:'line',data:{labels:d.labels,datasets:[
-    {label:'FAI累计同比(%)',data:d.vals,borderColor:'#059669',backgroundColor:'rgba(5,150,105,.1)',borderWidth:2.5,pointRadius:3,fill:true,tension:0.3},
+    {label:'FAI累计同比(%)',data:d.vals,borderColor:'#059669',backgroundColor:'rgba(5,150,105,.1)',borderWidth:2.5,pointRadius:3,fill:true,tension:0.3,order:1},
+    {label:'零轴',data:zeroLine,type:'line',borderColor:'rgba(239,68,68,.5)',borderWidth:1.2,borderDash:[4,3],pointRadius:0,fill:false,tension:0,order:2},
   ]},options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
+    plugins:{legend:{labels:{color:'#64748b',font:{size:11},filter:(item)=>item.datasetIndex===0}}},
     scales:{
       x:{grid:{color:'rgba(226,232,240,.6)'},ticks:{color:'#64748b',font:{size:9}}},
-      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'%'},
-         suggestedMin:2.5,suggestedMax:5.5},
+      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'%'}},
     }
   }});
 }
@@ -3647,11 +3650,17 @@ function _renderStageRadars(){
 
 // ── TAB ──────────────────────────────────────────────────────
 const TAB_ORDER=['tPort','tStage','t0','t4','t5','tAM','t1','t2','t3'];
+let _macroAutoFetched=false;
 function switchTab(idx){
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
   const target=document.getElementById(TAB_ORDER[idx]);
   if(target) target.classList.add('active');
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  // 首次打开"A股宏观"标签页时自动拉取最新NBS数据
+  if(TAB_ORDER[idx]==='tAM' && !_macroAutoFetched){
+    _macroAutoFetched=true;
+    setTimeout(refreshMacro, 300);
+  }
 }
 
 // ── REFRESH ──────────────────────────────────────────────────
@@ -3760,9 +3769,9 @@ async function refreshMacro(){
   const btn=document.getElementById('macroBtnRefresh');
   const ts =document.getElementById('macroTs');
   const alertEl=document.getElementById('macroAlert');
-  btn.classList.add('loading'); btn.disabled=true;
-  ts.textContent='正在获取最新数据…';
-  alertEl.style.display='none';
+  if(btn){ btn.classList.add('loading'); btn.disabled=true; }
+  if(ts) ts.textContent='正在获取最新数据…';
+  if(alertEl) alertEl.style.display='none';
 
   const chartKeys=[
     {key:'cpi',      chRef:()=>CH.cpi,       dsIdx:0},
@@ -3784,6 +3793,10 @@ async function refreshMacro(){
           ch.data.datasets[0].backgroundColor=d.vals.map(v=>(v||0)>=0?'rgba(5,150,105,.65)':'rgba(220,38,38,.55)');
           if(ch.data.datasets[1]){ch.data.datasets[1].data=d.vals;}
         }
+        if(key==='fai'){
+          // 同步更新零轴数据点数量
+          if(ch.data.datasets[1]){ch.data.datasets[1].data=d.labels.map(()=>0);}
+        }
         ch.update('none');
       }
       const latest=d.labels[d.labels.length-1]||'';
@@ -3795,19 +3808,21 @@ async function refreshMacro(){
   }
 
   const timeStr=new Date().toLocaleString('zh-CN');
-  ts.textContent=`已更新 ${ok.length}/${chartKeys.length} 项 · ${timeStr}`;
-  if(ok.length>0){
-    alertEl.className='alert a-info mb8';
-    alertEl.style.display='block';
-    const okStr=ok.map(r=>r.name+(r.latest?'(至'+r.latest+')'+(r.field?'['+r.field+']':''):'')).join('、');
-    const failStr=fail.length?'　⚠ 失败：'+fail.map(r=>r.name+'('+r.err+')').join('、'):'';
-    alertEl.textContent='✓ 已更新：'+okStr+failStr;
-  }else{
-    alertEl.className='alert a-warn mb8';
-    alertEl.style.display='block';
-    alertEl.textContent='⚠ 所有指标获取失败，显示历史静态数据。详情见控制台(F12)。失败：'+fail.map(r=>r.name+'→'+r.err).join('；');
+  if(ts) ts.textContent=`已更新 ${ok.length}/${chartKeys.length} 项 · ${timeStr}`;
+  if(alertEl){
+    if(ok.length>0){
+      alertEl.className='alert a-info mb8';
+      alertEl.style.display='block';
+      const okStr=ok.map(r=>r.name+(r.latest?'(至'+r.latest+')'+(r.field?'['+r.field+']':''):'')).join('、');
+      const failStr=fail.length?'　⚠ 失败：'+fail.map(r=>r.name+'('+r.err+')').join('、'):'';
+      alertEl.textContent='✓ 已更新：'+okStr+failStr;
+    }else{
+      alertEl.className='alert a-warn mb8';
+      alertEl.style.display='block';
+      alertEl.textContent='⚠ 所有指标获取失败，显示历史静态数据。详情见控制台(F12)。失败：'+fail.map(r=>r.name+'→'+r.err).join('；');
+    }
   }
-  btn.classList.remove('loading'); btn.disabled=false;
+  if(btn){ btn.classList.remove('loading'); btn.disabled=false; }
 
   // 同步刷新 iVIX
   fetchVixChart();
