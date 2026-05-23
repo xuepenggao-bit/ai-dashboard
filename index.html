@@ -4039,6 +4039,35 @@ async function fetchValData(){
   } catch(e){
     console.warn('fetchValData error',e);
   }
+
+  // ── 港股：按名称查找对应A股，取利润数据 ──────────────────────
+  const hkStocks=[];
+  PORT.sectors.forEach(sec=>sec.stocks.forEach(sk=>{ if(sk.mkt==='HK') hkStocks.push(sk); }));
+  await Promise.all(hkStocks.map(async sk=>{
+    if(_VAL_DATA[sk.code]?.annualProfit!=null) return; // 已有数据则跳过
+    try{
+      const f=encodeURIComponent(`(SECURITY_NAME_ABBR="${sk.name}")`);
+      const u=`https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_LICO_FN_CPD`
+        +`&columns=SECURITY_CODE,SECURITY_NAME_ABBR,REPORTDATE,PARENT_NETPROFIT,SJLTZ,SJLHZ,DATEMMDD,DATAYEAR,QDATE`
+        +`&filter=${f}&pageSize=10&pageNumber=1&sortColumns=REPORTDATE&sortTypes=-1&source=WEB`;
+      const j=await (await fetch(u)).json();
+      if(!j.success||!j.result?.data?.length) return;
+      const recs=j.result.data;
+      const ann=recs.find(r=>r.DATEMMDD==='年报');
+      const qtr=recs.find(r=>r.DATEMMDD!=='年报');
+      _VAL_DATA[sk.code]={
+        annualProfit : ann ? ann.PARENT_NETPROFIT/100000000 : null,
+        annualYoY    : ann ? ann.SJLTZ : null,
+        annualPeriod : ann ? ann.DATAYEAR+'年报' : null,
+        qtrProfit    : qtr ? qtr.PARENT_NETPROFIT/100000000 : null,
+        qtrYoY       : qtr ? qtr.SJLTZ : null,
+        qtrQoQ       : qtr ? qtr.SJLHZ : null,
+        qtrPeriod    : qtr ? qtr.QDATE : null,
+        proxyACode   : recs[0].SECURITY_CODE,  // 记录A股代码，供调试
+      };
+    }catch(e){ console.warn('[HK代理]',sk.name,e); }
+  }));
+
   renderValTable();
 }
 
@@ -4126,32 +4155,35 @@ function renderValTable(){
         : '<span style="color:#94a3b8">—</span>';
       const pctStr=pi.pct!=null ? _valPct(pi.pct) : '';
 
-      // 年报数据
-      const annProfitStr = isHK ? '<span style="color:#94a3b8;font-size:11px">暂不支持</span>'
-        : (d.annualProfit!=null ? _valFmt(d.annualProfit,2) : '<span style="color:#94a3b8">—</span>');
+      // 年报数据（港股若有A股代理则显示数据，并附小标注）
+      const hkProxyBadge = (isHK && d.annualProfit!=null)
+        ? `<span style="font-size:9px;background:#fef9c3;color:#92400e;border-radius:3px;padding:0 3px;font-weight:700;margin-left:3px;vertical-align:middle">A代</span>` : '';
+      const noData = isHK && d.annualProfit==null;
+      const annProfitStr = noData ? '<span style="color:#94a3b8;font-size:11px">无对应A股</span>'
+        : (d.annualProfit!=null ? _valFmt(d.annualProfit,2)+hkProxyBadge : '<span style="color:#94a3b8">—</span>');
       const annPeriodStr = d.annualPeriod ? `<br><span style="font-size:10px;color:var(--text2)">${d.annualPeriod}</span>` : '';
-      const annYoY = isHK ? '<span style="color:#94a3b8;font-size:11px">—</span>' : _valPct(d.annualYoY);
+      const annYoY = (noData) ? '<span style="color:#94a3b8">—</span>' : _valPct(d.annualYoY);
 
       // 季报数据
-      const qtrProfitStr = isHK ? '<span style="color:#94a3b8;font-size:11px">暂不支持</span>'
+      const qtrProfitStr = noData ? '<span style="color:#94a3b8;font-size:11px">—</span>'
         : (d.qtrProfit!=null ? _valFmt(d.qtrProfit,2) : '<span style="color:#94a3b8">—</span>');
       const qtrPeriodStr = d.qtrPeriod ? `<br><span style="font-size:10px;color:var(--text2)">${d.qtrPeriod}</span>` : '';
-      const qtrYoY = isHK ? '<span style="color:#94a3b8;font-size:11px">—</span>' : _valPct(d.qtrYoY);
-      const qtrQoQ = isHK ? '<span style="color:#94a3b8;font-size:11px">—</span>' : _valPct(d.qtrQoQ);
+      const qtrYoY = (noData) ? '<span style="color:#94a3b8">—</span>' : _valPct(d.qtrYoY);
+      const qtrQoQ = (noData) ? '<span style="color:#94a3b8">—</span>' : _valPct(d.qtrQoQ);
 
-      // 预测值（三项均值，港股不计算）
+      // 预测值（港股有代理数据时同样计算）
       let predRate=null, predProfit=null, predStr='<span style="color:#94a3b8">—</span>', predProfitStr='<span style="color:#94a3b8">—</span>';
-      if(!isHK && d.annualYoY!=null && d.qtrYoY!=null && d.qtrQoQ!=null){
-        predRate=(d.annualYoY+d.qtrYoY+d.qtrQoQ)/3;
-        if(d.annualProfit!=null) predProfit=d.annualProfit*(1+predRate/100);
-        predStr=_valPct(predRate);
-        predProfitStr=predProfit!=null ? `<span style="color:#065f46;font-weight:600">${_valFmt(predProfit,2)}</span>` : '<span style="color:#94a3b8">—</span>';
-      } else if(!isHK){
+      const canCalc = !noData; // A股或已找到A股代理的港股
+      if(canCalc){
         const vals=[d.annualYoY,d.qtrYoY,d.qtrQoQ].filter(v=>v!=null);
-        if(vals.length){
+        if(vals.length===3){
+          predRate=vals.reduce((a,b)=>a+b,0)/3;
+        } else if(vals.length){
           predRate=vals.reduce((a,b)=>a+b,0)/vals.length;
+        }
+        if(predRate!=null){
           if(d.annualProfit!=null) predProfit=d.annualProfit*(1+predRate/100);
-          predStr=_valPct(predRate)+`<span style="font-size:10px;color:var(--text2)"> (${vals.length}/3)</span>`;
+          predStr=_valPct(predRate)+(vals.length<3?`<span style="font-size:10px;color:var(--text2)"> (${vals.length}/3)</span>`:'');
           predProfitStr=predProfit!=null ? `<span style="color:#065f46;font-weight:600">${_valFmt(predProfit,2)}</span>` : '<span style="color:#94a3b8">—</span>';
         }
       }
