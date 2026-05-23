@@ -97,8 +97,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-@media(max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}}
-@media(max-width:600px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+@media(max-width:900px){.g2,.g3,.g4,.g5{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.g2,.g3,.g4,.g5{grid-template-columns:1fr}}
 
 /* ── Cards ── */
 .card{background:#fff;border:1px solid rgba(226,232,240,.9);border-radius:12px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.05),0 0 0 1px rgba(0,0,0,.02)}
@@ -528,7 +529,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- ── 上部分：A股市场监控 ── -->
 
   <!-- KPI Row -->
-  <div class="g4 mb16">
+  <div class="g5 mb16">
     <div class="card">
       <div class="klabel">沪深A股总市值 <span id="kTmcDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
       <div class="kval tb" id="kTmc">¥109万亿</div>
@@ -548,10 +549,16 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
     <div class="card">
-      <div class="klabel">两融余额 <span id="kAvgVolDate" style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
-      <div class="kval tb" id="kAvgVol">¥2.85万亿</div>
-      <div class="kchange up" id="kAvgVolChange">↑ 历史新高 · 较年初+9.3%</div>
-      <div class="tx3 mt4">来源: 东方财富 · 日频最新</div>
+      <div class="klabel">创业板指 PE(TTM) <span id="kGemPeDate" style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
+      <div class="kval tp" id="kGemPe">42.3x</div>
+      <div class="kchange neu" id="kGemPeHint">历史均值 ~35x · 偏高区间</div>
+      <div class="tx3 mt4">来源: 东方财富 · 实时</div>
+    </div>
+    <div class="card">
+      <div class="klabel">科创50 PE(TTM) <span id="kStarPeDate" style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
+      <div class="kval tp" id="kStarPe">53.8x</div>
+      <div class="kchange neu" id="kStarPeHint">含科技成长溢价 · 合理区间</div>
+      <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
   </div>
 
@@ -4440,16 +4447,19 @@ async function fetchMacroKpis(){
     }
   }catch(e){ console.warn('[MacroKpi] 总市值:', e.message); }
 
-  // ── 2. 指数 PE(TTM) ────────────────────────────────────────────────
-  // 注：push2 ulist.np 对所有指数代码的 f162/f9/f23 均返回 "-"，无法自动刷新。
+  // ── 2. 指数 PE(TTM) ─────────────────────────────────────────────────
+  // 注：push2 ulist.np 对所有指数代码的 f162 均返回 "-"，无法自动刷新。
   // 下方代码保留结构，若将来找到可用 API 可在此处替换；否则 PE 卡片显示静态值。
+  // secids 顺序：上证综指(1.000001) / 深证成指(0.399001) / 创业板指(0.399006) / 科创50(1.000688)
   try{
     const r = await fetch(
-      `https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&secids=1.000001,0.399001&fields=f162&_=${Date.now()}`
+      `https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&secids=1.000001,0.399001,0.399006,1.000688&fields=f162&_=${Date.now()}`
     ).then(r=>r.json());
     const diff = r?.data?.diff;
-    const ssePe = parseFloat(diff?.[0]?.f162); // 对指数恒为 NaN，静默跳过
-    const szePe = parseFloat(diff?.[1]?.f162);
+    const ssePe  = parseFloat(diff?.[0]?.f162); // 上证综指，对指数恒为 NaN，静默跳过
+    const szePe  = parseFloat(diff?.[1]?.f162); // 深证成指
+    const gemPe  = parseFloat(diff?.[2]?.f162); // 创业板指
+    const starPe = parseFloat(diff?.[3]?.f162); // 科创50
     if(ssePe > 0){
       const el = document.getElementById('kSsePe');
       if(el) el.textContent = ssePe.toFixed(1) + 'x';
@@ -4466,49 +4476,23 @@ async function fetchMacroKpis(){
       const he = document.getElementById('kSzePeHint');
       if(he) he.textContent = szePe < 20 ? '含成长溢价 · 低估区间' : szePe < 30 ? '含成长溢价 · 合理区间' : '含成长溢价 · 偏高区间';
     }
-  }catch(e){ console.warn('[MacroKpi] 指数PE:', e.message); }
-
-  // ── 3. 两融余额（RPTA_WEB_RZRQ_GGMX 逐股汇总）─────────────────────
-  // 每交易日约 1980 条个股记录，分 4 页并行拉取后求和
-  try{
-    const TOKEN = '894050c76af8597a853f5b408b6f1954';
-    const BASE = `https://datacenter.eastmoney.com/api/data/get?type=RPTA_WEB_RZRQ_GGMX&sty=DATE,RZRQYE&st=DATE&sr=-1&token=${TOKEN}`;
-
-    // Step 1: 获取最新交易日期
-    const r0 = await fetch(`${BASE}&p=1&ps=1&js={data:(x)}`).then(r=>r.json());
-    const latestDate = r0?.result?.data?.[0]?.DATE?.slice(0, 10);
-    if(!latestDate) throw new Error('no date');
-
-    // Step 2: 拉第 1 页并得到该日总记录数
-    const FBASE = `${BASE}&filter=(DATE>='${latestDate}')&js={count:(tc),data:(x)}`;
-    const r1 = await fetch(`${FBASE}&p=1&ps=500`).then(r=>r.json());
-    const count = r1?.result?.count || 0;
-    if(count === 0) throw new Error('no records for ' + latestDate);
-
-    // Step 3: 并行拉取剩余分页
-    const pages = Math.ceil(count / 500);
-    let total = (r1?.result?.data || []).reduce((s, d) => s + (parseFloat(d.RZRQYE)||0), 0);
-    if(pages > 1){
-      const extras = await Promise.all(
-        Array.from({length: pages - 1}, (_, i) =>
-          fetch(`${FBASE}&p=${i+2}&ps=500`).then(r=>r.json())
-        )
-      );
-      for(const res of extras){
-        for(const d of (res?.result?.data || [])){
-          total += parseFloat(d.RZRQYE) || 0;
-        }
-      }
+    if(gemPe > 0){
+      const el = document.getElementById('kGemPe');
+      if(el) el.textContent = gemPe.toFixed(1) + 'x';
+      const de = document.getElementById('kGemPeDate');
+      if(de) de.textContent = todayStr;
+      const he = document.getElementById('kGemPeHint');
+      if(he) he.textContent = gemPe < 25 ? '历史均值 ~35x · 低估区间' : gemPe < 40 ? '历史均值 ~35x · 合理区间' : '历史均值 ~35x · 偏高区间';
     }
-
-    const wan = total / 1e12; // 元 → 万亿
-    const el = document.getElementById('kAvgVol');
-    if(el) el.textContent = '¥' + wan.toFixed(2) + '万亿';
-    const de = document.getElementById('kAvgVolDate');
-    if(de) de.textContent = latestDate;
-    const ce = document.getElementById('kAvgVolChange');
-    if(ce) ce.textContent = '融资余额 ~' + Math.round(total/1e8).toLocaleString('zh-CN') + ' 亿';
-  }catch(e){ console.warn('[MacroKpi] 两融余额:', e.message); }
+    if(starPe > 0){
+      const el = document.getElementById('kStarPe');
+      if(el) el.textContent = starPe.toFixed(1) + 'x';
+      const de = document.getElementById('kStarPeDate');
+      if(de) de.textContent = todayStr;
+      const he = document.getElementById('kStarPeHint');
+      if(he) he.textContent = starPe < 30 ? '含科技成长溢价 · 低估区间' : starPe < 55 ? '含科技成长溢价 · 合理区间' : '含科技成长溢价 · 偏高区间';
+    }
+  }catch(e){ console.warn('[MacroKpi] 指数PE:', e.message); }
 }
 
 async function refreshMacro(){
