@@ -254,8 +254,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @media(max-width:768px){
   /* KPI 4格变2列 */
   #tPort .g4{grid-template-columns:1fr 1fr}
-  /* 第二行 4格变2列 */
-  #tPort .g4{grid-template-columns:1fr 1fr}
+  /* 第二行 3格变2列 */
+  #tPort .g3{grid-template-columns:1fr 1fr}
   #tPort .kval{font-size:26px}
   #tPort .klabel{font-size:12px}
   /* 分类头部自适应 */
@@ -272,8 +272,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   #tPort .col-price,#tPort .th-price{display:none}
 }
 @media(max-width:480px){
-  /* 第二行 g4 → 单列 */
-  #tPort .g4{grid-template-columns:1fr}
+  /* 第二行 g3 → 单列 */
+  #tPort .g3{grid-template-columns:1fr}
   /* 再隐藏：市场标签 */
   #tPort .col-mkt,#tPort .th-mkt{display:none}
   #tPort .kval{font-size:22px}
@@ -288,15 +288,15 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <!-- ═══ TABS ═══ -->
 <nav class="tabs">
   <div class="tabs-inner">
-    <button class="tab active" onclick="switchTab(0)">💼 投资组合</button>
-    <button class="tab" onclick="switchTab(1)">📊 估值分析</button>
-    <button class="tab" onclick="switchTab(2)">⚡ 风险仪表板</button>
-    <button class="tab" onclick="switchTab(3)">🏦 A股宏观</button>
-    <button class="tab" onclick="switchTab(4)">🤖 AI 趋势</button>
-    <button class="tab" onclick="switchTab(5)">🔌 光模块&amp;PCB</button>
-    <button class="tab" onclick="switchTab(6)">🗄️ 存储监控</button>
-    <button class="tab" onclick="switchTab(7)">🔴 产业链监控</button>
-    <button class="tab" onclick="switchTab(8)">🎯 十步框架</button>
+    <button class="tab active" onclick="switchTab(0)">🗂 投资组合</button>
+    <button class="tab" onclick="switchTab(1)">💹 估值分析</button>
+    <button class="tab" onclick="switchTab(2)">⚠️ 风险仪表板</button>
+    <button class="tab" onclick="switchTab(3)">🇨🇳 A股宏观</button>
+    <button class="tab" onclick="switchTab(4)">📈 AI 趋势</button>
+    <button class="tab" onclick="switchTab(5)">🔬 光模块&amp;PCB</button>
+    <button class="tab" onclick="switchTab(6)">💾 存储监控</button>
+    <button class="tab" onclick="switchTab(7)">🔗 产业链监控</button>
+    <button class="tab" onclick="switchTab(8)">📋 十步框架</button>
   </div>
 </nav>
 
@@ -851,8 +851,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 2: 持仓概览 + 仓位分配（按分类）+ 仓位分配（按行业）+ 新增分类 -->
-  <div class="g4 mb16">
+  <!-- Row 2: 持仓概览 + 仓位分配 + 新增分类 -->
+  <div class="g3 mb16">
     <!-- 持仓概览 -->
     <div class="card" style="border-top:3px solid var(--blue);background:linear-gradient(135deg,#eff6ff 0%,#fff 60%)">
       <div class="klabel" style="font-size:14px;font-weight:800;color:var(--blue);letter-spacing:.02em">📂 持仓概览</div>
@@ -910,20 +910,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
     </div>
 
-    <!-- 仓位分配图表（按分类） -->
+    <!-- 仓位分配图表 -->
     <div class="card">
       <div class="ch"><span class="ct">仓位分配（按分类）</span><span class="cbadge" id="pTotalBadge">合计 —%</span></div>
       <div style="height:200px"><canvas id="cPortAlloc"></canvas></div>
       <div id="portAllocLegend" style="margin-top:10px"></div>
     </div>
-
-    <!-- 仓位分配图表（按行业） -->
-    <div class="card">
-      <div class="ch"><span class="ct">仓位分配（按行业）</span><span class="cbadge" id="pIndustryBadge">—</span></div>
-      <div style="height:200px"><canvas id="cPortIndustry"></canvas></div>
-      <div id="portIndustryLegend" style="margin-top:10px"></div>
-    </div>
-
     <div class="card">
       <div class="ch"><span class="ct">新增分类</span></div>
       <div class="form-row">
@@ -1766,8 +1758,7 @@ function mkTrend(){
 }
 
 function mkSig(){
-  const el = document.getElementById('cSig'); if(!el) return;
-  const ctx = el.getContext('2d');
+  const ctx = document.getElementById('cSig').getContext('2d');
   CH.sig = new Chart(ctx,{
     type:'doughnut',
     data:{
@@ -3136,53 +3127,6 @@ function renderPortfolio(){
         </div>`).join('');
     }
   }
-  // ── 仓位分配（按行业）饼图 ──────────────────────────────────────
-  if(CH.portIndustry){ CH.portIndustry.destroy(); CH.portIndustry=null; }
-  const ictx = document.getElementById('cPortIndustry');
-  if(ictx){
-    const industryMap = {};
-    PORT.sectors.forEach(sec=>{
-      sec.stocks.forEach(sk=>{
-        if(sk.w != null && sk.w > 0){
-          const key = (sk.industry && sk.industry.trim()) ? sk.industry.trim() : '其他';
-          industryMap[key] = (industryMap[key]||0) + sk.w;
-        }
-      });
-    });
-    const indNames = Object.keys(industryMap).sort((a,b)=>industryMap[b]-industryMap[a]);
-    const indData  = indNames.map(k=>industryMap[k]);
-    const IND_PALETTE = ['#6366f1cc','#f59e0bcc','#10b981cc','#3b82f6cc','#ec4899cc',
-                         '#8b5cf6cc','#ef4444cc','#06b6d4cc','#84cc16cc','#f97316cc',
-                         '#a78bfacc','#34d399cc','#fb923ccc','#38bdf8cc','#f472b6cc'];
-    const indColors = indNames.map((_,i)=>IND_PALETTE[i%IND_PALETTE.length]);
-    const indTotal  = indData.reduce((s,v)=>s+v,0);
-    const indBadge  = document.getElementById('pIndustryBadge');
-    if(indBadge) indBadge.textContent = indNames.length ? '已标注 '+indTotal.toFixed(1)+'%' : '尚无行业标注';
-    if(indNames.length){
-      CH.portIndustry = new Chart(ictx.getContext('2d'),{
-        type:'doughnut',
-        data:{labels:indNames,datasets:[{data:indData,backgroundColor:indColors,borderWidth:0}]},
-        options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
-                 plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.label+' '+ctx.parsed.toFixed(1)+'%'}}}}
-      });
-    } else {
-      // 显示空状态占位
-      const placeHolder = document.createElement('div');
-      placeHolder.style.cssText='height:100%;display:flex;align-items:center;justify-content:center';
-      placeHolder.innerHTML='<span style="font-size:12px;color:var(--text2)">在股票编辑中填写"行业"字段后显示</span>';
-      ictx.parentNode.replaceChild(placeHolder,ictx);
-    }
-    const iLegend = document.getElementById('portIndustryLegend');
-    if(iLegend){
-      iLegend.innerHTML = indNames.length ? indNames.map((name,i)=>`
-        <div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid #f1f5f9">
-          <span style="width:10px;height:10px;border-radius:2px;flex-shrink:0;background:${indColors[i]}"></span>
-          <span style="font-size:12px;font-weight:600;color:#334155;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</span>
-          <span style="font-size:12px;font-weight:700;color:#475569;flex-shrink:0">${indData[i].toFixed(1)}%</span>
-        </div>`).join('') : '';
-    }
-  }
-
   // Sectors
   const mktStyle = {SH:'background:#dbeafe;color:#1e40af',SZ:'background:#ede9fe;color:#5b21b6',HK:'background:#fee2e2;color:#991b1b'};
   const mktLabel = {SH:'沪A',SZ:'深A',HK:'港股'};
@@ -4976,62 +4920,57 @@ async function fetchPortPrices(){
 
     _PORT_PRICES = {};
 
-    // ── 并行发起 A股行情 / A股市值 / 港股行情 三路请求 ──────────────
-    var ts0 = Date.now();
-    var qUrl  = aStocks.length  ? 'https://qt.gtimg.cn/q=' + aStocks.map(function(s){ return s.tc; }).join(',') + '&_=' + ts0 : null;
-    var aSids = aStocks.length  ? aStocks.map(function(s){ return (s.mkt==='SH'?'1.':'0.')+s.code; }).join(',') : null;
-    var mcUrl = aSids           ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f12,f20&secids='+aSids+'&_='+ts0 : null;
-    var hkSids= hkStocks.length ? hkStocks.map(function(s){ return '116.'+s.code; }).join(',') : null;
-    var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields=f12,f14,f2,f3,f20&_='+ts0 : null;
+    // ── A 股：腾讯 qt.gtimg.cn（实时）────────────────────────
+    if(aStocks.length){
+      try{
+        var qUrl = 'https://qt.gtimg.cn/q=' + aStocks.map(function(s){ return s.tc; }).join(',') + '&_=' + Date.now();
+        var resp = await fetch(qUrl);
+        if(!resp.ok) throw new Error('HTTP ' + resp.status);
+        var txt = new TextDecoder('gbk').decode(await resp.arrayBuffer());
+        aStocks.forEach(function(s){
+          var m = txt.match(new RegExp('v_' + s.tc + '="([^"]+)"'));
+          if(!m) return;
+          var p = m[1].split('~');
+          var cur = parseFloat(p[3]), pct = parseFloat(p[32]);
+          if(cur > 0 && isFinite(pct))
+            _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w};
+        });
+      }catch(e){ console.warn('[价格] A股:', e.message); }
 
-    var results = await Promise.all([
-      qUrl  ? fetch(qUrl).then(function(r){ return r.arrayBuffer(); }).then(function(b){ return new TextDecoder('gbk').decode(b); })
-                         .catch(function(e){ console.warn('[A股价格]',e.message); return ''; })
-            : Promise.resolve(''),
-      mcUrl ? fetch(mcUrl).then(function(r){ return r.json(); })
-                          .catch(function(e){ console.warn('[A股市值]',e.message); return null; })
-            : Promise.resolve(null),
-      emUrl ? fetch(emUrl).then(function(r){ return r.json(); })
-                          .catch(function(e){ console.warn('[HK东方财富]',e.message); return null; })
-            : Promise.resolve(null)
-    ]);
-    var aTxt   = results[0];
-    var mcJson = results[1];
-    var emJson = results[2];
-
-    // ��─ 处理 A股行情 ────────────────────────────────────────────────
-    if(aStocks.length && aTxt){
-      aStocks.forEach(function(s){
-        var m = aTxt.match(new RegExp('v_' + s.tc + '="([^"]+)"'));
-        if(!m) return;
-        var p = m[1].split('~');
-        var cur = parseFloat(p[3]), pct = parseFloat(p[32]);
-        if(cur > 0 && isFinite(pct))
-          _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w};
-      });
+      // ── A股市值：东方财富 f20（总市值，元→亿元）──────────────
+      try{
+        var aSids = aStocks.map(function(s){ return (s.mkt==='SH'?'1.':'0.')+s.code; }).join(',');
+        var mcUrl = 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2'
+                  + '&fields=f12,f20&secids=' + aSids + '&_=' + Date.now();
+        var mcDiff = (await (await fetch(mcUrl)).json())?.data?.diff || [];
+        mcDiff.forEach(function(d){
+          var code = String(d.f12 || '').padStart(6,'0');
+          var mc   = parseFloat(d.f20);
+          if(isFinite(mc) && mc > 0 && _PORT_PRICES[code]){
+            _PORT_PRICES[code].mktCap = mc / 100000000;  // 元 → 亿元
+          }
+        });
+      }catch(e){ console.warn('[MktCap] A股市值:', e.message); }
     }
 
-    // ── 处理 A股市值 ────────────────────────────────────────────────
-    if(aStocks.length && mcJson){
-      var mcDiff = mcJson?.data?.diff || [];
-      mcDiff.forEach(function(d){
-        var code = String(d.f12 || '').padStart(6,'0');
-        var mc   = parseFloat(d.f20);
-        if(isFinite(mc) && mc > 0 && _PORT_PRICES[code])
-          _PORT_PRICES[code].mktCap = mc / 100000000;  // 元 → 亿元
-      });
-    }
-
-    // ── 处理港股（东方财富主源）→ 腾讯备源补齐 ──────────────────────
+    // ── 港股：东方财富 push2（约30秒延迟）→ 腾讯备源（15分钟延迟）──
+    // 东方财富港股 secid 格式：116.XXXXX（5位代码带前导零，如 116.00700）
     if(hkStocks.length){
       var hkDone = {};   // code → true，记录已取到价格的港股
-      if(emJson){
-        var diff = emJson?.data?.diff || [];
+
+      // ① 东方财富 push2.eastmoney.com（主源，约30s更新频率）
+      try{
+        var secids = hkStocks.map(function(s){ return '116.' + s.code; }).join(',');
+        var emUrl  = 'https://push2.eastmoney.com/api/qt/ulist.np/get'
+                   + '?secids=' + secids + '&fltt=2&invt=2&fields=f12,f14,f2,f3,f20&_=' + Date.now();
+        var emJson = await (await fetch(emUrl)).json();
+        var diff   = emJson?.data?.diff || [];
         diff.forEach(function(d){
           var price = parseFloat(d.f2);
           var pct   = parseFloat(d.f3);
           if(!isFinite(price) || price <= 0 || !isFinite(pct)) return;
-          var emCode  = String(d.f12 || '').padStart(5, '0');
+          // f12 为数字（东方财富剥除前导零），需补回5位与 sk.code 匹配
+          var emCode = String(d.f12 || '').padStart(5, '0');
           var matched = hkStocks.find(function(s){ return s.code === emCode || s.code === String(d.f12); });
           if(matched){
             var mc = parseFloat(d.f20);
@@ -5041,7 +4980,7 @@ async function fetchPortPrices(){
           }
         });
         console.log('[HK] 东方财富 获取', Object.keys(hkDone).length, '/', hkStocks.length, '只');
-      }
+      }catch(e){ console.warn('[HK] 东方财富:', e.message); }
 
       // ② 腾讯 qt.gtimg.cn 备源（补齐东方财富未能返回的港股）
       var hkMissed = hkStocks.filter(function(s){ return !hkDone[s.code]; });
