@@ -5076,6 +5076,8 @@ async function fetchPortPrices(){
   } finally {
     _portSort.col = 'pct';
     _portSort.dir = -1;   // 默认降序（涨幅最高在前）
+    // 用实际取价完成时刻更新节流时间戳，避免"初始化时间 ≠ 取价完成时间"导致切换被误节流
+    _TAB_TS[0] = Date.now();
     renderPortfolio();
     renderPortTop3();
     _renderPortTopW();
@@ -5332,7 +5334,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 页面加载时已主动拉取所有动态数据，为各标签页初始化节流时间戳，
   // 避免30秒内切换标签时立即重复请求（t0/t3为静态，不需要节流记录）
   const _initTs=Date.now();
-  [0,2,3,5,6,7].forEach(i=>_TAB_TS[i]=_initTs); // 1=tVal不预加载，首次切换时立即拉取；8=t3静态无需节流
+  // 0(tPort) 不在此处预设：portInit 完成后 fetchPortPrices 会在 finally 里更新 _TAB_TS[0]，
+  // 确保节流起点是"实际取到价格的时刻"而不是"页面初始化时刻"，避免首次切换被误节流。
+  // 1(tVal)  不预加载，首次切换时立即拉取（同原逻辑）。
+  // 8(t3)    静态内容，无需节流。
+  [2,3,5,6,7].forEach(i=>_TAB_TS[i]=_initTs);
 });
 </script>
 </body>
