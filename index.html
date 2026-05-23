@@ -3002,74 +3002,45 @@ function portLoad(){
 }
 
 /**
- * 页面初始化：
- *  ① 无条件立即渲染本地数据 + 拉股价（portLoad 兜底，localStorage 有则用缓存，无则用默认）
- *  ② 后台与 GitHub 云端校验（8s 超时）
- *  ③ 云端更新时重新渲染；本地更新时自动推送云端
- *
- * 关键原则：fetchPortPrices() 和 renderPortfolio() 在任何情况下都必须在 GitHub fetch
- * 完成之前被调用，确保首屏不依赖网络请求即可显示列表和股价。
+ * 页面初始化：同时读取本地 localStorage 和远程 GitHub，
+ * 以"有效仓位数量"为标准择优使用，本地更好则自动推送到云端修正。
+ * 这样无论哪个浏览器先打开，都能收敛到数据最完整的那份。
  */
 async function portInit(){
   _setSyncTs('☁️ 加载中…', '#f59e0b');
 
-  // ① 无条件立即初始化（localStorage 有数据用缓存，无则用 BASE.portfolio 默认模板）
-  portLoad();   // 同步：保证 PORT 不为 null
-  try{ renderPortfolio(); }catch(e){ console.warn('[portInit renderPortfolio]', e); }
-  try{ fetchIndexPrices(); }catch(e){ console.warn('[portInit fetchIndexPrices]', e); }
-  try{ updateRiskDashboard(); }catch(e){ console.warn('[portInit updateRiskDashboard]', e); }
-  // fetchPortPrices 独立 try，确保上面任何一步抛错都不会跳过它
-  try{ fetchPortPrices(); }catch(e){ console.warn('[portInit fetchPortPrices]', e); }
-  _setSyncTs('☁️ 校验云端数据中…', '#f59e0b');
-
-  // ② 读本地快照（用于后续冲突判断基准）
+  // ① 读取本地
   let localData = null;
   try{
     const s = localStorage.getItem(PORT_KEY);
     if(s) localData = JSON.parse(s);
   }catch(e){}
 
-  // ③ 后台拉 GitHub 远端数据（带 8s AbortController 超时）
+  // ② 读取远程（使用 GitHub Contents API，不受 CDN 缓存影响，始终返回最新数据）
   let remoteData = null;
-  let remoteOk   = false;  // true = GitHub 可达（无论文件是否存在）
   try{
     const ghHeaders = {
       'Authorization': `token ${PORT_GH_TOKEN}`,
       'Accept': 'application/vnd.github.v3+json'
     };
-    const ctrl = new AbortController();
-    const tid  = setTimeout(()=>ctrl.abort(), 8000);
-    try{
-      const metaResp = await fetch(
-        `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,
-        {headers: ghHeaders, cache:'no-store', signal: ctrl.signal}
-      );
-      if(metaResp.ok){
-        remoteOk = true;
-        const metaJson = await metaResp.json();
-        // GitHub API 返回 base64 编码内容（含换行符），用 TextDecoder 正确还原 UTF-8
-        const b64   = metaJson.content.replace(/\n/g,'');
-        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-        remoteData  = JSON.parse(new TextDecoder('utf-8').decode(bytes));
-      } else if(metaResp.status === 404){
-        remoteOk = true; // GitHub 可达，文件不存在（首次使用）
-      }
-    }finally{ clearTimeout(tid); }
-  }catch(e){
-    console.warn('portLoadRemote:', e.name === 'AbortError' ? '超时(8s)，使用本地缓存' : e);
-  }
+    const metaResp = await fetch(
+      `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,
+      {headers: ghHeaders, cache:'no-store'}
+    );
+    if(metaResp.ok){
+      const metaJson = await metaResp.json();
+      // GitHub API 返回 base64 编码内容（含换行符），用 TextDecoder 正确还原 UTF-8
+      const b64 = metaJson.content.replace(/\n/g,'');
+      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+      remoteData = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+    }
+  }catch(e){ console.warn('portLoadRemote:', e); }
 
-  // ④ GitHub 完成后重新读本地（防竞争：用户可能在等待期间编辑了行业等字段）
-  //    重新读取后 lt 使用最新时间戳，避免误判"远端获胜"覆盖用户最新改动
-  try{
-    const s2 = localStorage.getItem(PORT_KEY);
-    if(s2) localData = JSON.parse(s2);
-  }catch(e){}
-
-  // ⑤ 择优：时间戳优先（谁更新谁赢），无时间戳时退回仓位数量比较
+  // ③ 择优：时间戳优先（谁更新谁赢），无时间戳时退回仓位数量比较
+  //    旧逻辑只比较股票数，改名不改权重时两端相同，随机选择 → 导致改名丢失
   const lw = _weightCount(localData);
   const rw = _weightCount(remoteData);
-  const lt = localData?._savedAt || 0;   // 本地修改时间戳（ms，已含用户最新改动）
+  const lt = localData?._savedAt || 0;   // 本地修改时间戳（ms）
   const rt = remoteData?._savedAt || 0;  // 远端修改时间戳（ms）
   const ts = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
 
@@ -3077,37 +3048,32 @@ async function portInit(){
   const remoteWins = remoteData && rw >= 0 && (rt > lt || (rt === lt && rw >= lw));
 
   if(remoteWins){
-    // 远端更新或相等 → 使用远端，同步本地缓存，重新渲染
+    // 远端更新或相等 → 使用远端，同步本地缓存
     PORT = remoteData;
     localStorage.setItem(PORT_KEY, JSON.stringify(remoteData));
     _setSyncTs('☁️ 已从云端加载 ' + ts, '#10b981');
-    renderPortfolio();
-    fetchIndexPrices();
-    updateRiskDashboard();
-    fetchPortPrices();
   } else if(localData && lw >= 0){
-    // 本地更新（或远端不可用）→ 使用本地，必要时推送云端
+    // 本地更新（或远端不可用）→ 使用本地并推送到云端修正
     PORT = localData;
+    // 确保自动推送时携带时间戳，防止将无时间戳的旧数据写入 GitHub
     if(!PORT._savedAt) PORT._savedAt = Date.now();
     localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
-    if(remoteOk){
-      // GitHub 可达但本地更新 → 推送本地到云端修正
-      _setSyncTs(remoteData
-        ? '☁️ 本地数据更新，正在同步至云端…'
-        : '☁️ 云端无数据，正在上传本地备份', '#f59e0b');
-      portSaveRemote();
-    } else {
-      // GitHub 不可达（超时/离线）→ 不推送，只提示
-      _setSyncTs('☁️ 云端暂时无法访问，已使用本地缓存', '#f59e0b');
-    }
-    // 本地数据可能因用户在 GitHub fetch 期间编辑而变化，重新渲染以确保 UI 最新
-    renderPortfolio();
-    fetchIndexPrices();
-    updateRiskDashboard();
+    _setSyncTs(remoteData
+      ? '☁️ 本地数据更新，正在同步至云端…'
+      : '☁️ 云端离线，已上传本地备份', '#f59e0b');
+    portSaveRemote();
   } else {
-    // 本地和远端均无有效数据，已在①用默认数据渲染，无需处理
+    // 全无，用默认
+    PORT = JSON.parse(JSON.stringify(BASE.portfolio));
     _setSyncTs('📂 使用默认数据', '#94a3b8');
   }
+
+  renderPortfolio();
+  fetchIndexPrices();
+  // 更新风险仪表板（依赖 PORT.sectors 仓位分散度）
+  updateRiskDashboard();
+  // 首次打开时自动刷新一次股价
+  fetchPortPrices();
 }
 
 /* 手动强制将当前数据推送到云端（用于应急修复） */
@@ -4989,8 +4955,8 @@ async function fetchMacroRates(){
 async function fetchPortPrices(){
   var btn = document.getElementById('portPriceBtn');
   var ts  = document.getElementById('portPriceTs');
-  if(btn){ btn.classList.add('loading'); btn.disabled = true; }
-  if(ts)  ts.textContent = '正在获取股价…';
+  btn.classList.add('loading'); btn.disabled = true;
+  ts.textContent = '正在获取股价…';
 
   try {
     portLoad();
@@ -5111,8 +5077,6 @@ async function fetchPortPrices(){
   } finally {
     _portSort.col = 'pct';
     _portSort.dir = -1;   // 默认降序（涨幅最高在前）
-    // 用实际取价完成时刻更新节流时间戳，避免"初始化时间 ≠ 取价完成时间"导致切换被误节流
-    _TAB_TS[0] = Date.now();
     renderPortfolio();
     renderPortTop3();
     _renderPortTopW();
@@ -5120,7 +5084,7 @@ async function fetchPortPrices(){
     // 如果估值分析标签页是活动状态，同步刷新估值表格（更新股价+市值列）
     var valEl = document.getElementById('tVal');
     if(valEl && valEl.classList.contains('active')) renderValTable();
-    if(btn){ btn.classList.remove('loading'); btn.disabled = false; }
+    btn.classList.remove('loading'); btn.disabled = false;
   }
 }
 
@@ -5348,33 +5312,19 @@ function _renderPortTopW(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────
-// 辅助：安全调用，单个 mk* 函数报错不影响后续初始化
-function _safe(fn){ try{ fn(); }catch(e){ console.warn('[init]', fn.name, e.message); } }
-
 document.addEventListener('DOMContentLoaded',()=>{
-  // 图表初始化——各自隔离，任意一个崩溃不拖垮其他（历史上 cSig 等 canvas 曾导致全局中断）
-  _safe(mkCapex);_safe(mkTrend);_safe(mkSig);_safe(mkStageC);
-  _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);_safe(mkPort);
-  _safe(mkNeoCapex);_safe(mkOptGrowth);_safe(mkPcbGrowth);
-  _safe(mkIntlPe);_safe(mkDomStorePe);_safe(mkArr);
-
+  mkCapex();mkTrend();mkSig();mkStageC();mkRadar();mkGauge();mkBubble();mkPort();
+  mkNeoCapex();mkOptGrowth();mkPcbGrowth();mkIntlPe();mkDomStorePe();mkArr();
   portInit();   // 优先从 GitHub 云端加载组合数据
-  // 兜底：1秒后若股价仍未加载（portInit 异步路径失败），强制触发一次
-  setTimeout(()=>{
-    const ts=document.getElementById('portPriceTs');
-    if(ts && ts.textContent==='股价未加载'){ portLoad(); fetchPortPrices(); }
-  }, 1000);
-
-  _safe(mkNewInv);_safe(mkMktPe);_safe(mkMargin);_safe(mkNorth);_safe(mkUpDown);_safe(mkConc);
-  _safe(mkCpi);_safe(mkTsf);_safe(mkFai);_safe(mkRetail);_safe(mkIndustrial);_safe(mkProfitAccum);_safe(mkElectronicProfit);
-  _safe(mkStageMatrix);
-  _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();});
-
-  fetchVixChart();        // 异步拉取 iVIX 历史数据
-  fetchStoreLive();       // 异步拉取存储监控实时行情
-  fetchStocksLive();      // 异步拉取光模块&PCB实时行情
-  fetchMonLive();         // 异步拉取产业链监控20日动量
-  fetchMacroRates();      // 异步拉取中美10年国债收益率（风险仪表板宏观指标）
+  mkNewInv();mkMktPe();mkMargin();mkNorth();mkUpDown();mkConc();
+  mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();mkProfitAccum();mkElectronicProfit();
+  fetchVixChart();   // 异步拉取 iVIX 历史数据
+  mkStageMatrix();
+  renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();
+  fetchStoreLive();         // 异步拉取存储监控实时行情
+  fetchStocksLive();        // 异步拉取光模块&PCB实时行情
+  fetchMonLive();           // 异步拉取产业链监控20日动量
+  fetchMacroRates();        // 异步拉取中美10年国债收益率（风险仪表板宏观指标）
   // 北向资金使用静态日频数据（BASE.ashare.north），无需远程拉取
   const _tsEl=document.getElementById('tsEl'); if(_tsEl) _tsEl.textContent='最后更新: '+new Date().toLocaleString('zh-CN');
   // 页面加载时自动拉取A股宏观最新数据（无需等待切换到宏观标签页）
@@ -5383,11 +5333,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 页面加载时已主动拉取所有动态数据，为各标签页初始化节流时间戳，
   // 避免30秒内切换标签时立即重复请求（t0/t3为静态，不需要节流记录）
   const _initTs=Date.now();
-  // 0(tPort) 不在此处预设：portInit 完成后 fetchPortPrices 会在 finally 里更新 _TAB_TS[0]，
-  // 确保节流起点是"实际取到价格的时刻"而不是"页面初始化时刻"，避免首次切换被误节流。
-  // 1(tVal)  不预加载，首次切换时立即拉取（同原逻辑）。
-  // 8(t3)    静态内容，无需节流。
-  [2,3,5,6,7].forEach(i=>_TAB_TS[i]=_initTs);
+  [0,2,3,5,6,7].forEach(i=>_TAB_TS[i]=_initTs); // 1=tVal不预加载，首次切换时立即拉取；8=t3静态无需节流
 });
 </script>
 </body>
