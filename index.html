@@ -254,8 +254,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @media(max-width:768px){
   /* KPI 4格变2列 */
   #tPort .g4{grid-template-columns:1fr 1fr}
-  /* 第二行 3格变2列 */
-  #tPort .g3{grid-template-columns:1fr 1fr}
+  /* 第二行 4格变2列 */
+  #tPort .g4{grid-template-columns:1fr 1fr}
   #tPort .kval{font-size:26px}
   #tPort .klabel{font-size:12px}
   /* 分类头部自适应 */
@@ -272,8 +272,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   #tPort .col-price,#tPort .th-price{display:none}
 }
 @media(max-width:480px){
-  /* 第二行 g3 → 单列 */
-  #tPort .g3{grid-template-columns:1fr}
+  /* 第二行 g4 → 单列 */
+  #tPort .g4{grid-template-columns:1fr}
   /* 再隐藏：市场标签 */
   #tPort .col-mkt,#tPort .th-mkt{display:none}
   #tPort .kval{font-size:22px}
@@ -288,15 +288,15 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <!-- ═══ TABS ═══ -->
 <nav class="tabs">
   <div class="tabs-inner">
-    <button class="tab active" onclick="switchTab(0)">🗂 投资组合</button>
-    <button class="tab" onclick="switchTab(1)">💹 估值分析</button>
-    <button class="tab" onclick="switchTab(2)">⚠️ 风险仪表板</button>
-    <button class="tab" onclick="switchTab(3)">🇨🇳 A股宏观</button>
-    <button class="tab" onclick="switchTab(4)">📈 AI 趋势</button>
-    <button class="tab" onclick="switchTab(5)">🔬 光模块&amp;PCB</button>
-    <button class="tab" onclick="switchTab(6)">💾 存储监控</button>
-    <button class="tab" onclick="switchTab(7)">🔗 产业链监控</button>
-    <button class="tab" onclick="switchTab(8)">📋 十步框架</button>
+    <button class="tab active" onclick="switchTab(0)">💼 投资组合</button>
+    <button class="tab" onclick="switchTab(1)">📊 估值分析</button>
+    <button class="tab" onclick="switchTab(2)">⚡ 风险仪表板</button>
+    <button class="tab" onclick="switchTab(3)">🏦 A股宏观</button>
+    <button class="tab" onclick="switchTab(4)">🤖 AI 趋势</button>
+    <button class="tab" onclick="switchTab(5)">🔌 光模块&amp;PCB</button>
+    <button class="tab" onclick="switchTab(6)">🗄️ 存储监控</button>
+    <button class="tab" onclick="switchTab(7)">🔴 产业链监控</button>
+    <button class="tab" onclick="switchTab(8)">🎯 十步框架</button>
   </div>
 </nav>
 
@@ -851,8 +851,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 2: 持仓概览 + 仓位分配 + 新增分类 -->
-  <div class="g3 mb16">
+  <!-- Row 2: 持仓概览 + 仓位分配（按分类）+ 仓位分配（按行业）+ 新增分类 -->
+  <div class="g4 mb16">
     <!-- 持仓概览 -->
     <div class="card" style="border-top:3px solid var(--blue);background:linear-gradient(135deg,#eff6ff 0%,#fff 60%)">
       <div class="klabel" style="font-size:14px;font-weight:800;color:var(--blue);letter-spacing:.02em">📂 持仓概览</div>
@@ -910,12 +910,20 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
     </div>
 
-    <!-- 仓位分配图表 -->
+    <!-- 仓位分配图表（按分类） -->
     <div class="card">
       <div class="ch"><span class="ct">仓位分配（按分类）</span><span class="cbadge" id="pTotalBadge">合计 —%</span></div>
       <div style="height:200px"><canvas id="cPortAlloc"></canvas></div>
       <div id="portAllocLegend" style="margin-top:10px"></div>
     </div>
+
+    <!-- 仓位分配图表（按行业） -->
+    <div class="card">
+      <div class="ch"><span class="ct">仓位分配（按行业）</span><span class="cbadge" id="pIndustryBadge">—</span></div>
+      <div style="height:200px"><canvas id="cPortIndustry"></canvas></div>
+      <div id="portIndustryLegend" style="margin-top:10px"></div>
+    </div>
+
     <div class="card">
       <div class="ch"><span class="ct">新增分类</span></div>
       <div class="form-row">
@@ -1758,7 +1766,8 @@ function mkTrend(){
 }
 
 function mkSig(){
-  const ctx = document.getElementById('cSig').getContext('2d');
+  const el = document.getElementById('cSig'); if(!el) return;
+  const ctx = el.getContext('2d');
   CH.sig = new Chart(ctx,{
     type:'doughnut',
     data:{
@@ -2993,45 +3002,74 @@ function portLoad(){
 }
 
 /**
- * 页面初始化：同时读取本地 localStorage 和远程 GitHub，
- * 以"有效仓位数量"为标准择优使用，本地更好则自动推送到云端修正。
- * 这样无论哪个浏览器先打开，都能收敛到数据最完整的那份。
+ * 页面初始化：
+ *  ① 无条件立即渲染本地数据 + 拉股价（portLoad 兜底，localStorage 有则用缓存，无则用默认）
+ *  ② 后台与 GitHub 云端校验（8s 超时）
+ *  ③ 云端更新时重新渲染；本地更新时自动推送云端
+ *
+ * 关键原则：fetchPortPrices() 和 renderPortfolio() 在任何情况下都必须在 GitHub fetch
+ * 完成之前被调用，确保首屏不依赖网络请求即可显示列表和股价。
  */
 async function portInit(){
   _setSyncTs('☁️ 加载中…', '#f59e0b');
 
-  // ① 读取本地
+  // ① 无条件立即初始化（localStorage 有数据用缓存，无则用 BASE.portfolio 默认模板）
+  portLoad();   // 同步：保证 PORT 不为 null
+  try{ renderPortfolio(); }catch(e){ console.warn('[portInit renderPortfolio]', e); }
+  try{ fetchIndexPrices(); }catch(e){ console.warn('[portInit fetchIndexPrices]', e); }
+  try{ updateRiskDashboard(); }catch(e){ console.warn('[portInit updateRiskDashboard]', e); }
+  // fetchPortPrices 独立 try，确保上面任何一步抛错都不会跳过它
+  try{ fetchPortPrices(); }catch(e){ console.warn('[portInit fetchPortPrices]', e); }
+  _setSyncTs('☁️ 校验云端数据中…', '#f59e0b');
+
+  // ② 读本地快照（用于后续冲突判断基准）
   let localData = null;
   try{
     const s = localStorage.getItem(PORT_KEY);
     if(s) localData = JSON.parse(s);
   }catch(e){}
 
-  // ② 读取远程（使用 GitHub Contents API，不受 CDN 缓存影响，始终返回最新数据）
+  // ③ 后台拉 GitHub 远端数据（带 8s AbortController 超时）
   let remoteData = null;
+  let remoteOk   = false;  // true = GitHub 可达（无论文件是否存在）
   try{
     const ghHeaders = {
       'Authorization': `token ${PORT_GH_TOKEN}`,
       'Accept': 'application/vnd.github.v3+json'
     };
-    const metaResp = await fetch(
-      `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,
-      {headers: ghHeaders, cache:'no-store'}
-    );
-    if(metaResp.ok){
-      const metaJson = await metaResp.json();
-      // GitHub API 返回 base64 编码内容（含换行符），用 TextDecoder 正确还原 UTF-8
-      const b64 = metaJson.content.replace(/\n/g,'');
-      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-      remoteData = JSON.parse(new TextDecoder('utf-8').decode(bytes));
-    }
-  }catch(e){ console.warn('portLoadRemote:', e); }
+    const ctrl = new AbortController();
+    const tid  = setTimeout(()=>ctrl.abort(), 8000);
+    try{
+      const metaResp = await fetch(
+        `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,
+        {headers: ghHeaders, cache:'no-store', signal: ctrl.signal}
+      );
+      if(metaResp.ok){
+        remoteOk = true;
+        const metaJson = await metaResp.json();
+        // GitHub API 返回 base64 编码内容（含换行符），用 TextDecoder 正确还原 UTF-8
+        const b64   = metaJson.content.replace(/\n/g,'');
+        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+        remoteData  = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+      } else if(metaResp.status === 404){
+        remoteOk = true; // GitHub 可达，文件不存在（首次使用）
+      }
+    }finally{ clearTimeout(tid); }
+  }catch(e){
+    console.warn('portLoadRemote:', e.name === 'AbortError' ? '超时(8s)，使用本地缓存' : e);
+  }
 
-  // ③ 择优：时间戳优先（谁更新谁赢），无时间戳时退回仓位数量比较
-  //    旧逻辑只比较股票数，改名不改权重时两端相同，随机选择 → 导致改名丢失
+  // ④ GitHub 完成后重新读本地（防竞争：用户可能在等待期间编辑了行业等字段）
+  //    重新读取后 lt 使用最新时间戳，避免误判"远端获胜"覆盖用户最新改动
+  try{
+    const s2 = localStorage.getItem(PORT_KEY);
+    if(s2) localData = JSON.parse(s2);
+  }catch(e){}
+
+  // ⑤ 择优：时间戳优先（谁更新谁赢），无时间戳时退回仓位数量比较
   const lw = _weightCount(localData);
   const rw = _weightCount(remoteData);
-  const lt = localData?._savedAt || 0;   // 本地修改时间戳（ms）
+  const lt = localData?._savedAt || 0;   // 本地修改时间戳（ms，已含用户最新改动）
   const rt = remoteData?._savedAt || 0;  // 远端修改时间戳（ms）
   const ts = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
 
@@ -3039,32 +3077,37 @@ async function portInit(){
   const remoteWins = remoteData && rw >= 0 && (rt > lt || (rt === lt && rw >= lw));
 
   if(remoteWins){
-    // 远端更新或相等 → 使用远端，同步本地缓存
+    // 远端更新或相等 → 使用远端，同步本地缓存，重新渲染
     PORT = remoteData;
     localStorage.setItem(PORT_KEY, JSON.stringify(remoteData));
     _setSyncTs('☁️ 已从云端加载 ' + ts, '#10b981');
+    renderPortfolio();
+    fetchIndexPrices();
+    updateRiskDashboard();
+    fetchPortPrices();
   } else if(localData && lw >= 0){
-    // 本地更新（或远端不可用）→ 使用本地并推送到云端修正
+    // 本地更新（或远端不可用）→ 使用本地，必要时推送云端
     PORT = localData;
-    // 确保自动推送时携带时间戳，防止将无时间戳的旧数据写入 GitHub
     if(!PORT._savedAt) PORT._savedAt = Date.now();
     localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
-    _setSyncTs(remoteData
-      ? '☁️ 本地数据更新，正在同步至云端…'
-      : '☁️ 云端离线，已上传本地备份', '#f59e0b');
-    portSaveRemote();
+    if(remoteOk){
+      // GitHub 可达但本地更新 → 推送本地到云端修正
+      _setSyncTs(remoteData
+        ? '☁️ 本地数据更新，正在同步至云端…'
+        : '☁️ 云端无数据，正在上传本地备份', '#f59e0b');
+      portSaveRemote();
+    } else {
+      // GitHub 不可达（超时/离线）→ 不推送，只提示
+      _setSyncTs('☁️ 云端暂时无法访问，已使用本地缓存', '#f59e0b');
+    }
+    // 本地数据可能因用户在 GitHub fetch 期间编辑而变化，重新渲染以确保 UI 最新
+    renderPortfolio();
+    fetchIndexPrices();
+    updateRiskDashboard();
   } else {
-    // 全无，用默认
-    PORT = JSON.parse(JSON.stringify(BASE.portfolio));
+    // 本地和远端均无有效数据，已在①用默认数据渲染，无需处理
     _setSyncTs('📂 使用默认数据', '#94a3b8');
   }
-
-  renderPortfolio();
-  fetchIndexPrices();
-  // 更新风险仪表板（依赖 PORT.sectors 仓位分散度）
-  updateRiskDashboard();
-  // 首次打开时自动刷新一次股价
-  fetchPortPrices();
 }
 
 /* 手动强制将当前数据推送到云端（用于应急修复） */
@@ -3127,6 +3170,53 @@ function renderPortfolio(){
         </div>`).join('');
     }
   }
+  // ── 仓位分配（按行业）饼图 ──────────────────────────────────────
+  if(CH.portIndustry){ CH.portIndustry.destroy(); CH.portIndustry=null; }
+  const ictx = document.getElementById('cPortIndustry');
+  if(ictx){
+    const industryMap = {};
+    PORT.sectors.forEach(sec=>{
+      sec.stocks.forEach(sk=>{
+        if(sk.w != null && sk.w > 0){
+          const key = (sk.industry && sk.industry.trim()) ? sk.industry.trim() : '其他';
+          industryMap[key] = (industryMap[key]||0) + sk.w;
+        }
+      });
+    });
+    const indNames = Object.keys(industryMap).sort((a,b)=>industryMap[b]-industryMap[a]);
+    const indData  = indNames.map(k=>industryMap[k]);
+    const IND_PALETTE = ['#6366f1cc','#f59e0bcc','#10b981cc','#3b82f6cc','#ec4899cc',
+                         '#8b5cf6cc','#ef4444cc','#06b6d4cc','#84cc16cc','#f97316cc',
+                         '#a78bfacc','#34d399cc','#fb923ccc','#38bdf8cc','#f472b6cc'];
+    const indColors = indNames.map((_,i)=>IND_PALETTE[i%IND_PALETTE.length]);
+    const indTotal  = indData.reduce((s,v)=>s+v,0);
+    const indBadge  = document.getElementById('pIndustryBadge');
+    if(indBadge) indBadge.textContent = indNames.length ? '已标注 '+indTotal.toFixed(1)+'%' : '尚无行业标注';
+    if(indNames.length){
+      CH.portIndustry = new Chart(ictx.getContext('2d'),{
+        type:'doughnut',
+        data:{labels:indNames,datasets:[{data:indData,backgroundColor:indColors,borderWidth:0}]},
+        options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+                 plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.label+' '+ctx.parsed.toFixed(1)+'%'}}}}
+      });
+    } else {
+      // 显示空状态占位
+      const placeHolder = document.createElement('div');
+      placeHolder.style.cssText='height:100%;display:flex;align-items:center;justify-content:center';
+      placeHolder.innerHTML='<span style="font-size:12px;color:var(--text2)">在股票编辑中填写"行业"字段后显示</span>';
+      ictx.parentNode.replaceChild(placeHolder,ictx);
+    }
+    const iLegend = document.getElementById('portIndustryLegend');
+    if(iLegend){
+      iLegend.innerHTML = indNames.length ? indNames.map((name,i)=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid #f1f5f9">
+          <span style="width:10px;height:10px;border-radius:2px;flex-shrink:0;background:${indColors[i]}"></span>
+          <span style="font-size:12px;font-weight:600;color:#334155;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</span>
+          <span style="font-size:12px;font-weight:700;color:#475569;flex-shrink:0">${indData[i].toFixed(1)}%</span>
+        </div>`).join('') : '';
+    }
+  }
+
   // Sectors
   const mktStyle = {SH:'background:#dbeafe;color:#1e40af',SZ:'background:#ede9fe;color:#5b21b6',HK:'background:#fee2e2;color:#991b1b'};
   const mktLabel = {SH:'沪A',SZ:'深A',HK:'港股'};
@@ -4899,8 +4989,8 @@ async function fetchMacroRates(){
 async function fetchPortPrices(){
   var btn = document.getElementById('portPriceBtn');
   var ts  = document.getElementById('portPriceTs');
-  btn.classList.add('loading'); btn.disabled = true;
-  ts.textContent = '正在获取股价…';
+  if(btn){ btn.classList.add('loading'); btn.disabled = true; }
+  if(ts)  ts.textContent = '正在获取股价…';
 
   try {
     portLoad();
@@ -4920,57 +5010,62 @@ async function fetchPortPrices(){
 
     _PORT_PRICES = {};
 
-    // ── A 股：腾讯 qt.gtimg.cn（实时）────────────────────────
-    if(aStocks.length){
-      try{
-        var qUrl = 'https://qt.gtimg.cn/q=' + aStocks.map(function(s){ return s.tc; }).join(',') + '&_=' + Date.now();
-        var resp = await fetch(qUrl);
-        if(!resp.ok) throw new Error('HTTP ' + resp.status);
-        var txt = new TextDecoder('gbk').decode(await resp.arrayBuffer());
-        aStocks.forEach(function(s){
-          var m = txt.match(new RegExp('v_' + s.tc + '="([^"]+)"'));
-          if(!m) return;
-          var p = m[1].split('~');
-          var cur = parseFloat(p[3]), pct = parseFloat(p[32]);
-          if(cur > 0 && isFinite(pct))
-            _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w};
-        });
-      }catch(e){ console.warn('[价格] A股:', e.message); }
+    // ── 并行发起 A股行情 / A股市值 / 港股行情 三路请求 ──────────────
+    var ts0 = Date.now();
+    var qUrl  = aStocks.length  ? 'https://qt.gtimg.cn/q=' + aStocks.map(function(s){ return s.tc; }).join(',') + '&_=' + ts0 : null;
+    var aSids = aStocks.length  ? aStocks.map(function(s){ return (s.mkt==='SH'?'1.':'0.')+s.code; }).join(',') : null;
+    var mcUrl = aSids           ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f12,f20&secids='+aSids+'&_='+ts0 : null;
+    var hkSids= hkStocks.length ? hkStocks.map(function(s){ return '116.'+s.code; }).join(',') : null;
+    var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields=f12,f14,f2,f3,f20&_='+ts0 : null;
 
-      // ── A股市值：东方财富 f20（总市值，元→亿元）──────────────
-      try{
-        var aSids = aStocks.map(function(s){ return (s.mkt==='SH'?'1.':'0.')+s.code; }).join(',');
-        var mcUrl = 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2'
-                  + '&fields=f12,f20&secids=' + aSids + '&_=' + Date.now();
-        var mcDiff = (await (await fetch(mcUrl)).json())?.data?.diff || [];
-        mcDiff.forEach(function(d){
-          var code = String(d.f12 || '').padStart(6,'0');
-          var mc   = parseFloat(d.f20);
-          if(isFinite(mc) && mc > 0 && _PORT_PRICES[code]){
-            _PORT_PRICES[code].mktCap = mc / 100000000;  // 元 → 亿元
-          }
-        });
-      }catch(e){ console.warn('[MktCap] A股市值:', e.message); }
+    var results = await Promise.all([
+      qUrl  ? fetch(qUrl).then(function(r){ return r.arrayBuffer(); }).then(function(b){ return new TextDecoder('gbk').decode(b); })
+                         .catch(function(e){ console.warn('[A股价格]',e.message); return ''; })
+            : Promise.resolve(''),
+      mcUrl ? fetch(mcUrl).then(function(r){ return r.json(); })
+                          .catch(function(e){ console.warn('[A股市值]',e.message); return null; })
+            : Promise.resolve(null),
+      emUrl ? fetch(emUrl).then(function(r){ return r.json(); })
+                          .catch(function(e){ console.warn('[HK东方财富]',e.message); return null; })
+            : Promise.resolve(null)
+    ]);
+    var aTxt   = results[0];
+    var mcJson = results[1];
+    var emJson = results[2];
+
+    // ��─ 处理 A股行情 ────────────────────────────────────────────────
+    if(aStocks.length && aTxt){
+      aStocks.forEach(function(s){
+        var m = aTxt.match(new RegExp('v_' + s.tc + '="([^"]+)"'));
+        if(!m) return;
+        var p = m[1].split('~');
+        var cur = parseFloat(p[3]), pct = parseFloat(p[32]);
+        if(cur > 0 && isFinite(pct))
+          _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w};
+      });
     }
 
-    // ── 港股：东方财富 push2（约30秒延迟）→ 腾讯备源（15分钟延迟）──
-    // 东方财富港股 secid 格式：116.XXXXX（5位代码带前导零，如 116.00700）
+    // ── 处理 A股市值 ────────────────────────────────────────────────
+    if(aStocks.length && mcJson){
+      var mcDiff = mcJson?.data?.diff || [];
+      mcDiff.forEach(function(d){
+        var code = String(d.f12 || '').padStart(6,'0');
+        var mc   = parseFloat(d.f20);
+        if(isFinite(mc) && mc > 0 && _PORT_PRICES[code])
+          _PORT_PRICES[code].mktCap = mc / 100000000;  // 元 → 亿元
+      });
+    }
+
+    // ── 处理港股（东方财富主源）→ 腾讯备源补齐 ──────────────────────
     if(hkStocks.length){
       var hkDone = {};   // code → true，记录已取到价格的港股
-
-      // ① 东方财富 push2.eastmoney.com（主源，约30s更新频率）
-      try{
-        var secids = hkStocks.map(function(s){ return '116.' + s.code; }).join(',');
-        var emUrl  = 'https://push2.eastmoney.com/api/qt/ulist.np/get'
-                   + '?secids=' + secids + '&fltt=2&invt=2&fields=f12,f14,f2,f3,f20&_=' + Date.now();
-        var emJson = await (await fetch(emUrl)).json();
-        var diff   = emJson?.data?.diff || [];
+      if(emJson){
+        var diff = emJson?.data?.diff || [];
         diff.forEach(function(d){
           var price = parseFloat(d.f2);
           var pct   = parseFloat(d.f3);
           if(!isFinite(price) || price <= 0 || !isFinite(pct)) return;
-          // f12 为数字（东方财富剥除前导零），需补回5位与 sk.code 匹配
-          var emCode = String(d.f12 || '').padStart(5, '0');
+          var emCode  = String(d.f12 || '').padStart(5, '0');
           var matched = hkStocks.find(function(s){ return s.code === emCode || s.code === String(d.f12); });
           if(matched){
             var mc = parseFloat(d.f20);
@@ -4980,7 +5075,7 @@ async function fetchPortPrices(){
           }
         });
         console.log('[HK] 东方财富 获取', Object.keys(hkDone).length, '/', hkStocks.length, '只');
-      }catch(e){ console.warn('[HK] 东方财富:', e.message); }
+      }
 
       // ② 腾讯 qt.gtimg.cn 备源（补齐东方财富未能返回的港股）
       var hkMissed = hkStocks.filter(function(s){ return !hkDone[s.code]; });
@@ -5016,6 +5111,8 @@ async function fetchPortPrices(){
   } finally {
     _portSort.col = 'pct';
     _portSort.dir = -1;   // 默认降序（涨幅最高在前）
+    // 用实际取价完成时刻更新节流时间戳，避免"初始化时间 ≠ 取价完成时间"导致切换被误节流
+    _TAB_TS[0] = Date.now();
     renderPortfolio();
     renderPortTop3();
     _renderPortTopW();
@@ -5023,7 +5120,7 @@ async function fetchPortPrices(){
     // 如果估值分析标签页是活动状态，同步刷新估值表格（更新股价+市值列）
     var valEl = document.getElementById('tVal');
     if(valEl && valEl.classList.contains('active')) renderValTable();
-    btn.classList.remove('loading'); btn.disabled = false;
+    if(btn){ btn.classList.remove('loading'); btn.disabled = false; }
   }
 }
 
@@ -5251,19 +5348,33 @@ function _renderPortTopW(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────
+// 辅助：安全调用，单个 mk* 函数报错不影响后续初始化
+function _safe(fn){ try{ fn(); }catch(e){ console.warn('[init]', fn.name, e.message); } }
+
 document.addEventListener('DOMContentLoaded',()=>{
-  mkCapex();mkTrend();mkSig();mkStageC();mkRadar();mkGauge();mkBubble();mkPort();
-  mkNeoCapex();mkOptGrowth();mkPcbGrowth();mkIntlPe();mkDomStorePe();mkArr();
+  // 图表初始化——各自隔离，任意一个崩溃不拖垮其他（历史上 cSig 等 canvas 曾导致全局中断）
+  _safe(mkCapex);_safe(mkTrend);_safe(mkSig);_safe(mkStageC);
+  _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);_safe(mkPort);
+  _safe(mkNeoCapex);_safe(mkOptGrowth);_safe(mkPcbGrowth);
+  _safe(mkIntlPe);_safe(mkDomStorePe);_safe(mkArr);
+
   portInit();   // 优先从 GitHub 云端加载组合数据
-  mkNewInv();mkMktPe();mkMargin();mkNorth();mkUpDown();mkConc();
-  mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();mkProfitAccum();mkElectronicProfit();
-  fetchVixChart();   // 异步拉取 iVIX 历史数据
-  mkStageMatrix();
-  renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();
-  fetchStoreLive();         // 异步拉取存储监控实时行情
-  fetchStocksLive();        // 异步拉取光模块&PCB实时行情
-  fetchMonLive();           // 异步拉取产业链监控20日动量
-  fetchMacroRates();        // 异步拉取中美10年国债收益率（风险仪表板宏观指标）
+  // 兜底：1秒后若股价仍未加载（portInit 异步路径失败），强制触发一次
+  setTimeout(()=>{
+    const ts=document.getElementById('portPriceTs');
+    if(ts && ts.textContent==='股价未加载'){ portLoad(); fetchPortPrices(); }
+  }, 1000);
+
+  _safe(mkNewInv);_safe(mkMktPe);_safe(mkMargin);_safe(mkNorth);_safe(mkUpDown);_safe(mkConc);
+  _safe(mkCpi);_safe(mkTsf);_safe(mkFai);_safe(mkRetail);_safe(mkIndustrial);_safe(mkProfitAccum);_safe(mkElectronicProfit);
+  _safe(mkStageMatrix);
+  _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();});
+
+  fetchVixChart();        // 异步拉取 iVIX 历史数据
+  fetchStoreLive();       // 异步拉取存储监控实时行情
+  fetchStocksLive();      // 异步拉取光模块&PCB实时行情
+  fetchMonLive();         // 异步拉取产业链监控20日动量
+  fetchMacroRates();      // 异步拉取中美10年国债收益率（风险仪表板宏观指标）
   // 北向资金使用静态日频数据（BASE.ashare.north），无需远程拉取
   const _tsEl=document.getElementById('tsEl'); if(_tsEl) _tsEl.textContent='最后更新: '+new Date().toLocaleString('zh-CN');
   // 页面加载时自动拉取A股宏观最新数据（无需等待切换到宏观标签页）
@@ -5272,7 +5383,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 页面加载时已主动拉取所有动态数据，为各标签页初始化节流时间戳，
   // 避免30秒内切换标签时立即重复请求（t0/t3为静态，不需要节流记录）
   const _initTs=Date.now();
-  [0,2,3,5,6,7].forEach(i=>_TAB_TS[i]=_initTs); // 1=tVal不预加载，首次切换时立即拉取；8=t3静态无需节流
+  // 0(tPort) 不在此处预设：portInit 完成后 fetchPortPrices 会在 finally 里更新 _TAB_TS[0]，
+  // 确保节流起点是"实际取到价格的时刻"而不是"页面初始化时刻"，避免首次切换被误节流。
+  // 1(tVal)  不预加载，首次切换时立即拉取（同原逻辑）。
+  // 8(t3)    静态内容，无需节流。
+  [2,3,5,6,7].forEach(i=>_TAB_TS[i]=_initTs);
 });
 </script>
 </body>
