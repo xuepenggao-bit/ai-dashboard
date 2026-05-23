@@ -532,28 +532,28 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- KPI Row -->
   <div class="g4 mb16">
     <div class="card">
-      <div class="klabel">沪深A股总市值 <span style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
-      <div class="kval tb">¥109万亿</div>
-      <div class="kchange up">↑ YoY +24% · 较年初+7.2%</div>
+      <div class="klabel">沪深A股总市值 <span id="kTmcDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
+      <div class="kval tb" id="kTmc">¥109万亿</div>
+      <div class="kchange up" id="kTmcChange">↑ YoY +24% · 较年初+7.2%</div>
       <div class="tx3 mt4">沪市+深市，含科创/创业板 · 日频估算</div>
     </div>
     <div class="card">
-      <div class="klabel">上证综指 PE(TTM) <span style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
+      <div class="klabel">上证综指 PE(TTM) <span id="kSsePeDate" style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
       <div class="kval" id="kSsePe">16.8x</div>
-      <div class="kchange neu">历史均值 ~12x · 偏高区间</div>
-      <div class="tx3 mt4">来源: 乐咕乐股/东方财富估值中心</div>
+      <div class="kchange neu" id="kSsePeHint">历史均值 ~12x · 偏高区间</div>
+      <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
     <div class="card">
-      <div class="klabel">深证成指 PE(TTM) <span style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
+      <div class="klabel">深证成指 PE(TTM) <span id="kSzePeDate" style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
       <div class="kval ty" id="kSzePe">31.5x</div>
-      <div class="kchange neu">含成长溢价 · 偏高区间</div>
-      <div class="tx3 mt4">来源: 乐咕乐股/东方财富估值中心</div>
+      <div class="kchange neu" id="kSzePeHint">含成长溢价 · 偏高区间</div>
+      <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
     <div class="card">
-      <div class="klabel">两融余额 <span style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
+      <div class="klabel">两融余额 <span id="kAvgVolDate" style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
       <div class="kval tb" id="kAvgVol">¥2.85万亿</div>
-      <div class="kchange up">↑ 历史新高 · 较年初+9.3%</div>
-      <div class="tx3 mt4">来源: 沪深交易所 · 最新日频余额 28,520亿</div>
+      <div class="kchange up" id="kAvgVolChange">↑ 历史新高 · 较年初+9.3%</div>
+      <div class="tx3 mt4">来源: 东方财富 · 日频最新</div>
     </div>
   </div>
 
@@ -4398,6 +4398,78 @@ async function fetchMacroApi(key){
   return{...result, dsLabel, name};
 }
 
+// ── 日频 KPI 卡片实时刷新（总市值、PE、两融）────────────────────
+async function fetchMacroKpis(){
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  // ── 1. 上证综指 & 深证综指 → PE(TTM) + 总市值 ──────────────
+  try{
+    const [r1, r2] = await Promise.all([
+      fetch(`https://push2.eastmoney.com/api/qt/stock/get?secid=1.000001&fields=f20,f162&_=${Date.now()}`).then(r=>r.json()),
+      // 399106 = 深证综合指数（全市场），399001 = 深证成指（成分股）
+      fetch(`https://push2.eastmoney.com/api/qt/stock/get?secid=0.399106&fields=f20,f162&_=${Date.now()}`).then(r=>r.json()),
+    ]);
+
+    // 沪深A股总市值（两市之和，f20单位：元）
+    const mc1 = r1?.data?.f20, mc2 = r2?.data?.f20;
+    if(mc1 > 0 && mc2 > 0){
+      const total = (mc1 + mc2) / 1e12; // 元 → 万亿
+      const el = document.getElementById('kTmc');
+      if(el) el.textContent = '¥' + total.toFixed(0) + '万亿';
+      const de = document.getElementById('kTmcDate');
+      if(de) de.textContent = todayStr;
+    }
+
+    // 上证综指 PE(TTM)
+    const ssePe = r1?.data?.f162;
+    if(ssePe > 0){
+      const el = document.getElementById('kSsePe');
+      if(el) el.textContent = ssePe.toFixed(1) + 'x';
+      const de = document.getElementById('kSsePeDate');
+      if(de) de.textContent = todayStr;
+      const he = document.getElementById('kSsePeHint');
+      if(he) he.textContent = ssePe < 12 ? '历史均值 ~12x · 低估区间' : ssePe < 16 ? '历史均值 ~12x · 合理区间' : '历史均值 ~12x · 偏高区间';
+    }
+
+    // 深证成指 PE(TTM)（399106 若无 PE 则退回 399001）
+    let szePe = r2?.data?.f162;
+    if(!(szePe > 0)){
+      try{
+        const r3 = await fetch(`https://push2.eastmoney.com/api/qt/stock/get?secid=0.399001&fields=f162&_=${Date.now()}`).then(r=>r.json());
+        szePe = r3?.data?.f162;
+      }catch(_){}
+    }
+    if(szePe > 0){
+      const el = document.getElementById('kSzePe');
+      if(el) el.textContent = szePe.toFixed(1) + 'x';
+      const de = document.getElementById('kSzePeDate');
+      if(de) de.textContent = todayStr;
+      const he = document.getElementById('kSzePeHint');
+      if(he) he.textContent = szePe < 20 ? '含成长溢价 · 低估区间' : szePe < 30 ? '含成长溢价 · 合理区间' : '含成长溢价 · 偏高区间';
+    }
+  }catch(e){ console.warn('[MacroKpi] 指数行情:', e.message); }
+
+  // ── 2. 两融余额 ───────────────────────────────────────────
+  try{
+    const url = `https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_RZRQ_LRZQHZ&columns=DATE,RZRQYE,RZYE,RQYE&pageSize=1&sortColumns=DATE&sortTypes=-1&source=WEB&_=${Date.now()}`;
+    const j = await fetch(url).then(r=>r.json());
+    const d = j?.result?.data?.[0];
+    if(d && d.RZRQYE != null){
+      // RZRQYE 单位：元，换算 万亿
+      let rzrqye = parseFloat(d.RZRQYE);
+      const wan = rzrqye > 1e10 ? rzrqye/1e12 : rzrqye/10000; // 元→万亿 or 亿→万亿
+      const yi  = rzrqye > 1e10 ? rzrqye/1e8  : rzrqye;       // 亿
+      const el = document.getElementById('kAvgVol');
+      if(el) el.textContent = '¥' + wan.toFixed(2) + '万亿';
+      const de = document.getElementById('kAvgVolDate');
+      const dateStr = (d.DATE||'').slice(0,10) || todayStr;
+      if(de) de.textContent = dateStr;
+      const ce = document.getElementById('kAvgVolChange');
+      if(ce) ce.textContent = '最新余额 ' + Math.round(yi).toLocaleString('zh-CN') + ' 亿';
+    }
+  }catch(e){ console.warn('[MacroKpi] 两融余额:', e.message); }
+}
+
 async function refreshMacro(){
   const btn=document.getElementById('macroBtnRefresh');
   const ts =document.getElementById('macroTs');
@@ -4405,6 +4477,9 @@ async function refreshMacro(){
   if(btn){ btn.classList.add('loading'); btn.disabled=true; }
   if(ts) ts.textContent='正在获取最新数据…';
   if(alertEl) alertEl.style.display='none';
+
+  // 日频 KPI 卡片（总市值、PE、两融）并行拉取，不阻塞图表更新
+  fetchMacroKpis();
 
   const chartKeys=[
     {key:'cpi',         chRef:()=>CH.cpi,             dsIdx:0},
