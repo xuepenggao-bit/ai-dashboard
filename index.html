@@ -3001,45 +3001,80 @@ function portLoad(){
 }
 
 /**
- * 页面初始化：同时读取本地 localStorage 和远程 GitHub，
- * 以"有效仓位数量"为标准择优使用，本地更好则自动推送到云端修正。
- * 这样无论哪个浏览器先打开，都能收敛到数据最完整的那份。
+ * 页面初始化：优先从本地 localStorage 立即渲染（零等待首屏），
+ * 再与 GitHub 云端数据校验合并（8秒超时），本地更新时自动推送到云端。
+ *
+ * 修复说明：
+ *  1. 立即渲染本地数据（_earlyRendered），消除"加载中+股价未加载"首屏卡死问题
+ *  2. GitHub fetch 加 8s AbortController 超时，防止网络慢时永久挂起
+ *  3. GitHub fetch 完成后重新读取 localStorage（_freshLocal），防止用户在等待期间
+ *     编辑了行业等字段，导致 portInit 用旧时间戳误判"远端获胜"并覆盖用户改动
  */
 async function portInit(){
   _setSyncTs('☁️ 加载中…', '#f59e0b');
+  let _earlyRendered = false;
 
-  // ① 读取本地
+  // ① 读取本地快照
   let localData = null;
   try{
     const s = localStorage.getItem(PORT_KEY);
     if(s) localData = JSON.parse(s);
   }catch(e){}
 
-  // ② 读取远程（使用 GitHub Contents API，不受 CDN 缓存影响，始终返回最新数据）
-  let remoteData = null;
+  // ★ 本地有数据 → 立即先渲染，不阻塞于 GitHub 请求（首屏秒开）
+  if(localData && _weightCount(localData) >= 0){
+    PORT = localData;
+    _earlyRendered = true;
+    try{
+      renderPortfolio();
+      fetchIndexPrices();
+      updateRiskDashboard();
+      fetchPortPrices();
+    }catch(e){ console.warn('[portInit early render]', e); }
+    _setSyncTs('☁️ 校验云端数据中…', '#f59e0b');
+  }
+
+  // ② 读取远端（带 8s 超时，防止 GitHub 响应慢导致长时间卡在"加载中"）
+  let remoteData  = null;
+  let remoteOk    = false;  // true = GitHub 可达（无论文件是否存在）
   try{
     const ghHeaders = {
       'Authorization': `token ${PORT_GH_TOKEN}`,
       'Accept': 'application/vnd.github.v3+json'
     };
-    const metaResp = await fetch(
-      `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,
-      {headers: ghHeaders, cache:'no-store'}
-    );
-    if(metaResp.ok){
-      const metaJson = await metaResp.json();
-      // GitHub API 返回 base64 编码内容（含换行符），用 TextDecoder 正确还原 UTF-8
-      const b64 = metaJson.content.replace(/\n/g,'');
-      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-      remoteData = JSON.parse(new TextDecoder('utf-8').decode(bytes));
-    }
-  }catch(e){ console.warn('portLoadRemote:', e); }
+    const ctrl = new AbortController();
+    const tid  = setTimeout(()=>ctrl.abort(), 8000);
+    try{
+      const metaResp = await fetch(
+        `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,
+        {headers: ghHeaders, cache:'no-store', signal: ctrl.signal}
+      );
+      if(metaResp.ok){
+        remoteOk = true;
+        const metaJson = await metaResp.json();
+        // GitHub API 返回 base64 编码内容（含换行符），用 TextDecoder 正确还原 UTF-8
+        const b64   = metaJson.content.replace(/\n/g,'');
+        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+        remoteData  = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+      } else if(metaResp.status === 404){
+        remoteOk = true; // GitHub 可达，文件不存在（首次使用）
+      }
+    }finally{ clearTimeout(tid); }
+  }catch(e){
+    console.warn('portLoadRemote:', e.name === 'AbortError' ? '超时(8s)，使用本地缓存' : e);
+  }
 
-  // ③ 择优：时间戳优先（谁更新谁赢），无时间戳时退回仓位数量比较
-  //    旧逻辑只比较股票数，改名不改权重时两端相同，随机选择 → 导致改名丢失
+  // ③ GitHub 请求完成后重新读取本地（防止用户在等待期间编辑了数据，如行业字段）
+  //    重新读取后 lt 使用最新时间戳，避免误判"远端获胜"覆盖用户改动
+  try{
+    const s2 = localStorage.getItem(PORT_KEY);
+    if(s2) localData = JSON.parse(s2);
+  }catch(e){}
+
+  // ④ 择优：时间戳优先（谁更新谁赢），无时间戳时退回仓位数量比较
   const lw = _weightCount(localData);
   const rw = _weightCount(remoteData);
-  const lt = localData?._savedAt || 0;   // 本地修改时间戳（ms）
+  const lt = localData?._savedAt || 0;   // 本地修改时间戳（ms，已含用户最新改动）
   const rt = remoteData?._savedAt || 0;  // 远端修改时间戳（ms）
   const ts = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
 
@@ -3047,32 +3082,47 @@ async function portInit(){
   const remoteWins = remoteData && rw >= 0 && (rt > lt || (rt === lt && rw >= lw));
 
   if(remoteWins){
-    // 远端更新或相等 → 使用远端，同步本地缓存
+    // 远端更新或相等 → 使用远端，同步本地缓存，重新渲染
     PORT = remoteData;
     localStorage.setItem(PORT_KEY, JSON.stringify(remoteData));
     _setSyncTs('☁️ 已从云端加载 ' + ts, '#10b981');
+    renderPortfolio();
+    fetchIndexPrices();
+    updateRiskDashboard();
+    fetchPortPrices();
   } else if(localData && lw >= 0){
-    // 本地更新（或远端不可用）→ 使用本地并推送到云端修正
+    // 本地更新（或远端不可用）→ 使用本地
     PORT = localData;
-    // 确保自动推送时携带时间戳，防止将无时间戳的旧数据写入 GitHub
     if(!PORT._savedAt) PORT._savedAt = Date.now();
     localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
-    _setSyncTs(remoteData
-      ? '☁️ 本地数据更新，正在同步至云端…'
-      : '☁️ 云端离线，已上传本地备份', '#f59e0b');
-    portSaveRemote();
+    if(remoteOk){
+      // GitHub 可达但本地更新 → 推送本地到云端修正
+      _setSyncTs(remoteData
+        ? '☁️ 本地数据更新，正在同步至云端…'
+        : '☁️ 云端无数据，正在上传本地备份', '#f59e0b');
+      portSaveRemote();
+    } else {
+      // GitHub 不可达（超时/离线）→ 不推送，显示提示
+      _setSyncTs('☁️ 云端暂时无法访问，已使用本地缓存', '#f59e0b');
+    }
+    // 早期渲染已完成的不再重复；否则（无本地缓存时 GitHub 超时后才有数据）执行渲染
+    if(!_earlyRendered){
+      renderPortfolio();
+      fetchIndexPrices();
+      updateRiskDashboard();
+      fetchPortPrices();
+    }
   } else {
-    // 全无，用默认
+    // 全无，用默认数据
     PORT = JSON.parse(JSON.stringify(BASE.portfolio));
     _setSyncTs('📂 使用默认数据', '#94a3b8');
+    if(!_earlyRendered){
+      renderPortfolio();
+      fetchIndexPrices();
+      updateRiskDashboard();
+      fetchPortPrices();
+    }
   }
-
-  renderPortfolio();
-  fetchIndexPrices();
-  // 更新风险仪表板（依赖 PORT.sectors 仓位分散度）
-  updateRiskDashboard();
-  // 首次打开时自动刷新一次股价
-  fetchPortPrices();
 }
 
 /* 手动强制将当前数据推送到云端（用于应急修复） */
