@@ -5152,7 +5152,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 页面加载时已主动拉取所有动态数据，为各标签页初始化节流时间戳，
   // 避免30秒内切换标签时立即重复请求（t0/t3为静态，不需要节流记录）
   const _initTs=Date.now();
-  [0,1,2,3,5,6,7,8].forEach(i=>_TAB_TS[i]=_initTs);
+  [0,2,3,5,6,7,8].forEach(i=>_TAB_TS[i]=_initTs); // 1=tVal不预加载，首次切换时立即拉取
 });
 </script>
 </body>
