@@ -3149,6 +3149,9 @@ async function portInit(){
   } else if(localData && lw >= 0){
     // 本地更新（或远端不可用）→ 使用本地并推送到云端修正
     PORT = localData;
+    // 确保自动推送时携带时间戳，防止将无时间戳的旧数据写入 GitHub
+    if(!PORT._savedAt) PORT._savedAt = Date.now();
+    localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
     _setSyncTs(remoteData
       ? '☁️ 本地数据更新，正在同步至云端…'
       : '☁️ 云端离线，已上传本地备份', '#f59e0b');
@@ -3169,8 +3172,13 @@ async function portInit(){
 
 /* 手动强制将当前数据推送到云端（用于应急修复） */
 async function portForcePush(){
-  portLoad();
+  // 从 localStorage 重新读取最新数据，避免使用内存中的旧快照（多标签场景）
+  try{ const s = localStorage.getItem(PORT_KEY); if(s) PORT = JSON.parse(s); }catch(e){}
+  if(!PORT){ portLoad(); }
   if(!PORT){ alert('没有数据可同步'); return; }
+  // 用户主动同步 → 强制刷新时间戳，确保此版本在任何冲突解决中优先
+  PORT._savedAt = Date.now();
+  localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
   _setSyncTs('☁️ 强制同步中…', '#f59e0b');
   await portSaveRemote();
 }
