@@ -2945,6 +2945,25 @@ function _weightCount(data){
   return data.sectors.flatMap(s=>s.stocks).filter(sk=>sk.w != null && sk.w > 0).length;
 }
 
+/* 将远端有值、本地为空的字段（如 industry）合并入本地，防止旧版本数据覆盖新增字段
+ * 规则：本地字段为空 且 远端字段非空 → 使用远端值（不覆盖用户主动填写的内容）
+ */
+function _mergeRemoteFields(local, remote){
+  if(!local || !remote || !local.sectors || !remote.sectors) return;
+  local.sectors.forEach(lsec=>{
+    const rsec = remote.sectors.find(s=>s.id===lsec.id || s.name===lsec.name);
+    if(!rsec) return;
+    lsec.stocks.forEach(lsk=>{
+      const rsk = rsec.stocks.find(s=>s.code===lsk.code);
+      if(!rsk) return;
+      // industry：本地空 + 远端有值 → 补充远端值，避免旧浏览器缓存抹掉行业标签
+      if((!lsk.industry||!lsk.industry.trim()) && rsk.industry && rsk.industry.trim()){
+        lsk.industry = rsk.industry;
+      }
+    });
+  });
+}
+
 /* 将组合数据写回 GitHub（后台静默执行） */
 async function portSaveRemote(){
   try{
@@ -3086,12 +3105,14 @@ async function portInit(){
     updateRiskDashboard();
     fetchPortPrices();
   } else if(localData && lw >= 0){
-    // 本地更新（或远端不可用）→ 使用本地，必要时推送云端
+    // 本地更新（或远端不可用）→ 使用本地；先将远端已有的新字段（如 industry）合并进来，
+    // 防止旧缓存覆盖其他浏览器同步好的行业标签等数据
+    if(remoteData) _mergeRemoteFields(localData, remoteData);
     PORT = localData;
     if(!PORT._savedAt) PORT._savedAt = Date.now();
     localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
     if(remoteOk){
-      // GitHub 可达但本地更新 → 推送本地到云端修正
+      // GitHub 可达但本地更新 → 推送合并后的本地数据到云端
       _setSyncTs(remoteData
         ? '☁️ 本地数据更新，正在同步至云端…'
         : '☁️ 云端无数据，正在上传本地备份', '#f59e0b');
