@@ -4122,97 +4122,37 @@ function renderValTable(){
   const mktLabel={SH:'沪A',SZ:'深A',HK:'港股'};
   const mktColor={SH:'background:#dbeafe;color:#1e40af',SZ:'background:#ede9fe;color:#5b21b6',HK:'background:#fee2e2;color:#991b1b'};
 
-  // ── 预计算所有行数据（含排序键）────────────────────────────
-  const allRows=[];
-  PORT.sectors.forEach(sec=>{
-    if(!sec.stocks||!sec.stocks.length) return;
-    sec.stocks.forEach(sk=>{
-      const pi=_PORT_PRICES[sk.code]||{};
-      const d=_VAL_DATA[sk.code]||{};
-      const isHK=sk.mkt==='HK';
-      const noData=isHK && d.annualProfit==null;
-
-      let predRate=null, predProfit=null;
-      if(!noData){
-        const vals=[d.annualYoY,d.qtrYoY,d.qtrQoQ].filter(v=>v!=null);
-        if(vals.length) predRate=vals.reduce((a,b)=>a+b,0)/vals.length;
-        if(predRate!=null && d.annualProfit!=null) predProfit=d.annualProfit*(1+predRate/100);
-      }
-      const mktCap=pi.mktCap??null;
-      const pe=(mktCap>0 && predProfit>0) ? Math.round(mktCap/predProfit) : null;
-      allRows.push({sk,sec,pi,d,isHK,noData,predRate,predProfit,mktCap,pe});
-    });
-  });
-
-  // ── 排序 ──────────────────────────────────────────────────
-  if(_VAL_SORT.col){
-    const key=_VAL_SORT.col;
-    allRows.sort((a,b)=>{
-      const va=a[key]??(_VAL_SORT.dir<0?-Infinity:Infinity);
-      const vb=b[key]??(_VAL_SORT.dir<0?-Infinity:Infinity);
-      return _VAL_SORT.dir*(va-vb);
-    });
-  }
-
-  // ── 全局排序图标 ─────────────────────────────────────────
-  const si=(col)=>{
-    if(_VAL_SORT.col!==col) return '<span style="opacity:.3;font-size:10px;margin-left:2px">↕</span>';
-    return _VAL_SORT.dir<0
-      ? '<span style="color:#2563eb;font-size:11px;margin-left:2px">↓</span>'
-      : '<span style="color:#2563eb;font-size:11px;margin-left:2px">↑</span>';
-  };
+  // ── 预计算每股行数据 ──────────────────────────────────────
+  const secWts = PORT.sectors.map(s=>s.stocks.reduce((a,sk)=>a+(sk.w||0),0));
+  const wTot   = secWts.reduce((a,w)=>a+w,0);
 
   // ── 板块内排序图标 ────────────────────────────────────────
   const sis=(secIdx,col)=>{
     const ss=_VAL_SEC_SORT[secIdx]||{col:null,dir:-1};
-    if(ss.col!==col) return '<span style="opacity:.25;font-size:9px;margin-left:1px">↕</span>';
+    if(ss.col!==col) return '<span style="opacity:.28;font-size:10px;margin-left:2px">↕</span>';
     return ss.dir<0
-      ? '<span style="font-size:9px;margin-left:1px">↓</span>'
-      : '<span style="font-size:9px;margin-left:1px">↑</span>';
+      ? '<span style="font-size:11px;margin-left:2px">↓</span>'
+      : '<span style="font-size:11px;margin-left:2px">↑</span>';
   };
 
-  // ── 全局顶部表头（sticky）────────────────────────────────
-  let html=`<table style="width:100%;border-collapse:collapse;font-size:13px">
-    <thead>
-      <tr style="background:linear-gradient(180deg,#f1f5f9,#e8edf5);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:10">
-        <th style="padding:10px 14px;text-align:left;font-weight:700;color:var(--text);white-space:nowrap">股票名称</th>
-        <th style="padding:10px 10px;text-align:center;font-weight:700;color:var(--text);white-space:nowrap">市场</th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:var(--text);white-space:nowrap">当前股价</th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap;border-left:2px solid #fde68a">上年利润</th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap">上年同比</th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap;border-left:2px solid #bfdbfe">上季利润</th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季同比</th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季环比</th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#7c3aed;white-space:nowrap;border-left:2px solid #ddd6fe">年度增速预测</th>
-        <th onclick="valSort('predProfit')" style="padding:10px 12px;text-align:right;font-weight:700;color:#065f46;white-space:nowrap;cursor:pointer;user-select:none" title="点击全局排序">年度利润预测${si('predProfit')}</th>
-        <th onclick="valSort('mktCap')" style="padding:10px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap;border-left:2px solid #e2e8f0;cursor:pointer;user-select:none" title="点击全局排序">总市值${si('mktCap')}</th>
-        <th onclick="valSort('pe')" style="padding:10px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap;cursor:pointer;user-select:none" title="点击全局排序">预测PE${si('pe')}</th>
-      </tr>
-    </thead>
-    <tbody>`;
-
-  // ── 行渲染函数 ─────────────────────────────────────────────
-  const mkRow=(row, showSecBadge)=>{
+  // ── 行渲染函数 ────────────────────────────────────────────
+  const mkRow=(row)=>{
     const {sk,sec,pi,d,isHK,noData,predRate,predProfit,mktCap,pe}=row;
-
     const priceStr=pi.price!=null
       ?(isHK?Number(pi.price).toFixed(3):Number(pi.price).toFixed(2))
       :'<span style="color:#94a3b8">—</span>';
     const pctStr=pi.pct!=null?_valPct(pi.pct):'';
-
     const hkBadge=(isHK && d.annualProfit!=null)
       ?`<span style="font-size:9px;background:#fef9c3;color:#92400e;border-radius:3px;padding:0 3px;font-weight:700;margin-left:3px;vertical-align:middle">A代</span>`:'';
     const annProfitStr=noData?'<span style="color:#94a3b8;font-size:11px">无对应A股</span>'
       :(d.annualProfit!=null?_valFmt(d.annualProfit,2)+hkBadge:'<span style="color:#94a3b8">—</span>');
     const annPeriodStr=d.annualPeriod?`<br><span style="font-size:10px;color:var(--text2)">${d.annualPeriod}</span>`:'';
     const annYoY=noData?'<span style="color:#94a3b8">—</span>':_valPct(d.annualYoY);
-
     const qtrProfitStr=noData?'<span style="color:#94a3b8">—</span>'
       :(d.qtrProfit!=null?_valFmt(d.qtrProfit,2):'<span style="color:#94a3b8">—</span>');
     const qtrPeriodStr=d.qtrPeriod?`<br><span style="font-size:10px;color:var(--text2)">${d.qtrPeriod}</span>`:'';
     const qtrYoY=noData?'<span style="color:#94a3b8">—</span>':_valPct(d.qtrYoY);
     const qtrQoQ=noData?'<span style="color:#94a3b8">—</span>':_valPct(d.qtrQoQ);
-
     const nVals=[d.annualYoY,d.qtrYoY,d.qtrQoQ].filter(v=>v!=null).length;
     const predStr=predRate!=null
       ?(_valPct(predRate)+(nVals<3?`<span style="font-size:10px;color:var(--text2)"> (${nVals}/3)</span>`:''))
@@ -4220,19 +4160,13 @@ function renderValTable(){
     const predProfitStr=predProfit!=null
       ?`<span style="color:#065f46;font-weight:600">${_valFmt(predProfit,2)}</span>`
       :'<span style="color:#94a3b8">—</span>';
-
     const mktCapStr=mktCap>0?`<span style="font-weight:600">${_valFmt(mktCap,0)}</span>`:'<span style="color:#94a3b8">—</span>';
     const peStr=pe!=null?(()=>{
       const c=pe<20?'#059669':pe<40?'#d97706':'#dc2626';
       return `<span style="font-weight:700;color:${c}">${pe}x</span>`;
     })():'<span style="color:#94a3b8">—</span>';
-
-    // 排序状态下在名称旁显示所属板块小徽标
-    const secBadge=showSecBadge
-      ?`<span style="font-size:9px;background:${sec.color}22;color:${sec.color};border-radius:3px;padding:1px 5px;margin-left:5px;font-weight:600;vertical-align:middle">${sec.name}</span>`:'';
-
     return `<tr style="border-bottom:1px solid var(--border);transition:background .12s" onmouseover="this.style.background='rgba(37,99,235,.04)'" onmouseout="this.style.background=''">
-      <td style="padding:9px 14px;font-weight:600;color:var(--text);white-space:nowrap">${sk.name}${secBadge}</td>
+      <td style="padding:9px 14px;font-weight:600;color:var(--text);white-space:nowrap">${sk.name}</td>
       <td style="padding:9px 10px;text-align:center">
         <span style="font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;${mktColor[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span>
       </td>
@@ -4251,59 +4185,77 @@ function renderValTable(){
     </tr>`;
   };
 
-  // ── 渲染：全局排序状态 → 平铺列表；默认 → 按板块分组 ──────────
-  if(_VAL_SORT.col){
-    allRows.forEach(row=>{ html+=mkRow(row,true); });
-  } else {
-    const secWts = PORT.sectors.map(s=>s.stocks.reduce((a,sk)=>a+(sk.w||0),0));
-    const wTot = secWts.reduce((a,w)=>a+w,0);
-    PORT.sectors.forEach((sec,idx)=>{
-      let secRows=allRows.filter(r=>r.sec===sec);
-      if(!secRows.length) return;
-      // 板块内排序
-      const ss=_VAL_SEC_SORT[idx]||{col:null,dir:-1};
-      if(ss.col){
-        const key=ss.col;
-        secRows=[...secRows].sort((a,b)=>{
-          const va=a[key]??(ss.dir<0?-Infinity:Infinity);
-          const vb=b[key]??(ss.dir<0?-Infinity:Infinity);
-          return ss.dir*(va-vb);
-        });
-      }
-      if(idx>0) html+=`<tr><td colspan="12" style="height:16px;background:var(--bg);padding:0"></td></tr>`;
-      const wLabel = wTot>0 ? secWts[idx].toFixed(1)+'%' : (sec.weight||0)+'%';
-      // 板块标题行
-      html+=`<tr>
-        <td colspan="12" style="padding:0;border-top:3px solid ${sec.color};background:linear-gradient(90deg,${sec.color}35 0%,${sec.color}12 40%,transparent 100%)">
-          <div style="padding:9px 16px;display:flex;align-items:center;gap:10px">
-            <span style="display:inline-block;width:4px;height:18px;background:${sec.color};border-radius:2px;flex-shrink:0"></span>
-            <span style="font-size:14px;font-weight:800;color:${sec.color};letter-spacing:.04em">${sec.name}</span>
-            <span style="font-size:11px;color:var(--text2);background:rgba(255,255,255,.72);border:1px solid ${sec.color}40;border-radius:8px;padding:1px 8px">权重 ${wLabel}</span>
-            <span style="font-size:11px;color:var(--text2)">${sec.stocks.length} 只</span>
-          </div>
-        </td>
-      </tr>`;
-      // 板块内小表头（含三列可排序）
-      html+=`<tr style="background:${sec.color}12;border-bottom:1px solid ${sec.color}30">
-        <th style="padding:5px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap">股票名称</th>
-        <th style="padding:5px 10px;text-align:center;font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap">市场</th>
-        <th style="padding:5px 12px;text-align:right;font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap">当前股价</th>
-        <th style="padding:5px 12px;text-align:right;font-size:11px;font-weight:600;color:#92400e;white-space:nowrap;border-left:2px solid #fde68a80">上年利润</th>
-        <th style="padding:5px 12px;text-align:right;font-size:11px;font-weight:600;color:#92400e;white-space:nowrap">上年同比</th>
-        <th style="padding:5px 12px;text-align:right;font-size:11px;font-weight:600;color:#1e40af;white-space:nowrap;border-left:2px solid #bfdbfe80">上季利润</th>
-        <th style="padding:5px 12px;text-align:right;font-size:11px;font-weight:600;color:#1e40af;white-space:nowrap">上季同比</th>
-        <th style="padding:5px 12px;text-align:right;font-size:11px;font-weight:600;color:#1e40af;white-space:nowrap">上季环比</th>
-        <th style="padding:5px 12px;text-align:right;font-size:11px;font-weight:600;color:#7c3aed;white-space:nowrap;border-left:2px solid #ddd6fe80">年度增速预测</th>
-        <th onclick="valSecSort(${idx},'predProfit')" style="padding:5px 12px;text-align:right;font-size:11px;font-weight:600;color:#065f46;white-space:nowrap;cursor:pointer;user-select:none" title="板块内排序">年度利润预测${sis(idx,'predProfit')}</th>
-        <th onclick="valSecSort(${idx},'mktCap')" style="padding:5px 12px;text-align:right;font-size:11px;font-weight:600;color:#1e293b;white-space:nowrap;border-left:2px solid #e2e8f080;cursor:pointer;user-select:none" title="板块内排序">总市值${sis(idx,'mktCap')}</th>
-        <th onclick="valSecSort(${idx},'pe')" style="padding:5px 12px;text-align:right;font-size:11px;font-weight:600;color:#1e293b;white-space:nowrap;cursor:pointer;user-select:none" title="板块内排序">预测PE${sis(idx,'pe')}</th>
-      </tr>`;
-      secRows.forEach(row=>{ html+=mkRow(row,false); });
-    });
-  }
+  // ── 每板块独立渲染一张完整表格 ───────────────────────────
+  let html='';
+  PORT.sectors.forEach((sec,idx)=>{
+    if(!sec.stocks||!sec.stocks.length) return;
 
-  html+='</tbody></table>';
-  wrap.innerHTML=html;
+    // 构建行数据
+    let rows=[];
+    sec.stocks.forEach(sk=>{
+      const pi=_PORT_PRICES[sk.code]||{};
+      const d=_VAL_DATA[sk.code]||{};
+      const isHK=sk.mkt==='HK';
+      const noData=isHK && d.annualProfit==null;
+      let predRate=null, predProfit=null;
+      if(!noData){
+        const vals=[d.annualYoY,d.qtrYoY,d.qtrQoQ].filter(v=>v!=null);
+        if(vals.length) predRate=vals.reduce((a,b)=>a+b,0)/vals.length;
+        if(predRate!=null && d.annualProfit!=null) predProfit=d.annualProfit*(1+predRate/100);
+      }
+      const mktCap=pi.mktCap??null;
+      const pe=(mktCap>0 && predProfit>0) ? Math.round(mktCap/predProfit) : null;
+      rows.push({sk,sec,pi,d,isHK,noData,predRate,predProfit,mktCap,pe});
+    });
+    if(!rows.length) return;
+
+    // 板块内排序
+    const ss=_VAL_SEC_SORT[idx]||{col:null,dir:-1};
+    if(ss.col){
+      const key=ss.col;
+      rows=[...rows].sort((a,b)=>{
+        const va=a[key]??(ss.dir<0?-Infinity:Infinity);
+        const vb=b[key]??(ss.dir<0?-Infinity:Infinity);
+        return ss.dir*(va-vb);
+      });
+    }
+
+    const wLabel=wTot>0 ? secWts[idx].toFixed(1)+'%' : (sec.weight||0)+'%';
+
+    // 板块卡片
+    html+=`<div style="margin-bottom:20px;border-radius:12px;overflow:hidden;border:1px solid ${sec.color}40;box-shadow:0 2px 8px ${sec.color}18">
+      <!-- 板块标题 -->
+      <div style="padding:10px 18px;background:linear-gradient(90deg,${sec.color}30 0%,${sec.color}10 50%,transparent 100%);border-bottom:2px solid ${sec.color}50;display:flex;align-items:center;gap:10px">
+        <span style="display:inline-block;width:5px;height:20px;background:${sec.color};border-radius:3px;flex-shrink:0"></span>
+        <span style="font-size:15px;font-weight:800;color:${sec.color};letter-spacing:.04em">${sec.name}</span>
+        <span style="font-size:11px;color:var(--text2);background:rgba(255,255,255,.8);border:1px solid ${sec.color}50;border-radius:8px;padding:1px 9px">权重 ${wLabel}</span>
+        <span style="font-size:11px;color:var(--text2)">${sec.stocks.length} 只</span>
+      </div>
+      <!-- 板块独立表格 -->
+      <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:linear-gradient(180deg,${sec.color}18,${sec.color}08);border-bottom:2px solid ${sec.color}40">
+            <th style="padding:9px 14px;text-align:left;font-weight:700;color:var(--text);white-space:nowrap">股票名称</th>
+            <th style="padding:9px 10px;text-align:center;font-weight:700;color:var(--text);white-space:nowrap">市场</th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:var(--text);white-space:nowrap">当前股价</th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap;border-left:2px solid #fde68a">上年利润</th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap">上年同比</th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap;border-left:2px solid #bfdbfe">上季利润</th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季同比</th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季环比</th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#7c3aed;white-space:nowrap;border-left:2px solid #ddd6fe">年度增速预测</th>
+            <th onclick="valSecSort(${idx},'predProfit')" style="padding:9px 12px;text-align:right;font-weight:700;color:#065f46;white-space:nowrap;cursor:pointer;user-select:none" title="点击排序">年度利润预测${sis(idx,'predProfit')}</th>
+            <th onclick="valSecSort(${idx},'mktCap')" style="padding:9px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap;border-left:2px solid #e2e8f0;cursor:pointer;user-select:none" title="点击排序">总市值${sis(idx,'mktCap')}</th>
+            <th onclick="valSecSort(${idx},'pe')" style="padding:9px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap;cursor:pointer;user-select:none" title="点击排序">预测PE${sis(idx,'pe')}</th>
+          </tr>
+        </thead>
+        <tbody>`;
+    rows.forEach(row=>{ html+=mkRow(row); });
+    html+=`</tbody></table></div></div>`;
+  });
+
+  wrap.innerHTML=html||'<div style="padding:48px;text-align:center;color:var(--text2)">暂无数据</div>';
 }
 
 // ── TAB ──────────────────────────────────────────────────────
