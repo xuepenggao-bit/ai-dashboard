@@ -243,8 +243,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 /* 防止单元格内容换行导致列宽被压缩 */
 #tPort .mtable th,
 #tPort .mtable td{white-space:nowrap}
-/* 备注列例外：允许换行 */
-#tPort .mtable td.col-note{white-space:normal;max-width:120px;word-break:break-all}
+/* 行业列宽度约束 */
+#tPort .mtable td.col-industry{max-width:100px;overflow:hidden;text-overflow:ellipsis}
 
 /* ── 分类饼图面板 ─────────────────────────────────────────── */
 .sec-pie-panel{transition:opacity .3s}
@@ -263,9 +263,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   /* 表格紧凑 */
   #tPort .mtable th{font-size:11px;padding:7px 9px}
   #tPort .mtable td{font-size:13px;padding:9px 9px}
-  /* 隐藏：代码、备注 */
+  /* 隐藏：代码、行业 */
   #tPort .col-code,#tPort .th-code,
-  #tPort .col-note,#tPort .th-note{display:none}
+  #tPort .col-industry,#tPort .th-industry{display:none}
 }
 @media(max-width:600px){
   /* 再隐藏：当前股价 */
@@ -988,8 +988,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         </div>
       </div>
       <div class="form-row">
-        <label class="form-label">备注（可选）</label>
-        <input id="pStkNote" class="form-input" placeholder="例如: 核心仓位 · 长期持有" type="text" />
+        <label class="form-label">行业（可选）</label>
+        <input id="pStkIndustry" class="form-input" placeholder="例如: 半导体 · 光模块 · 算力" type="text" />
       </div>
       <div class="form-actions">
         <button type="button" class="btn-ghost" onclick="closePortModal()">取消</button>
@@ -3159,10 +3159,10 @@ function renderPortfolio(){
         <td style="font-weight:700;font-size:15px;color:var(--text)">${sk.name}</td>
         <td class="col-code" style="font-family:monospace;font-size:13px;color:var(--text2)">${sk.code}</td>
         <td class="col-mkt"><span class="mkt-badge" style="${mktStyle[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span></td>
+        <td class="col-industry" style="color:var(--text2);font-size:13px">${sk.industry||''}</td>
         <td class="col-price" style="text-align:right">${priceCell}</td>
         <td style="text-align:right">${pctCell}</td>
         <td style="text-align:right">${sk.w!=null?'<strong style="color:var(--blue);font-size:15px">'+sk.w.toFixed(1)+'%</strong>':'<span style="color:var(--text2);font-size:13px">—</span>'}</td>
-        <td class="col-note" style="color:var(--text2);font-size:13px">${sk.note||''}</td>
         <td style="white-space:nowrap">
           <button class="btn-edit" onclick="openPortModal('edit',${si},${ki})" style="background:none;border:1.5px solid var(--blue);color:var(--blue);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600">编辑</button>
           <button class="btn-del"  onclick="delPortStock(${si},${ki})"         style="background:none;border:1.5px solid #fca5a5;color:var(--red);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;margin-left:5px">删除</button>
@@ -3191,10 +3191,10 @@ function renderPortfolio(){
             <th>股票名称</th>
             <th class="th-code">代码</th>
             <th class="th-mkt">市场</th>
+            <th class="th-industry">行业</th>
             <th class="th-price" style="text-align:right">当前股价</th>
             <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
             <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
-            <th class="th-note">备注</th>
             <th>操作</th>
           </tr></thead><tbody>${rows}</tbody></table>
         </div>
@@ -3319,13 +3319,13 @@ function openPortModal(mode,si,ki){
     document.getElementById('pStkCode').value  = sk.code;
     document.getElementById('pStkMkt').value   = sk.mkt;
     document.getElementById('pStkWeight').value= sk.w!=null?sk.w:'';
-    document.getElementById('pStkNote').value  = sk.note||'';
+    document.getElementById('pStkIndustry').value = sk.industry||'';
   } else {
     document.getElementById('pStkName').value  = '';
     document.getElementById('pStkCode').value  = '';
     document.getElementById('pStkMkt').value   = 'SH';
     document.getElementById('pStkWeight').value= '';
-    document.getElementById('pStkNote').value  = '';
+    document.getElementById('pStkIndustry').value = '';
   }
   document.getElementById('portModal').style.display='flex';
 }
@@ -3336,9 +3336,9 @@ function submitPortModal(){
   const code= document.getElementById('pStkCode').value.trim();
   const mkt = document.getElementById('pStkMkt').value;
   const wv  = document.getElementById('pStkWeight').value;
-  const note= document.getElementById('pStkNote').value.trim();
+  const industry = document.getElementById('pStkIndustry').value.trim();
   if(!name||!code){alert('请填写股票名称和代码');return;}
-  const obj = {name,code,mkt,w:wv?parseFloat(wv):null,note};
+  const obj = {name,code,mkt,w:wv?parseFloat(wv):null,industry};
   if(_portModalMode==='add'){
     PORT.sectors[tsi].stocks.push(obj);
   } else {
