@@ -3064,20 +3064,23 @@ async function portSaveRemote(){
       method:'PUT', headers, body: JSON.stringify(body)
     });
     if(res.ok){
-      _portDirty = false;   // 同步成功，清除 dirty 标志
-      _setSyncTs('☁️ 已同步 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}), '#10b981');
+      _portDirty = false;
+      const savedTs = PORT._savedAt ? new Date(PORT._savedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
+      _setSyncTs('☁️ 已同步 · 数据时间 '+savedTs, '#10b981');
+      console.log('[portSync] 成功写入 GitHub，_savedAt=', PORT._savedAt);
     } else {
       const err = await res.json().catch(()=>({}));
       throw new Error(err.message || res.status);
     }
   }catch(e){
     console.error('portSaveRemote:', e);
-    _setSyncTs('⚠️ 云端同步失败', '#ef4444');
+    _setSyncTs('⚠️ 云端同步失败：' + e.message, '#ef4444');
   }
 }
 
 /* 只写本地，标记待同步；需用户手动点击"同步到云端"才推送 */
 function portSave(){
+  PORT._savedAt = Date.now();   // 写入修改时间戳，供冲突解决使用
   localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
   _portDirty = true;
   _setSyncTs('📝 有改动未同步，点击"同步到云端"', '#f59e0b');
@@ -3127,27 +3130,29 @@ async function portInit(){
     }
   }catch(e){ console.warn('portLoadRemote:', e); }
 
-  // ③ 择优：以有效仓位数量决定使用哪份数据
+  // ③ 择优：时间戳优先（谁更新谁赢），无时间戳时退回仓位数量比较
+  //    旧逻辑只比较股票数，改名不改权重时两端相同，随机选择 → 导致改名丢失
   const lw = _weightCount(localData);
   const rw = _weightCount(remoteData);
-
+  const lt = localData?._savedAt || 0;   // 本地修改时间戳（ms）
+  const rt = remoteData?._savedAt || 0;  // 远端修改时间戳（ms）
   const ts = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
 
-  if(lw > rw){
-    // 本地数据更完整 → 使用本地，并将本地推送到 GitHub 修正云端
-    PORT = localData;
-    _setSyncTs('☁️ 本地数据更完整，正在同步至云端…', '#f59e0b');
-    portSaveRemote();                       // 推送后会更新状态文字
-  } else if(remoteData && rw >= 0){
-    // 远程数据更完整或相等 → 使用远程，同时更新本地缓存
+  // 远端胜出条件：有数据 AND (远端更新 OR 同时间戳且数量≥本地)
+  const remoteWins = remoteData && rw >= 0 && (rt > lt || (rt === lt && rw >= lw));
+
+  if(remoteWins){
+    // 远端更新或相等 → 使用远端，同步本地缓存
     PORT = remoteData;
     localStorage.setItem(PORT_KEY, JSON.stringify(remoteData));
     _setSyncTs('☁️ 已从云端加载 ' + ts, '#10b981');
-  } else if(localData){
-    // 远程不可用，只有本地
+  } else if(localData && lw >= 0){
+    // 本地更新（或远端不可用）→ 使用本地并推送到云端修正
     PORT = localData;
+    _setSyncTs(remoteData
+      ? '☁️ 本地数据更新，正在同步至云端…'
+      : '☁️ 云端离线，已上传本地备份', '#f59e0b');
     portSaveRemote();
-    _setSyncTs('☁️ 云端离线，已上传本地备份', '#f59e0b');
   } else {
     // 全无，用默认
     PORT = JSON.parse(JSON.stringify(BASE.portfolio));
