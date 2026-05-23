@@ -4051,7 +4051,7 @@ function _valPct(v){
   if(v===null||v===undefined||isNaN(v)) return '<span style="color:#94a3b8">—</span>';
   const c=v>0?'#059669':v<0?'#dc2626':'#64748b';
   const sign=v>0?'+':'';
-  return `<span style="color:${c};font-weight:600">${sign}${Number(v).toFixed(2)}%</span>`;
+  return `<span style="color:${c};font-weight:600">${sign}${Math.round(Number(v))}%</span>`;
 }
 
 function renderValTable(){
@@ -4077,23 +4077,40 @@ function renderValTable(){
         <th style="padding:10px 14px;text-align:left;font-weight:700;color:var(--text);white-space:nowrap">股票名称</th>
         <th style="padding:10px 10px;text-align:center;font-weight:700;color:var(--text);white-space:nowrap">市场</th>
         <th style="padding:10px 12px;text-align:right;font-weight:700;color:var(--text);white-space:nowrap">当前股价</th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap;border-left:2px solid #fde68a">上年利润<br><span style="font-weight:400;font-size:11px;color:var(--text2)">亿元</span></th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap;border-left:2px solid #fde68a">上年利润</th>
         <th style="padding:10px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap">上年同比</th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap;border-left:2px solid #bfdbfe">上季利润<br><span style="font-weight:400;font-size:11px;color:var(--text2)">亿元</span></th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap;border-left:2px solid #bfdbfe">上季利润</th>
         <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季同比</th>
         <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季环比</th>
         <th style="padding:10px 12px;text-align:right;font-weight:700;color:#7c3aed;white-space:nowrap;border-left:2px solid #ddd6fe">年度增速预测</th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#065f46;white-space:nowrap">年度利润预测<br><span style="font-weight:400;font-size:11px;color:var(--text2)">亿元</span></th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap;border-left:2px solid #e2e8f0">总市值<br><span style="font-weight:400;font-size:11px;color:var(--text2)">亿元</span></th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#065f46;white-space:nowrap">年度利润预测</th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap;border-left:2px solid #e2e8f0">总市值</th>
         <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap">预测PE</th>
       </tr>
     </thead>
     <tbody>`;
 
+  // 单位说明行（紧跟表头）
+  html+=`<tr style="background:#fafbfc;border-bottom:1px solid var(--border)">
+    <td style="padding:3px 14px;font-size:10px;color:var(--text2)"></td>
+    <td style="padding:3px 10px"></td>
+    <td style="padding:3px 12px;text-align:right;font-size:10px;color:var(--text2)">元</td>
+    <td style="padding:3px 12px;text-align:right;font-size:10px;color:#92400e80;border-left:2px solid #fde68a">亿元</td>
+    <td style="padding:3px 12px;text-align:right;font-size:10px;color:#92400e80"></td>
+    <td style="padding:3px 12px;text-align:right;font-size:10px;color:#1e40af80;border-left:2px solid #bfdbfe">亿元</td>
+    <td style="padding:3px 12px;text-align:right;font-size:10px;color:#1e40af80"></td>
+    <td style="padding:3px 12px;text-align:right;font-size:10px;color:#1e40af80"></td>
+    <td style="padding:3px 12px;text-align:right;border-left:2px solid #ddd6fe"></td>
+    <td style="padding:3px 12px;text-align:right;font-size:10px;color:#06504680">亿元</td>
+    <td style="padding:3px 12px;text-align:right;font-size:10px;color:#1e293b80;border-left:2px solid #e2e8f0">亿元</td>
+    <td style="padding:3px 12px"></td>
+  </tr>`;
+
   PORT.sectors.forEach((sec,si)=>{
     if(!sec.stocks||!sec.stocks.length) return;
-    // 板块分隔行
-    html+=`<tr><td colspan="12" style="padding:8px 14px 6px;background:linear-gradient(90deg,${sec.color}22,transparent);border-top:${si>0?'2px solid var(--border)':'none'};border-bottom:1px solid var(--border)20">
+    // 板块空白分隔 + 标题行
+    if(si>0) html+=`<tr><td colspan="12" style="height:14px;background:var(--bg);padding:0"></td></tr>`;
+    html+=`<tr><td colspan="12" style="padding:7px 14px 6px;background:linear-gradient(90deg,${sec.color}28,${sec.color}08,transparent);border-top:2px solid ${sec.color}40;border-bottom:1px solid ${sec.color}30">
       <span style="font-size:12px;font-weight:700;color:${sec.color};letter-spacing:.04em">● ${sec.name}</span>
       <span style="font-size:11px;color:var(--text2);margin-left:8px">权重 ${sec.weight}%</span>
     </td></tr>`;
