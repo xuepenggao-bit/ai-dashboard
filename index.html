@@ -4162,7 +4162,7 @@ function renderValTable(){
       :'<span style="color:#94a3b8">—</span>';
     const mktCapStr=mktCap>0?`<span style="font-weight:600">${_valFmt(mktCap,0)}</span>`:'<span style="color:#94a3b8">—</span>';
     const peStr=pe!=null?(()=>{
-      const c=pe<20?'#059669':pe<40?'#d97706':'#dc2626';
+      const c=pe<30?'#059669':pe<50?'#d97706':'#dc2626';
       return `<span style="font-weight:700;color:${c}">${pe}x</span>`;
     })():'<span style="color:#94a3b8">—</span>';
     return `<tr style="border-bottom:1px solid var(--border);transition:background .12s" onmouseover="this.style.background='rgba(37,99,235,.04)'" onmouseout="this.style.background=''">
