@@ -1766,7 +1766,8 @@ function mkTrend(){
 }
 
 function mkSig(){
-  const ctx = document.getElementById('cSig').getContext('2d');
+  const el = document.getElementById('cSig'); if(!el) return;
+  const ctx = el.getContext('2d');
   CH.sig = new Chart(ctx,{
     type:'doughnut',
     data:{
@@ -5347,24 +5348,33 @@ function _renderPortTopW(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────
+// 辅助：安全调用，单个 mk* 函数报错不影响后续初始化
+function _safe(fn){ try{ fn(); }catch(e){ console.warn('[init]', fn.name, e.message); } }
+
 document.addEventListener('DOMContentLoaded',()=>{
-  mkCapex();mkTrend();mkSig();mkStageC();mkRadar();mkGauge();mkBubble();mkPort();
-  mkNeoCapex();mkOptGrowth();mkPcbGrowth();mkIntlPe();mkDomStorePe();mkArr();
+  // 图表初始化——各自隔离，任意一个崩溃不拖垮其他（历史上 cSig 等 canvas 曾导致全局中断）
+  _safe(mkCapex);_safe(mkTrend);_safe(mkSig);_safe(mkStageC);
+  _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);_safe(mkPort);
+  _safe(mkNeoCapex);_safe(mkOptGrowth);_safe(mkPcbGrowth);
+  _safe(mkIntlPe);_safe(mkDomStorePe);_safe(mkArr);
+
   portInit();   // 优先从 GitHub 云端加载组合数据
   // 兜底：1秒后若股价仍未加载（portInit 异步路径失败），强制触发一次
   setTimeout(()=>{
     const ts=document.getElementById('portPriceTs');
     if(ts && ts.textContent==='股价未加载'){ portLoad(); fetchPortPrices(); }
   }, 1000);
-  mkNewInv();mkMktPe();mkMargin();mkNorth();mkUpDown();mkConc();
-  mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();mkProfitAccum();mkElectronicProfit();
-  fetchVixChart();   // 异步拉取 iVIX 历史数据
-  mkStageMatrix();
-  renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();
-  fetchStoreLive();         // 异步拉取存储监控实时行情
-  fetchStocksLive();        // 异步拉取光模块&PCB实时行情
-  fetchMonLive();           // 异步拉取产业链监控20日动量
-  fetchMacroRates();        // 异步拉取中美10年国债收益率（风险仪表板宏观指标）
+
+  _safe(mkNewInv);_safe(mkMktPe);_safe(mkMargin);_safe(mkNorth);_safe(mkUpDown);_safe(mkConc);
+  _safe(mkCpi);_safe(mkTsf);_safe(mkFai);_safe(mkRetail);_safe(mkIndustrial);_safe(mkProfitAccum);_safe(mkElectronicProfit);
+  _safe(mkStageMatrix);
+  _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();});
+
+  fetchVixChart();        // 异步拉取 iVIX 历史数据
+  fetchStoreLive();       // 异步拉取存储监控实时行情
+  fetchStocksLive();      // 异步拉取光模块&PCB实时行情
+  fetchMonLive();         // 异步拉取产业链监控20日动量
+  fetchMacroRates();      // 异步拉取中美10年国债收益率（风险仪表板宏观指标）
   // 北向资金使用静态日频数据（BASE.ashare.north），无需远程拉取
   const _tsEl=document.getElementById('tsEl'); if(_tsEl) _tsEl.textContent='最后更新: '+new Date().toLocaleString('zh-CN');
   // 页面加载时自动拉取A股宏观最新数据（无需等待切换到宏观标签页）
