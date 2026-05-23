@@ -3014,12 +3014,11 @@ async function portInit(){
 
   // ① 无条件立即初始化（localStorage 有数据用缓存，无则用 BASE.portfolio 默认模板）
   portLoad();   // 同步：保证 PORT 不为 null
-  try{
-    renderPortfolio();
-    fetchIndexPrices();
-    updateRiskDashboard();
-    fetchPortPrices();   // ← 首屏立即拉股价，不等 GitHub
-  }catch(e){ console.warn('[portInit render]', e); }
+  try{ renderPortfolio(); }catch(e){ console.warn('[portInit renderPortfolio]', e); }
+  try{ fetchIndexPrices(); }catch(e){ console.warn('[portInit fetchIndexPrices]', e); }
+  try{ updateRiskDashboard(); }catch(e){ console.warn('[portInit updateRiskDashboard]', e); }
+  // fetchPortPrices 独立 try，确保上面任何一步抛错都不会跳过它
+  try{ fetchPortPrices(); }catch(e){ console.warn('[portInit fetchPortPrices]', e); }
   _setSyncTs('☁️ 校验云端数据中…', '#f59e0b');
 
   // ② 读本地快照（用于后续冲突判断基准）
@@ -4989,8 +4988,8 @@ async function fetchMacroRates(){
 async function fetchPortPrices(){
   var btn = document.getElementById('portPriceBtn');
   var ts  = document.getElementById('portPriceTs');
-  btn.classList.add('loading'); btn.disabled = true;
-  ts.textContent = '正在获取股价…';
+  if(btn){ btn.classList.add('loading'); btn.disabled = true; }
+  if(ts)  ts.textContent = '正在获取股价…';
 
   try {
     portLoad();
@@ -5120,7 +5119,7 @@ async function fetchPortPrices(){
     // 如果估值分析标签页是活动状态，同步刷新估值表格（更新股价+市值列）
     var valEl = document.getElementById('tVal');
     if(valEl && valEl.classList.contains('active')) renderValTable();
-    btn.classList.remove('loading'); btn.disabled = false;
+    if(btn){ btn.classList.remove('loading'); btn.disabled = false; }
   }
 }
 
@@ -5352,8 +5351,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   mkCapex();mkTrend();mkSig();mkStageC();mkRadar();mkGauge();mkBubble();mkPort();
   mkNeoCapex();mkOptGrowth();mkPcbGrowth();mkIntlPe();mkDomStorePe();mkArr();
   portInit();   // 优先从 GitHub 云端加载组合数据
-  // 安全网：首次加载自动点击"刷新股价"，不依赖 portInit 异步完成时机
-  setTimeout(()=>{ const b=document.getElementById('portPriceBtn'); if(b&&!b.disabled) b.click(); }, 200);
+  // 兜底：1秒后若股价仍未加载（portInit 异步路径失败），强制触发一次
+  setTimeout(()=>{
+    const ts=document.getElementById('portPriceTs');
+    if(ts && ts.textContent==='股价未加载'){ portLoad(); fetchPortPrices(); }
+  }, 1000);
   mkNewInv();mkMktPe();mkMargin();mkNorth();mkUpDown();mkConc();
   mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();mkProfitAccum();mkElectronicProfit();
   fetchVixChart();   // 异步拉取 iVIX 历史数据
