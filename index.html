@@ -3001,42 +3001,37 @@ function portLoad(){
 }
 
 /**
- * 页面初始化：优先从本地 localStorage 立即渲染（零等待首屏），
- * 再与 GitHub 云端数据校验合并（8秒超时），本地更新时自动推送到云端。
+ * 页面初始化：
+ *  ① 无条件立即渲染本地数据 + 拉股价（portLoad 兜底，localStorage 有则用缓存，无则用默认）
+ *  ② 后台与 GitHub 云端校验（8s 超时）
+ *  ③ 云端更新时重新渲染；本地更新时自动推送云端
  *
- * 修复说明：
- *  1. 立即渲染本地数据（_earlyRendered），消除"加载中+股价未加载"首屏卡死问题
- *  2. GitHub fetch 加 8s AbortController 超时，防止网络慢时永久挂起
- *  3. GitHub fetch 完成后重新读取 localStorage（_freshLocal），防止用户在等待期间
- *     编辑了行业等字段，导致 portInit 用旧时间戳误判"远端获胜"并覆盖用户改动
+ * 关键原则：fetchPortPrices() 和 renderPortfolio() 在任何情况下都必须在 GitHub fetch
+ * 完成之前被调用，确保首屏不依赖网络请求即可显示列表和股价。
  */
 async function portInit(){
   _setSyncTs('☁️ 加载中…', '#f59e0b');
-  let _earlyRendered = false;
 
-  // ① 读取本地快照
+  // ① 无条件立即初始化（localStorage 有数据用缓存，无则用 BASE.portfolio 默认模板）
+  portLoad();   // 同步：保证 PORT 不为 null
+  try{
+    renderPortfolio();
+    fetchIndexPrices();
+    updateRiskDashboard();
+    fetchPortPrices();   // ← 首屏立即拉股价，不等 GitHub
+  }catch(e){ console.warn('[portInit render]', e); }
+  _setSyncTs('☁️ 校验云端数据中…', '#f59e0b');
+
+  // ② 读本地快照（用于后续冲突判断基准）
   let localData = null;
   try{
     const s = localStorage.getItem(PORT_KEY);
     if(s) localData = JSON.parse(s);
   }catch(e){}
 
-  // ★ 本地有数据 → 立即先渲染，不阻塞于 GitHub 请求（首屏秒开）
-  if(localData && _weightCount(localData) >= 0){
-    PORT = localData;
-    _earlyRendered = true;
-    try{
-      renderPortfolio();
-      fetchIndexPrices();
-      updateRiskDashboard();
-      fetchPortPrices();
-    }catch(e){ console.warn('[portInit early render]', e); }
-    _setSyncTs('☁️ 校验云端数据中…', '#f59e0b');
-  }
-
-  // ② 读取远端（带 8s 超时，防止 GitHub 响应慢导致长时间卡在"加载中"）
-  let remoteData  = null;
-  let remoteOk    = false;  // true = GitHub 可达（无论文件是否存在）
+  // ③ 后台拉 GitHub 远端数据（带 8s AbortController 超时）
+  let remoteData = null;
+  let remoteOk   = false;  // true = GitHub 可达（无论文件是否存在）
   try{
     const ghHeaders = {
       'Authorization': `token ${PORT_GH_TOKEN}`,
@@ -3064,14 +3059,14 @@ async function portInit(){
     console.warn('portLoadRemote:', e.name === 'AbortError' ? '超时(8s)，使用本地缓存' : e);
   }
 
-  // ③ GitHub 请求完成后重新读取本地（防止用户在等待期间编辑了数据，如行业字段）
-  //    重新读取后 lt 使用最新时间戳，避免误判"远端获胜"覆盖用户改动
+  // ④ GitHub 完成后重新读本地（防竞争：用户可能在等待期间编辑了行业等字段）
+  //    重新读取后 lt 使用最新时间戳，避免误判"远端获胜"覆盖用户最新改动
   try{
     const s2 = localStorage.getItem(PORT_KEY);
     if(s2) localData = JSON.parse(s2);
   }catch(e){}
 
-  // ④ 择优：时间戳优先（谁更新谁赢），无时间戳时退回仓位数量比较
+  // ⑤ 择优：时间戳优先（谁更新谁赢），无时间戳时退回仓位数量比较
   const lw = _weightCount(localData);
   const rw = _weightCount(remoteData);
   const lt = localData?._savedAt || 0;   // 本地修改时间戳（ms，已含用户最新改动）
@@ -3091,7 +3086,7 @@ async function portInit(){
     updateRiskDashboard();
     fetchPortPrices();
   } else if(localData && lw >= 0){
-    // 本地更新（或远端不可用）→ 使用本地
+    // 本地更新（或远端不可用）→ 使用本地，必要时推送云端
     PORT = localData;
     if(!PORT._savedAt) PORT._savedAt = Date.now();
     localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
@@ -3102,26 +3097,16 @@ async function portInit(){
         : '☁️ 云端无数据，正在上传本地备份', '#f59e0b');
       portSaveRemote();
     } else {
-      // GitHub 不可达（超时/离线）→ 不推送，显示提示
+      // GitHub 不可达（超时/离线）→ 不推送，只提示
       _setSyncTs('☁️ 云端暂时无法访问，已使用本地缓存', '#f59e0b');
     }
-    // 早期渲染已完成的不再重复；否则（无本地缓存时 GitHub 超时后才有数据）执行渲染
-    if(!_earlyRendered){
-      renderPortfolio();
-      fetchIndexPrices();
-      updateRiskDashboard();
-      fetchPortPrices();
-    }
+    // 本地数据可能因用户在 GitHub fetch 期间编辑而变化，重新渲染以确保 UI 最新
+    renderPortfolio();
+    fetchIndexPrices();
+    updateRiskDashboard();
   } else {
-    // 全无，用默认数据
-    PORT = JSON.parse(JSON.stringify(BASE.portfolio));
+    // 本地和远端均无有效数据，已在①用默认数据渲染，无需处理
     _setSyncTs('📂 使用默认数据', '#94a3b8');
-    if(!_earlyRendered){
-      renderPortfolio();
-      fetchIndexPrices();
-      updateRiskDashboard();
-      fetchPortPrices();
-    }
   }
 }
 
