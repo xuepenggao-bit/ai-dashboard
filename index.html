@@ -5352,6 +5352,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   mkCapex();mkTrend();mkSig();mkStageC();mkRadar();mkGauge();mkBubble();mkPort();
   mkNeoCapex();mkOptGrowth();mkPcbGrowth();mkIntlPe();mkDomStorePe();mkArr();
   portInit();   // 优先从 GitHub 云端加载组合数据
+  // 安全网：首次加载自动点击"刷新股价"，不依赖 portInit 异步完成时机
+  setTimeout(()=>{ const b=document.getElementById('portPriceBtn'); if(b&&!b.disabled) b.click(); }, 200);
   mkNewInv();mkMktPe();mkMargin();mkNorth();mkUpDown();mkConc();
   mkCpi();mkTsf();mkFai();mkRetail();mkIndustrial();mkProfitAccum();mkElectronicProfit();
   fetchVixChart();   // 异步拉取 iVIX 历史数据
