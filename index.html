@@ -75,15 +75,16 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 }
 .tab.active:hover{transform:translateY(-2px);filter:none}
 /* 各标签色系（比之前稍深，补偿玻璃层的提亮） */
-.tabs-inner .tab:nth-child(1){--tab-top:#dbeafe;--tab-bot:#bfdbfe;--tab-bdr:#93c5fd}  /* 蓝  投资组合 */
-.tabs-inner .tab:nth-child(2){--tab-top:#fee2e2;--tab-bot:#fecaca;--tab-bdr:#fca5a5}  /* 红  风险仪表板 */
-.tabs-inner .tab:nth-child(3){--tab-top:#dcfce7;--tab-bot:#bbf7d0;--tab-bdr:#86efac}  /* 绿  A股宏观 */
-.tabs-inner .tab:nth-child(4){--tab-top:#ede9fe;--tab-bot:#ddd6fe;--tab-bdr:#c4b5fd}  /* 紫  AI趋势 */
-.tabs-inner .tab:nth-child(5){--tab-top:#cffafe;--tab-bot:#a5f3fc;--tab-bdr:#67e8f9}  /* 青  光模块&PCB */
-.tabs-inner .tab:nth-child(6){--tab-top:#ffedd5;--tab-bot:#fed7aa;--tab-bdr:#fdba74}  /* 橙  存储监控 */
-.tabs-inner .tab:nth-child(7){--tab-top:#ccfbf1;--tab-bot:#99f6e4;--tab-bdr:#5eead4}  /* 青绿 产业链阶段 */
-.tabs-inner .tab:nth-child(8){--tab-top:#d1fae5;--tab-bot:#a7f3d0;--tab-bdr:#6ee7b7}  /* 绿  产业链监控 */
-.tabs-inner .tab:nth-child(9){--tab-top:#e2e8f0;--tab-bot:#cbd5e1;--tab-bdr:#94a3b8}  /* 灰  十步框架 */
+.tabs-inner .tab:nth-child(1) {--tab-top:#dbeafe;--tab-bot:#bfdbfe;--tab-bdr:#93c5fd}  /* 蓝  投资组合 */
+.tabs-inner .tab:nth-child(2) {--tab-top:#fef9c3;--tab-bot:#fde68a;--tab-bdr:#fbbf24}  /* 黄  估值分析 */
+.tabs-inner .tab:nth-child(3) {--tab-top:#fee2e2;--tab-bot:#fecaca;--tab-bdr:#fca5a5}  /* 红  风险仪表板 */
+.tabs-inner .tab:nth-child(4) {--tab-top:#dcfce7;--tab-bot:#bbf7d0;--tab-bdr:#86efac}  /* 绿  A股宏观 */
+.tabs-inner .tab:nth-child(5) {--tab-top:#ede9fe;--tab-bot:#ddd6fe;--tab-bdr:#c4b5fd}  /* 紫  AI趋势 */
+.tabs-inner .tab:nth-child(6) {--tab-top:#cffafe;--tab-bot:#a5f3fc;--tab-bdr:#67e8f9}  /* 青  光模块&PCB */
+.tabs-inner .tab:nth-child(7) {--tab-top:#ffedd5;--tab-bot:#fed7aa;--tab-bdr:#fdba74}  /* 橙  存储监控 */
+.tabs-inner .tab:nth-child(8) {--tab-top:#ccfbf1;--tab-bot:#99f6e4;--tab-bdr:#5eead4}  /* 青绿 产业链阶段 */
+.tabs-inner .tab:nth-child(9) {--tab-top:#d1fae5;--tab-bot:#a7f3d0;--tab-bdr:#6ee7b7}  /* 绿  产业链监控 */
+.tabs-inner .tab:nth-child(10){--tab-top:#e2e8f0;--tab-bot:#cbd5e1;--tab-bdr:#94a3b8}  /* 灰  十步框架 */
 /* 小屏恢复横向滚动 */
 @media(max-width:1023px){
   .tabs-inner{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
@@ -289,14 +290,15 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <nav class="tabs">
   <div class="tabs-inner">
     <button class="tab active" onclick="switchTab(0)">🗂 投资组合</button>
-    <button class="tab" onclick="switchTab(1)">⚠️ 风险仪表板</button>
-    <button class="tab" onclick="switchTab(2)">🇨🇳 A股宏观</button>
-    <button class="tab" onclick="switchTab(3)">📈 AI 趋势</button>
-    <button class="tab" onclick="switchTab(4)">🔬 光模块&amp;PCB</button>
-    <button class="tab" onclick="switchTab(5)">💾 存储监控</button>
-    <button class="tab" onclick="switchTab(6)">🔗 产业链阶段</button>
-    <button class="tab" onclick="switchTab(7)">🔍 产业链监控</button>
-    <button class="tab" onclick="switchTab(8)">📋 十步框架</button>
+    <button class="tab" onclick="switchTab(1)">💹 估值分析</button>
+    <button class="tab" onclick="switchTab(2)">⚠️ 风险仪表板</button>
+    <button class="tab" onclick="switchTab(3)">🇨🇳 A股宏观</button>
+    <button class="tab" onclick="switchTab(4)">📈 AI 趋势</button>
+    <button class="tab" onclick="switchTab(5)">🔬 光模块&amp;PCB</button>
+    <button class="tab" onclick="switchTab(6)">💾 存储监控</button>
+    <button class="tab" onclick="switchTab(7)">🔗 产业链阶段</button>
+    <button class="tab" onclick="switchTab(8)">🔍 产业链监控</button>
+    <button class="tab" onclick="switchTab(9)">📋 十步框架</button>
   </div>
 </nav>
 
@@ -1096,6 +1098,32 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="fjb mb4"><span class="tx3">20日动量</span><span class="tg" id="d-optMom">+15.2%</span></div>
       <div class="rbar mt8"><div class="rfill rm" style="width:30%"></div></div>
       <div class="tx3 mt4">超级互联需求驱动 · A股核心受益赛道 · 毛利率持续改善 · 风险: 客户集中度高、汇率波动</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 估值分析 ════════════════ -->
+<div class="tab-content" id="tVal">
+  <div class="stitle">
+    估值分析 <span class="stag">盈利能力 · 利润趋势 · 增速预测</span>
+  </div>
+
+  <!-- 说明栏 + 更新时间 -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap">
+    <div style="font-size:12px;color:var(--text2);line-height:1.6">
+      数据来源：东方财富 · 仅覆盖A股（港股利润数据暂不支持）&nbsp;|&nbsp;
+      <span style="color:#d97706;font-weight:600">年度利润增速预测</span> = (上年同比 + 上季同比 + 上季环比) / 3 &nbsp;|&nbsp;
+      <span style="color:#059669;font-weight:600">年度利润预测</span> = 上年利润 × (1 + 预测增速)
+    </div>
+    <div style="font-size:12px;color:var(--text2)" id="val-update-ts">—</div>
+  </div>
+
+  <!-- 估值表格容器 -->
+  <div id="val-table-wrap" style="overflow-x:auto;border-radius:10px;border:1px solid var(--border);background:var(--card)">
+    <div id="val-table-inner" style="min-width:1100px">
+      <div style="padding:48px;text-align:center;color:var(--text2);font-size:14px" id="val-placeholder">
+        ⏳ 正在加载利润数据…
+      </div>
     </div>
   </div>
 </div>
@@ -3959,8 +3987,184 @@ function _renderStageRadars(){
   });
 }
 
+// ── 估值分析 ───────────────────────────────────────────────────
+let _VAL_DATA = {};   // { code: { annualProfit, annualYoY, annualPeriod, qtrProfit, qtrYoY, qtrQoQ, qtrPeriod } }
+let _VAL_TS   = 0;
+const _VAL_THROTTLE = 300000; // 5分钟缓存
+
+async function fetchValData(){
+  if(Date.now()-_VAL_TS < _VAL_THROTTLE) { renderValTable(); return; }
+  if(!PORT || !PORT.sectors) return;
+
+  // 收集所有A股代码（排除港股）
+  const codes=[];
+  PORT.sectors.forEach(sec=>sec.stocks.forEach(sk=>{ if(sk.mkt!=='HK') codes.push(sk.code); }));
+  if(!codes.length){ renderValTable(); return; }
+
+  const codeList=codes.map(c=>`"${c}"`).join(',');
+  const url=`https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_LICO_FN_CPD`
+    +`&columns=SECURITY_CODE,REPORTDATE,PARENT_NETPROFIT,SJLTZ,SJLHZ,DATEMMDD,DATAYEAR,QDATE`
+    +`&filter=(SECURITY_CODE in (${codeList}))`
+    +`&pageSize=300&pageNumber=1&sortColumns=REPORTDATE&sortTypes=-1&source=WEB`;
+
+  try {
+    const resp=await fetch(url);
+    const json=await resp.json();
+    if(!json.success||!json.result) throw new Error('API返回空数据');
+
+    // 按代码分组（全局已按日期降序，分组后同样保持降序）
+    const byCode={};
+    json.result.data.forEach(r=>{
+      const c=r.SECURITY_CODE;
+      if(!byCode[c]) byCode[c]=[];
+      byCode[c].push(r);
+    });
+
+    _VAL_DATA={};
+    codes.forEach(code=>{
+      const recs=byCode[code]||[];
+      const ann  =recs.find(r=>r.DATEMMDD==='年报');
+      const qtr  =recs.find(r=>r.DATEMMDD!=='年报');
+      _VAL_DATA[code]={
+        annualProfit : ann ? ann.PARENT_NETPROFIT/10000 : null,
+        annualYoY    : ann ? ann.SJLTZ : null,
+        annualPeriod : ann ? ann.DATAYEAR+'年报' : null,
+        qtrProfit    : qtr ? qtr.PARENT_NETPROFIT/10000 : null,
+        qtrYoY       : qtr ? qtr.SJLTZ : null,
+        qtrQoQ       : qtr ? qtr.SJLHZ : null,
+        qtrPeriod    : qtr ? qtr.QDATE : null,
+      };
+    });
+    _VAL_TS=Date.now();
+  } catch(e){
+    console.warn('fetchValData error',e);
+  }
+  renderValTable();
+}
+
+function _valFmt(v, decimals=2){
+  // 格式化万元数值，带千分位
+  if(v===null||v===undefined||isNaN(v)) return '<span style="color:#94a3b8">—</span>';
+  return Number(v).toLocaleString('zh-CN',{minimumFractionDigits:decimals,maximumFractionDigits:decimals});
+}
+function _valPct(v){
+  if(v===null||v===undefined||isNaN(v)) return '<span style="color:#94a3b8">—</span>';
+  const c=v>0?'#059669':v<0?'#dc2626':'#64748b';
+  const sign=v>0?'+':'';
+  return `<span style="color:${c};font-weight:600">${sign}${Number(v).toFixed(2)}%</span>`;
+}
+
+function renderValTable(){
+  const wrap=document.getElementById('val-table-inner');
+  if(!wrap) return;
+
+  if(!PORT||!PORT.sectors||!PORT.sectors.length){
+    wrap.innerHTML='<div style="padding:48px;text-align:center;color:var(--text2)">投资组合暂无数据，请先在"投资组合"中配置股票</div>';
+    return;
+  }
+
+  // 更新时间戳
+  const tsEl=document.getElementById('val-update-ts');
+  if(tsEl && _VAL_TS) tsEl.textContent='数据更新：'+new Date(_VAL_TS).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  const mktLabel={SH:'沪A',SZ:'深A',HK:'港股'};
+  const mktColor ={SH:'background:#dbeafe;color:#1e40af',SZ:'background:#ede9fe;color:#5b21b6',HK:'background:#fee2e2;color:#991b1b'};
+
+  let html=`
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead>
+      <tr style="background:linear-gradient(180deg,#f8fafc,#f1f5f9);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:10">
+        <th style="padding:10px 14px;text-align:left;font-weight:700;color:var(--text);white-space:nowrap">股票名称</th>
+        <th style="padding:10px 10px;text-align:center;font-weight:700;color:var(--text);white-space:nowrap">代码</th>
+        <th style="padding:10px 10px;text-align:center;font-weight:700;color:var(--text);white-space:nowrap">市场</th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:var(--text);white-space:nowrap">当前股价</th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap;border-left:2px solid #fde68a">上年利润<br><span style="font-weight:400;font-size:11px;color:var(--text2)">万元</span></th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap">上年同比</th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap;border-left:2px solid #bfdbfe">上季利润<br><span style="font-weight:400;font-size:11px;color:var(--text2)">万元</span></th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季同比</th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季环比</th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#7c3aed;white-space:nowrap;border-left:2px solid #ddd6fe">年度增速预测</th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#065f46;white-space:nowrap">年度利润预测<br><span style="font-weight:400;font-size:11px;color:var(--text2)">万元</span></th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  PORT.sectors.forEach((sec,si)=>{
+    if(!sec.stocks||!sec.stocks.length) return;
+    // 板块分隔行
+    html+=`<tr><td colspan="11" style="padding:8px 14px 6px;background:linear-gradient(90deg,${sec.color}22,transparent);border-top:${si>0?'2px solid var(--border)':'none'};border-bottom:1px solid var(--border)20">
+      <span style="font-size:12px;font-weight:700;color:${sec.color};letter-spacing:.04em">● ${sec.name}</span>
+      <span style="font-size:11px;color:var(--text2);margin-left:8px">权重 ${sec.weight}%</span>
+    </td></tr>`;
+
+    sec.stocks.forEach(sk=>{
+      const pi=_PORT_PRICES[sk.code]||{};
+      const d=_VAL_DATA[sk.code]||{};
+      const isHK=sk.mkt==='HK';
+
+      // 当前股价
+      const priceStr=pi.price!=null
+        ? (isHK?Number(pi.price).toFixed(3):Number(pi.price).toFixed(2))
+        : '—';
+      const pctStr=pi.pct!=null ? _valPct(pi.pct) : '<span style="color:#94a3b8">—</span>';
+
+      // 年报数据
+      const annProfitStr = isHK ? '<span style="color:#94a3b8;font-size:11px">暂不支持</span>'
+        : (d.annualProfit!=null ? _valFmt(d.annualProfit,0) : '<span style="color:#94a3b8">—</span>');
+      const annPeriodStr = d.annualPeriod ? `<br><span style="font-size:10px;color:var(--text2)">${d.annualPeriod}</span>` : '';
+      const annYoY = isHK ? '<span style="color:#94a3b8;font-size:11px">—</span>' : _valPct(d.annualYoY);
+
+      // 季报数据
+      const qtrProfitStr = isHK ? '<span style="color:#94a3b8;font-size:11px">暂不支持</span>'
+        : (d.qtrProfit!=null ? _valFmt(d.qtrProfit,0) : '<span style="color:#94a3b8">—</span>');
+      const qtrPeriodStr = d.qtrPeriod ? `<br><span style="font-size:10px;color:var(--text2)">${d.qtrPeriod}</span>` : '';
+      const qtrYoY = isHK ? '<span style="color:#94a3b8;font-size:11px">—</span>' : _valPct(d.qtrYoY);
+      const qtrQoQ = isHK ? '<span style="color:#94a3b8;font-size:11px">—</span>' : _valPct(d.qtrQoQ);
+
+      // 预测值（三项均值，港股不计算）
+      let predRate=null, predProfit=null, predStr='<span style="color:#94a3b8">—</span>', predProfitStr='<span style="color:#94a3b8">—</span>';
+      if(!isHK && d.annualYoY!=null && d.qtrYoY!=null && d.qtrQoQ!=null){
+        predRate=(d.annualYoY+d.qtrYoY+d.qtrQoQ)/3;
+        if(d.annualProfit!=null) predProfit=d.annualProfit*(1+predRate/100);
+        predStr=_valPct(predRate);
+        predProfitStr=predProfit!=null ? `<span style="color:#065f46;font-weight:600">${_valFmt(predProfit,0)}</span>` : '<span style="color:#94a3b8">—</span>';
+      } else if(!isHK){
+        // 部分数据可用时取平均
+        const vals=[d.annualYoY,d.qtrYoY,d.qtrQoQ].filter(v=>v!=null);
+        if(vals.length){
+          predRate=vals.reduce((a,b)=>a+b,0)/vals.length;
+          if(d.annualProfit!=null) predProfit=d.annualProfit*(1+predRate/100);
+          predStr=_valPct(predRate)+`<span style="font-size:10px;color:var(--text2)"> (${vals.length}/3)</span>`;
+          predProfitStr=predProfit!=null ? `<span style="color:#065f46;font-weight:600">${_valFmt(predProfit,0)}</span>` : '<span style="color:#94a3b8">—</span>';
+        }
+      }
+
+      html+=`<tr style="border-bottom:1px solid var(--border);transition:background .12s" onmouseover="this.style.background='rgba(37,99,235,.04)'" onmouseout="this.style.background=''">
+        <td style="padding:9px 14px;font-weight:600;color:var(--text);white-space:nowrap">${sk.name}</td>
+        <td style="padding:9px 10px;text-align:center;font-family:monospace;font-size:12px;color:var(--text2)">${sk.code}</td>
+        <td style="padding:9px 10px;text-align:center">
+          <span style="font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;${mktColor[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span>
+        </td>
+        <td style="padding:9px 12px;text-align:right;white-space:nowrap">
+          <span style="font-weight:700;font-size:14px">${priceStr}</span><br>${pctStr}
+        </td>
+        <td style="padding:9px 12px;text-align:right;white-space:nowrap;border-left:2px solid #fde68a40">${annProfitStr}${annPeriodStr}</td>
+        <td style="padding:9px 12px;text-align:right;white-space:nowrap">${annYoY}</td>
+        <td style="padding:9px 12px;text-align:right;white-space:nowrap;border-left:2px solid #bfdbfe40">${qtrProfitStr}${qtrPeriodStr}</td>
+        <td style="padding:9px 12px;text-align:right;white-space:nowrap">${qtrYoY}</td>
+        <td style="padding:9px 12px;text-align:right;white-space:nowrap">${qtrQoQ}</td>
+        <td style="padding:9px 12px;text-align:right;white-space:nowrap;border-left:2px solid #ddd6fe40">${predStr}</td>
+        <td style="padding:9px 12px;text-align:right;white-space:nowrap">${predProfitStr}</td>
+      </tr>`;
+    });
+  });
+
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+}
+
 // ── TAB ──────────────────────────────────────────────────────
-const TAB_ORDER=['tPort','t2','tAM','t0','t4','t5','tStage','t1','t3'];
+const TAB_ORDER=['tPort','tVal','t2','tAM','t0','t4','t5','tStage','t1','t3'];
 let _macroAutoFetched=false;
 const _TAB_TS={};  // 各标签页最近一次动态刷新的时间戳（用于节流）
 const _TAB_THROTTLE=30000; // 30秒内不重复刷新
@@ -3972,6 +4176,7 @@ function _tabRefresh(idx){
   _TAB_TS[idx]=now;
   // 按标签页类型调用对应的动态数据刷新函数
   if(tab==='tPort')  fetchPortPrices();           // finally 内会链式调用 fetchIndexPrices
+  else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tStage') fetchStageData();
   else if(tab==='tAM')    refreshMacro();
   else if(tab==='t4')     fetchStocksLive();
@@ -4947,7 +5152,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 页面加载时已主动拉取所有动态数据，为各标签页初始化节流时间戳，
   // 避免30秒内切换标签时立即重复请求（t0/t3为静态，不需要节流记录）
   const _initTs=Date.now();
-  [0,1,2,4,5,6,7].forEach(i=>_TAB_TS[i]=_initTs);
+  [0,1,2,3,5,6,7,8].forEach(i=>_TAB_TS[i]=_initTs);
 });
 </script>
 </body>
