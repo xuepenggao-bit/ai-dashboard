@@ -4026,10 +4026,10 @@ async function fetchValData(){
       const ann  =recs.find(r=>r.DATEMMDD==='年报');
       const qtr  =recs.find(r=>r.DATEMMDD!=='年报');
       _VAL_DATA[code]={
-        annualProfit : ann ? ann.PARENT_NETPROFIT/10000 : null,
+        annualProfit : ann ? ann.PARENT_NETPROFIT/100000000 : null,
         annualYoY    : ann ? ann.SJLTZ : null,
         annualPeriod : ann ? ann.DATAYEAR+'年报' : null,
-        qtrProfit    : qtr ? qtr.PARENT_NETPROFIT/10000 : null,
+        qtrProfit    : qtr ? qtr.PARENT_NETPROFIT/100000000 : null,
         qtrYoY       : qtr ? qtr.SJLTZ : null,
         qtrQoQ       : qtr ? qtr.SJLHZ : null,
         qtrPeriod    : qtr ? qtr.QDATE : null,
@@ -4075,16 +4075,17 @@ function renderValTable(){
     <thead>
       <tr style="background:linear-gradient(180deg,#f8fafc,#f1f5f9);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:10">
         <th style="padding:10px 14px;text-align:left;font-weight:700;color:var(--text);white-space:nowrap">股票名称</th>
-        <th style="padding:10px 10px;text-align:center;font-weight:700;color:var(--text);white-space:nowrap">代码</th>
         <th style="padding:10px 10px;text-align:center;font-weight:700;color:var(--text);white-space:nowrap">市场</th>
         <th style="padding:10px 12px;text-align:right;font-weight:700;color:var(--text);white-space:nowrap">当前股价</th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap;border-left:2px solid #fde68a">上年利润<br><span style="font-weight:400;font-size:11px;color:var(--text2)">万元</span></th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap;border-left:2px solid #fde68a">上年利润<br><span style="font-weight:400;font-size:11px;color:var(--text2)">亿元</span></th>
         <th style="padding:10px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap">上年同比</th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap;border-left:2px solid #bfdbfe">上季利润<br><span style="font-weight:400;font-size:11px;color:var(--text2)">万元</span></th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap;border-left:2px solid #bfdbfe">上季利润<br><span style="font-weight:400;font-size:11px;color:var(--text2)">亿元</span></th>
         <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季同比</th>
         <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季环比</th>
         <th style="padding:10px 12px;text-align:right;font-weight:700;color:#7c3aed;white-space:nowrap;border-left:2px solid #ddd6fe">年度增速预测</th>
-        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#065f46;white-space:nowrap">年度利润预测<br><span style="font-weight:400;font-size:11px;color:var(--text2)">万元</span></th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#065f46;white-space:nowrap">年度利润预测<br><span style="font-weight:400;font-size:11px;color:var(--text2)">亿元</span></th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap;border-left:2px solid #e2e8f0">总市值<br><span style="font-weight:400;font-size:11px;color:var(--text2)">亿元</span></th>
+        <th style="padding:10px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap">预测PE</th>
       </tr>
     </thead>
     <tbody>`;
@@ -4092,7 +4093,7 @@ function renderValTable(){
   PORT.sectors.forEach((sec,si)=>{
     if(!sec.stocks||!sec.stocks.length) return;
     // 板块分隔行
-    html+=`<tr><td colspan="11" style="padding:8px 14px 6px;background:linear-gradient(90deg,${sec.color}22,transparent);border-top:${si>0?'2px solid var(--border)':'none'};border-bottom:1px solid var(--border)20">
+    html+=`<tr><td colspan="12" style="padding:8px 14px 6px;background:linear-gradient(90deg,${sec.color}22,transparent);border-top:${si>0?'2px solid var(--border)':'none'};border-bottom:1px solid var(--border)20">
       <span style="font-size:12px;font-weight:700;color:${sec.color};letter-spacing:.04em">● ${sec.name}</span>
       <span style="font-size:11px;color:var(--text2);margin-left:8px">权重 ${sec.weight}%</span>
     </td></tr>`;
@@ -4105,18 +4106,18 @@ function renderValTable(){
       // 当前股价
       const priceStr=pi.price!=null
         ? (isHK?Number(pi.price).toFixed(3):Number(pi.price).toFixed(2))
-        : '—';
-      const pctStr=pi.pct!=null ? _valPct(pi.pct) : '<span style="color:#94a3b8">—</span>';
+        : '<span style="color:#94a3b8">—</span>';
+      const pctStr=pi.pct!=null ? _valPct(pi.pct) : '';
 
       // 年报数据
       const annProfitStr = isHK ? '<span style="color:#94a3b8;font-size:11px">暂不支持</span>'
-        : (d.annualProfit!=null ? _valFmt(d.annualProfit,0) : '<span style="color:#94a3b8">—</span>');
+        : (d.annualProfit!=null ? _valFmt(d.annualProfit,2) : '<span style="color:#94a3b8">—</span>');
       const annPeriodStr = d.annualPeriod ? `<br><span style="font-size:10px;color:var(--text2)">${d.annualPeriod}</span>` : '';
       const annYoY = isHK ? '<span style="color:#94a3b8;font-size:11px">—</span>' : _valPct(d.annualYoY);
 
       // 季报数据
       const qtrProfitStr = isHK ? '<span style="color:#94a3b8;font-size:11px">暂不支持</span>'
-        : (d.qtrProfit!=null ? _valFmt(d.qtrProfit,0) : '<span style="color:#94a3b8">—</span>');
+        : (d.qtrProfit!=null ? _valFmt(d.qtrProfit,2) : '<span style="color:#94a3b8">—</span>');
       const qtrPeriodStr = d.qtrPeriod ? `<br><span style="font-size:10px;color:var(--text2)">${d.qtrPeriod}</span>` : '';
       const qtrYoY = isHK ? '<span style="color:#94a3b8;font-size:11px">—</span>' : _valPct(d.qtrYoY);
       const qtrQoQ = isHK ? '<span style="color:#94a3b8;font-size:11px">—</span>' : _valPct(d.qtrQoQ);
@@ -4127,26 +4128,38 @@ function renderValTable(){
         predRate=(d.annualYoY+d.qtrYoY+d.qtrQoQ)/3;
         if(d.annualProfit!=null) predProfit=d.annualProfit*(1+predRate/100);
         predStr=_valPct(predRate);
-        predProfitStr=predProfit!=null ? `<span style="color:#065f46;font-weight:600">${_valFmt(predProfit,0)}</span>` : '<span style="color:#94a3b8">—</span>';
+        predProfitStr=predProfit!=null ? `<span style="color:#065f46;font-weight:600">${_valFmt(predProfit,2)}</span>` : '<span style="color:#94a3b8">—</span>';
       } else if(!isHK){
-        // 部分数据可用时取平均
         const vals=[d.annualYoY,d.qtrYoY,d.qtrQoQ].filter(v=>v!=null);
         if(vals.length){
           predRate=vals.reduce((a,b)=>a+b,0)/vals.length;
           if(d.annualProfit!=null) predProfit=d.annualProfit*(1+predRate/100);
           predStr=_valPct(predRate)+`<span style="font-size:10px;color:var(--text2)"> (${vals.length}/3)</span>`;
-          predProfitStr=predProfit!=null ? `<span style="color:#065f46;font-weight:600">${_valFmt(predProfit,0)}</span>` : '<span style="color:#94a3b8">—</span>';
+          predProfitStr=predProfit!=null ? `<span style="color:#065f46;font-weight:600">${_valFmt(predProfit,2)}</span>` : '<span style="color:#94a3b8">—</span>';
         }
+      }
+
+      // 市值（亿元）
+      const mktCap = pi.mktCap;  // 已在 fetchPortPrices 中换算为亿元
+      const mktCapStr = mktCap!=null && mktCap>0
+        ? `<span style="font-weight:600">${_valFmt(mktCap,0)}</span>`
+        : '<span style="color:#94a3b8">—</span>';
+
+      // 预测PE = 市值 / 年度利润预测（均为亿元，整数）
+      let peStr='<span style="color:#94a3b8">—</span>';
+      if(mktCap!=null && mktCap>0 && predProfit!=null && predProfit>0){
+        const pe=Math.round(mktCap/predProfit);
+        const peColor=pe<20?'#059669':pe<40?'#d97706':'#dc2626';
+        peStr=`<span style="font-weight:700;color:${peColor}">${pe}x</span>`;
       }
 
       html+=`<tr style="border-bottom:1px solid var(--border);transition:background .12s" onmouseover="this.style.background='rgba(37,99,235,.04)'" onmouseout="this.style.background=''">
         <td style="padding:9px 14px;font-weight:600;color:var(--text);white-space:nowrap">${sk.name}</td>
-        <td style="padding:9px 10px;text-align:center;font-family:monospace;font-size:12px;color:var(--text2)">${sk.code}</td>
         <td style="padding:9px 10px;text-align:center">
           <span style="font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;${mktColor[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span>
         </td>
         <td style="padding:9px 12px;text-align:right;white-space:nowrap">
-          <span style="font-weight:700;font-size:14px">${priceStr}</span><br>${pctStr}
+          <span style="font-weight:700;font-size:14px">${priceStr}</span>${pctStr?'<br>'+pctStr:''}
         </td>
         <td style="padding:9px 12px;text-align:right;white-space:nowrap;border-left:2px solid #fde68a40">${annProfitStr}${annPeriodStr}</td>
         <td style="padding:9px 12px;text-align:right;white-space:nowrap">${annYoY}</td>
@@ -4155,6 +4168,8 @@ function renderValTable(){
         <td style="padding:9px 12px;text-align:right;white-space:nowrap">${qtrQoQ}</td>
         <td style="padding:9px 12px;text-align:right;white-space:nowrap;border-left:2px solid #ddd6fe40">${predStr}</td>
         <td style="padding:9px 12px;text-align:right;white-space:nowrap">${predProfitStr}</td>
+        <td style="padding:9px 12px;text-align:right;white-space:nowrap;border-left:2px solid #e2e8f040">${mktCapStr}</td>
+        <td style="padding:9px 12px;text-align:right;white-space:nowrap">${peStr}</td>
       </tr>`;
     });
   });
@@ -4836,6 +4851,21 @@ async function fetchPortPrices(){
             _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w};
         });
       }catch(e){ console.warn('[价格] A股:', e.message); }
+
+      // ── A股市值：东方财富 f20（总市值，元→亿元）──────────────
+      try{
+        var aSids = aStocks.map(function(s){ return (s.mkt==='SH'?'1.':'0.')+s.code; }).join(',');
+        var mcUrl = 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2'
+                  + '&fields=f12,f20&secids=' + aSids + '&_=' + Date.now();
+        var mcDiff = (await (await fetch(mcUrl)).json())?.data?.diff || [];
+        mcDiff.forEach(function(d){
+          var code = String(d.f12 || '').padStart(6,'0');
+          var mc   = parseFloat(d.f20);
+          if(isFinite(mc) && mc > 0 && _PORT_PRICES[code]){
+            _PORT_PRICES[code].mktCap = mc / 100000000;  // 元 → 亿元
+          }
+        });
+      }catch(e){ console.warn('[MktCap] A股市值:', e.message); }
     }
 
     // ── 港股：东方财富 push2（约30秒延迟）→ 腾讯备源（15分钟延迟）──
@@ -4847,7 +4877,7 @@ async function fetchPortPrices(){
       try{
         var secids = hkStocks.map(function(s){ return '116.' + s.code; }).join(',');
         var emUrl  = 'https://push2.eastmoney.com/api/qt/ulist.np/get'
-                   + '?secids=' + secids + '&fltt=2&invt=2&fields=f12,f14,f2,f3&_=' + Date.now();
+                   + '?secids=' + secids + '&fltt=2&invt=2&fields=f12,f14,f2,f3,f20&_=' + Date.now();
         var emJson = await (await fetch(emUrl)).json();
         var diff   = emJson?.data?.diff || [];
         diff.forEach(function(d){
@@ -4858,7 +4888,9 @@ async function fetchPortPrices(){
           var emCode = String(d.f12 || '').padStart(5, '0');
           var matched = hkStocks.find(function(s){ return s.code === emCode || s.code === String(d.f12); });
           if(matched){
-            _PORT_PRICES[matched.code] = {price:price, pct:pct, name:matched.name, mkt:matched.mkt, w:matched.w, src:'em'};
+            var mc = parseFloat(d.f20);
+            _PORT_PRICES[matched.code] = {price:price, pct:pct, name:matched.name, mkt:matched.mkt, w:matched.w, src:'em',
+              mktCap: (isFinite(mc)&&mc>0) ? mc/100000000 : null};
             hkDone[matched.code] = true;
           }
         });
@@ -4903,6 +4935,9 @@ async function fetchPortPrices(){
     renderPortTop3();
     _renderPortTopW();
     fetchIndexPrices();
+    // 如果估值分析标签页是活动状态，同步刷新估值表格（更新股价+市值列）
+    var valEl = document.getElementById('tVal');
+    if(valEl && valEl.classList.contains('active')) renderValTable();
     btn.classList.remove('loading'); btn.disabled = false;
   }
 }
