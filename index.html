@@ -4137,7 +4137,7 @@ function renderValTable(){
     allRows.sort((a,b)=>{
       const va=a[key]??(_VAL_SORT.dir<0?-Infinity:Infinity);
       const vb=b[key]??(_VAL_SORT.dir<0?-Infinity:Infinity);
-      return _VAL_SORT.dir*(vb-va);
+      return _VAL_SORT.dir*(va-vb);
     });
   }
 
@@ -4233,17 +4233,20 @@ function renderValTable(){
   if(_VAL_SORT.col){
     allRows.forEach(row=>{ html+=mkRow(row,true); });
   } else {
+    const secWts = PORT.sectors.map(s=>s.stocks.reduce((a,sk)=>a+(sk.w||0),0));
+    const wTot = secWts.reduce((a,w)=>a+w,0);
     PORT.sectors.forEach((sec,idx)=>{
       const secRows=allRows.filter(r=>r.sec===sec);
       if(!secRows.length) return;
       if(idx>0) html+=`<tr><td colspan="12" style="height:16px;background:var(--bg);padding:0"></td></tr>`;
+      const wLabel = wTot>0 ? secWts[idx].toFixed(1)+'%' : (sec.weight||0)+'%';
       // 醒目的板块分隔标题行
       html+=`<tr>
         <td colspan="12" style="padding:0;border-top:3px solid ${sec.color};background:linear-gradient(90deg,${sec.color}35 0%,${sec.color}12 40%,transparent 100%)">
           <div style="padding:9px 16px;display:flex;align-items:center;gap:10px">
             <span style="display:inline-block;width:4px;height:18px;background:${sec.color};border-radius:2px;flex-shrink:0"></span>
             <span style="font-size:14px;font-weight:800;color:${sec.color};letter-spacing:.04em">${sec.name}</span>
-            <span style="font-size:11px;color:var(--text2);background:rgba(255,255,255,.72);border:1px solid ${sec.color}40;border-radius:8px;padding:1px 8px">权重 ${sec.weight}%</span>
+            <span style="font-size:11px;color:var(--text2);background:rgba(255,255,255,.72);border:1px solid ${sec.color}40;border-radius:8px;padding:1px 8px">权重 ${wLabel}</span>
             <span style="font-size:11px;color:var(--text2)">${sec.stocks.length} 只</span>
           </div>
         </td>
