@@ -3074,6 +3074,8 @@ async function portInit(){
 
   // ① 无条件立即初始化（localStorage 有数据用缓存，无则用 BASE.portfolio 默认模板）
   portLoad();   // 同步：保证 PORT 不为 null
+  // 记录初始持仓代码集：用于后续判断远端是否带来新标的，避免代码未变时重复拉取股价（防双重刷新）
+  const _initCodes = new Set((PORT?.sectors||[]).flatMap(s=>s.stocks.map(sk=>sk.code)));
   try{ renderPortfolio(); }catch(e){ console.warn('[portInit renderPortfolio]', e); }
   try{ fetchIndexPrices(); }catch(e){ console.warn('[portInit fetchIndexPrices]', e); }
   try{ updateRiskDashboard(); }catch(e){ console.warn('[portInit updateRiskDashboard]', e); }
@@ -3141,9 +3143,12 @@ async function portInit(){
     localStorage.setItem(PORT_KEY, JSON.stringify(remoteData));
     _setSyncTs('☁️ 已从云端加载 ' + ts, '#10b981');
     renderPortfolio();
-    fetchIndexPrices();
     updateRiskDashboard();
-    fetchPortPrices();
+    // 仅在远端带来新/减持仓标的时重新拉取股价；代码集相同则已有价格继续有效，避免双重刷新
+    const _remoteCodes = new Set((remoteData.sectors||[]).flatMap(s=>s.stocks.map(sk=>sk.code)));
+    const _rosterChanged = _remoteCodes.size !== _initCodes.size ||
+                           [..._remoteCodes].some(c=>!_initCodes.has(c));
+    if(_rosterChanged) fetchPortPrices();
   } else if(localData && lw >= 0){
     // 本地更新（或远端不可用）→ 使用本地；先将远端已有的新字段（如 industry）合并进来，
     // 防止旧缓存覆盖其他浏览器同步好的行业标签等数据
@@ -3162,8 +3167,8 @@ async function portInit(){
       _setSyncTs('☁️ 云端暂时无法访问，已使用本地缓存', '#f59e0b');
     }
     // 本地数据可能因用户在 GitHub fetch 期间编辑而变化，重新渲染以确保 UI 最新
+    // 股价无需重新拉取（第一阶段已拉取且持仓未变），fetchIndexPrices 由 fetchPortPrices.finally 统一调用
     renderPortfolio();
-    fetchIndexPrices();
     updateRiskDashboard();
   } else {
     // 本地和远端均无有效数据，已在①用默认数据渲染，无需处理
