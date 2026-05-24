@@ -5149,11 +5149,11 @@ async function fetchMainFlow(){
       const pctCol  = !pctOk  ? neuCol : pct>0  ? upCol  : pct<0  ? dnCol  : neuCol;
       const flowCol = !flowOk ? neuCol : flow>0 ? upCol  : flow<0 ? dnCol  : neuCol;
       return `<div style="display:grid;grid-template-columns:18px 1fr 44px 50px;gap:0 4px;`
-           + `align-items:center;padding:3px 0;border-bottom:1px solid #f3e8ff;font-size:10.5px">`
-           + `<span style="color:#a78bfa;font-weight:700;text-align:right">${i+1}</span>`
-           + `<span style="font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.f14}">${item.f14}</span>`
-           + `<span style="color:${pctCol};font-weight:700;text-align:right">${pctOk?(pct>0?'+':'')+pct.toFixed(2)+'%':'—'}</span>`
-           + `<span style="color:${flowCol};font-weight:700;text-align:right">${_fmtFlow(flow)}</span>`
+           + `align-items:center;padding:3px 0;border-bottom:1px solid #f3e8ff">`
+           + `<span style="font-size:10.5px;color:#a78bfa;font-weight:700;text-align:right">${i+1}</span>`
+           + `<span style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.f14}">${item.f14}</span>`
+           + `<span style="font-size:10.5px;color:${pctCol};font-weight:700;text-align:right">${pctOk?(pct>0?'+':'')+pct.toFixed(2)+'%':'—'}</span>`
+           + `<span style="font-size:10.5px;color:${flowCol};font-weight:700;text-align:right">${_fmtFlow(flow)}</span>`
            + `</div>`;
     }).join('');
 
