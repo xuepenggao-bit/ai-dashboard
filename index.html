@@ -828,7 +828,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <!-- 今日涨幅 TOP 8 -->
     <div class="card" style="min-width:0;border-top:3px solid var(--green)">
       <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--green)">
-        📈 今日涨幅 TOP 8
+        📈 今日涨幅 TOP 5
       </div>
       <div id="portTop3Up" style="margin-top:8px">
         <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
@@ -840,7 +840,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <!-- 今日跌幅 TOP 8 -->
     <div class="card" style="min-width:0;border-top:3px solid var(--red)">
       <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--red)">
-        📉 今日跌幅 TOP 8
+        📉 今日跌幅 TOP 5
       </div>
       <div id="portTop3Down" style="margin-top:8px">
         <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
@@ -852,7 +852,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <!-- 重仓 TOP 8（按仓位高低） -->
     <div class="card" style="min-width:0;border-top:3px solid var(--blue)">
       <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--blue)">
-        🏋️ 重仓 TOP 8
+        🏋️ 重仓 TOP 5
       </div>
       <div id="portTop5W" style="margin-top:8px">
         <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
@@ -864,7 +864,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <!-- 主力净流入 TOP 20 -->
     <div class="card" style="min-width:0;border-top:3px solid #7c3aed;background:linear-gradient(135deg,#faf5ff 0%,#fff 60%)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <span style="font-size:13px;font-weight:800;color:#6d28d9;letter-spacing:.02em">💹 主力净流入</span>
+        <span style="font-size:13px;font-weight:800;color:#6d28d9;letter-spacing:.02em">💹 主力净流入 TOP 10</span>
         <div style="display:flex;align-items:center;gap:5px">
           <span style="font-size:10px;color:#7c3aed;font-weight:600" id="mfTs"></span>
           <button onclick="fetchMainFlow()" id="mfRefBtn"
@@ -5124,7 +5124,7 @@ async function fetchMainFlow(){
     const _t = Date.now();
     // 东方财富 A股主力净流入排行：覆盖上交所主板+科创板、深交所主板+创业板
     const url = `https://push2.eastmoney.com/api/qt/clist/get`
-      + `?fid=f62&po=1&pz=20&pn=1&np=1&fltt=2&invt=2`
+      + `?fid=f62&po=1&pz=10&pn=1&np=1&fltt=2&invt=2`
       + `&fields=f12,f14,f3,f62,f184`
       + `&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23&_=${_t}`;
     const data = await fetch(url).then(r=>r.json());
@@ -5340,8 +5340,8 @@ function renderPortTop3(){
 
   // 排序
   entries.sort(function(a,b){ return b.pct - a.pct; });
-  var top5 = entries.slice(0, 8);
-  var bot5 = entries.slice(-8).reverse();
+  var top5 = entries.slice(0, 5);
+  var bot5 = entries.slice(-5).reverse();
 
   function mkRow(item, rank, isUp){
     var color  = isUp ? 'var(--green)' : 'var(--red)';
@@ -5525,7 +5525,7 @@ function _renderPortTopW(){
     var wb = b.w != null ? b.w : -1;
     return wb - wa;
   });
-  var topW = wEntries.slice(0, 8);
+  var topW = wEntries.slice(0, 5);
 
   wEl.innerHTML = topW.map(function(item, i){
     var rank     = i + 1;
