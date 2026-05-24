@@ -918,6 +918,28 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           </div>
         </div>
         <div id="pFlatInfo" style="display:none;font-size:10px;color:#94a3b8;text-align:center;margin-top:7px;font-weight:500"></div>
+        <!-- 领涨/领跌行业 -->
+        <div id="portIndLeader" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #bfdbfe">
+          <div style="font-size:10px;color:#3b82f6;font-weight:700;letter-spacing:.04em;margin-bottom:6px">行业表现</div>
+          <div style="display:flex;gap:7px">
+            <div style="flex:1;background:linear-gradient(150deg,#f0fdf4 0%,#dcfce7 100%);border:1.5px solid #86efac;border-radius:10px;padding:8px 10px;min-width:0">
+              <div style="font-size:10px;color:#16a34a;font-weight:700;letter-spacing:.03em;margin-bottom:3px">▲ 领涨行业</div>
+              <div id="pTopIndName" style="font-size:12px;font-weight:900;color:#14532d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">—</div>
+              <div style="display:flex;align-items:baseline;gap:3px">
+                <span id="pTopIndAvg" style="font-size:15px;font-weight:900;color:#15803d;letter-spacing:-.02em">—</span>
+                <span id="pTopIndCnt" style="font-size:10px;color:#4ade80;font-weight:600"></span>
+              </div>
+            </div>
+            <div style="flex:1;background:linear-gradient(150deg,#fff1f2 0%,#ffe4e6 100%);border:1.5px solid #fda4af;border-radius:10px;padding:8px 10px;min-width:0">
+              <div style="font-size:10px;color:#dc2626;font-weight:700;letter-spacing:.03em;margin-bottom:3px">▼ 领跌行业</div>
+              <div id="pBotIndName" style="font-size:12px;font-weight:900;color:#7f1d1d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">—</div>
+              <div style="display:flex;align-items:baseline;gap:3px">
+                <span id="pBotIndAvg" style="font-size:15px;font-weight:900;color:#b91c1c;letter-spacing:-.02em">—</span>
+                <span id="pBotIndCnt" style="font-size:10px;color:#fda4af;font-weight:600"></span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -5342,6 +5364,34 @@ function _renderPortBreadth(){
   var flatEl = document.getElementById('pFlatInfo');
   if(flat.length){ flatEl.textContent='平盘 '+flat.length+' 只'; flatEl.style.display='block'; }
   else { flatEl.style.display='none'; }
+
+  // ── 领涨/领跌行业 ──────────────────────────────────────────────
+  var _indMap = {};
+  withPrice.forEach(function(sk){
+    var ind = (sk.industry && sk.industry.trim()) ? sk.industry.trim() : '未分类';
+    if(!_indMap[ind]) _indMap[ind] = [];
+    _indMap[ind].push(_PORT_PRICES[sk.code].pct);
+  });
+  var _indList = Object.keys(_indMap).map(function(ind){
+    var pcts = _indMap[ind];
+    return { name: ind, cnt: pcts.length, avg: pcts.reduce(function(s,v){return s+v;},0)/pcts.length };
+  });
+  var liEl = document.getElementById('portIndLeader');
+  if(_indList.length >= 2 && liEl){
+    _indList.sort(function(a,b){ return b.avg - a.avg; });
+    var _topI = _indList[0];
+    var _botI = _indList[_indList.length-1];
+    var _fmt = function(v){ return (v >= 0 ? '+' : '') + v.toFixed(2) + '%'; };
+    document.getElementById('pTopIndName').textContent = _topI.name;
+    document.getElementById('pTopIndAvg').textContent  = _fmt(_topI.avg);
+    document.getElementById('pTopIndCnt').textContent  = _topI.cnt + '只均值';
+    document.getElementById('pBotIndName').textContent = _botI.name;
+    document.getElementById('pBotIndAvg').textContent  = _fmt(_botI.avg);
+    document.getElementById('pBotIndCnt').textContent  = _botI.cnt + '只均值';
+    liEl.style.display = 'block';
+  } else if(liEl){
+    liEl.style.display = 'none';
+  }
 
   el.style.display = 'block';
 }
