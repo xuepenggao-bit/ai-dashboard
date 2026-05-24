@@ -549,7 +549,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="card">
       <div class="klabel">深证成指 PE(TTM) <span id="kSzePeDate" style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
       <div class="kval ty" id="kSzePe">31.5x</div>
-      <div class="kchange neu" id="kSzePeHint">含成长溢价 · 偏高区间</div>
+      <div class="kchange neu" id="kSzePeHint">历史均值 ~25x · 偏高区间</div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
     <div class="card">
@@ -561,7 +561,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="card">
       <div class="klabel">科创50 PE(TTM) <span id="kStarPeDate" style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
       <div class="kval tp" id="kStarPe">53.8x</div>
-      <div class="kchange neu" id="kStarPeHint">含科技成长溢价 · 合理区间</div>
+      <div class="kchange neu" id="kStarPeHint">历史均值 ~45x · 合理区间</div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
   </div>
@@ -4499,7 +4499,17 @@ async function fetchMacroApi(key){
 
 // ── 日频 KPI 卡片实时刷新（总市值、PE、两融）────────────────────
 async function fetchMacroKpis(){
-  const todayStr = new Date().toISOString().slice(0,10);
+  const _now = new Date();
+  const _pad = n => String(n).padStart(2,'0');
+  // 日期格式：YYYY-MM-DD
+  const todayStr = `${_now.getFullYear()}-${_pad(_now.getMonth()+1)}-${_pad(_now.getDate())}`;
+  // 刷新时间格式：MM-DD HH:MM（PE 卡片刷新时间标记）
+  const refreshTs = `${_pad(_now.getMonth()+1)}-${_pad(_now.getDate())} ${_pad(_now.getHours())}:${_pad(_now.getMinutes())}`;
+
+  // ── 0. PE 卡片刷新时间（API 对指数均不返回实时 PE，始终以刷新触发时间为准）
+  ['kSsePeDate','kSzePeDate','kGemPeDate','kStarPeDate'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent=refreshTs;
+  });
 
   // ── 1. 沪深A股总市值 ─────────────────────────────────────────────
   // ulist.np API：f20 对指数代码返回交易所全市场总市值（单位：元）
@@ -4532,37 +4542,30 @@ async function fetchMacroKpis(){
     const szePe  = parseFloat(diff?.[1]?.f162); // 深证成指
     const gemPe  = parseFloat(diff?.[2]?.f162); // 创业板指
     const starPe = parseFloat(diff?.[3]?.f162); // 科创50
+    // 若 API 日后支持指数 PE，则自动更新数值和区间判断
     if(ssePe > 0){
       const el = document.getElementById('kSsePe');
       if(el) el.textContent = ssePe.toFixed(1) + 'x';
-      const de = document.getElementById('kSsePeDate');
-      if(de) de.textContent = todayStr;
       const he = document.getElementById('kSsePeHint');
       if(he) he.textContent = ssePe < 12 ? '历史均值 ~12x · 低估区间' : ssePe < 16 ? '历史均值 ~12x · 合理区间' : '历史均值 ~12x · 偏高区间';
     }
     if(szePe > 0){
       const el = document.getElementById('kSzePe');
       if(el) el.textContent = szePe.toFixed(1) + 'x';
-      const de = document.getElementById('kSzePeDate');
-      if(de) de.textContent = todayStr;
       const he = document.getElementById('kSzePeHint');
-      if(he) he.textContent = szePe < 20 ? '含成长溢价 · 低估区间' : szePe < 30 ? '含成长溢价 · 合理区间' : '含成长溢价 · 偏高区间';
+      if(he) he.textContent = szePe < 20 ? '历史均值 ~25x · 低估区间' : szePe < 30 ? '历史均值 ~25x · 合理区间' : '历史均值 ~25x · 偏高区间';
     }
     if(gemPe > 0){
       const el = document.getElementById('kGemPe');
       if(el) el.textContent = gemPe.toFixed(1) + 'x';
-      const de = document.getElementById('kGemPeDate');
-      if(de) de.textContent = todayStr;
       const he = document.getElementById('kGemPeHint');
       if(he) he.textContent = gemPe < 25 ? '历史均值 ~35x · 低估区间' : gemPe < 40 ? '历史均值 ~35x · 合理区间' : '历史均值 ~35x · 偏高区间';
     }
     if(starPe > 0){
       const el = document.getElementById('kStarPe');
       if(el) el.textContent = starPe.toFixed(1) + 'x';
-      const de = document.getElementById('kStarPeDate');
-      if(de) de.textContent = todayStr;
       const he = document.getElementById('kStarPeHint');
-      if(he) he.textContent = starPe < 30 ? '含科技成长溢价 · 低估区间' : starPe < 55 ? '含科技成长溢价 · 合理区间' : '含科技成长溢价 · 偏高区间';
+      if(he) he.textContent = starPe < 30 ? '历史均值 ~45x · 低估区间' : starPe < 55 ? '历史均值 ~45x · 合理区间' : '历史均值 ~45x · 偏高区间';
     }
   }catch(e){ console.warn('[MacroKpi] 指数PE:', e.message); }
 }
