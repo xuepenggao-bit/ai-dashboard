@@ -77,8 +77,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 /* 各标签色系（比之前稍深，补偿玻璃层的提亮） */
 .tabs-inner .tab:nth-child(1) {--tab-top:#dbeafe;--tab-bot:#bfdbfe;--tab-bdr:#93c5fd}  /* 蓝  投资组合 */
 .tabs-inner .tab:nth-child(2) {--tab-top:#fef9c3;--tab-bot:#fde68a;--tab-bdr:#fbbf24}  /* 黄  估值分析 */
-.tabs-inner .tab:nth-child(3) {--tab-top:#fee2e2;--tab-bot:#fecaca;--tab-bdr:#fca5a5}  /* 红  风险仪表板 */
-.tabs-inner .tab:nth-child(4) {--tab-top:#dcfce7;--tab-bot:#bbf7d0;--tab-bdr:#86efac}  /* 绿  A股宏观 */
+.tabs-inner .tab:nth-child(3) {--tab-top:#dcfce7;--tab-bot:#bbf7d0;--tab-bdr:#86efac}  /* 绿  A股宏观 */
+.tabs-inner .tab:nth-child(4) {--tab-top:#fee2e2;--tab-bot:#fecaca;--tab-bdr:#fca5a5}  /* 红  总体风险 */
 .tabs-inner .tab:nth-child(5) {--tab-top:#ede9fe;--tab-bot:#ddd6fe;--tab-bdr:#c4b5fd}  /* 紫  AI趋势 */
 .tabs-inner .tab:nth-child(6) {--tab-top:#cffafe;--tab-bot:#a5f3fc;--tab-bdr:#67e8f9}  /* 青  光模块&PCB */
 .tabs-inner .tab:nth-child(7) {--tab-top:#ffedd5;--tab-bot:#fed7aa;--tab-bdr:#fdba74}  /* 橙  存储监控 */
@@ -295,8 +295,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div class="tabs-inner">
     <button class="tab active" onclick="switchTab(0)">💼 投资组合</button>
     <button class="tab" onclick="switchTab(1)">📊 估值分析</button>
-    <button class="tab" onclick="switchTab(2)">⚡ 风险仪表板</button>
-    <button class="tab" onclick="switchTab(3)">🏦 A股宏观</button>
+    <button class="tab" onclick="switchTab(2)">🏦 A股宏观</button>
+    <button class="tab" onclick="switchTab(3)">⚡ 总体风险</button>
     <button class="tab" onclick="switchTab(4)">🤖 AI 趋势</button>
     <button class="tab" onclick="switchTab(5)">🔌 光模块&amp;PCB</button>
     <button class="tab" onclick="switchTab(6)">🗄️ 存储监控</button>
@@ -1053,7 +1053,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ════════════════ TAB 2.4 ════════════════ -->
 <div class="tab-content" id="t2">
-  <div class="stitle">AI产业风险仪表板 <span class="stag">风险监控</span></div>
+  <div class="stitle">总体风险 <span class="stag">风险监控</span></div>
 
   <!-- Gauge + Radar -->
   <div class="g2 mb16">
@@ -4359,7 +4359,7 @@ function renderValTable(){
 }
 
 // ── TAB ──────────────────────────────────────────────────────
-const TAB_ORDER=['tPort','tVal','t2','tAM','t0','t4','t5','tStage','t3'];
+const TAB_ORDER=['tPort','tVal','tAM','t2','t0','t4','t5','tStage','t3'];
 let _macroAutoFetched=false;
 const _TAB_TS={};  // 各标签页最近一次动态刷新的时间戳（用于节流）
 const _TAB_THROTTLE=30000; // 30秒内不重复刷新
