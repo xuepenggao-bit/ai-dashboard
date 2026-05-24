@@ -807,8 +807,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 1: 主要指数 + TOP5涨跌 + 重仓TOP5 -->
-  <div class="g4 mb16">
+  <!-- Row 1: 主要指数 + 主力净流入TOP20 + TOP5涨跌 + 重仓TOP5 -->
+  <div class="g5 mb16">
     <!-- 主要指数 -->
     <div class="card" style="min-width:0;border-top:3px solid #f59e0b;background:linear-gradient(135deg,#fffbeb 0%,#fff 60%)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -822,6 +822,25 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
       <div id="portIndexList">
         <div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0">加载中…</div>
+      </div>
+    </div>
+
+    <!-- 主力净流入 TOP 20 -->
+    <div class="card" style="min-width:0;border-top:3px solid #7c3aed;background:linear-gradient(135deg,#faf5ff 0%,#fff 60%)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px;font-weight:800;color:#6d28d9;letter-spacing:.02em">💹 主力净流入</span>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:10px;color:#7c3aed;font-weight:600" id="mfTs"></span>
+          <button onclick="fetchMainFlow()" id="mfRefBtn"
+            style="background:#ede9fe;border:1px solid #ddd6fe;color:#6d28d9;border-radius:6px;
+                   padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:18px 1fr 44px 50px;gap:0 4px;font-size:9.5px;font-weight:700;color:#9ca3af;padding:0 0 4px;border-bottom:1px solid #ede9fe;margin-bottom:3px">
+        <span></span><span>名称</span><span style="text-align:right">涨跌</span><span style="text-align:right">净流入</span>
+      </div>
+      <div id="mfList" style="max-height:308px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#ddd6fe transparent">
+        <div style="color:var(--text2);font-size:11px;text-align:center;padding:10px 0">点击「↻」加载</div>
       </div>
     </div>
 
@@ -4397,7 +4416,7 @@ function _tabRefresh(idx){
   if(_TAB_TS[idx] && now-_TAB_TS[idx]<_TAB_THROTTLE) return; // 节流
   _TAB_TS[idx]=now;
   // 按标签页类型调用对应的动态数据刷新函数
-  if(tab==='tPort')  fetchPortPrices();           // finally 内会链式调用 fetchIndexPrices
+  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); } // finally 内会链式调用 fetchIndexPrices
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tStage') fetchStageData();
   else if(tab==='tAM')    refreshMacro();
@@ -5093,6 +5112,60 @@ async function fetchMacroRates(){
   }catch(e){ console.warn('[MacroRates]:', e); }
 }
 
+// ── 主力净流入 TOP 20 ──────────────────────────────────────────
+async function fetchMainFlow(){
+  const listEl = document.getElementById('mfList');
+  const tsEl   = document.getElementById('mfTs');
+  const btn    = document.getElementById('mfRefBtn');
+  if(!listEl) return;
+  if(btn){ btn.disabled=true; btn.textContent='⏳'; }
+
+  try{
+    const _t = Date.now();
+    // 东方财富 A股主力净流入排行：覆盖上交所主板+科创板、深交所主板+创业板
+    const url = `https://push2.eastmoney.com/api/qt/clist/get`
+      + `?fid=f62&po=1&pz=20&pn=1&np=1&fltt=2&invt=2`
+      + `&fields=f12,f14,f3,f62,f184`
+      + `&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23&_=${_t}`;
+    const data = await fetch(url).then(r=>r.json());
+    const list = data?.data?.diff;
+    if(!list || !list.length){
+      listEl.innerHTML='<div style="color:var(--text2);font-size:11px;text-align:center;padding:10px 0">暂无数据</div>';
+      return;
+    }
+
+    // 格式化金额：亿 / 万
+    const _fmtFlow = v => {
+      if(!isFinite(v)) return '—';
+      const abs = Math.abs(v), s = v>=0?'+':'-';
+      return abs>=1e8 ? s+(abs/1e8).toFixed(1)+'亿' : s+(abs/1e4).toFixed(0)+'万';
+    };
+
+    listEl.innerHTML = list.map((item,i)=>{
+      const pct  = parseFloat(item.f3);
+      const flow = parseFloat(item.f62);
+      const pctOk = isFinite(pct), flowOk = isFinite(flow);
+      const upCol  = '#dc2626', dnCol = '#16a34a', neuCol = '#64748b';
+      const pctCol  = !pctOk  ? neuCol : pct>0  ? upCol  : pct<0  ? dnCol  : neuCol;
+      const flowCol = !flowOk ? neuCol : flow>0 ? upCol  : flow<0 ? dnCol  : neuCol;
+      return `<div style="display:grid;grid-template-columns:18px 1fr 44px 50px;gap:0 4px;`
+           + `align-items:center;padding:3px 0;border-bottom:1px solid #f3e8ff;font-size:10.5px">`
+           + `<span style="color:#a78bfa;font-weight:700;text-align:right">${i+1}</span>`
+           + `<span style="font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.f14}">${item.f14}</span>`
+           + `<span style="color:${pctCol};font-weight:700;text-align:right">${pctOk?(pct>0?'+':'')+pct.toFixed(2)+'%':'—'}</span>`
+           + `<span style="color:${flowCol};font-weight:700;text-align:right">${_fmtFlow(flow)}</span>`
+           + `</div>`;
+    }).join('');
+
+    if(tsEl) tsEl.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  }catch(err){
+    listEl.innerHTML=`<div style="color:var(--red);font-size:11px;text-align:center;padding:10px 0">获取失败</div>`;
+    console.error('fetchMainFlow:', err);
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='↻'; }
+  }
+}
+
 async function fetchPortPrices(){
   var btn = document.getElementById('portPriceBtn');
   var ts  = document.getElementById('portPriceTs');
@@ -5494,6 +5567,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   _safe(mkIntlPe);_safe(mkDomStorePe);_safe(mkArr);
 
   portInit();   // 优先从 GitHub 云端加载组合数据
+  fetchMainFlow(); // 初始化时立即拉取主力净流入榜
   // 兜底：1秒后若股价仍未加载（portInit 异步路径失败），强制触发一次
   setTimeout(()=>{
     const ts=document.getElementById('portPriceTs');
