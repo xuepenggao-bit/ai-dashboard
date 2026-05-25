@@ -807,8 +807,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 1: 主要指数 + 主力净流入TOP20 + TOP5涨跌 + 重仓TOP5 -->
-  <div class="g5 mb16">
+  <!-- Row 1: 主要指数 + TOP5涨跌 + 重仓TOP5 -->
+  <div class="g4 mb16">
     <!-- 主要指数 -->
     <div class="card" style="min-width:0;border-top:3px solid #f59e0b;background:linear-gradient(135deg,#fffbeb 0%,#fff 60%)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -861,27 +861,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
     </div>
 
-    <!-- 主力净流入 TOP 20 -->
-    <div class="card" style="min-width:0;border-top:3px solid #7c3aed;background:linear-gradient(135deg,#faf5ff 0%,#fff 60%)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <span style="font-size:13px;font-weight:800;color:#6d28d9;letter-spacing:.02em">💹 主力净流入 TOP 10</span>
-        <div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:10px;color:#7c3aed;font-weight:600" id="mfTs"></span>
-          <button onclick="fetchMainFlow()" id="mfRefBtn"
-            style="background:#ede9fe;border:1px solid #ddd6fe;color:#6d28d9;border-radius:6px;
-                   padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:18px 1fr 44px 50px;gap:0 4px;font-size:9.5px;font-weight:700;color:#9ca3af;padding:0 0 4px;border-bottom:1px solid #ede9fe;margin-bottom:3px">
-        <span></span><span>名称</span><span style="text-align:right">涨跌</span><span style="text-align:right">净流入</span>
-      </div>
-      <div id="mfList">
-        <div style="color:var(--text2);font-size:11px;text-align:center;padding:10px 0">点击「↻」加载</div>
-      </div>
-    </div>
   </div>
 
-  <!-- Row 2: 持仓概览 + 仓位分配（按分类）+ 仓位分配（按行业）+ 新增分类 -->
+  <!-- Row 2: 持仓概览 + 仓位分配（按分类）+ 仓位分配（按行业）+ 主力净流入TOP10 -->
   <div class="g4 mb16">
     <!-- 持仓概览 -->
     <div class="card" style="border-top:3px solid var(--blue);background:linear-gradient(135deg,#eff6ff 0%,#fff 60%)">
@@ -976,39 +958,59 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div id="portIndustryLegend" style="margin-top:10px"></div>
     </div>
 
-    <div class="card">
-      <div class="ch"><span class="ct">新增分类</span></div>
-      <div class="form-row">
-        <label class="form-label">分类名称</label>
-        <input id="newSecName" class="form-input" placeholder="例如：消费、医疗…" type="text" />
+    <!-- 主力净流入 TOP 10 -->
+    <div class="card" style="min-width:0;border-top:3px solid #7c3aed;background:linear-gradient(135deg,#faf5ff 0%,#fff 60%)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px;font-weight:800;color:#6d28d9;letter-spacing:.02em">💹 主力净流入 TOP 10</span>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:10px;color:#7c3aed;font-weight:600" id="mfTs"></span>
+          <button onclick="fetchMainFlow()" id="mfRefBtn"
+            style="background:#ede9fe;border:1px solid #ddd6fe;color:#6d28d9;border-radius:6px;
+                   padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+        </div>
       </div>
-      <div class="form-row">
-        <label class="form-label">标签颜色</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" class="color-swatch sel" onclick="selColor(this,'#22c55e')" style="background:#22c55e"></button>
-          <button type="button" class="color-swatch" onclick="selColor(this,'#3b82f6')" style="background:#3b82f6"></button>
-          <button type="button" class="color-swatch" onclick="selColor(this,'#f97316')" style="background:#f97316"></button>
-          <button type="button" class="color-swatch" onclick="selColor(this,'#8b5cf6')" style="background:#8b5cf6"></button>
-          <button type="button" class="color-swatch" onclick="selColor(this,'#ec4899')" style="background:#ec4899"></button>
-          <button type="button" class="color-swatch" onclick="selColor(this,'#06b6d4')" style="background:#06b6d4"></button>
-          <button type="button" class="color-swatch" onclick="selColor(this,'#dc2626')" style="background:#dc2626"></button>
-        </div>
-        <input id="newSecColor" type="hidden" value="#22c55e" />
+      <div style="display:grid;grid-template-columns:18px 1fr 44px 50px;gap:0 4px;font-size:9.5px;font-weight:700;color:#9ca3af;padding:0 0 4px;border-bottom:1px solid #ede9fe;margin-bottom:3px">
+        <span></span><span>名称</span><span style="text-align:right">涨跌</span><span style="text-align:right">净流入</span>
       </div>
-      <div class="form-row2c">
-        <div>
-          <label class="form-label">分类仓位 (%)</label>
-          <input id="newSecWeight" class="form-input" placeholder="0.0" type="number" min="0" max="100" step="0.5" />
-        </div>
-        <div style="display:flex;align-items:flex-end">
-          <button type="button" onclick="addPortSector()" class="btn-primary" style="width:100%;padding:9px 0">+ 创建分类</button>
-        </div>
+      <div id="mfList">
+        <div style="color:var(--text2);font-size:11px;text-align:center;padding:10px 0">点击「↻」加载</div>
       </div>
     </div>
   </div>
 
   <!-- Sector cards (rendered by JS) -->
   <div id="portSectors"></div>
+
+  <!-- 新增分类（置于页面底部） -->
+  <div class="card mt16">
+    <div class="ch"><span class="ct">新增分类</span></div>
+    <div class="form-row">
+      <label class="form-label">分类名称</label>
+      <input id="newSecName" class="form-input" placeholder="例如：消费、医疗…" type="text" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">标签颜色</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="color-swatch sel" onclick="selColor(this,'#22c55e')" style="background:#22c55e"></button>
+        <button type="button" class="color-swatch" onclick="selColor(this,'#3b82f6')" style="background:#3b82f6"></button>
+        <button type="button" class="color-swatch" onclick="selColor(this,'#f97316')" style="background:#f97316"></button>
+        <button type="button" class="color-swatch" onclick="selColor(this,'#8b5cf6')" style="background:#8b5cf6"></button>
+        <button type="button" class="color-swatch" onclick="selColor(this,'#ec4899')" style="background:#ec4899"></button>
+        <button type="button" class="color-swatch" onclick="selColor(this,'#06b6d4')" style="background:#06b6d4"></button>
+        <button type="button" class="color-swatch" onclick="selColor(this,'#dc2626')" style="background:#dc2626"></button>
+      </div>
+      <input id="newSecColor" type="hidden" value="#22c55e" />
+    </div>
+    <div class="form-row2c">
+      <div>
+        <label class="form-label">分类仓位 (%)</label>
+        <input id="newSecWeight" class="form-input" placeholder="0.0" type="number" min="0" max="100" step="0.5" />
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <button type="button" onclick="addPortSector()" class="btn-primary" style="width:100%;padding:9px 0">+ 创建分类</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ── Add/Edit Stock Modal ── -->
