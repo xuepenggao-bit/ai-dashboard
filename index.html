@@ -3403,7 +3403,7 @@ function renderPortfolio(){
             <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
             <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
             <th class="${vrThCls} th-vr" onclick="togglePortSort('vr')"    style="text-align:right;cursor:pointer">量比 ${vrArrow}</th>
-            <th class="${spThCls} th-sp" onclick="togglePortSort('speed')" style="text-align:right;cursor:pointer">涨速 ${spArrow}</th>
+            <th class="${spThCls} th-sp" onclick="togglePortSort('speed')" style="text-align:right;cursor:pointer">5分钟 ${spArrow}</th>
             <th>操作</th>
           </tr></thead><tbody>${rows}</tbody></table>
         </div>
@@ -5465,9 +5465,9 @@ async function fetchPortPrices(){
     var ts0 = Date.now();
     var qUrl  = aStocks.length  ? 'https://qt.gtimg.cn/q=' + aStocks.map(function(s){ return s.tc; }).join(',') + '&_=' + ts0 : null;
     var aSids = aStocks.length  ? aStocks.map(function(s){ return (s.mkt==='SH'?'1.':'0.')+s.code; }).join(',') : null;
-    var mcUrl = aSids           ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f12,f20,f124&secids='+aSids+'&_='+ts0 : null;
+    var mcUrl = aSids           ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f12,f20,f11&secids='+aSids+'&_='+ts0 : null;
     var hkSids= hkStocks.length ? hkStocks.map(function(s){ return '116.'+s.code; }).join(',') : null;
-    var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields=f12,f14,f2,f3,f20,f50,f124&_='+ts0 : null;
+    var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields=f12,f14,f2,f3,f20,f50,f11&_='+ts0 : null;
 
     var results = await Promise.all([
       qUrl  ? fetch(qUrl).then(function(r){ return r.arrayBuffer(); }).then(function(b){ return new TextDecoder('gbk').decode(b); })
@@ -5503,10 +5503,10 @@ async function fetchPortPrices(){
       mcDiff.forEach(function(d){
         var code = String(d.f12 || '').padStart(6,'0');
         var mc   = parseFloat(d.f20);
-        var sp   = parseFloat(d.f124);
+        var sp   = parseFloat(d.f11);
         if(_PORT_PRICES[code]){
           if(isFinite(mc) && mc > 0) _PORT_PRICES[code].mktCap   = mc / 100000000;
-          if(isFinite(sp))           _PORT_PRICES[code].speedPct  = sp / 100; // 东方财富 f124 单位为 0.01%，转为 %
+          if(isFinite(sp))           _PORT_PRICES[code].speedPct  = sp; // fltt=2 已是 %，直接使用
         }
       });
     }
@@ -5525,11 +5525,11 @@ async function fetchPortPrices(){
           if(matched){
             var mc = parseFloat(d.f20);
             var vr = parseFloat(d.f50);
-            var sp = parseFloat(d.f124);
+            var sp = parseFloat(d.f11);
             _PORT_PRICES[matched.code] = {price:price, pct:pct, name:matched.name, mkt:matched.mkt, w:matched.w, src:'em',
               mktCap:   (isFinite(mc)&&mc>0) ? mc/100000000 : null,
               volRatio: isFinite(vr)&&vr>0   ? vr           : null,
-              speedPct: isFinite(sp)          ? sp/100       : null};
+              speedPct: isFinite(sp)          ? sp           : null};
             hkDone[matched.code] = true;
           }
         });
