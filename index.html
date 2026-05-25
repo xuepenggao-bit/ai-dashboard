@@ -275,7 +275,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 }
 @media(max-width:600px){
   /* 再隐藏：当前股价 */
-  #tPort .col-price,#tPort .th-price,#tPort .col-vr,#tPort .th-vr{display:none}
+  #tPort .col-price,#tPort .th-price,#tPort .col-vr,#tPort .th-vr,#tPort .col-sp,#tPort .th-sp{display:none}
 }
 @media(max-width:480px){
   /* 第二行 g4 → 单列 */
@@ -3318,10 +3318,12 @@ function renderPortfolio(){
   const mktLabel = {SH:'沪A',SZ:'深A',HK:'港股'};
   const pctArrow  = _portSort.col==='pct' ? (_portSort.dir<0?'↓':'↑') : '↕';
   const wArrow    = _portSort.col==='w'   ? (_portSort.dir<0?'↓':'↑') : '↕';
-  const vrArrow   = _portSort.col==='vr'  ? (_portSort.dir<0?'↓':'↑') : '↕';
-  const pctThCls  = 'th-sort'+(_portSort.col==='pct'?(_portSort.dir<0?' th-desc':' th-asc'):'');
-  const wThCls    = 'th-sort'+(_portSort.col==='w'  ?(_portSort.dir<0?' th-desc':' th-asc'):'');
-  const vrThCls   = 'th-sort'+(_portSort.col==='vr' ?(_portSort.dir<0?' th-desc':' th-asc'):'');
+  const vrArrow   = _portSort.col==='vr'    ? (_portSort.dir<0?'↓':'↑') : '↕';
+  const spArrow   = _portSort.col==='speed' ? (_portSort.dir<0?'↓':'↑') : '↕';
+  const pctThCls  = 'th-sort'+(_portSort.col==='pct'  ?(_portSort.dir<0?' th-desc':' th-asc'):'');
+  const wThCls    = 'th-sort'+(_portSort.col==='w'    ?(_portSort.dir<0?' th-desc':' th-asc'):'');
+  const vrThCls   = 'th-sort'+(_portSort.col==='vr'   ?(_portSort.dir<0?' th-desc':' th-asc'):'');
+  const spThCls   = 'th-sort'+(_portSort.col==='speed'?(_portSort.dir<0?' th-desc':' th-asc'):'');
 
   document.getElementById('portSectors').innerHTML = PORT.sectors.map((sec,si)=>{
     const secW = secWeights[si];
@@ -3333,6 +3335,8 @@ function renderPortfolio(){
       disp.sort((a,b)=>((b.w??-1)-(a.w??-1))*_portSort.dir);
     } else if(_portSort.col==='vr'){
       disp.sort((a,b)=>((_PORT_PRICES[b.code]?.volRatio??-1)-(_PORT_PRICES[a.code]?.volRatio??-1))*_portSort.dir);
+    } else if(_portSort.col==='speed'){
+      disp.sort((a,b)=>((_PORT_PRICES[b.code]?.speedPct??-9999)-(_PORT_PRICES[a.code]?.speedPct??-9999))*_portSort.dir);
     }
     const rows = sec.stocks.length ? disp.map((sk)=>{
       const ki=sec.stocks.indexOf(sk);
@@ -3351,6 +3355,11 @@ function renderPortfolio(){
       const vrCell = vr!=null
         ? `<span style="${vrAnim}font-size:14px;color:${vrCol}">${Number(vr).toFixed(2)}</span>`
         : `<span style="color:var(--text2);font-size:13px">—</span>`;
+      const sp = pi?.speedPct;
+      const spCol = sp==null ? 'var(--text2)' : sp>0 ? '#065f46' : sp<0 ? '#991b1b' : '#475569';
+      const spCell = sp!=null
+        ? `<span style="font-weight:700;font-size:14px;color:${spCol}">${sp>0?'+':''}${Number(sp).toFixed(2)}%</span>`
+        : `<span style="color:var(--text2);font-size:13px">—</span>`;
       return `<tr>
         <td style="font-weight:700;font-size:15px;color:var(--text)">${sk.name}</td>
         <td class="col-code" style="font-family:monospace;font-size:13px;color:var(--text2)">${sk.code}</td>
@@ -3360,12 +3369,13 @@ function renderPortfolio(){
         <td style="text-align:right">${pctCell}</td>
         <td style="text-align:right">${sk.w!=null?'<strong style="color:var(--blue);font-size:15px">'+sk.w.toFixed(1)+'%</strong>':'<span style="color:var(--text2);font-size:13px">—</span>'}</td>
         <td class="col-vr" style="text-align:right">${vrCell}</td>
+        <td class="col-sp" style="text-align:right">${spCell}</td>
         <td style="white-space:nowrap">
           <button class="btn-edit" onclick="openPortModal('edit',${si},${ki})" style="background:none;border:1.5px solid var(--blue);color:var(--blue);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600">编辑</button>
           <button class="btn-del"  onclick="delPortStock(${si},${ki})"         style="background:none;border:1.5px solid #fca5a5;color:var(--red);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;margin-left:5px">删除</button>
         </td>
       </tr>`;}).join('')
-    : `<tr><td colspan="9" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
+    : `<tr><td colspan="10" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
     return `<div class="card mb16" style="overflow:hidden">
       <div class="sec-header">
         <span style="width:20px;height:20px;border-radius:6px;background:${sec.color};display:inline-block;flex-shrink:0;box-shadow:0 2px 6px ${sec.color}55"></span>
@@ -3392,7 +3402,8 @@ function renderPortfolio(){
             <th class="th-price" style="text-align:right">当前股价</th>
             <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
             <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
-            <th class="${vrThCls} th-vr" onclick="togglePortSort('vr')" style="text-align:right;cursor:pointer">量比 ${vrArrow}</th>
+            <th class="${vrThCls} th-vr" onclick="togglePortSort('vr')"    style="text-align:right;cursor:pointer">量比 ${vrArrow}</th>
+            <th class="${spThCls} th-sp" onclick="togglePortSort('speed')" style="text-align:right;cursor:pointer">涨速 ${spArrow}</th>
             <th>操作</th>
           </tr></thead><tbody>${rows}</tbody></table>
         </div>
@@ -5454,9 +5465,9 @@ async function fetchPortPrices(){
     var ts0 = Date.now();
     var qUrl  = aStocks.length  ? 'https://qt.gtimg.cn/q=' + aStocks.map(function(s){ return s.tc; }).join(',') + '&_=' + ts0 : null;
     var aSids = aStocks.length  ? aStocks.map(function(s){ return (s.mkt==='SH'?'1.':'0.')+s.code; }).join(',') : null;
-    var mcUrl = aSids           ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f12,f20&secids='+aSids+'&_='+ts0 : null;
+    var mcUrl = aSids           ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f12,f20,f124&secids='+aSids+'&_='+ts0 : null;
     var hkSids= hkStocks.length ? hkStocks.map(function(s){ return '116.'+s.code; }).join(',') : null;
-    var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields=f12,f14,f2,f3,f20,f50&_='+ts0 : null;
+    var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields=f12,f14,f2,f3,f20,f50,f124&_='+ts0 : null;
 
     var results = await Promise.all([
       qUrl  ? fetch(qUrl).then(function(r){ return r.arrayBuffer(); }).then(function(b){ return new TextDecoder('gbk').decode(b); })
@@ -5492,8 +5503,11 @@ async function fetchPortPrices(){
       mcDiff.forEach(function(d){
         var code = String(d.f12 || '').padStart(6,'0');
         var mc   = parseFloat(d.f20);
-        if(isFinite(mc) && mc > 0 && _PORT_PRICES[code])
-          _PORT_PRICES[code].mktCap = mc / 100000000;  // 元 → 亿元
+        var sp   = parseFloat(d.f124);
+        if(_PORT_PRICES[code]){
+          if(isFinite(mc) && mc > 0) _PORT_PRICES[code].mktCap   = mc / 100000000;
+          if(isFinite(sp))           _PORT_PRICES[code].speedPct  = sp / 100; // 东方财富 f124 单位为 0.01%，转为 %
+        }
       });
     }
 
@@ -5511,9 +5525,11 @@ async function fetchPortPrices(){
           if(matched){
             var mc = parseFloat(d.f20);
             var vr = parseFloat(d.f50);
+            var sp = parseFloat(d.f124);
             _PORT_PRICES[matched.code] = {price:price, pct:pct, name:matched.name, mkt:matched.mkt, w:matched.w, src:'em',
-              mktCap: (isFinite(mc)&&mc>0) ? mc/100000000 : null,
-              volRatio: isFinite(vr)&&vr>0 ? vr : null};
+              mktCap:   (isFinite(mc)&&mc>0) ? mc/100000000 : null,
+              volRatio: isFinite(vr)&&vr>0   ? vr           : null,
+              speedPct: isFinite(sp)          ? sp/100       : null};
             hkDone[matched.code] = true;
           }
         });
