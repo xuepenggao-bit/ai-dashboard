@@ -274,7 +274,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 }
 @media(max-width:600px){
   /* 再隐藏：当前股价 */
-  #tPort .col-price,#tPort .th-price{display:none}
+  #tPort .col-price,#tPort .th-price,#tPort .col-vr,#tPort .th-vr{display:none}
 }
 @media(max-width:480px){
   /* 第二行 g4 → 单列 */
@@ -3340,6 +3340,11 @@ function renderPortfolio(){
       const pctCell = pi
         ? `<span style="display:inline-block;background:${pctBg};color:${pctCol};font-weight:800;font-size:15px;padding:4px 10px;border-radius:7px;letter-spacing:-.01em">${pi.pct>0?'+':''}${Number(pi.pct).toFixed(2)}%</span>`
         : `<span style="color:var(--text2);font-size:13px">—</span>`;
+      const vr = pi?.volRatio;
+      const vrCol = !vr ? 'var(--text2)' : vr>=2 ? '#dc2626' : vr>=1.5 ? '#d97706' : vr>=1 ? 'var(--text)' : '#64748b';
+      const vrCell = vr!=null
+        ? `<span style="font-weight:700;font-size:14px;color:${vrCol}">${Number(vr).toFixed(2)}</span>`
+        : `<span style="color:var(--text2);font-size:13px">—</span>`;
       return `<tr>
         <td style="font-weight:700;font-size:15px;color:var(--text)">${sk.name}</td>
         <td class="col-code" style="font-family:monospace;font-size:13px;color:var(--text2)">${sk.code}</td>
@@ -3348,12 +3353,13 @@ function renderPortfolio(){
         <td class="col-price" style="text-align:right">${priceCell}</td>
         <td style="text-align:right">${pctCell}</td>
         <td style="text-align:right">${sk.w!=null?'<strong style="color:var(--blue);font-size:15px">'+sk.w.toFixed(1)+'%</strong>':'<span style="color:var(--text2);font-size:13px">—</span>'}</td>
+        <td class="col-vr" style="text-align:right">${vrCell}</td>
         <td style="white-space:nowrap">
           <button class="btn-edit" onclick="openPortModal('edit',${si},${ki})" style="background:none;border:1.5px solid var(--blue);color:var(--blue);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600">编辑</button>
           <button class="btn-del"  onclick="delPortStock(${si},${ki})"         style="background:none;border:1.5px solid #fca5a5;color:var(--red);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;margin-left:5px">删除</button>
         </td>
       </tr>`;}).join('')
-    : `<tr><td colspan="8" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
+    : `<tr><td colspan="9" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
     return `<div class="card mb16" style="overflow:hidden">
       <div class="sec-header">
         <span style="width:20px;height:20px;border-radius:6px;background:${sec.color};display:inline-block;flex-shrink:0;box-shadow:0 2px 6px ${sec.color}55"></span>
@@ -3380,6 +3386,7 @@ function renderPortfolio(){
             <th class="th-price" style="text-align:right">当前股价</th>
             <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
             <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
+            <th class="th-vr" style="text-align:right">量比</th>
             <th>操作</th>
           </tr></thead><tbody>${rows}</tbody></table>
         </div>
@@ -5443,7 +5450,7 @@ async function fetchPortPrices(){
     var aSids = aStocks.length  ? aStocks.map(function(s){ return (s.mkt==='SH'?'1.':'0.')+s.code; }).join(',') : null;
     var mcUrl = aSids           ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f12,f20&secids='+aSids+'&_='+ts0 : null;
     var hkSids= hkStocks.length ? hkStocks.map(function(s){ return '116.'+s.code; }).join(',') : null;
-    var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields=f12,f14,f2,f3,f20&_='+ts0 : null;
+    var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields=f12,f14,f2,f3,f20,f50&_='+ts0 : null;
 
     var results = await Promise.all([
       qUrl  ? fetch(qUrl).then(function(r){ return r.arrayBuffer(); }).then(function(b){ return new TextDecoder('gbk').decode(b); })
@@ -5466,9 +5473,10 @@ async function fetchPortPrices(){
         var m = aTxt.match(new RegExp('v_' + s.tc + '="([^"]+)"'));
         if(!m) return;
         var p = m[1].split('~');
-        var cur = parseFloat(p[3]), pct = parseFloat(p[32]);
+        var cur = parseFloat(p[3]), pct = parseFloat(p[32]), vr = parseFloat(p[49]);
         if(cur > 0 && isFinite(pct))
-          _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w};
+          _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w,
+            volRatio: isFinite(vr)&&vr>0 ? vr : null};
       });
     }
 
@@ -5496,8 +5504,10 @@ async function fetchPortPrices(){
           var matched = hkStocks.find(function(s){ return s.code === emCode || s.code === String(d.f12); });
           if(matched){
             var mc = parseFloat(d.f20);
+            var vr = parseFloat(d.f50);
             _PORT_PRICES[matched.code] = {price:price, pct:pct, name:matched.name, mkt:matched.mkt, w:matched.w, src:'em',
-              mktCap: (isFinite(mc)&&mc>0) ? mc/100000000 : null};
+              mktCap: (isFinite(mc)&&mc>0) ? mc/100000000 : null,
+              volRatio: isFinite(vr)&&vr>0 ? vr : null};
             hkDone[matched.code] = true;
           }
         });
@@ -5515,9 +5525,10 @@ async function fetchPortPrices(){
             var m = txt2.match(new RegExp('v_' + s.tc + '="([^"]+)"'));
             if(!m) return;
             var p = m[1].split('~');
-            var cur = parseFloat(p[3]), pct = parseFloat(p[32]);
+            var cur = parseFloat(p[3]), pct = parseFloat(p[32]), vr = parseFloat(p[49]);
             if(cur > 0 && isFinite(pct))
-              _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w, src:'tc'};
+              _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w, src:'tc',
+                volRatio: isFinite(vr)&&vr>0 ? vr : null};
           });
           console.log('[HK] 腾讯备源 补齐', hkMissed.length, '只');
         }catch(e){ console.warn('[HK] 腾讯备源:', e.message); }
