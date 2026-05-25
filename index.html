@@ -863,7 +863,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   </div>
 
-  <!-- Row 2: 持仓概览 + 仓位分配（按分类）+ 仓位分配（按行业）+ 主力净流入TOP10 -->
+  <!-- Row 2: 持仓概览 + 仓位分配（按分类）+ 仓位分配（按行业）+ 主力净流入TOP20 -->
   <div class="g4 mb16">
     <!-- 持仓概览 -->
     <div class="card" style="border-top:3px solid var(--blue);background:linear-gradient(135deg,#eff6ff 0%,#fff 60%)">
@@ -961,7 +961,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <!-- 主力净流入 TOP 10 -->
     <div class="card" style="min-width:0;border-top:3px solid #7c3aed;background:linear-gradient(135deg,#faf5ff 0%,#fff 60%)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <span style="font-size:13px;font-weight:800;color:#6d28d9;letter-spacing:.02em">💹 主力净流入 TOP 10</span>
+        <span style="font-size:13px;font-weight:800;color:#6d28d9;letter-spacing:.02em">💹 主力净流入 TOP 20</span>
         <div style="display:flex;align-items:center;gap:5px">
           <span style="font-size:10px;color:#7c3aed;font-weight:600" id="mfTs"></span>
           <button onclick="fetchMainFlow()" id="mfRefBtn"
@@ -5371,7 +5371,7 @@ async function fetchMainFlow(){
     const _t = Date.now();
     // 东方财富 A股主力净流入排行：覆盖上交所主板+科创板、深交所主板+创业板
     const url = `https://push2.eastmoney.com/api/qt/clist/get`
-      + `?fid=f62&po=1&pz=10&pn=1&np=1&fltt=2&invt=2`
+      + `?fid=f62&po=1&pz=20&pn=1&np=1&fltt=2&invt=2`
       + `&fields=f12,f14,f3,f62,f184`
       + `&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23&_=${_t}`;
     const data = await fetch(url).then(r=>r.json());
