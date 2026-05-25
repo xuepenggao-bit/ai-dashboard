@@ -2982,7 +2982,7 @@ const PORT_GH_FILE  = 'portfolio.json';
 const PORT_GH_TOKEN = [103,104,112,95,121,57,117,101,122,50,54,98,115,99,71,99,72,50,50,117,90,103,78,84,50,100,111,103,80,48,106,50,114,81,52,83,54,68,115,73].map(c=>String.fromCharCode(c)).join('');
 let PORT = null;
 let _PORT_PRICES = {};
-let _portSort = {col:'w', dir:-1};
+let _portSort = {col:'w', dir:1};
 let _portDirty = false;   // 有本地修改未同步到云端时为 true
 
 function togglePortSort(col){
@@ -5535,7 +5535,7 @@ async function fetchPortPrices(){
     console.error('fetchPortPrices:', err);
   } finally {
     _portSort.col = 'w';
-    _portSort.dir = -1;   // 默认降序（仓位最高在前）
+    _portSort.dir = 1;    // 默认降序（仓位最高在前）
     // 用实际取价完成时刻更新节流时间戳，避免"初始化时间 ≠ 取价完成时间"导致切换被误节流
     _TAB_TS[0] = Date.now();
     renderPortfolio();
