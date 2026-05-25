@@ -1317,37 +1317,56 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- 统计概览 -->
-  <div class="g4 mb16" id="histStats" style="display:none">
-    <div class="card" style="border-top:3px solid var(--blue)">
-      <div class="klabel" style="color:var(--blue);font-size:12px">📅 已记录天数</div>
-      <div class="kval tb" id="histDays" style="font-size:30px">—</div>
+  <!-- ── 主列表视图 ── -->
+  <div id="histMain">
+    <!-- 统计概览 -->
+    <div class="g4 mb16" id="histStats" style="display:none">
+      <div class="card" style="border-top:3px solid var(--blue)">
+        <div class="klabel" style="color:var(--blue);font-size:12px">📅 已记录天数</div>
+        <div class="kval tb" id="histDays" style="font-size:30px">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid #dc2626">
+        <div class="klabel" style="color:#dc2626;font-size:12px">📈 持仓日均涨跌</div>
+        <div class="kval" id="histAvgPort" style="font-size:30px">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid var(--text2)">
+        <div class="klabel" style="color:var(--text2);font-size:12px">📊 全指日均涨跌</div>
+        <div class="kval tb" id="histAvgCsi" style="font-size:30px">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid var(--purple)">
+        <div class="klabel" style="color:var(--purple);font-size:12px">⚡ 日均超额收益</div>
+        <div class="kval" id="histAvgExc" style="font-size:30px;color:var(--purple)">—</div>
+      </div>
     </div>
-    <div class="card" style="border-top:3px solid #dc2626">
-      <div class="klabel" style="color:#dc2626;font-size:12px">📈 持仓日均涨跌</div>
-      <div class="kval" id="histAvgPort" style="font-size:30px">—</div>
-    </div>
-    <div class="card" style="border-top:3px solid var(--text2)">
-      <div class="klabel" style="color:var(--text2);font-size:12px">📊 全指日均涨跌</div>
-      <div class="kval tb" id="histAvgCsi" style="font-size:30px">—</div>
-    </div>
-    <div class="card" style="border-top:3px solid var(--purple)">
-      <div class="klabel" style="color:var(--purple);font-size:12px">⚡ 日均超额收益</div>
-      <div class="kval" id="histAvgExc" style="font-size:30px;color:var(--purple)">—</div>
+    <!-- 记录表格 -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">持仓日志</span>
+        <span class="cbadge" id="histCountBadge">0 条记录</span>
+      </div>
+      <div style="overflow-x:auto">
+        <div id="histTable">
+          <div style="color:var(--text2);font-size:13px;text-align:center;padding:28px 0">
+            切换到「投资组合」刷新股价后，点击「记录今日持仓」开始记录
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- 记录表格 -->
-  <div class="card">
-    <div class="ch">
-      <span class="ct">持仓日志</span>
-      <span class="cbadge" id="histCountBadge">0 条记录</span>
+  <!-- ── 二级：单日持仓明细 ── -->
+  <div id="histDetail" style="display:none">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
+      <button onclick="closeHistDetail()"
+        style="background:var(--card2);border:1.5px solid var(--border);color:var(--text);border-radius:8px;
+               padding:7px 16px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:600;
+               display:flex;align-items:center;gap:5px">← 返回日志</button>
+      <div style="font-size:18px;font-weight:800;color:var(--text)" id="histDetailTitle"></div>
+      <span style="font-size:12px;color:var(--text2)" id="histDetailMeta"></span>
     </div>
-    <div style="overflow-x:auto">
-      <div id="histTable">
-        <div style="color:var(--text2);font-size:13px;text-align:center;padding:28px 0">
-          切换到「投资组合」刷新股价后，点击「记录今日持仓」开始记录
-        </div>
+    <div class="card">
+      <div style="overflow-x:auto">
+        <div id="histDetailTable"></div>
       </div>
     </div>
   </div>
@@ -5154,7 +5173,7 @@ function renderHistTable(){
       const nv=(r.note||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
       return `<tr style="border-bottom:1px solid var(--border)"
                   onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''">
-        <td style="padding:9px 14px;font-weight:700;white-space:nowrap;color:var(--text)">${r.date}</td>
+        <td style="padding:9px 14px;white-space:nowrap">${(r.stocks&&r.stocks.length)?`<a onclick="showHistDetail('${r.date}')" style="font-weight:700;color:var(--blue);cursor:pointer;text-decoration:none;border-bottom:1.5px solid var(--blue)" title="查看当日持仓明细">${r.date}</a>`:`<span style="font-weight:700;color:var(--text2)">${r.date}</span>`}</td>
         <td style="padding:9px 14px;text-align:right;font-weight:600">${r.weight>0?r.weight.toFixed(1)+'%':'—'}</td>
         <td style="padding:9px 14px;text-align:right;font-weight:700;color:${pc(r.portPct)}">${fmt(r.portPct)}</td>
         <td style="padding:9px 14px;text-align:right;font-weight:700;color:${pc(r.csiPct)}">${fmt(r.csiPct)}</td>
@@ -5173,6 +5192,82 @@ function renderHistTable(){
         </td>
       </tr>`;
     }).join('')}</tbody>
+  </table>`;
+}
+
+function showHistDetail(date){
+  const main=document.getElementById('histMain');
+  const det =document.getElementById('histDetail');
+  if(!main||!det) return;
+  main.style.display='none';
+  det.style.display='block';
+  const titleEl=document.getElementById('histDetailTitle');
+  if(titleEl) titleEl.textContent=date+'  持仓明细';
+  renderHistDetail(date);
+}
+
+function closeHistDetail(){
+  const main=document.getElementById('histMain');
+  const det =document.getElementById('histDetail');
+  if(main) main.style.display='block';
+  if(det)  det.style.display='none';
+}
+
+function renderHistDetail(date){
+  const el=document.getElementById('histDetailTable');
+  const metaEl=document.getElementById('histDetailMeta');
+  if(!el) return;
+  if(!PORT||!PORT.history){ el.innerHTML='<div style="color:var(--text2);text-align:center;padding:24px">无数据</div>'; return; }
+
+  const rec=PORT.history.find(r=>r.date===date);
+  if(!rec||!rec.stocks||!rec.stocks.length){
+    el.innerHTML='<div style="color:var(--text2);font-size:13px;text-align:center;padding:24px 0">该记录未包含持仓明细（记录时未刷新股价）</div>';
+    return;
+  }
+
+  // 更新副标题：总仓位 / 只数
+  if(metaEl) metaEl.textContent=`${rec.stocks.length} 只  ·  总仓位 ${rec.weight?rec.weight.toFixed(1)+'%':'—'}`;
+
+  const mktSty={'SH':'background:#dbeafe;color:#1e40af','SZ':'background:#dcfce7;color:#166534','HK':'background:#fee2e2;color:#991b1b'};
+  const mktLbl={'SH':'沪A','SZ':'深A','HK':'港股'};
+
+  // 按仓位降序（snapshot 已排好，但以防万一）
+  const stocks=[...rec.stocks].sort((a,b)=>(b.w||0)-(a.w||0));
+
+  const rows=stocks.map(s=>{
+    const isHK=s.mkt==='HK';
+    const pctBg =s.pct!=null?(s.pct>0?'#d1fae5':s.pct<0?'#fee2e2':'#f1f5f9'):'';
+    const pctCol=s.pct!=null?(s.pct>0?'#065f46':s.pct<0?'#991b1b':'#475569'):'';
+    const priceCell=s.price!=null
+      ?`<span style="font-weight:700;font-size:15px;color:var(--text)">${Number(s.price).toFixed(isHK?3:2)}</span>`
+      :`<span style="color:var(--text2);font-size:13px">—</span>`;
+    const pctCell=s.pct!=null
+      ?`<span style="display:inline-block;background:${pctBg};color:${pctCol};font-weight:800;font-size:14px;padding:3px 9px;border-radius:7px;letter-spacing:-.01em">${s.pct>0?'+':''}${Number(s.pct).toFixed(2)}%</span>`
+      :`<span style="color:var(--text2);font-size:13px">—</span>`;
+    const wCell=s.w>0
+      ?`<strong style="color:var(--blue);font-size:15px">${Number(s.w).toFixed(1)}%</strong>`
+      :`<span style="color:var(--text2);font-size:13px">—</span>`;
+    return `<tr onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''">
+      <td style="color:var(--text2);font-size:12px;white-space:nowrap">${s.sector||''}</td>
+      <td style="font-weight:700;font-size:15px;color:var(--text)">${s.name}</td>
+      <td class="col-code" style="font-family:monospace;font-size:13px;color:var(--text2)">${s.code}</td>
+      <td class="col-mkt"><span class="mkt-badge" style="${mktSty[s.mkt]||'background:#f1f5f9;color:#475569'}">${mktLbl[s.mkt]||s.mkt}</span></td>
+      <td class="col-industry" style="color:var(--text2);font-size:13px">${s.industry||''}</td>
+      <td style="text-align:right">${priceCell}</td>
+      <td style="text-align:right">${pctCell}</td>
+      <td style="text-align:right">${wCell}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML=`<table class="mtable">
+    <thead><tr>
+      <th>分类</th><th>股票名称</th><th class="th-code">代码</th>
+      <th class="th-mkt">市场</th><th class="th-industry">行业</th>
+      <th style="text-align:right">当日股价</th>
+      <th style="text-align:right">当日涨跌幅</th>
+      <th style="text-align:right">个股仓位</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
   </table>`;
 }
 
@@ -5204,12 +5299,30 @@ function addHistRecord(){
   }));
   const portPct=totalW>0?parseFloat((wPct/totalW).toFixed(3)):null;
 
+  // 抓取当前持仓快照（按仓位降序）
+  const _snapStocks=[];
+  PORT.sectors.forEach(sec=>sec.stocks.forEach(sk=>{
+    const pi=_PORT_PRICES[sk.code];
+    _snapStocks.push({
+      code:     sk.code,
+      name:     sk.name,
+      mkt:      sk.mkt,
+      industry: sk.industry||'',
+      sector:   sec.name,
+      w:        sk.w!=null?parseFloat(Number(sk.w).toFixed(2)):0,
+      price:    pi?parseFloat(Number(pi.price).toFixed(sk.mkt==='HK'?3:2)):null,
+      pct:      pi?parseFloat(Number(pi.pct).toFixed(3)):null
+    });
+  }));
+  _snapStocks.sort((a,b)=>(b.w||0)-(a.w||0));
+
   const rec={
     date:    dateStr,
     weight:  parseFloat(totalW.toFixed(2)),
     portPct: portPct,
     csiPct:  _csiPct!=null?parseFloat(_csiPct.toFixed(3)):null,
-    note:    ''
+    note:    '',
+    stocks:  _snapStocks
   };
   PORT.history.unshift(rec);
   portSave();
