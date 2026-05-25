@@ -194,6 +194,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .val-subtab-active{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(37,99,235,.3)}
 .pulse{animation:pls 2s infinite}
 @keyframes pls{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes vrBlink{0%,100%{opacity:1;text-shadow:0 0 6px #dc2626aa}50%{opacity:.55;text-shadow:none}}
 .ratiobox{background:#f8fafc;border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border)}
 .rationum{font-size:22px;font-weight:700}
 
@@ -3317,8 +3318,10 @@ function renderPortfolio(){
   const mktLabel = {SH:'沪A',SZ:'深A',HK:'港股'};
   const pctArrow  = _portSort.col==='pct' ? (_portSort.dir<0?'↓':'↑') : '↕';
   const wArrow    = _portSort.col==='w'   ? (_portSort.dir<0?'↓':'↑') : '↕';
+  const vrArrow   = _portSort.col==='vr'  ? (_portSort.dir<0?'↓':'↑') : '↕';
   const pctThCls  = 'th-sort'+(_portSort.col==='pct'?(_portSort.dir<0?' th-desc':' th-asc'):'');
   const wThCls    = 'th-sort'+(_portSort.col==='w'  ?(_portSort.dir<0?' th-desc':' th-asc'):'');
+  const vrThCls   = 'th-sort'+(_portSort.col==='vr' ?(_portSort.dir<0?' th-desc':' th-asc'):'');
 
   document.getElementById('portSectors').innerHTML = PORT.sectors.map((sec,si)=>{
     const secW = secWeights[si];
@@ -3328,6 +3331,8 @@ function renderPortfolio(){
       disp.sort((a,b)=>((_PORT_PRICES[b.code]?.pct??-9999)-(_PORT_PRICES[a.code]?.pct??-9999))*_portSort.dir);
     } else if(_portSort.col==='w'){
       disp.sort((a,b)=>((b.w??-1)-(a.w??-1))*_portSort.dir);
+    } else if(_portSort.col==='vr'){
+      disp.sort((a,b)=>((_PORT_PRICES[b.code]?.volRatio??-1)-(_PORT_PRICES[a.code]?.volRatio??-1))*_portSort.dir);
     }
     const rows = sec.stocks.length ? disp.map((sk)=>{
       const ki=sec.stocks.indexOf(sk);
@@ -3341,9 +3346,10 @@ function renderPortfolio(){
         ? `<span style="display:inline-block;background:${pctBg};color:${pctCol};font-weight:800;font-size:15px;padding:4px 10px;border-radius:7px;letter-spacing:-.01em">${pi.pct>0?'+':''}${Number(pi.pct).toFixed(2)}%</span>`
         : `<span style="color:var(--text2);font-size:13px">—</span>`;
       const vr = pi?.volRatio;
-      const vrCol = !vr ? 'var(--text2)' : vr>=2 ? '#dc2626' : vr>=1.5 ? '#d97706' : vr>=1 ? 'var(--text)' : '#64748b';
+      const vrCol = !vr ? 'var(--text2)' : vr>=3 ? '#991b1b' : vr>=2 ? '#dc2626' : vr>=1.5 ? '#d97706' : vr>=1 ? 'var(--text)' : '#64748b';
+      const vrAnim = vr>=3 ? 'animation:vrBlink 1s ease-in-out infinite;font-weight:900;' : 'font-weight:700;';
       const vrCell = vr!=null
-        ? `<span style="font-weight:700;font-size:14px;color:${vrCol}">${Number(vr).toFixed(2)}</span>`
+        ? `<span style="${vrAnim}font-size:14px;color:${vrCol}">${Number(vr).toFixed(2)}</span>`
         : `<span style="color:var(--text2);font-size:13px">—</span>`;
       return `<tr>
         <td style="font-weight:700;font-size:15px;color:var(--text)">${sk.name}</td>
@@ -3386,7 +3392,7 @@ function renderPortfolio(){
             <th class="th-price" style="text-align:right">当前股价</th>
             <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
             <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
-            <th class="th-vr" style="text-align:right">量比</th>
+            <th class="${vrThCls} th-vr" onclick="togglePortSort('vr')" style="text-align:right;cursor:pointer">量比 ${vrArrow}</th>
             <th>操作</th>
           </tr></thead><tbody>${rows}</tbody></table>
         </div>
