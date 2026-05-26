@@ -5561,59 +5561,82 @@ function deleteHistRecord(idx){
 }
 
 // ── 市场涨跌统计（分布直方图）──────────────────────────────────
-async function fetchMarketBreadth(){
-  const btn  = document.getElementById('mktBreadthBtn');
-  const tsEl = document.getElementById('mktBreadthTs');
+// ── 市场统计：涨跌分布 + 两市成交额（合并一次请求）──────────────
+// 一次拉全 A 股 f3(涨跌幅)+f6(成交额)，同时填充两张卡片
+// 避免旧版本错误：① 北交所过滤器格式错误 ② 用合成指数的 f6 取成交额（指数本身无实际成交）
+var _mktStatsFetching = false;
+
+async function fetchMarketStats(){
+  if(_mktStatsFetching) return;
+  _mktStatsFetching = true;
+
+  const bBtn  = document.getElementById('mktBreadthBtn');
+  const tBtn  = document.getElementById('mktTurnBtn');
+  const bTs   = document.getElementById('mktBreadthTs');
+  const tTs   = document.getElementById('mktTurnTs');
   const chartEl = document.getElementById('mktBreadthChart');
-  if(btn){ btn.disabled=true; btn.textContent='⏳'; }
-  if(tsEl) tsEl.textContent='加载中…';
+  const bodyEl  = document.getElementById('mktTurnoverBody');
+
+  [bBtn,tBtn].forEach(b=>{ if(b){ b.disabled=true; b.textContent='⏳'; } });
+  if(bTs) bTs.textContent='加载中…';
+  if(tTs) tTs.textContent='加载中…';
+
   try{
     const ts = Date.now();
-    // 拉取全 A 股涨跌幅（沪主板+科创板+深主板+创业板+北交所）
+    // 与 fetchMainFlow 使用完全相同的 fs，去掉不支持的北交所过滤格式
+    // pz=10000 确保覆盖全部沪深 A 股（~5500只）
     const url = 'https://push2.eastmoney.com/api/qt/clist/get'
-      +'?fid=f3&po=0&pz=6000&pn=1&np=1&fltt=2&invt=2'
-      +'&fields=f3'
-      +'&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:81+s:2048'
-      +'&_='+ts;
-    const resp = await fetch(url,{cache:'no-store'});
-    const diff = (await resp.json()).data?.diff || [];
+      + '?fid=f3&po=1&pz=10000&pn=1&np=1&fltt=2&invt=2'
+      + '&fields=f3,f6'
+      + '&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23'
+      + '&_=' + ts;
 
-    // 9 分桶：涨停 | 5~板 | 1~5% | 0~1% | 平盘 | 0~1% | 1~5% | 5~板 | 跌停
+    const diff = (await fetch(url).then(r=>r.json())).data?.diff || [];
+
+    // ── 分布分桶 ──
     const BKTS=[
-      {label:'涨停', side:'up',   lim:true,  min:9.9,    max:Infinity},
-      {label:'5~板', side:'up',              min:5,      max:9.9},
-      {label:'1~5%', side:'up',              min:1,      max:5},
-      {label:'0~1%', side:'up',              min:0.001,  max:1},
-      {label:'平盘',  side:'flat',            min:-0.001, max:0.001},
-      {label:'0~1%', side:'down',            min:-1,     max:-0.001},
-      {label:'1~5%', side:'down',            min:-5,     max:-1},
-      {label:'5~板', side:'down',            min:-9.9,   max:-5},
-      {label:'跌停', side:'down', lim:true,  min:-Infinity,max:-9.9},
+      {label:'涨停', side:'up',  lim:true,  min:9.9,     max:Infinity},
+      {label:'5~板', side:'up',             min:5,       max:9.9},
+      {label:'1~5%', side:'up',             min:1,       max:5},
+      {label:'0~1%', side:'up',             min:0.001,   max:1},
+      {label:'平盘',  side:'flat',           min:-0.001,  max:0.001},
+      {label:'0~1%', side:'down',           min:-1,      max:-0.001},
+      {label:'1~5%', side:'down',           min:-5,      max:-1},
+      {label:'5~板', side:'down',           min:-9.9,    max:-5},
+      {label:'跌停', side:'down',lim:true,  min:-Infinity,max:-9.9},
     ];
     for(const b of BKTS) b.count=0;
 
+    // 成交额累加（f6 单位：元，fltt=2 下为原值）
+    // ↓ 这是正确方式：累加各只股票的真实成交额，而非用合成指数的 f6
+    let totalYuan = 0;
+    const shMap = {}, szMap = {};   // 按市场拆分（f12 开头区分沪/深）
+
     for(const s of diff){
-      const p=parseFloat(s.f3);
+      const p = parseFloat(s.f3);
+      const v = parseFloat(s.f6);
+      if(isFinite(v) && v > 0) totalYuan += v;
       if(!isFinite(p)) continue;
-      for(const b of BKTS){ if(p>=b.min && p<b.max){ b.count++; break; } }
+      for(const b of BKTS){ if(p >= b.min && p < b.max){ b.count++; break; } }
     }
 
+    // ── 涨跌统计卡片 ──
     const upCnt   = BKTS.filter(b=>b.side==='up').reduce((s,b)=>s+b.count,0);
     const downCnt = BKTS.filter(b=>b.side==='down').reduce((s,b)=>s+b.count,0);
     const flatCnt = BKTS.find(b=>b.side==='flat').count;
-    document.getElementById('mktUp').textContent       = upCnt;
-    document.getElementById('mktDown').textContent     = downCnt;
-    document.getElementById('mktFlat').textContent     = flatCnt;
-    document.getElementById('mktLimitUp').textContent  = BKTS.find(b=>b.side==='up'  &&b.lim).count;
-    document.getElementById('mktLimitDown').textContent= BKTS.find(b=>b.side==='down'&&b.lim).count;
+    document.getElementById('mktUp').textContent        = upCnt;
+    document.getElementById('mktDown').textContent      = downCnt;
+    document.getElementById('mktFlat').textContent      = flatCnt;
+    document.getElementById('mktLimitUp').textContent   = BKTS.find(b=>b.side==='up'  &&b.lim).count;
+    document.getElementById('mktLimitDown').textContent = BKTS.find(b=>b.side==='down'&&b.lim).count;
 
     // 直方图
-    const maxCnt=Math.max(...BKTS.map(b=>b.count),1);
-    const MAX_H=65;
-    const COL=['#b91c1c','#dc2626','#ef4444','#fca5a5','#94a3b8','#bbf7d0','#4ade80','#16a34a','#14532d'];
-    const TC =['#dc2626','#dc2626','#dc2626','#dc2626','#64748b','#15803d','#15803d','#15803d','#15803d'];
-    const bars=BKTS.map((b,i)=>{
-      const bh=Math.max(2,Math.round((b.count/maxCnt)*MAX_H));
+    const maxCnt = Math.max(...BKTS.map(b=>b.count), 1);
+    const MAX_H  = 65;
+    const COL = ['#b91c1c','#dc2626','#ef4444','#fca5a5','#94a3b8','#bbf7d0','#4ade80','#16a34a','#14532d'];
+    const TC  = ['#dc2626','#dc2626','#dc2626','#dc2626','#64748b','#15803d','#15803d','#15803d','#15803d'];
+    const bars = BKTS.map((b,i)=>{
+      const bh = Math.max(2, Math.round((b.count/maxCnt)*MAX_H));
       return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;gap:1px">
         <div style="font-size:8.5px;font-weight:800;color:${TC[i]};min-height:11px;text-align:center;line-height:1">${b.count||''}</div>
         <div style="display:flex;flex-direction:column;justify-content:flex-end;height:${MAX_H}px;width:100%">
@@ -5622,91 +5645,66 @@ async function fetchMarketBreadth(){
         <div style="font-size:8px;color:var(--text2);white-space:nowrap;overflow:hidden;max-width:100%;text-align:center;margin-top:1px">${b.label}</div>
       </div>`;
     }).join('');
-    if(chartEl) chartEl.innerHTML=`<div style="display:flex;align-items:stretch;gap:2px">${bars}</div>`;
-    if(tsEl) tsEl.textContent=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
-  }catch(e){
-    console.error('fetchMarketBreadth:',e);
-    if(chartEl) chartEl.innerHTML='<div style="color:#ef4444;font-size:11px;text-align:center;padding:14px 0">获取失败</div>';
-    if(tsEl) tsEl.textContent='获取失败';
-  }finally{
-    if(btn){ btn.disabled=false; btn.textContent='↻'; }
-  }
-}
+    if(chartEl) chartEl.innerHTML = `<div style="display:flex;align-items:stretch;gap:2px">${bars}</div>`;
 
-// ── 三市成交分析 ──────────────────────────────────────────────
-async function fetchMarketTurnover(){
-  const btn   = document.getElementById('mktTurnBtn');
-  const tsEl  = document.getElementById('mktTurnTs');
-  const bodyEl= document.getElementById('mktTurnoverBody');
-  if(btn){ btn.disabled=true; btn.textContent='⏳'; }
-  if(tsEl) tsEl.textContent='加载中…';
-  try{
-    const ts=Date.now();
-    const [shR,szR]=await Promise.all([
-      fetch(`https://push2.eastmoney.com/api/qt/stock/get?secid=1.000001&fields=f6&fltt=2&_=${ts}`,{cache:'no-store'}).then(r=>r.json()),
-      fetch(`https://push2.eastmoney.com/api/qt/stock/get?secid=0.399001&fields=f6&fltt=2&_=${ts}`,{cache:'no-store'}).then(r=>r.json()),
-    ]);
-    const shVol=parseFloat(shR.data?.f6)||0;
-    const szVol=parseFloat(szR.data?.f6)||0;
-    const totalBi=(shVol+szVol)/1e8;
-    const shBi=shVol/1e8, szBi=szVol/1e8;
+    const timeStr = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    if(bTs) bTs.textContent = timeStr + ' · ' + diff.length + '只';
 
-    // 预测全天（按剩余交易时间线性外推）
-    const now=new Date();
-    const curMin=now.getHours()*60+now.getMinutes();
-    let elapsed=0;
-    if(curMin<570) elapsed=0;                     // 9:30 前
-    else if(curMin<=690) elapsed=curMin-570;       // 9:30-11:30 (0-120)
-    else if(curMin<780) elapsed=120;               // 午休
-    else if(curMin<=900) elapsed=120+(curMin-780); // 13:00-15:00 (120-240)
-    else elapsed=240;
+    // ── 成交分析卡片 ──
+    const totalBi = totalYuan / 1e8;   // 元 → 亿元
+    const now     = new Date();
+    const curMin  = now.getHours()*60 + now.getMinutes();
+    let elapsed = 0;
+    if(curMin < 570)       elapsed = 0;
+    else if(curMin <= 690) elapsed = curMin - 570;
+    else if(curMin < 780)  elapsed = 120;
+    else if(curMin <= 900) elapsed = 120 + (curMin - 780);
+    else                   elapsed = 240;
 
-    const fmt=v=>{
-      if(v>=10000) return (v/10000).toFixed(2)+'万亿';
-      if(v>=1000)  return (v/1000).toFixed(1)+'千亿';
+    const fmt = v => {
+      if(v >= 10000) return (v/10000).toFixed(2)+'万亿';
+      if(v >= 1000)  return (v/1000).toFixed(1)+'千亿';
       return Math.round(v)+'亿';
     };
-    const timeStr=now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
 
-    let html=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+    let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div style="background:#dbeafe;border-radius:10px;padding:11px 12px">
         <div style="font-size:10px;color:#1d4ed8;font-weight:700;margin-bottom:4px">沪深两市成交额</div>
         <div style="font-size:22px;font-weight:900;color:#1e40af;line-height:1;letter-spacing:-.02em">${fmt(totalBi)}</div>
         <div style="font-size:10px;color:#3b82f6;margin-top:4px">实时 · ${timeStr}</div>
       </div>`;
-    if(elapsed>15 && elapsed<235){
-      const pred=totalBi*(240/elapsed);
-      html+=`<div style="background:#e0f2fe;border-radius:10px;padding:11px 12px">
+    if(elapsed > 15 && elapsed < 235){
+      const pred = totalBi * (240 / elapsed);
+      html += `<div style="background:#e0f2fe;border-radius:10px;padding:11px 12px">
         <div style="font-size:10px;color:#0369a1;font-weight:700;margin-bottom:4px">预测全天成交额</div>
         <div style="font-size:22px;font-weight:900;color:#075985;line-height:1;letter-spacing:-.02em">${fmt(pred)}</div>
         <div style="font-size:10px;color:#0284c7;margin-top:4px">已交易${elapsed}min / 240min</div>
       </div>`;
     } else {
-      html+=`<div style="background:#f8fafc;border-radius:10px;padding:11px 12px;display:flex;align-items:center;justify-content:center">
+      html += `<div style="background:#f8fafc;border-radius:10px;padding:11px 12px;display:flex;align-items:center;justify-content:center">
         <span style="font-size:11px;color:#94a3b8">${elapsed===0?'未开盘':'已收盘'}</span>
       </div>`;
     }
-    html+=`</div>
-    <div style="display:flex;gap:6px">
-      <div style="flex:1;background:#f8fafc;border-radius:7px;padding:7px 10px">
-        <div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:2px">沪市成交额</div>
-        <div style="font-size:14px;font-weight:800;color:#1e40af">${fmt(shBi)}</div>
-      </div>
-      <div style="flex:1;background:#f8fafc;border-radius:7px;padding:7px 10px">
-        <div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:2px">深市成交额</div>
-        <div style="font-size:14px;font-weight:800;color:#1e40af">${fmt(szBi)}</div>
-      </div>
-    </div>`;
-    if(bodyEl) bodyEl.innerHTML=html;
-    if(tsEl) tsEl.textContent=timeStr;
+    html += `</div><div style="font-size:10px;color:#94a3b8;text-align:center">统计自 ${diff.length} 只沪深 A 股</div>`;
+    if(bodyEl) bodyEl.innerHTML = html;
+    if(tTs)    tTs.textContent  = timeStr;
+
   }catch(e){
-    console.error('fetchMarketTurnover:',e);
-    if(bodyEl) bodyEl.innerHTML='<div style="color:#ef4444;font-size:11px;text-align:center;padding:14px 0">获取失败</div>';
-    if(tsEl) tsEl.textContent='获取失败';
+    console.error('fetchMarketStats:', e);
+    const errHtml = `<div style="color:#ef4444;font-size:11px;text-align:center;padding:10px 0">获取失败: ${e.message}</div>`;
+    if(chartEl) chartEl.innerHTML = errHtml;
+    if(bodyEl)  bodyEl.innerHTML  = errHtml;
+    if(bTs) bTs.textContent = '失败';
+    if(tTs) tTs.textContent = '失败';
   }finally{
-    if(btn){ btn.disabled=false; btn.textContent='↻'; }
+    _mktStatsFetching = false;
+    [bBtn,tBtn].forEach(b=>{ if(b){ b.disabled=false; b.textContent='↻'; } });
   }
 }
+
+// 兼容旧调用（tab 切换、股价刷新后联动）
+function fetchMarketBreadth()  { fetchMarketStats(); }
+function fetchMarketTurnover() { fetchMarketStats(); }
 
 // ── 主力净流入 TOP 20 ──────────────────────────────────────────
 async function fetchMainFlow(){
