@@ -907,7 +907,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
               <span style="font-size:11px;color:#16a34a;font-weight:700">只</span>
             </div>
             <div id="pUpAvg" style="font-size:14px;font-weight:800;color:#15803d;letter-spacing:-.01em">—</div>
-            <div style="font-size:10px;color:#86efac;font-weight:600;margin-top:2px;letter-spacing:.02em">平均涨幅</div>
+            <div style="font-size:10px;color:#86efac;font-weight:600;margin-top:2px;letter-spacing:.02em">加权平均涨幅</div>
           </div>
           <div style="flex:1;background:linear-gradient(150deg,#fff1f2 0%,#ffe4e6 100%);border:1.5px solid #fda4af;border-radius:10px;padding:9px 11px">
             <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:3px">
@@ -916,7 +916,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
               <span style="font-size:11px;color:#dc2626;font-weight:700">只</span>
             </div>
             <div id="pDownAvg" style="font-size:14px;font-weight:800;color:#b91c1c;letter-spacing:-.01em">—</div>
-            <div style="font-size:10px;color:#fda4af;font-weight:600;margin-top:2px;letter-spacing:.02em">平均跌幅</div>
+            <div style="font-size:10px;color:#fda4af;font-weight:600;margin-top:2px;letter-spacing:.02em">加权平均跌幅</div>
           </div>
         </div>
         <div id="pFlatInfo" style="display:none;font-size:10px;color:#94a3b8;text-align:center;margin-top:7px;font-weight:500"></div>
@@ -5789,8 +5789,19 @@ function _renderPortBreadth(){
   var down = withPrice.filter(function(sk){ return _PORT_PRICES[sk.code].pct < 0; });
   var flat = withPrice.filter(function(sk){ return _PORT_PRICES[sk.code].pct === 0; });
 
-  var avgUp   = up.length   ? up.reduce(function(s,sk){  return s+_PORT_PRICES[sk.code].pct; },0)/up.length   : 0;
-  var avgDown = down.length ? down.reduce(function(s,sk){ return s+_PORT_PRICES[sk.code].pct; },0)/down.length : 0;
+  // 加权平均涨幅：Σ(pct × w) / Σ(w)，若无仓位数据则退化为等权平均
+  var avgUp = (function(){
+    if(!up.length) return 0;
+    var wSum = up.reduce(function(s,sk){ return s+(sk.w||0); },0);
+    if(wSum > 0) return up.reduce(function(s,sk){ return s+_PORT_PRICES[sk.code].pct*(sk.w||0); },0)/wSum;
+    return up.reduce(function(s,sk){ return s+_PORT_PRICES[sk.code].pct; },0)/up.length;
+  })();
+  var avgDown = (function(){
+    if(!down.length) return 0;
+    var wSum = down.reduce(function(s,sk){ return s+(sk.w||0); },0);
+    if(wSum > 0) return down.reduce(function(s,sk){ return s+_PORT_PRICES[sk.code].pct*(sk.w||0); },0)/wSum;
+    return down.reduce(function(s,sk){ return s+_PORT_PRICES[sk.code].pct; },0)/down.length;
+  })();
   var upRatio = withPrice.length > 0 ? up.length/withPrice.length : 0;
 
   // 热力点阵：按涨幅从高到低排序，大小代表仓位，颜色深浅代表幅度
