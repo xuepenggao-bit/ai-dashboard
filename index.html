@@ -5568,7 +5568,8 @@ function deleteHistRecord(idx){
 // ── 市场涨跌统计（分布直方图）──────────────────────────────────
 // ── 市场统计：涨跌分布 + 两市成交额（合并一次请求）──────────────
 // 一次拉全 A 股 f3(涨跌幅)+f6(成交额)，同时填充两张卡片
-// 避免旧版本错误：① 北交所过滤器格式错误 ② 用合成指数的 f6 取成交额（指数本身无实际成交）
+// 涨跌统计 + 成交分析
+// API限制：每页最多100条，全市场约5500只，需要多页并行抓取
 var _mktStatsFetching = false;
 
 async function fetchMarketStats(){
@@ -5587,16 +5588,38 @@ async function fetchMarketStats(){
   if(tTs) tTs.textContent='加载中…';
 
   try{
-    const ts = Date.now();
-    // 与 fetchMainFlow 使用完全相同的 fs，去掉不支持的北交所过滤格式
-    // pz=10000 确保覆盖全部沪深 A 股（~5500只）
-    const url = 'https://push2.eastmoney.com/api/qt/clist/get'
-      + '?fid=f3&po=1&pz=10000&pn=1&np=1&fltt=2&invt=2'
+    const BASE = 'https://push2.eastmoney.com/api/qt/clist/get'
+      + '?ut=fa5fd1943c7b386f172d6893dbfba10b'
+      + '&fid=f3&po=1&pz=100&np=1&fltt=2&invt=2'
       + '&fields=f3,f6'
-      + '&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23'
-      + '&_=' + ts;
+      + '&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
 
-    const diff = (await fetch(url).then(r=>r.json())).data?.diff || [];
+    // 第一页：取总数
+    const first = await fetch(BASE + '&pn=1&_=' + Date.now()).then(r=>r.json());
+    const total = first?.data?.total || 0;
+    const pages = Math.ceil(total / 100);
+
+    // 分批并行拉取（每批10页，防止服务器限流）
+    let diff = Array.from(first?.data?.diff || []);
+    const BATCH = 10;
+    for(let bStart = 2; bStart <= pages; bStart += BATCH){
+      const bEnd = Math.min(bStart + BATCH - 1, pages);
+      const bFetches = [];
+      for(let pn = bStart; pn <= bEnd; pn++){
+        bFetches.push(
+          fetch(BASE + '&pn=' + pn + '&_=' + (Date.now() + pn))
+            .then(r=>r.json())
+            .catch(()=>null)
+        );
+      }
+      const bResults = await Promise.all(bFetches);
+      for(const r of bResults){
+        const d = r?.data?.diff;
+        if(d && d.length) diff = diff.concat(d);
+      }
+      // 更新加载进度
+      if(bTs) bTs.textContent = '加载中… ' + Math.round(diff.length/Math.max(total,1)*100) + '%';
+    }
 
     // ── 分布分桶（9档，与东方财富牛熊风向标一致）──
     // 上涨侧标签从外到内：涨停 | 涨停~5% | 5~1% | 1~0%
@@ -5613,9 +5636,9 @@ async function fetchMarketStats(){
       {label:'跌停',    side:'down',lim:true,  min:-Infinity, max:-9.9},
     ];
     for(const b of BKTS) b.count=0;
+    const LU = BKTS[0], LD = BKTS[8];   // 涨停 / 跌停桶
 
     // 成交额累加（f6 单位：元，fltt=2 下为原值）
-    // 正确方式：累加各只股票的真实成交额，不用合成指数的 f6
     let totalYuan = 0;
 
     for(const s of diff){
@@ -5623,7 +5646,14 @@ async function fetchMarketStats(){
       const v = parseFloat(s.f6);
       if(isFinite(v) && v > 0) totalYuan += v;
       if(!isFinite(p)) continue;
-      for(const b of BKTS){ if(p >= b.min && p < b.max){ b.count++; break; } }
+      // 先判断涨停/跌停（避免边界被中间桶截走）
+      if(p >= 9.9)  { LU.count++; continue; }
+      if(p <= -9.9) { LD.count++; continue; }
+      // 其余 7 个桶正常匹配
+      for(let i=1; i<=7; i++){
+        const b = BKTS[i];
+        if(p >= b.min && p < b.max){ b.count++; break; }
+      }
     }
 
     // ── 涨跌统计卡片 ──
