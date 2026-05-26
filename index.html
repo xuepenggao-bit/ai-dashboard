@@ -597,13 +597,13 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;padding:8px 12px;background:#fffbeb;border-radius:8px;border:1px solid #fde68a">
         <div>
           <span class="tx3">最新余额&nbsp;</span>
-          <span style="font-size:18px;font-weight:800;color:#d97706">¥28,780亿</span>
+          <span id="marginKpiVal" style="font-size:18px;font-weight:800;color:#d97706">¥28,780亿</span>
         </div>
-        <span class="tx3" style="color:#94a3b8">2026-05-26 · 较年初+9.3%</span>
-        <span class="tx3" style="margin-left:auto;color:#94a3b8">近51交易日 · 2026-03-10起</span>
+        <span id="marginKpiDate" class="tx3" style="color:#94a3b8">2026-05-26</span>
+        <span id="marginKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8">近51交易日 · 2026-03-10起</span>
       </div>
       <div style="height:175px"><canvas id="cMargin"></canvas></div>
-      <div class="tx3 mt4">来源: 沪深交易所 · 日频余额数据 · 数据截至2026-05-26 · 趋势参考</div>
+      <div class="tx3 mt4">来源: 沪深交易所 · 日频余额数据 · <span id="marginKpiFooter">数据截至2026-05-26</span> · 趋势参考</div>
     </div>
   </div>
 
@@ -4515,6 +4515,118 @@ function fmtMacroLabel(d){
 // 每个 entry 的 vfs 是按优先级排列的候选字段名；若所有候选为 null，自动扫描第一个数值字段
 // 开发调试：点刷新后在浏览器控制台查看 [Macro] 输出，可看到实际返回的字段名
 const _DC='https://datacenter-web.eastmoney.com/api/data/v1/get?source=WEB&client=WEB&pageSize=24&sortColumns=REPORT_DATE&sortTypes=-1&';
+
+// ── 日频图表动态拉取（融资融券 / 北向资金 / 涨跌家数） ────────────────────
+const _DC60='https://datacenter-web.eastmoney.com/api/data/v1/get?source=WEB&client=WEB&pageSize=60&sortTypes=-1&';
+
+function _fmtDayLabel(s){
+  // 'YYYY-MM-DD' → 'MM-DD'；'YYYYMMDD' → 'MM-DD'
+  if(!s) return s;
+  s=String(s).replace(/T.*/,'').trim();
+  if(s.length>=10) return s.slice(5,10);
+  if(s.length===8)  return s.slice(4,6)+'-'+s.slice(6,8);
+  return s;
+}
+
+async function _fetchDailySeries(url, lf, vfs){
+  const res=await fetch(url,{cache:'no-store'});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const json=await res.json();
+  const data=json.result?.data;
+  if(!data?.length) throw new Error('空数据');
+  const first=data[0];
+  let vf=vfs.find(f=>first[f]!=null&&first[f]!=='');
+  if(!vf){
+    const auto=Object.keys(first).filter(k=>k!==lf&&typeof first[k]==='number'&&isFinite(first[k]));
+    if(auto.length) vf=auto[0]; else throw new Error('无数值字段');
+  }
+  const sorted=[...data].sort((a,b)=>String(a[lf])>String(b[lf])?1:-1);
+  const rawVals=sorted.map(d=>d[vf]!=null?parseFloat(d[vf]):null);
+  const maxAbs=Math.max(...rawVals.filter(v=>v!=null).map(Math.abs));
+  // 自动换算单位 → 亿元
+  const scale = maxAbs>1e10 ? 1/1e8   // 元 → 亿
+              : maxAbs>1e6  ? 1/1e4   // 万元 → 亿
+              : 1;                     // 已是亿
+  return{
+    labels: sorted.map(d=>_fmtDayLabel(d[lf])),
+    vals:   rawVals.map(v=>v!=null?Math.round(v*scale):null),
+    latestDate: String(sorted[sorted.length-1]?.[lf]||'').slice(0,10),
+    latestVal:  rawVals[rawVals.length-1]!=null?Math.round(rawVals[rawVals.length-1]*scale):null,
+    usedField: vf,
+  };
+}
+
+async function fetchDailyCharts(){
+  // ── 1. 融资融券余额 ──────────────────────────────────────────────
+  try{
+    const d=await _fetchDailySeries(
+      _DC60+'reportName=RPT_MARGIN_GGMX&columns=TRADE_DATE,RZRQYE&sortColumns=TRADE_DATE',
+      'TRADE_DATE',['RZRQYE','TOTAL_RZRQYE']
+    );
+    if(CH.margin){
+      CH.margin.data.labels=d.labels;
+      CH.margin.data.datasets[0].data=d.vals;
+      // 动态调整 Y 轴建议范围
+      const minV=Math.min(...d.vals.filter(v=>v!=null));
+      const maxV=Math.max(...d.vals.filter(v=>v!=null));
+      const pad=Math.round((maxV-minV)*0.15)||1000;
+      CH.margin.options.scales.y.suggestedMin=minV-pad;
+      CH.margin.options.scales.y.suggestedMax=maxV+pad;
+      CH.margin.update('none');
+    }
+    // 更新 KPI 显示
+    const kv=document.getElementById('marginKpiVal');
+    const kd=document.getElementById('marginKpiDate');
+    const kc=document.getElementById('marginKpiCnt');
+    const kf=document.getElementById('marginKpiFooter');
+    if(kv&&d.latestVal!=null) kv.textContent='¥'+d.latestVal.toLocaleString()+'亿';
+    if(kd&&d.latestDate)      kd.textContent=d.latestDate;
+    if(kc) kc.textContent='近'+d.labels.length+'交易日 · '+d.labels[0]+'起';
+    if(kf&&d.latestDate)      kf.textContent='数据截至'+d.latestDate;
+    console.log('[Daily] 融资融券 OK | 字段:'+d.usedField+' 最新:'+d.latestDate,d.latestVal+'亿');
+  }catch(e){ console.warn('[Daily] 融资融券余额失败:',e.message); }
+
+  // ── 2. 北向资金净流入 ──────────────────────────────────────────
+  try{
+    const d=await _fetchDailySeries(
+      _DC60+'reportName=RPT_MUTUAL_FUND_SUM&columns=DATE,NORTH_MONEY,SH_NORTH_MONEY,SZ_NORTH_MONEY&sortColumns=DATE',
+      'DATE',['NORTH_MONEY','SH_NORTH_MONEY']
+    );
+    if(CH.north){
+      CH.north.data.labels=d.labels;
+      CH.north.data.datasets[0].data=d.vals;
+      CH.north.data.datasets[0].backgroundColor=
+        d.vals.map(v=>v==null?'rgba(148,163,184,.4)':v>=0?'rgba(5,150,105,.7)':'rgba(220,38,38,.6)');
+      CH.north.update('none');
+    }
+    console.log('[Daily] 北向资金 OK | 字段:'+d.usedField+' 最新:'+d.latestDate,d.latestVal+'亿');
+  }catch(e){ console.warn('[Daily] 北向资金失败:',e.message); }
+
+  // ── 3. 涨跌家数：仅用 push2 拉当日实时数据，追加/覆盖最后一根柱 ──
+  try{
+    const r=await fetch(
+      `https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=1&po=1&np=1&fltt=2&invt=2`
+      +`&fid=f3&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23&fields=f104,f105&_=${Date.now()}`
+    ).then(r=>r.json());
+    const f104=parseInt(r?.data?.diff?.[0]?.f104);
+    const f105=parseInt(r?.data?.diff?.[0]?.f105);
+    if(isFinite(f104)&&isFinite(f105)&&f104>0&&CH.updown){
+      const now=new Date();
+      const lbl=String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+      const labels=CH.updown.data.labels;
+      const upDs=CH.updown.data.datasets[0].data;
+      const dnDs=CH.updown.data.datasets[1].data;
+      if(labels[labels.length-1]===lbl){
+        upDs[upDs.length-1]=f104;
+        dnDs[dnDs.length-1]=-f105;
+      }else{
+        labels.push(lbl); upDs.push(f104); dnDs.push(-f105);
+      }
+      CH.updown.update('none');
+      console.log('[Daily] 涨跌家数 OK:',lbl,'↑'+f104,'↓'+f105);
+    }
+  }catch(e){ console.warn('[Daily] 涨跌家数失败:',e.message); }
+}
 const MACRO_CFGS={
   cpi:{
     url:_DC+'reportName=RPT_ECONOMY_CPI&columns=REPORT_DATE,NATIONAL_CHANGE_RATE,CITY_CHANGE_RATE,RURAL_CHANGE_RATE',
@@ -4661,6 +4773,8 @@ async function refreshMacro(){
 
   // 日频 KPI 卡片（总市值、PE、两融）并行拉取，不阻塞图表更新
   fetchMacroKpis();
+  // 日频图表（融资融券余额 / 北向资金 / 涨跌家数当日）
+  fetchDailyCharts();
 
   const chartKeys=[
     {key:'cpi',         chRef:()=>CH.cpi,             dsIdx:0},
