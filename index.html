@@ -981,59 +981,64 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   <!-- Row 3: 市场涨跌统计 + 三市成交分析 -->
   <div class="g2 mb16">
-    <!-- 涨跌统计 -->
-    <div class="card" style="border-top:3px solid #dc2626;background:linear-gradient(135deg,#fef2f2 0%,#fff 60%)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:13px;font-weight:800;color:#991b1b;letter-spacing:.02em">📊 市场涨跌统计</span>
+    <!-- 涨跌统计（仿东方财富牛熊风向标格式） -->
+    <div class="card" style="border-top:3px solid #dc2626;background:#fff">
+      <!-- 标题行 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:800;color:#374151;letter-spacing:.01em">📊 涨跌统计</span>
         <div style="display:flex;align-items:center;gap:5px">
-          <span id="mktBreadthTs" style="font-size:10px;color:#94a3b8;font-weight:600"></span>
-          <button onclick="fetchMarketBreadth()" id="mktBreadthBtn"
-            style="background:#fee2e2;border:1px solid #fecaca;color:#991b1b;border-radius:6px;
+          <span id="mktBreadthTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
+          <button onclick="fetchMarketStats()" id="mktBreadthBtn"
+            style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
                    padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
         </div>
       </div>
-      <!-- 家数 KPI -->
-      <div style="display:flex;gap:6px;margin-bottom:10px">
-        <div style="flex:1;background:#fee2e2;border-radius:8px;padding:6px 8px;text-align:center">
-          <div id="mktUp" style="font-size:20px;font-weight:900;color:#b91c1c;line-height:1">—</div>
-          <div style="font-size:10px;color:#dc2626;font-weight:700;margin-top:2px">上涨</div>
+      <!-- 家数统计：左列上涨/下跌，右列涨停/跌停 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:10px;height:10px;border-radius:2px;background:#ef4444;display:inline-block;flex-shrink:0"></span>
+          <span style="font-size:13px;color:#374151;font-weight:500">上涨</span>
+          <span id="mktUp" style="font-size:16px;font-weight:900;color:#dc2626;margin-left:2px">—</span>
+          <span style="font-size:12px;color:#6b7280;font-weight:500">家</span>
         </div>
-        <div style="flex:1;background:#f8fafc;border-radius:8px;padding:6px 8px;text-align:center">
-          <div id="mktFlat" style="font-size:20px;font-weight:900;color:#64748b;line-height:1">—</div>
-          <div style="font-size:10px;color:#94a3b8;font-weight:700;margin-top:2px">平盘</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:13px;color:#374151;font-weight:500">涨停</span>
+          <span id="mktLimitUp" style="font-size:16px;font-weight:900;color:#dc2626">—</span>
+          <span style="font-size:12px;color:#6b7280;font-weight:500">家</span>
         </div>
-        <div style="flex:1;background:#f0fdf4;border-radius:8px;padding:6px 8px;text-align:center">
-          <div id="mktDown" style="font-size:20px;font-weight:900;color:#15803d;line-height:1">—</div>
-          <div style="font-size:10px;color:#16a34a;font-weight:700;margin-top:2px">下跌</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:10px;height:10px;border-radius:2px;background:#22c55e;display:inline-block;flex-shrink:0"></span>
+          <span style="font-size:13px;color:#374151;font-weight:500">下跌</span>
+          <span id="mktDown" style="font-size:16px;font-weight:900;color:#16a34a;margin-left:2px">—</span>
+          <span style="font-size:12px;color:#6b7280;font-weight:500">家</span>
         </div>
-        <div style="flex:1;background:#fff1f2;border-radius:8px;padding:6px 8px;text-align:center;border:1.5px solid #fecaca">
-          <div id="mktLimitUp" style="font-size:20px;font-weight:900;color:#991b1b;line-height:1">—</div>
-          <div style="font-size:10px;color:#dc2626;font-weight:700;margin-top:2px">涨停</div>
-        </div>
-        <div style="flex:1;background:#f0fdf4;border-radius:8px;padding:6px 8px;text-align:center;border:1.5px solid #86efac">
-          <div id="mktLimitDown" style="font-size:20px;font-weight:900;color:#14532d;line-height:1">—</div>
-          <div style="font-size:10px;color:#15803d;font-weight:700;margin-top:2px">跌停</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:13px;color:#374151;font-weight:500">跌停</span>
+          <span id="mktLimitDown" style="font-size:16px;font-weight:900;color:#16a34a">—</span>
+          <span style="font-size:12px;color:#6b7280;font-weight:500">家</span>
         </div>
       </div>
-      <!-- 分布直方图（由 JS 填充） -->
+      <!-- 分布直方图（JS 填充） -->
       <div id="mktBreadthChart">
-        <div style="color:var(--text2);font-size:11px;text-align:center;padding:14px 0">点击↻加载</div>
+        <div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">点击↻加载</div>
       </div>
+      <!-- 平盘提示（JS 填充） -->
+      <div id="mktFlatRow" style="display:none;font-size:10px;color:#94a3b8;text-align:center;margin-top:6px"></div>
     </div>
 
-    <!-- 三市成交分析 -->
-    <div class="card" style="border-top:3px solid #2563eb;background:linear-gradient(135deg,#eff6ff 0%,#fff 60%)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:13px;font-weight:800;color:#1d4ed8;letter-spacing:.02em">💰 三市成交分析</span>
-        <div style="display:flex;align-items:center;gap:5px">
-          <span id="mktTurnTs" style="font-size:10px;color:#94a3b8;font-weight:600"></span>
-          <button onclick="fetchMarketTurnover()" id="mktTurnBtn"
-            style="background:#dbeafe;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:6px;
-                   padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+    <!-- 三市成交分析（仿东方财富格式） -->
+    <div class="card" style="border-top:3px solid #2563eb;background:#fff">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:13px;font-weight:800;color:#374151">💰 成交分析</span>
+          <span id="mktTurnTs" style="font-size:11px;color:#94a3b8;font-weight:500"></span>
         </div>
+        <button onclick="fetchMarketStats()" id="mktTurnBtn"
+          style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
+                 padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
       </div>
       <div id="mktTurnoverBody">
-        <div style="color:var(--text2);font-size:11px;text-align:center;padding:14px 0">点击↻加载</div>
+        <div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">点击↻加载</div>
       </div>
     </div>
   </div>
@@ -5593,24 +5598,25 @@ async function fetchMarketStats(){
 
     const diff = (await fetch(url).then(r=>r.json())).data?.diff || [];
 
-    // ── 分布分桶 ──
+    // ── 分布分桶（9档，与东方财富牛熊风向标一致）──
+    // 上涨侧标签从外到内：涨停 | 涨停~5% | 5~1% | 1~0%
+    // 下跌侧标签从内到外：0~1% | 1~5% | 5%~跌停 | 跌停
     const BKTS=[
-      {label:'涨停', side:'up',  lim:true,  min:9.9,     max:Infinity},
-      {label:'5~板', side:'up',             min:5,       max:9.9},
-      {label:'1~5%', side:'up',             min:1,       max:5},
-      {label:'0~1%', side:'up',             min:0.001,   max:1},
-      {label:'平盘',  side:'flat',           min:-0.001,  max:0.001},
-      {label:'0~1%', side:'down',           min:-1,      max:-0.001},
-      {label:'1~5%', side:'down',           min:-5,      max:-1},
-      {label:'5~板', side:'down',           min:-9.9,    max:-5},
-      {label:'跌停', side:'down',lim:true,  min:-Infinity,max:-9.9},
+      {label:'涨停',    side:'up',  lim:true,  min:9.9,      max:Infinity},
+      {label:'涨停~5%', side:'up',             min:5,        max:9.9},
+      {label:'5~1%',   side:'up',             min:1,        max:5},
+      {label:'1~0%',   side:'up',             min:0.001,    max:1},
+      {label:'平盘',    side:'flat',           min:-0.001,   max:0.001},
+      {label:'0~1%',   side:'down',           min:-1,       max:-0.001},
+      {label:'1~5%',   side:'down',           min:-5,       max:-1},
+      {label:'5%~跌停', side:'down',           min:-9.9,     max:-5},
+      {label:'跌停',    side:'down',lim:true,  min:-Infinity, max:-9.9},
     ];
     for(const b of BKTS) b.count=0;
 
     // 成交额累加（f6 单位：元，fltt=2 下为原值）
-    // ↓ 这是正确方式：累加各只股票的真实成交额，而非用合成指数的 f6
+    // 正确方式：累加各只股票的真实成交额，不用合成指数的 f6
     let totalYuan = 0;
-    const shMap = {}, szMap = {};   // 按市场拆分（f12 开头区分沪/深）
 
     for(const s of diff){
       const p = parseFloat(s.f3);
@@ -5624,23 +5630,33 @@ async function fetchMarketStats(){
     const upCnt   = BKTS.filter(b=>b.side==='up').reduce((s,b)=>s+b.count,0);
     const downCnt = BKTS.filter(b=>b.side==='down').reduce((s,b)=>s+b.count,0);
     const flatCnt = BKTS.find(b=>b.side==='flat').count;
-    document.getElementById('mktUp').textContent        = upCnt;
-    document.getElementById('mktDown').textContent      = downCnt;
-    document.getElementById('mktFlat').textContent      = flatCnt;
-    document.getElementById('mktLimitUp').textContent   = BKTS.find(b=>b.side==='up'  &&b.lim).count;
-    document.getElementById('mktLimitDown').textContent = BKTS.find(b=>b.side==='down'&&b.lim).count;
+    const elUp   = document.getElementById('mktUp');
+    const elDown = document.getElementById('mktDown');
+    const elLU   = document.getElementById('mktLimitUp');
+    const elLD   = document.getElementById('mktLimitDown');
+    const elFlat = document.getElementById('mktFlatRow');
+    if(elUp)   elUp.textContent   = upCnt;
+    if(elDown) elDown.textContent = downCnt;
+    if(elLU)   elLU.textContent   = BKTS.find(b=>b.side==='up'  &&b.lim).count;
+    if(elLD)   elLD.textContent   = BKTS.find(b=>b.side==='down'&&b.lim).count;
+    // 平盘家数（小行提示）
+    if(elFlat){
+      elFlat.textContent = '平盘 ' + flatCnt + ' 家';
+      elFlat.style.display = flatCnt > 0 ? 'block' : 'none';
+    }
 
-    // 直方图
+    // 直方图（带穹顶圆角，柱越矮圆越大）
     const maxCnt = Math.max(...BKTS.map(b=>b.count), 1);
-    const MAX_H  = 65;
+    const MAX_H  = 64;
     const COL = ['#b91c1c','#dc2626','#ef4444','#fca5a5','#94a3b8','#bbf7d0','#4ade80','#16a34a','#14532d'];
     const TC  = ['#dc2626','#dc2626','#dc2626','#dc2626','#64748b','#15803d','#15803d','#15803d','#15803d'];
     const bars = BKTS.map((b,i)=>{
-      const bh = Math.max(2, Math.round((b.count/maxCnt)*MAX_H));
+      const bh = Math.max(3, Math.round((b.count/maxCnt)*MAX_H));
+      const r  = Math.min(6, Math.ceil(bh/2));
       return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;gap:1px">
         <div style="font-size:8.5px;font-weight:800;color:${TC[i]};min-height:11px;text-align:center;line-height:1">${b.count||''}</div>
         <div style="display:flex;flex-direction:column;justify-content:flex-end;height:${MAX_H}px;width:100%">
-          <div style="width:100%;height:${bh}px;background:${COL[i]};border-radius:3px 3px 0 0"></div>
+          <div style="width:100%;height:${bh}px;background:${COL[i]};border-radius:${r}px ${r}px 0 0"></div>
         </div>
         <div style="font-size:8px;color:var(--text2);white-space:nowrap;overflow:hidden;max-width:100%;text-align:center;margin-top:1px">${b.label}</div>
       </div>`;
@@ -5654,31 +5670,33 @@ async function fetchMarketStats(){
     const totalBi = totalYuan / 1e8;   // 元 → 亿元
     const now     = new Date();
     const curMin  = now.getHours()*60 + now.getMinutes();
+    // 计算已交易分钟数（上午9:30-11:30，下午13:00-15:00）
     let elapsed = 0;
-    if(curMin < 570)       elapsed = 0;
-    else if(curMin <= 690) elapsed = curMin - 570;
-    else if(curMin < 780)  elapsed = 120;
-    else if(curMin <= 900) elapsed = 120 + (curMin - 780);
-    else                   elapsed = 240;
+    if(curMin < 570)       elapsed = 0;           // 未开盘
+    else if(curMin <= 690) elapsed = curMin - 570; // 上午盘中
+    else if(curMin < 780)  elapsed = 120;          // 午休
+    else if(curMin <= 900) elapsed = 120 + (curMin - 780); // 下午盘中
+    else                   elapsed = 240;          // 收盘
 
+    // 格式化：亿→千亿→万亿，保留2位小数
     const fmt = v => {
-      if(v >= 10000) return (v/10000).toFixed(2)+'万亿';
-      if(v >= 1000)  return (v/1000).toFixed(1)+'千亿';
-      return Math.round(v)+'亿';
+      if(v >= 10000) return (v/10000).toFixed(2) + '万亿元';
+      if(v >= 1000)  return (v/1000).toFixed(2) + '千亿元';
+      return Math.round(v) + '亿元';
     };
 
-    let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+    let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
       <div style="background:#dbeafe;border-radius:10px;padding:11px 12px">
-        <div style="font-size:10px;color:#1d4ed8;font-weight:700;margin-bottom:4px">沪深两市成交额</div>
-        <div style="font-size:22px;font-weight:900;color:#1e40af;line-height:1;letter-spacing:-.02em">${fmt(totalBi)}</div>
-        <div style="font-size:10px;color:#3b82f6;margin-top:4px">实时 · ${timeStr}</div>
+        <div style="font-size:10px;color:#1d4ed8;font-weight:700;margin-bottom:6px">沪深两市成交额</div>
+        <div style="font-size:22px;font-weight:900;color:#1e40af;line-height:1.1;letter-spacing:-.02em">${fmt(totalBi)}</div>
+        <div style="font-size:10px;color:#3b82f6;margin-top:5px">实时 · ${timeStr}</div>
       </div>`;
     if(elapsed > 15 && elapsed < 235){
       const pred = totalBi * (240 / elapsed);
       html += `<div style="background:#e0f2fe;border-radius:10px;padding:11px 12px">
-        <div style="font-size:10px;color:#0369a1;font-weight:700;margin-bottom:4px">预测全天成交额</div>
-        <div style="font-size:22px;font-weight:900;color:#075985;line-height:1;letter-spacing:-.02em">${fmt(pred)}</div>
-        <div style="font-size:10px;color:#0284c7;margin-top:4px">已交易${elapsed}min / 240min</div>
+        <div style="font-size:10px;color:#0369a1;font-weight:700;margin-bottom:6px">预测全天成交额</div>
+        <div style="font-size:22px;font-weight:900;color:#075985;line-height:1.1;letter-spacing:-.02em">${fmt(pred)}</div>
+        <div style="font-size:10px;color:#0284c7;margin-top:5px">已交易 ${elapsed}min / 240min</div>
       </div>`;
     } else {
       html += `<div style="background:#f8fafc;border-radius:10px;padding:11px 12px;display:flex;align-items:center;justify-content:center">
