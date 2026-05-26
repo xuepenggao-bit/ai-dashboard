@@ -979,6 +979,65 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
+  <!-- Row 3: 市场涨跌统计 + 三市成交分析 -->
+  <div class="g2 mb16">
+    <!-- 涨跌统计 -->
+    <div class="card" style="border-top:3px solid #dc2626;background:linear-gradient(135deg,#fef2f2 0%,#fff 60%)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:800;color:#991b1b;letter-spacing:.02em">📊 市场涨跌统计</span>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span id="mktBreadthTs" style="font-size:10px;color:#94a3b8;font-weight:600"></span>
+          <button onclick="fetchMarketBreadth()" id="mktBreadthBtn"
+            style="background:#fee2e2;border:1px solid #fecaca;color:#991b1b;border-radius:6px;
+                   padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+        </div>
+      </div>
+      <!-- 家数 KPI -->
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <div style="flex:1;background:#fee2e2;border-radius:8px;padding:6px 8px;text-align:center">
+          <div id="mktUp" style="font-size:20px;font-weight:900;color:#b91c1c;line-height:1">—</div>
+          <div style="font-size:10px;color:#dc2626;font-weight:700;margin-top:2px">上涨</div>
+        </div>
+        <div style="flex:1;background:#f8fafc;border-radius:8px;padding:6px 8px;text-align:center">
+          <div id="mktFlat" style="font-size:20px;font-weight:900;color:#64748b;line-height:1">—</div>
+          <div style="font-size:10px;color:#94a3b8;font-weight:700;margin-top:2px">平盘</div>
+        </div>
+        <div style="flex:1;background:#f0fdf4;border-radius:8px;padding:6px 8px;text-align:center">
+          <div id="mktDown" style="font-size:20px;font-weight:900;color:#15803d;line-height:1">—</div>
+          <div style="font-size:10px;color:#16a34a;font-weight:700;margin-top:2px">下跌</div>
+        </div>
+        <div style="flex:1;background:#fff1f2;border-radius:8px;padding:6px 8px;text-align:center;border:1.5px solid #fecaca">
+          <div id="mktLimitUp" style="font-size:20px;font-weight:900;color:#991b1b;line-height:1">—</div>
+          <div style="font-size:10px;color:#dc2626;font-weight:700;margin-top:2px">涨停</div>
+        </div>
+        <div style="flex:1;background:#f0fdf4;border-radius:8px;padding:6px 8px;text-align:center;border:1.5px solid #86efac">
+          <div id="mktLimitDown" style="font-size:20px;font-weight:900;color:#14532d;line-height:1">—</div>
+          <div style="font-size:10px;color:#15803d;font-weight:700;margin-top:2px">跌停</div>
+        </div>
+      </div>
+      <!-- 分布直方图（由 JS 填充） -->
+      <div id="mktBreadthChart">
+        <div style="color:var(--text2);font-size:11px;text-align:center;padding:14px 0">点击↻加载</div>
+      </div>
+    </div>
+
+    <!-- 三市成交分析 -->
+    <div class="card" style="border-top:3px solid #2563eb;background:linear-gradient(135deg,#eff6ff 0%,#fff 60%)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:800;color:#1d4ed8;letter-spacing:.02em">💰 三市成交分析</span>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span id="mktTurnTs" style="font-size:10px;color:#94a3b8;font-weight:600"></span>
+          <button onclick="fetchMarketTurnover()" id="mktTurnBtn"
+            style="background:#dbeafe;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:6px;
+                   padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+        </div>
+      </div>
+      <div id="mktTurnoverBody">
+        <div style="color:var(--text2);font-size:11px;text-align:center;padding:14px 0">点击↻加载</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Sector cards (rendered by JS) -->
   <div id="portSectors"></div>
 
@@ -4450,7 +4509,7 @@ function _tabRefresh(idx){
   if(_TAB_TS[idx] && now-_TAB_TS[idx]<_TAB_THROTTLE) return; // 节流
   _TAB_TS[idx]=now;
   // 按标签页类型调用对应的动态数据刷新函数
-  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); } // finally 内会链式调用 fetchIndexPrices
+  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); } // finally 内会链式调用 fetchIndexPrices
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tStage') fetchStageData();
   else if(tab==='tAM')    refreshMacro();
@@ -5501,6 +5560,154 @@ function deleteHistRecord(idx){
   renderHistTable();
 }
 
+// ── 市场涨跌统计（分布直方图）──────────────────────────────────
+async function fetchMarketBreadth(){
+  const btn  = document.getElementById('mktBreadthBtn');
+  const tsEl = document.getElementById('mktBreadthTs');
+  const chartEl = document.getElementById('mktBreadthChart');
+  if(btn){ btn.disabled=true; btn.textContent='⏳'; }
+  if(tsEl) tsEl.textContent='加载中…';
+  try{
+    const ts = Date.now();
+    // 拉取全 A 股涨跌幅（沪主板+科创板+深主板+创业板+北交所）
+    const url = 'https://push2.eastmoney.com/api/qt/clist/get'
+      +'?fid=f3&po=0&pz=6000&pn=1&np=1&fltt=2&invt=2'
+      +'&fields=f3'
+      +'&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:81+s:2048'
+      +'&_='+ts;
+    const resp = await fetch(url,{cache:'no-store'});
+    const diff = (await resp.json()).data?.diff || [];
+
+    // 9 分桶：涨停 | 5~板 | 1~5% | 0~1% | 平盘 | 0~1% | 1~5% | 5~板 | 跌停
+    const BKTS=[
+      {label:'涨停', side:'up',   lim:true,  min:9.9,    max:Infinity},
+      {label:'5~板', side:'up',              min:5,      max:9.9},
+      {label:'1~5%', side:'up',              min:1,      max:5},
+      {label:'0~1%', side:'up',              min:0.001,  max:1},
+      {label:'平盘',  side:'flat',            min:-0.001, max:0.001},
+      {label:'0~1%', side:'down',            min:-1,     max:-0.001},
+      {label:'1~5%', side:'down',            min:-5,     max:-1},
+      {label:'5~板', side:'down',            min:-9.9,   max:-5},
+      {label:'跌停', side:'down', lim:true,  min:-Infinity,max:-9.9},
+    ];
+    for(const b of BKTS) b.count=0;
+
+    for(const s of diff){
+      const p=parseFloat(s.f3);
+      if(!isFinite(p)) continue;
+      for(const b of BKTS){ if(p>=b.min && p<b.max){ b.count++; break; } }
+    }
+
+    const upCnt   = BKTS.filter(b=>b.side==='up').reduce((s,b)=>s+b.count,0);
+    const downCnt = BKTS.filter(b=>b.side==='down').reduce((s,b)=>s+b.count,0);
+    const flatCnt = BKTS.find(b=>b.side==='flat').count;
+    document.getElementById('mktUp').textContent       = upCnt;
+    document.getElementById('mktDown').textContent     = downCnt;
+    document.getElementById('mktFlat').textContent     = flatCnt;
+    document.getElementById('mktLimitUp').textContent  = BKTS.find(b=>b.side==='up'  &&b.lim).count;
+    document.getElementById('mktLimitDown').textContent= BKTS.find(b=>b.side==='down'&&b.lim).count;
+
+    // 直方图
+    const maxCnt=Math.max(...BKTS.map(b=>b.count),1);
+    const MAX_H=65;
+    const COL=['#b91c1c','#dc2626','#ef4444','#fca5a5','#94a3b8','#bbf7d0','#4ade80','#16a34a','#14532d'];
+    const TC =['#dc2626','#dc2626','#dc2626','#dc2626','#64748b','#15803d','#15803d','#15803d','#15803d'];
+    const bars=BKTS.map((b,i)=>{
+      const bh=Math.max(2,Math.round((b.count/maxCnt)*MAX_H));
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;gap:1px">
+        <div style="font-size:8.5px;font-weight:800;color:${TC[i]};min-height:11px;text-align:center;line-height:1">${b.count||''}</div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;height:${MAX_H}px;width:100%">
+          <div style="width:100%;height:${bh}px;background:${COL[i]};border-radius:3px 3px 0 0"></div>
+        </div>
+        <div style="font-size:8px;color:var(--text2);white-space:nowrap;overflow:hidden;max-width:100%;text-align:center;margin-top:1px">${b.label}</div>
+      </div>`;
+    }).join('');
+    if(chartEl) chartEl.innerHTML=`<div style="display:flex;align-items:stretch;gap:2px">${bars}</div>`;
+    if(tsEl) tsEl.textContent=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){
+    console.error('fetchMarketBreadth:',e);
+    if(chartEl) chartEl.innerHTML='<div style="color:#ef4444;font-size:11px;text-align:center;padding:14px 0">获取失败</div>';
+    if(tsEl) tsEl.textContent='获取失败';
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='↻'; }
+  }
+}
+
+// ── 三市成交分析 ──────────────────────────────────────────────
+async function fetchMarketTurnover(){
+  const btn   = document.getElementById('mktTurnBtn');
+  const tsEl  = document.getElementById('mktTurnTs');
+  const bodyEl= document.getElementById('mktTurnoverBody');
+  if(btn){ btn.disabled=true; btn.textContent='⏳'; }
+  if(tsEl) tsEl.textContent='加载中…';
+  try{
+    const ts=Date.now();
+    const [shR,szR]=await Promise.all([
+      fetch(`https://push2.eastmoney.com/api/qt/stock/get?secid=1.000001&fields=f6&fltt=2&_=${ts}`,{cache:'no-store'}).then(r=>r.json()),
+      fetch(`https://push2.eastmoney.com/api/qt/stock/get?secid=0.399001&fields=f6&fltt=2&_=${ts}`,{cache:'no-store'}).then(r=>r.json()),
+    ]);
+    const shVol=parseFloat(shR.data?.f6)||0;
+    const szVol=parseFloat(szR.data?.f6)||0;
+    const totalBi=(shVol+szVol)/1e8;
+    const shBi=shVol/1e8, szBi=szVol/1e8;
+
+    // 预测全天（按剩余交易时间线性外推）
+    const now=new Date();
+    const curMin=now.getHours()*60+now.getMinutes();
+    let elapsed=0;
+    if(curMin<570) elapsed=0;                     // 9:30 前
+    else if(curMin<=690) elapsed=curMin-570;       // 9:30-11:30 (0-120)
+    else if(curMin<780) elapsed=120;               // 午休
+    else if(curMin<=900) elapsed=120+(curMin-780); // 13:00-15:00 (120-240)
+    else elapsed=240;
+
+    const fmt=v=>{
+      if(v>=10000) return (v/10000).toFixed(2)+'万亿';
+      if(v>=1000)  return (v/1000).toFixed(1)+'千亿';
+      return Math.round(v)+'亿';
+    };
+    const timeStr=now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+
+    let html=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div style="background:#dbeafe;border-radius:10px;padding:11px 12px">
+        <div style="font-size:10px;color:#1d4ed8;font-weight:700;margin-bottom:4px">沪深两市成交额</div>
+        <div style="font-size:22px;font-weight:900;color:#1e40af;line-height:1;letter-spacing:-.02em">${fmt(totalBi)}</div>
+        <div style="font-size:10px;color:#3b82f6;margin-top:4px">实时 · ${timeStr}</div>
+      </div>`;
+    if(elapsed>15 && elapsed<235){
+      const pred=totalBi*(240/elapsed);
+      html+=`<div style="background:#e0f2fe;border-radius:10px;padding:11px 12px">
+        <div style="font-size:10px;color:#0369a1;font-weight:700;margin-bottom:4px">预测全天成交额</div>
+        <div style="font-size:22px;font-weight:900;color:#075985;line-height:1;letter-spacing:-.02em">${fmt(pred)}</div>
+        <div style="font-size:10px;color:#0284c7;margin-top:4px">已交易${elapsed}min / 240min</div>
+      </div>`;
+    } else {
+      html+=`<div style="background:#f8fafc;border-radius:10px;padding:11px 12px;display:flex;align-items:center;justify-content:center">
+        <span style="font-size:11px;color:#94a3b8">${elapsed===0?'未开盘':'已收盘'}</span>
+      </div>`;
+    }
+    html+=`</div>
+    <div style="display:flex;gap:6px">
+      <div style="flex:1;background:#f8fafc;border-radius:7px;padding:7px 10px">
+        <div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:2px">沪市成交额</div>
+        <div style="font-size:14px;font-weight:800;color:#1e40af">${fmt(shBi)}</div>
+      </div>
+      <div style="flex:1;background:#f8fafc;border-radius:7px;padding:7px 10px">
+        <div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:2px">深市成交额</div>
+        <div style="font-size:14px;font-weight:800;color:#1e40af">${fmt(szBi)}</div>
+      </div>
+    </div>`;
+    if(bodyEl) bodyEl.innerHTML=html;
+    if(tsEl) tsEl.textContent=timeStr;
+  }catch(e){
+    console.error('fetchMarketTurnover:',e);
+    if(bodyEl) bodyEl.innerHTML='<div style="color:#ef4444;font-size:11px;text-align:center;padding:14px 0">获取失败</div>';
+    if(tsEl) tsEl.textContent='获取失败';
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='↻'; }
+  }
+}
+
 // ── 主力净流入 TOP 20 ──────────────────────────────────────────
 async function fetchMainFlow(){
   const listEl = document.getElementById('mfList');
@@ -5695,6 +5902,8 @@ async function fetchPortPrices(){
     renderPortTop3();
     _renderPortTopW();
     fetchIndexPrices();
+    try{ fetchMarketBreadth(); }catch(e){}
+    try{ fetchMarketTurnover(); }catch(e){}
     // 如果估值分析标签页是活动状态，同步刷新估值表格（更新股价+市值列）
     var valEl = document.getElementById('tVal');
     if(valEl && valEl.classList.contains('active')) renderValTable();
@@ -5976,7 +6185,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   _safe(mkIntlPe);_safe(mkDomStorePe);_safe(mkArr);
 
   portInit();   // 优先从 GitHub 云端加载组合数据
-  fetchMainFlow(); // 初始化时立即拉取主力净流入榜
+  fetchMainFlow();      // 初始化时立即拉取主力净流入榜
+  fetchMarketBreadth(); // 市场涨跌统计
+  fetchMarketTurnover();// 三市成交分析
   // 兜底：1秒后若股价仍未加载（portInit 异步路径失败），强制触发一次
   setTimeout(()=>{
     const ts=document.getElementById('portPriceTs');
