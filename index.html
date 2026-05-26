@@ -5593,35 +5593,22 @@ async function fetchMarketStats(){
       + '&fields=f3,f6'
       + '&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
 
-    // 单页抓取（带重试，不检查 HTTP 状态码，只检查数据结构）
-    const fetchPageRaw = async (pn, retries) => {
-      retries = retries || 0;
-      try {
-        const json = await fetch(BASE + '&pn=' + pn + '&_=' + (Date.now() + pn + retries * 99999))
-          .then(r => r.json());
-        if(json?.data) return json;           // 有 data 就算成功
-        if(retries < 2) return fetchPageRaw(pn, retries + 1);
-        return null;
-      } catch(e) {
-        if(retries < 2) return fetchPageRaw(pn, retries + 1);
-        return null;
-      }
-    };
+    // 第一页：拿 total 和第一批 diff（与 fetchMainFlow 完全相同的写法）
+    const first = await fetch(BASE + '&pn=1&_=' + Date.now()).then(r=>r.json());
+    const total = first?.data?.total || 0;
+    const pages = Math.ceil(total / 100);
 
-    // 第一页：同时拿 total 和第一批 diff
-    const firstJson = await fetchPageRaw(1, 0);
-    if(!firstJson?.data) throw new Error('第一页请求失败，请检查网络');
-    const total = firstJson.data.total || 0;
-    const pages  = Math.ceil(total / 100);
-
-    // 分批并行拉取其余页（每批5页，降低并发）
-    let diff = Array.from(firstJson.data.diff || []);
+    // 分批并行拉取其余页（每批5页）
+    let diff = Array.from(first?.data?.diff || []);
     const BATCH = 5;
     for(let bStart = 2; bStart <= pages; bStart += BATCH){
       const bEnd = Math.min(bStart + BATCH - 1, pages);
       const bFetches = [];
       for(let pn = bStart; pn <= bEnd; pn++){
-        bFetches.push(fetchPageRaw(pn, 0));
+        bFetches.push(
+          fetch(BASE + '&pn=' + pn + '&_=' + (Date.now() + pn))
+            .then(r=>r.json()).catch(()=>null)
+        );
       }
       const bResults = await Promise.all(bFetches);
       for(const r of bResults){
