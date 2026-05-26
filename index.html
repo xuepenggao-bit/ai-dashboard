@@ -5593,32 +5593,64 @@ async function fetchMarketStats(){
       + '&fields=f3,f6'
       + '&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
 
-    // 第一页：取总数
-    const first = await fetch(BASE + '&pn=1&_=' + Date.now()).then(r=>r.json());
-    const total = first?.data?.total || 0;
-    const pages = Math.ceil(total / 100);
+    // 带重试的单页抓取：返回完整 data 对象（保留 total）
+    const fetchPageRaw = async (pn, attempt) => {
+      attempt = attempt || 0;
+      try {
+        const res = await fetch(BASE + '&pn=' + pn + '&_=' + (Date.now() + pn + attempt * 9999999));
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        return await res.json();
+      } catch(e) {
+        if(attempt < 2) return fetchPageRaw(pn, attempt + 1);
+        return null;
+      }
+    };
 
-    // 分批并行拉取（每批10页，防止服务器限流）
-    let diff = Array.from(first?.data?.diff || []);
-    const BATCH = 10;
+    // 第一页：同时拿 total 和第一批 diff
+    const firstJson = await fetchPageRaw(1, 0);
+    if(!firstJson?.data) throw new Error('第一页请求失败，请检查网络');
+    const total = firstJson.data.total || 0;
+    const pages  = Math.ceil(total / 100);
+
+    // 分批并行拉取其余页（每批5页，降低并发）
+    let diff = Array.from(firstJson.data.diff || []);
+    const BATCH = 5;
     for(let bStart = 2; bStart <= pages; bStart += BATCH){
       const bEnd = Math.min(bStart + BATCH - 1, pages);
       const bFetches = [];
       for(let pn = bStart; pn <= bEnd; pn++){
-        bFetches.push(
-          fetch(BASE + '&pn=' + pn + '&_=' + (Date.now() + pn))
-            .then(r=>r.json())
-            .catch(()=>null)
-        );
+        bFetches.push(fetchPageRaw(pn, 0));
       }
       const bResults = await Promise.all(bFetches);
       for(const r of bResults){
         const d = r?.data?.diff;
         if(d && d.length) diff = diff.concat(d);
       }
-      // 更新加载进度
-      if(bTs) bTs.textContent = '加载中… ' + Math.round(diff.length/Math.max(total,1)*100) + '%';
+      if(bTs) bTs.textContent = '加载中… ' + Math.round(diff.length / Math.max(total, 1) * 100) + '%';
     }
+
+    // 单独补取北交所（fs=m:0+t:81）；失败不影响主数据
+    try {
+      const BJ_BASE = 'https://push2.eastmoney.com/api/qt/clist/get'
+        + '?fid=f3&po=1&pz=100&np=1&fltt=2&invt=2'
+        + '&fields=f3,f6'
+        + '&fs=m:0+t:81';
+      // 先拿第1页取北交所 total
+      const bjFirst = await fetch(BJ_BASE + '&pn=1&_=' + Date.now()).then(r=>r.json()).catch(()=>null);
+      if(bjFirst?.data?.diff?.length){
+        diff = diff.concat(bjFirst.data.diff);
+        const bjTotal = bjFirst.data.total || 0;
+        const bjPages = Math.ceil(bjTotal / 100);
+        if(bjPages > 1){
+          const bjFetches = [];
+          for(let pn = 2; pn <= bjPages; pn++){
+            bjFetches.push(fetch(BJ_BASE + '&pn=' + pn + '&_=' + (Date.now()+pn)).then(r=>r.json()).catch(()=>null));
+          }
+          const bjRest = await Promise.all(bjFetches);
+          for(const r of bjRest){ const d=r?.data?.diff; if(d&&d.length) diff=diff.concat(d); }
+        }
+      }
+    } catch(e){ /* 北交所数据获取失败，忽略 */ }
 
     // ── 分布分桶（9档，与东方财富牛熊风向标一致）──
     // 上涨侧标签从外到内：涨停 | 涨停~5% | 5~1% | 1~0%
@@ -5693,7 +5725,8 @@ async function fetchMarketStats(){
     if(chartEl) chartEl.innerHTML = `<div style="display:flex;align-items:stretch;gap:2px">${bars}</div>`;
 
     const timeStr = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
-    if(bTs) bTs.textContent = timeStr + ' · ' + diff.length + '只';
+    // 显示实际抓到的只数，方便核对
+    if(bTs) bTs.textContent = timeStr + ' · ' + diff.length + '只' + (diff.length < total * 0.95 ? ' ⚠️' : '');
 
     // ── 成交分析卡片 ──
     const totalBi = totalYuan / 1e8;   // 元 → 亿元
