@@ -5593,15 +5593,17 @@ async function fetchMarketStats(){
       + '&fields=f3,f6'
       + '&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
 
-    // 带重试的单页抓取：返回完整 data 对象（保留 total）
-    const fetchPageRaw = async (pn, attempt) => {
-      attempt = attempt || 0;
+    // 单页抓取（带重试，不检查 HTTP 状态码，只检查数据结构）
+    const fetchPageRaw = async (pn, retries) => {
+      retries = retries || 0;
       try {
-        const res = await fetch(BASE + '&pn=' + pn + '&_=' + (Date.now() + pn + attempt * 9999999));
-        if(!res.ok) throw new Error('HTTP ' + res.status);
-        return await res.json();
+        const json = await fetch(BASE + '&pn=' + pn + '&_=' + (Date.now() + pn + retries * 99999))
+          .then(r => r.json());
+        if(json?.data) return json;           // 有 data 就算成功
+        if(retries < 2) return fetchPageRaw(pn, retries + 1);
+        return null;
       } catch(e) {
-        if(attempt < 2) return fetchPageRaw(pn, attempt + 1);
+        if(retries < 2) return fetchPageRaw(pn, retries + 1);
         return null;
       }
     };
