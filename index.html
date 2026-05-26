@@ -5327,6 +5327,7 @@ function renderHistTable(){
         <td style="padding:9px 14px;text-align:right;font-weight:700;color:${pc(exc)}">${fmt(exc)}</td>
         <td style="padding:6px 14px">
           <input type="text" value="${nv}" placeholder="添加备注…"
+            oninput="updateHistNote(${idx},this.value)"
             onchange="updateHistNote(${idx},this.value)"
             onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"
             style="width:100%;border:1px solid var(--border);border-radius:5px;padding:5px 8px;
@@ -5480,11 +5481,14 @@ function addHistRecord(){
   switchTab(8);
 }
 
+var _noteRemoteTimer = null;
 function updateHistNote(idx,val){
   if(!PORT||!PORT.history||PORT.history[idx]==null) return;
-  PORT.history[idx].note=val.trim();
-  portSave();
-  portSaveRemote();
+  PORT.history[idx].note = val.trim();
+  portSave();                          // 立即写本地 localStorage
+  // 防抖：停止输入 800ms 后才推送远端，避免每次击键都触发 GitHub API
+  clearTimeout(_noteRemoteTimer);
+  _noteRemoteTimer = setTimeout(function(){ portSaveRemote(); }, 800);
 }
 
 function deleteHistRecord(idx){
