@@ -3459,7 +3459,7 @@ function renderPortfolio(){
         : `<span style="color:var(--text2);font-size:13px">—</span>`;
       const _emUrl = sk.mkt==='SH' ? `https://quote.eastmoney.com/sh${sk.code}.html`
                    : sk.mkt==='SZ' ? `https://quote.eastmoney.com/sz${sk.code}.html`
-                   : sk.mkt==='HK' ? `https://quote.eastmoney.com/hk${String(sk.code).padStart(5,'0')}.html`
+                   : sk.mkt==='HK' ? `https://quote.eastmoney.com/hk/${String(sk.code).padStart(5,'0')}.html`
                    : null;
       const _codeCell = _emUrl
         ? `<a href="${_emUrl}" target="_blank" rel="noopener"
