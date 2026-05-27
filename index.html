@@ -4907,26 +4907,75 @@ async function fetchMacroKpis(){
     const el=document.getElementById(id); if(el) el.textContent=refreshTs;
   });
 
-  // ── 1. 沪深A股总市值 ─────────────────────────────────────────────
-  // 东方财富 ulist.np: 上证A股(1.000002) + 深证综合(0.399107)
-  // f116 = 总市值(元, fltt=2), 两市相加后除以 1e12 换算为万亿元
+  // ── 1. 沪深A股总市值（日频，localStorage 缓存当日数据）────────────
+  // 策略：① 先读本地缓存立即渲染；② 后台拉新数据更新并写缓存
+  // 数据源A: EM ulist.np f116(总市值)；数据源B: 腾讯行情字段扫描
   try{
-    const rMc = await fetch(
-      `https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&np=1`
-      +`&secids=1.000002,0.399107&fields=f116&_=${Date.now()}`
-    ).then(r=>r.ok?r.json():null).catch(()=>null);
-    const diff = rMc?.data?.diff;
-    const mc1  = parseFloat(diff?.[0]?.f116)||0;   // 沪市A股总市值（元）
-    const mc2  = parseFloat(diff?.[1]?.f116)||0;   // 深市A股总市值（元）
-    console.log('[MacroKpi] 总市值 mc1=', mc1, 'mc2=', mc2);
-    if(mc1 > 1e10 && mc2 > 1e10){
-      const totalWanYi = (mc1+mc2)/1e12;           // 元 → 万亿元
-      if(totalWanYi > 30 && totalWanYi < 500){     // 合理范围校验
+    const MC_KEY = 'aShare_mktCap_v2';
+
+    // ① 今日本地缓存→即时显示（无网络延迟）
+    try{
+      const cached = JSON.parse(localStorage.getItem(MC_KEY)||'null');
+      if(cached?.date === todayStr && cached.wanYi > 30){
         const el = document.getElementById('kTmc');
-        if(el) el.textContent = '¥' + totalWanYi.toFixed(0) + '万亿';
+        if(el) el.textContent = '¥' + Math.round(cached.wanYi) + '万亿';
         const de = document.getElementById('kTmcDate');
         if(de) de.textContent = todayStr;
       }
+    }catch(e2){}
+
+    // ② 后台拉取最新数据（更新缓存和显示）
+    let wanYi = 0;
+
+    // 数据源A: EM ulist.np — 上证A股(1.000002) + 深证综合(0.399107) — f116=总市值
+    const rEm = await fetch(
+      `https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&np=1`
+      +`&secids=1.000002,0.399107&fields=f116&_=${Date.now()}`
+    ).then(r=>r.ok?r.json():null).catch(()=>null);
+    const emD  = rEm?.data?.diff;
+    const emMc1 = parseFloat(emD?.[0]?.f116)||0;
+    const emMc2 = parseFloat(emD?.[1]?.f116)||0;
+    console.log('[MacroKpi] EM f116 mc1=', emMc1, 'mc2=', emMc2);
+    if(emMc1 > 0 && emMc2 > 0){
+      // 自适应单位：依次尝试 元/亿元/万亿元，取落在30~500万亿的结果
+      const s = emMc1 + emMc2;
+      for(const div of [1e12, 1e8, 1e4, 1]){
+        const v = s / div;
+        if(v > 30 && v < 500){ wanYi = v; break; }
+      }
+    }
+
+    // 数据源B: 腾讯行情全量 sh000002+sz399107（备用，扫字段找合理市值范围）
+    if(!wanYi){
+      const txRaw = await fetch('https://qt.gtimg.cn/q=sh000002,sz399107&_='+Date.now())
+        .then(r=>r.arrayBuffer()).catch(()=>null);
+      if(txRaw){
+        const txTxt = new TextDecoder('gbk').decode(txRaw);
+        const _scan = code => {
+          const m = txTxt.match(new RegExp('v_'+code+'="([^"]+)"'));
+          if(!m) return 0;
+          const f = m[1].split('~');
+          // 单市场总市值约40~200万亿元 → 亿元: 400000~2000000
+          for(let i=38;i<=60;i++){
+            const v=parseFloat(f[i]);
+            if(v>300000 && v<2500000) return v;
+          }
+          console.log('[MacroKpi] TX '+code+' f38-60:', f.slice(38,61).join('|'));
+          return 0;
+        };
+        const txMc1=_scan('sh000002'), txMc2=_scan('sz399107');
+        if(txMc1>0 && txMc2>0) wanYi=(txMc1+txMc2)/10000;
+      }
+    }
+
+    if(wanYi > 30 && wanYi < 500){
+      const el = document.getElementById('kTmc');
+      if(el) el.textContent = '¥' + Math.round(wanYi) + '万亿';
+      const de = document.getElementById('kTmcDate');
+      if(de) de.textContent = todayStr;
+      try{ localStorage.setItem(MC_KEY, JSON.stringify({date:todayStr, wanYi})); }catch(e2){}
+    } else {
+      console.warn('[MacroKpi] 总市值未获取到有效数据 wanYi=', wanYi);
     }
   }catch(e){ console.warn('[MacroKpi] 总市值:', e.message); }
 
