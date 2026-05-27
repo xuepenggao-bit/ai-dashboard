@@ -6,7 +6,7 @@ Outputs: data/xq_hot.json  data/xq_sentiment.json
 import os, json, time, datetime, re, requests
 
 XQ_TOKEN     = os.environ.get('XQ_TOKEN', '')
-ANTHROPIC_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+GITHUB_TOKEN  = os.environ.get('GITHUB_TOKEN', '')   # 自动注入，无需手动添加 Secret
 
 HEADERS = {
     'Cookie':     f'xq_a_token={XQ_TOKEN}' if XQ_TOKEN else '',
@@ -118,12 +118,13 @@ def keyword_analyze(posts):
 
     return pos, neg, len(posts)
 
-# ── 情感分析（Claude AI） ─────────────────────────────────────
+# ── 情感分析（GitHub Models / gpt-4o-mini） ───────────────────
+# 使用 GitHub Actions 自动注入的 GITHUB_TOKEN，无需额外 Secret
 
-def claude_analyze(name, symbol, posts):
-    try:
-        import anthropic
-    except ImportError:
+def ai_analyze(name, symbol, posts):
+    """调用 GitHub Models API（gpt-4o-mini）做语义摘要，失败时回退关键词分析。"""
+    if not GITHUB_TOKEN:
+        print(f'  [AI] GITHUB_TOKEN 不可用，回退关键词分析')
         return keyword_analyze(posts)
 
     texts = []
@@ -147,19 +148,30 @@ def claude_analyze(name, symbol, posts):
               f'{{"pos": ["...", "...", "..."], "neg": ["...", "...", ...]}}')
 
     try:
-        client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
-        msg = client.messages.create(
-            model='claude-haiku-4-5',
-            max_tokens=400,
-            messages=[{'role': 'user', 'content': prompt}]
+        r = requests.post(
+            'https://models.inference.ai.azure.com/chat/completions',
+            headers={
+                'Authorization': f'Bearer {GITHUB_TOKEN}',
+                'Content-Type':  'application/json',
+            },
+            json={
+                'model':       'gpt-4o-mini',
+                'messages':    [{'role': 'user', 'content': prompt}],
+                'max_tokens':  500,
+                'temperature': 0.3,
+            },
+            timeout=30,
         )
-        raw_resp = msg.content[0].text.strip()
+        r.raise_for_status()
+        raw_resp = r.json()['choices'][0]['message']['content'].strip()
         m = re.search(r'\{.*\}', raw_resp, re.DOTALL)
         if m:
             j = json.loads(m.group())
-            return j.get('pos', [])[:3], j.get('neg', [])[:3], len(posts)
+            pos = [x for x in j.get('pos', []) if x and x != '...'][:3]
+            neg = [x for x in j.get('neg', []) if x and x != '...'][:3]
+            return pos, neg, len(posts)
     except Exception as e:
-        print(f'  [Claude] 分析失败: {e}，回退到关键词分析')
+        print(f'  [AI] GitHub Models 调用失败: {e}，回退关键词分析')
 
     return keyword_analyze(posts)
 
@@ -214,8 +226,8 @@ def main():
             json.dump({'ts': ts, 'stocks': []}, f, ensure_ascii=False)
         return
 
-    use_claude = bool(ANTHROPIC_KEY)
-    print(f'   分析方式: {"Claude AI (claude-haiku-4-5)" if use_claude else "关键词匹配"}')
+    use_ai = bool(GITHUB_TOKEN)
+    print(f'   分析方式: {"GitHub Models / gpt-4o-mini" if use_ai else "关键词匹配"}')
 
     stocks_result = []
     for sk in top5:
@@ -226,8 +238,8 @@ def main():
         posts = fetch_stock_posts(sym)
         print(f'   [{sym}] 获取 {len(posts)} 条')
 
-        if use_claude:
-            pos, neg, total = claude_analyze(name, sym, posts)
+        if use_ai:
+            pos, neg, total = ai_analyze(name, sym, posts)
         else:
             pos, neg, total = keyword_analyze(posts)
 
