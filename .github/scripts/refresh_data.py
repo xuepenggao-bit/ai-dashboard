@@ -9,11 +9,14 @@ XQ_TOKEN     = os.environ.get('XQ_TOKEN', '')
 GITHUB_TOKEN  = os.environ.get('GITHUB_TOKEN', '')   # 自动注入，无需手动添加 Secret
 
 HEADERS = {
-    'Cookie':     f'xq_a_token={XQ_TOKEN}' if XQ_TOKEN else '',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    'Referer':    'https://xueqiu.com/',
-    'Accept':     'application/json, text/plain, */*',
+    'User-Agent':      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Referer':         'https://xueqiu.com/',
+    'Accept':          'application/json, text/plain, */*',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+    'Origin':          'https://xueqiu.com',
 }
+if XQ_TOKEN:
+    HEADERS['Cookie'] = f'xq_a_token={XQ_TOKEN}; xq_is_login=1; u=111'
 
 POS_WORDS = ['看多','买入','值得买','上涨','利好','突破','强势','增持','超预期','大涨',
              '新高','建仓','加仓','推荐','机会','低吸','看好','有望','涨停','放量','优质',
@@ -73,25 +76,68 @@ def fetch_hot_stocks():
         return []
 
 # ── 讨论抓取 ───────────────────────────────────────────────────
+# 多接口备用：v4 timeline > query/v1 search > v4 user_timeline
+
+def _fetch_page(url, symbol, page_num):
+    """抓单页，返回帖子列表；任何错误返回 None。"""
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=15)
+        print(f'  [{symbol}] 接口 HTTP {r.status_code}  url={url[:80]}')
+        if r.status_code in (401, 403):
+            print(f'  [{symbol}] ⚠️  认证失败（{r.status_code}），XQ_TOKEN 可能已过期')
+            return None
+        r.raise_for_status()
+        data = r.json()
+        # 兼容多种响应结构
+        lst = (data.get('list')
+               or data.get('statuses')
+               or data.get('items')
+               or (data.get('data') or {}).get('list')
+               or [])
+        print(f'  [{symbol}] 第{page_num}页返回 {len(lst)} 条，keys={list(data.keys())}')
+        return lst
+    except Exception as e:
+        print(f'  [{symbol}] 请求异常: {type(e).__name__}: {e}')
+        return None
+
 
 def fetch_stock_posts(symbol, pages=3):
     posts = []
+
+    # 接口1：v4 timeline（不需要登录，公开数据）
     for page in range(1, pages + 1):
-        url = (f'https://xueqiu.com/query/v1/symbol/search/status'
-               f'?symbol={symbol}&page={page}&size=20&type=status&_={int(time.time()*1000)}')
-        try:
-            r = requests.get(url, headers=HEADERS, timeout=15)
-            r.raise_for_status()
-            data = r.json()
-            lst  = data.get('list', data.get('statuses', []))
-            posts.extend(lst)
-            if len(lst) < 20:
-                break
-        except Exception as e:
-            print(f'  [{symbol}] 第{page}页失败: {e}')
+        url = (f'https://xueqiu.com/v4/statuses/search.json'
+               f'?symbol={symbol}&type=1&page={page}&count=20&_={int(time.time()*1000)}')
+        lst = _fetch_page(url, symbol, page)
+        if lst is None:
+            break
+        items = lst
+        # v4 返回的每条可能嵌套在 'data' 或 'statuses' 字段里
+        if lst and isinstance(lst[0], dict) and 'statuses' in lst[0]:
+            items = [s for entry in lst for s in entry.get('statuses', [])]
+        posts.extend(items)
+        if len(items) < 15:
             break
         if page < pages:
             time.sleep(0.4)
+
+    if posts:
+        return posts
+
+    # 接口2：query/v1 search（需要 XQ_TOKEN）
+    print(f'  [{symbol}] 接口1无结果，尝试接口2…')
+    for page in range(1, pages + 1):
+        url = (f'https://xueqiu.com/query/v1/symbol/search/status'
+               f'?symbol={symbol}&page={page}&size=20&type=status&_={int(time.time()*1000)}')
+        lst = _fetch_page(url, symbol, page)
+        if lst is None:
+            break
+        posts.extend(lst)
+        if len(lst) < 20:
+            break
+        if page < pages:
+            time.sleep(0.4)
+
     return posts
 
 # ── 情感分析（关键词） ─────────────────────────────────────────
