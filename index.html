@@ -782,55 +782,54 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div style="font-size:9px;color:#94a3b8;letter-spacing:.1em;margin-top:3px">实时时钟</div>
     </div>
 
-    <!-- 右：操作区 -->
-    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;z-index:1">
+    <!-- 右：操作区（统一外壳，三格等宽） -->
+    <div style="display:flex;align-items:stretch;flex-shrink:0;z-index:1;
+                background:#f5f7ff;border:1.5px solid #dde3f5;border-radius:14px;
+                overflow:hidden;box-shadow:0 1px 10px rgba(99,102,241,.07)">
 
       <!-- ① 同步 -->
-      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-        <button onclick="portForcePush()" title="将当前浏览器的仓位数据推送到云端"
-          style="background:#ede9fe;color:#6d28d9;border:1.5px solid #c4b5fd;
-                 border-radius:10px;padding:8px 20px;cursor:pointer;font-size:12px;
-                 font-family:inherit;font-weight:600;white-space:nowrap;letter-spacing:.04em;
-                 transition:all .18s"
-          onmouseover="this.style.background='#ddd6fe';this.style.borderColor='#a78bfa'"
-          onmouseout="this.style.background='#ede9fe';this.style.borderColor='#c4b5fd'"
-          onmousedown="this.style.transform='scale(.95)'" onmouseup="this.style.transform='scale(1)'">☁ 同步</button>
-        <span id="portSyncTs"
-          style="font-size:9px;color:#94a3b8;white-space:nowrap;max-width:110px;
-                 overflow:hidden;text-overflow:ellipsis;text-align:center">☁️ 加载中…</span>
-      </div>
+      <button onclick="portForcePush()" title="将当前浏览器的仓位数据推送到云端"
+        style="flex:1;min-width:90px;display:flex;flex-direction:column;align-items:center;
+               justify-content:center;gap:4px;padding:10px 18px;background:transparent;
+               border:none;cursor:pointer;font-family:inherit;transition:background .15s"
+        onmouseover="this.style.background='rgba(109,40,217,.07)'"
+        onmouseout="this.style.background='transparent'"
+        onmousedown="this.style.opacity='.75'" onmouseup="this.style.opacity='1'">
+        <span style="font-size:13px;font-weight:700;color:#6d28d9;letter-spacing:.03em;white-space:nowrap">☁ 同步</span>
+        <span id="portSyncTs" style="font-size:9px;color:#94a3b8;white-space:nowrap;
+               max-width:100px;overflow:hidden;text-overflow:ellipsis">☁️ 加载中…</span>
+      </button>
 
       <!-- 分割线 -->
-      <div style="width:1px;height:44px;background:#e2e8f0;flex-shrink:0"></div>
+      <div style="width:1px;background:#dde3f5;flex-shrink:0"></div>
 
       <!-- ② 刷新股价 -->
-      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-        <button id="portPriceBtn" onclick="fetchPortPrices()"
-          style="background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);color:#fff;
-                 border:none;border-radius:10px;padding:8px 20px;cursor:pointer;
-                 font-size:12px;font-family:inherit;font-weight:600;letter-spacing:.04em;
-                 white-space:nowrap;box-shadow:0 2px 12px rgba(37,99,235,.28);transition:all .18s"
-          onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 5px 18px rgba(37,99,235,.42)'"
-          onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 12px rgba(37,99,235,.28)'"
-          onmousedown="this.style.transform='scale(.95)'" onmouseup="this.style.transform='translateY(-1px)'">
-          <span class="ricon">↻</span> 刷新股价</button>
-        <span id="portPriceTs"
-          style="font-size:9px;color:#94a3b8;white-space:nowrap;max-width:110px;
-                 overflow:hidden;text-overflow:ellipsis;text-align:center">股价未加载</span>
-      </div>
+      <button id="portPriceBtn" onclick="fetchPortPrices()"
+        style="flex:1;min-width:96px;display:flex;flex-direction:column;align-items:center;
+               justify-content:center;gap:4px;padding:10px 18px;background:transparent;
+               border:none;cursor:pointer;font-family:inherit;transition:background .15s"
+        onmouseover="this.style.background='rgba(37,99,235,.07)'"
+        onmouseout="this.style.background='transparent'"
+        onmousedown="this.style.opacity='.75'" onmouseup="this.style.opacity='1'">
+        <span style="font-size:13px;font-weight:700;color:#2563eb;letter-spacing:.03em;white-space:nowrap">
+          <span class="ricon" style="display:inline-block">↻</span> 刷新股价</span>
+        <span id="portPriceTs" style="font-size:9px;color:#94a3b8;white-space:nowrap;
+               max-width:100px;overflow:hidden;text-overflow:ellipsis">股价未加载</span>
+      </button>
 
       <!-- 分割线 -->
-      <div style="width:1px;height:44px;background:#e2e8f0;flex-shrink:0"></div>
+      <div style="width:1px;background:#dde3f5;flex-shrink:0"></div>
 
       <!-- ③ 自动刷新 -->
-      <div id="autoRefreshBox" style="display:flex;flex-direction:column;align-items:center;gap:4px">
-        <div id="autoRefreshInner"
-          style="display:flex;align-items:center;gap:6px;background:#f0f9ff;
-                 border:1.5px solid #bae6fd;border-radius:10px;padding:7px 12px;white-space:nowrap">
-          <span style="font-size:11px;color:#0284c7">⏱</span>
+      <div id="autoRefreshBox"
+        style="flex:1;min-width:90px;display:flex;flex-direction:column;align-items:center;
+               justify-content:center;gap:4px;padding:10px 18px;transition:background .15s">
+        <div id="autoRefreshInner" style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:12px;color:#0284c7;flex-shrink:0">⏱</span>
           <select id="autoRefreshSel" onchange="setAutoRefresh(this.value)"
-            style="font-size:11px;font-family:inherit;border:none;background:transparent;
-                   color:#0369a1;font-weight:600;padding:0 2px;cursor:pointer;outline:none">
+            style="font-size:13px;font-weight:700;color:#0369a1;font-family:inherit;
+                   border:none;background:transparent;cursor:pointer;outline:none;
+                   padding:0;letter-spacing:.02em">
             <option value="0">手动</option>
             <option value="10">10秒</option>
             <option value="30">30秒</option>
@@ -842,10 +841,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
             <option value="900">15分钟</option>
             <option value="1800">30分钟</option>
           </select>
-          <span id="autoRefreshCd"
-            style="font-size:10px;color:#2563eb;font-weight:700;min-width:34px"></span>
         </div>
-        <span style="font-size:9px;color:#94a3b8;letter-spacing:.04em">自动刷新</span>
+        <span id="autoRefreshCd"
+          style="font-size:9px;color:#2563eb;font-weight:700;min-height:13px;
+                 letter-spacing:.02em"></span>
       </div>
 
     </div>
