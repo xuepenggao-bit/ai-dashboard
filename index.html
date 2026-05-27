@@ -1106,13 +1106,13 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         点击「↻」加载雪球热股榜
       </div>
     </div>
-    <!-- 数据源不可用时的引导提示 -->
+    <!-- 数据尚未生成时的引导提示 -->
     <div id="xqHotGuide" style="display:none;margin-top:10px;padding:10px 12px;background:#fff7ed;border-radius:8px;border:1px solid #fed7aa">
-      <div style="font-size:11px;color:#92400e;margin-bottom:6px;font-weight:600">⚠️ 浏览器 CORS 限制，需运行本地刷新脚本</div>
-      <div style="font-size:10px;color:#78350f;margin-bottom:8px">在桌面找到「刷新雪球热股.ps1」，右键→用 PowerShell 运行，完成后点击↻</div>
-      <button onclick="copyXqRefreshCmd()" id="xqCopyBtn"
+      <div style="font-size:11px;color:#92400e;margin-bottom:6px;font-weight:600">⏳ 数据尚未生成 · 由 GitHub Actions 自动刷新</div>
+      <div style="font-size:10px;color:#78350f;margin-bottom:8px">每30分钟自动更新（交易时段），或点击下方按钮立即触发刷新（约1分钟后生效）</div>
+      <button onclick="triggerHotRefresh()" id="xqTriggerBtn"
         style="background:#f97316;color:#fff;border:none;border-radius:5px;padding:4px 12px;
-               cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">📋 复制一键刷新命令</button>
+               cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">⚡ 立即触发刷新</button>
     </div>
   </div>
 
@@ -1135,17 +1135,16 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         点击「↻」分析 Top5 权重股舆情（各取最新 50 条讨论）
       </div>
     </div>
-    <!-- CORS 限制时的引导提示 -->
+    <!-- 数据尚未生成时的引导提示 -->
     <div id="sentGuide" style="display:none;margin-top:10px;padding:10px 12px;
          background:#f5f3ff;border-radius:8px;border:1px solid #ddd6fe">
       <div style="font-size:11px;color:#5b21b6;margin-bottom:5px;font-weight:600">
-        ⚠️ 浏览器 CORS 限制，需运行本地刷新脚本</div>
+        ⏳ 数据尚未生成 · 由 GitHub Actions 自动刷新</div>
       <div style="font-size:10px;color:#4c1d95;margin-bottom:8px">
-        在桌面找到「刷新舆情分析.ps1」，右键→用 PowerShell 运行，完成后点击↻<br>
-        或点击下方按钮复制命令（自动嵌入当前 Top5 代码），在 PowerShell 窗口粘贴执行：</div>
-      <button onclick="copySentimentCmd()" id="sentCopyBtn"
+        每30分钟自动更新（交易时段），或点击下方按钮立即触发刷新（约1分钟后生效）：</div>
+      <button onclick="triggerSentimentRefresh()" id="sentTriggerBtn"
         style="background:#7c3aed;color:#fff;border:none;border-radius:5px;padding:4px 12px;
-               cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">📋 复制刷新命令（含当前Top5）</button>
+               cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">⚡ 立即触发刷新</button>
     </div>
   </div>
 
@@ -4754,7 +4753,7 @@ function _tabRefresh(idx){
   if(_TAB_TS[idx] && now-_TAB_TS[idx]<_TAB_THROTTLE) return; // 节流
   _TAB_TS[idx]=now;
   // 按标签页类型调用对应的动态数据刷新函数
-  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); fetchXqHot(); _tryLoadSentimentSilent(); } // finally 内会链式调用 fetchIndexPrices
+  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); fetchXqHot(); fetchXqSentiment(); } // finally 内会链式调用 fetchIndexPrices
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tStage') fetchStageData();
   else if(tab==='tAM')    refreshMacro();
@@ -6328,13 +6327,6 @@ var _mktAutoRetried = false;
 var _mfAutoRetried  = false;
 
 // ── 权重股舆情分析 ─────────────────────────────────────────────
-// 正负面关键词词库（A股语境）
-const _SENT_POS = ['看多','买入','值得买','上涨','利好','突破','强势','增持','超预期','大涨',
-  '新高','建仓','加仓','推荐','机会','低吸','看好','有望','涨停','放量','优质',
-  '高成长','底部','翻倍','增长','分红','回调买','低估','绩优','主升浪','继续持有'];
-const _SENT_NEG = ['看空','卖出','下跌','利空','破位','弱势','减持','不及预期','大跌','新低',
-  '出局','减仓','风险','警惕','跌停','套牢','亏损','压力','见顶','悲观',
-  '泡沫','担忧','不确定','跌破','暴跌','高估','缩量','割肉','筑顶','主跌浪'];
 
 let _sentimentCache = null; // { ts:epoch, analyses:{xqCode:{pos,neg,total}} }
 
@@ -6349,15 +6341,6 @@ function _escH(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// 计算一段文本的情感分值
-function _scoreSentiment(text) {
-  if (!text) return 0;
-  let s = 0;
-  for (const w of _SENT_POS) { if (text.includes(w)) s++; }
-  for (const w of _SENT_NEG) { if (text.includes(w)) s--; }
-  return s;
-}
-
 // 从 PORT 中获取权重 Top5 股票
 function _getSentimentTop5() {
   if (!PORT || !PORT.sectors) return [];
@@ -6368,35 +6351,24 @@ function _getSentimentTop5() {
     .slice(0, 5);
 }
 
-// 拉取一只股票的最新 3 页讨论（约 50-60 条）
-async function _fetchStockPosts(xqCode) {
-  const posts = [];
-  for (let page = 1; page <= 3; page++) {
-    const url = `https://xueqiu.com/query/v1/symbol/search/status?symbol=${xqCode}`
-              + `&page=${page}&size=20&type=status&_=${Date.now()}`;
-    const r = await fetch(url, { credentials: 'include', cache: 'no-store' });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const j = await r.json();
-    const list = j.list || j.statuses || [];
-    posts.push(...list);
-    if (list.length < 20) break;
-    if (page < 3) await new Promise(res => setTimeout(res, 300));
-  }
-  return posts;
-}
-
-// 对帖子列表做情感分析，提取 Top3 正面/负面
-function _analyzeStockPosts(posts) {
-  const scored = posts.map(p => {
-    let txt = p.description || p.text || '';
-    txt = txt.replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
-    const display = txt.slice(0, 52);
-    const eng = ((p.like_count||0)*3) + ((p.reply_count||0)*2) + Math.round((p.view_count||0)/300);
-    return { display, score: _scoreSentiment(txt), eng };
+// 触发 GitHub Actions workflow_dispatch（手动刷新数据）
+async function _triggerGhAction() {
+  const owner = 'xuepenggao-bit', repo = 'ai-dashboard';
+  const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/refresh-xueqiu.yml/dispatches`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `token ${PORT_GH_TOKEN}`,
+      'Accept':        'application/vnd.github+json',
+      'Content-Type':  'application/json',
+    },
+    body: JSON.stringify({ ref: 'main', inputs: { reason: 'Dashboard manual refresh' } }),
   });
-  const pos = scored.filter(x=>x.score>0).sort((a,b)=>b.eng-a.eng).slice(0,3).map(x=>x.display).filter(Boolean);
-  const neg = scored.filter(x=>x.score<0).sort((a,b)=>b.eng-a.eng).slice(0,3).map(x=>x.display).filter(Boolean);
-  return { pos, neg, total: posts.length };
+  // 204 = success, no body; anything else = error
+  if (!r.ok && r.status !== 204) {
+    const txt = await r.text().catch(() => '');
+    throw new Error(`GitHub API ${r.status}: ${txt.slice(0, 120)}`);
+  }
 }
 
 // 渲染 5 格情感看板
@@ -6412,14 +6384,14 @@ function _renderSentimentGrid(top5, analyses) {
   }
   grid.innerHTML = top5.map(sk => {
     const code = _xqSym(sk);
-    const a    = analyses[code] || { pos:[], neg:[], total:0, error:true };
+    const a    = analyses[code] || { pos:[], neg:[], total:0, missing:true };
     const mkItems = (arr, borderColor) => arr.length
       ? arr.map(t => `<div style="font-size:10px;color:#1e293b;line-height:1.5;margin-bottom:3px;
                padding:2px 4px 2px 7px;border-left:2px solid ${borderColor};
                word-break:break-all">${_escH(t)}</div>`).join('')
       : `<div style="color:#94a3b8;font-size:10px;padding:1px 0">暂无明显观点</div>`;
-    const posH = a.error ? '<div style="color:#94a3b8;font-size:10px">获取失败，请刷新</div>' : mkItems(a.pos, '#6ee7b7');
-    const negH = a.error ? '' : mkItems(a.neg, '#fca5a5');
+    const posH = a.missing ? '<div style="color:#94a3b8;font-size:10px">等待 GitHub Actions 生成数据</div>' : mkItems(a.pos, '#6ee7b7');
+    const negH = a.missing ? '' : mkItems(a.neg, '#fca5a5');
     return `<div style="border-radius:8px;border:1px solid #e5e7eb;padding:9px 8px 6px;background:#fafafa;
                   min-width:0;display:flex;flex-direction:column">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
@@ -6446,129 +6418,61 @@ function _renderSentimentGrid(top5, analyses) {
   if (tsEl) tsEl.textContent = hm + ' 更新';
 }
 
-// 显示 CORS 引导
-function _showSentimentGuide() {
-  const grid  = document.getElementById('sentGrid');
-  const guide = document.getElementById('sentGuide');
-  if (grid)  grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px">跨域受限，请运行本地刷新脚本后再试</div>';
-  if (guide) guide.style.display = 'block';
-}
-
-// 静默加载本地 xq_sentiment.js（动态 script tag）
-function _loadSentimentLocal() {
-  return new Promise((resolve, reject) => {
-    const old = document.getElementById('_sentData');
-    if (old) old.remove();
-    delete window._xqSentiment;
-    const s = document.createElement('script');
-    s.id  = '_sentData';
-    s.src = 'xq_sentiment.js?' + Date.now();
-    s.onload  = () => window._xqSentiment ? resolve(window._xqSentiment) : reject(new Error('格式错误'));
-    s.onerror = () => reject(new Error('文件不存在'));
-    document.head.appendChild(s);
-  });
-}
-
-// 仅尝试加载本地缓存文件，不触发网络请求（供 tab 切换时静默调用）
-async function _tryLoadSentimentSilent() {
-  if (!PORT || !PORT.sectors) return;
-  // 已有有效缓存则直接渲染
-  if (_sentimentCache && Date.now() - _sentimentCache.ts < 30*60*1000) {
-    _renderSentimentGrid(_getSentimentTop5(), _sentimentCache.analyses);
-    return;
-  }
-  try {
-    const data = await _loadSentimentLocal();
-    const analyses = {};
-    (data.stocks || []).forEach(item => { analyses[item.code] = item; });
-    _sentimentCache = { ts: Date.now(), analyses };
-    const top5 = _getSentimentTop5();
-    _renderSentimentGrid(top5, analyses);
-    const tsEl = document.getElementById('sentTs');
-    if (tsEl && data.ts) tsEl.textContent = data.ts + ' 更新';
-  } catch(e) { /* 本地文件不存在，保持默认提示 */ }
-}
-
-// 主刷新函数（↻ 按钮触发）
+// 主刷新函数：从 GitHub Pages 同源 data/xq_sentiment.json 加载
 async function fetchXqSentiment(force) {
   force = (force === true);
-  // 30分钟缓存，非强制刷新时直接使用
+  // 30 分钟缓存，非强制时直接渲染
   if (!force && _sentimentCache && Date.now() - _sentimentCache.ts < 30*60*1000) {
     _renderSentimentGrid(_getSentimentTop5(), _sentimentCache.analyses);
     return;
   }
-  const btn  = document.getElementById('sentBtn');
-  const grid = document.getElementById('sentGrid');
+  const btn   = document.getElementById('sentBtn');
+  const grid  = document.getElementById('sentGrid');
   const guide = document.getElementById('sentGuide');
-  if (btn)   { btn.disabled = true; btn.textContent = '…'; }
-  if (guide)  guide.style.display = 'none';
+  if (btn)  { btn.disabled = true; btn.textContent = '…'; }
+  if (guide) guide.style.display = 'none';
+  if (grid)  grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px">加载中…</div>';
 
-  const top5 = _getSentimentTop5();
-  if (!top5.length) {
-    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px">请先加载投资组合，稍后重试</div>';
-    if (btn) { btn.disabled = false; btn.textContent = '↻'; }
-    return;
-  }
-
-  // ① 尝试直接 fetch（浏览器已登录雪球时 credentials:include 可能成功）
   try {
+    const r = await fetch('data/xq_sentiment.json?_=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    if (!data.stocks || !data.stocks.length) throw new Error('empty');
     const analyses = {};
-    for (const sk of top5) {
-      const xqCode = _xqSym(sk);
-      if (grid) grid.innerHTML = `<div style="grid-column:1/-1;color:#7c3aed;font-size:11px;text-align:center;padding:20px">
-        正在分析 <strong>${_escH(sk.name)}</strong> 的讨论…（${top5.indexOf(sk)+1}/5）</div>`;
-      const posts = await _fetchStockPosts(xqCode);
-      analyses[xqCode] = _analyzeStockPosts(posts);
-    }
+    data.stocks.forEach(item => { analyses[item.code] = item; });
     _sentimentCache = { ts: Date.now(), analyses };
-    _renderSentimentGrid(top5, analyses);
-    console.log('[Sentiment] 直接 fetch 成功');
-  } catch (e1) {
-    console.warn('[Sentiment] 直接 fetch 失败:', e1.message, '→ 尝试本地缓存');
-    // ② 回退到本地 xq_sentiment.js
-    try {
-      const data = await _loadSentimentLocal();
-      const analyses = {};
-      (data.stocks || []).forEach(item => { analyses[item.code] = item; });
-      _sentimentCache = { ts: Date.now(), analyses };
-      _renderSentimentGrid(top5, analyses);
-      const tsEl = document.getElementById('sentTs');
-      if (tsEl && data.ts) tsEl.textContent = data.ts + ' 更新';
-      console.log('[Sentiment] 本地缓存加载成功');
-    } catch (e2) {
-      console.warn('[Sentiment] 本地缓存失败:', e2.message);
-      // ③ 显示引导
-      _showSentimentGuide();
-    }
+    _renderSentimentGrid(_getSentimentTop5(), analyses);
+    const tsEl = document.getElementById('sentTs');
+    if (tsEl && data.ts) tsEl.textContent = data.ts + ' 更新';
+    console.log('[Sentiment] 同源 JSON 加载成功');
+  } catch(e) {
+    console.warn('[Sentiment] 加载失败:', e.message);
+    if (grid)  grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px">暂无数据，可点击「⚡ 立即触发刷新」生成</div>';
+    if (guide) guide.style.display = 'block';
   }
   if (btn) { btn.disabled = false; btn.textContent = '↻'; }
 }
 
-// 生成 PS 刷新命令并复制到剪贴板（含当前 Top5 代码）
-function copySentimentCmd() {
-  const top5 = _getSentimentTop5();
-  if (!top5.length) { alert('请先加载投资组合数据后再试'); return; }
-  const symbols  = top5.map(sk => _xqSym(sk)).join(',');
-  const dashPath = location.pathname.replace(/\/[^/]*$/, '').replace(/^\//, '').replace(/\//g,'\\');
-  const dir      = dashPath || 'C:\\Users\\xuepe\\Desktop';
-  const top5File = dir + '\\xq_top5.txt';
-  const psFile   = dir + '\\刷新舆情分析.ps1';
-  const cmd = `[IO.File]::WriteAllText('${top5File}','${symbols}',[Text.Encoding]::UTF8); & '${psFile}'`;
-  navigator.clipboard.writeText(cmd).then(() => {
-    const b = document.getElementById('sentCopyBtn');
-    if (b) { b.textContent = '✅ 已复制！在 PowerShell 粘贴执行'; setTimeout(()=>{ b.textContent='📋 复制刷新命令（含当前Top5）'; }, 3000); }
-  }).catch(() => {
-    prompt('请手动复制下方命令：', cmd);
-  });
+// 触发 GitHub Actions 刷新舆情数据（↻ 引导区 button）
+async function triggerSentimentRefresh() {
+  const btn = document.getElementById('sentTriggerBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 触发中…'; }
+  try {
+    await _triggerGhAction();
+    if (btn) { btn.textContent = '✅ 已触发！约1分钟后刷新页面'; btn.disabled = false; }
+    // 70 秒后自动重新拉取
+    setTimeout(() => fetchXqSentiment(true), 70000);
+  } catch(e) {
+    console.warn('[TriggerAction] 舆情触发失败:', e.message);
+    if (btn) { btn.textContent = '❌ 触发失败（检查 token）'; btn.disabled = false; }
+  }
 }
 
 // ── 雪球热股榜 ────────────────────────────────────────────────
-const _XQ_HOT_URL = 'https://stock.xueqiu.com/v5/stock/screener/quote/list.json'
-                  + '?market=CN&order=desc&order_by=value&page=1&size=20&type=hot_1h';
 
 function _renderXqHotGrid(data) {
-  const grid = document.getElementById('xqHotGrid');
-  const tsEl = document.getElementById('xqHotTs');
+  const grid  = document.getElementById('xqHotGrid');
+  const tsEl  = document.getElementById('xqHotTs');
   const guide = document.getElementById('xqHotGuide');
   if (!grid) return;
   if (guide) guide.style.display = 'none';
@@ -6580,15 +6484,14 @@ function _renderXqHotGrid(data) {
   }
 
   grid.innerHTML = list.map(s => {
-    const up = s.percent >= 0;
+    const up  = s.percent >= 0;
     const pct = (up ? '+' : '') + Number(s.percent).toFixed(2) + '%';
     const pctColor = up ? '#dc2626' : '#16a34a';
-    const bg = up ? '#fff5f5' : '#f0fdf4';
+    const bg     = up ? '#fff5f5' : '#f0fdf4';
     const border = up ? '#fecaca' : '#bbf7d0';
-    const name = (s.name || '').slice(0, 5);
-    const code = (s.symbol || '').replace(/^[A-Z]+/, '');
-    const price = s.current != null ? Number(s.current).toFixed(2) : '--';
-    const hot = s.value || 0;
+    const name   = (s.name || '').slice(0, 5);
+    const code   = (s.symbol || '').replace(/^[A-Z]+/, '');
+    const hot    = s.value || 0;
     return `<div style="display:flex;align-items:center;gap:4px;padding:5px 6px;
                  border-radius:6px;background:${bg};border:1px solid ${border};min-width:0">
       <span style="font-size:10px;color:#9ca3af;width:18px;text-align:right;
@@ -6606,78 +6509,46 @@ function _renderXqHotGrid(data) {
   }).join('');
 
   const t = new Date();
-  const hms = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
-  if (tsEl) { tsEl.textContent = (data.ts || hms) + ' 更新'; }
+  const hm = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+  if (tsEl) tsEl.textContent = (data.ts || hm) + ' 更新';
 }
 
-function _showXqHotGuide() {
-  const grid = document.getElementById('xqHotGrid');
-  const guide = document.getElementById('xqHotGuide');
-  if (grid) grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px">本地缓存文件不存在，请运行刷新脚本后重试</div>';
-  if (guide) guide.style.display = 'block';
-}
-
-// 从同目录 xq_hot.js 加载本地缓存（动态 script tag，兼容 file:// 协议）
-function _loadXqHotLocal() {
-  return new Promise((resolve, reject) => {
-    const old = document.getElementById('_xqHotData');
-    if (old) old.remove();
-    delete window._xqHot;
-    const s = document.createElement('script');
-    s.id = '_xqHotData';
-    s.src = 'xq_hot.js?' + Date.now();
-    s.onload = () => {
-      if (window._xqHot && window._xqHot.list) resolve(window._xqHot);
-      else reject(new Error('格式错误'));
-    };
-    s.onerror = () => reject(new Error('文件不存在'));
-    document.head.appendChild(s);
-  });
-}
-
+// 从 GitHub Pages 同源 data/xq_hot.json 加载热股榜
 async function fetchXqHot() {
-  const btn  = document.getElementById('xqHotBtn');
-  const grid = document.getElementById('xqHotGrid');
+  const btn   = document.getElementById('xqHotBtn');
+  const grid  = document.getElementById('xqHotGrid');
   const guide = document.getElementById('xqHotGuide');
-  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  if (btn)  { btn.disabled = true; btn.textContent = '…'; }
   if (guide) guide.style.display = 'none';
-  if (grid) grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px">加载中…</div>';
+  if (grid)  grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px">加载中…</div>';
 
   try {
-    // ① 先试直接 fetch（浏览器登录雪球时 credentials:include 可能成功）
-    const resp = await fetch(_XQ_HOT_URL, { credentials: 'include', cache: 'no-store' });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const json = await resp.json();
-    const raw  = json?.data?.list || [];
-    if (!raw.length) throw new Error('空数据');
-    _renderXqHotGrid({ ts: '', list: raw.map((s, i) => ({ rank: i+1, ...s })) });
-    console.log('[XqHot] 直接 fetch 成功，', raw.length, '只');
-  } catch (e1) {
-    console.warn('[XqHot] 直接 fetch 失败:', e1.message, '→ 尝试本地缓存');
-    try {
-      // ② 回退到本地 xq_hot.js 缓存文件
-      const data = await _loadXqHotLocal();
-      _renderXqHotGrid(data);
-      console.log('[XqHot] 本地缓存加载成功');
-    } catch (e2) {
-      console.warn('[XqHot] 本地缓存也失败:', e2.message);
-      _showXqHotGuide();
-    }
+    const r = await fetch('data/xq_hot.json?_=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    if (!data.list || !data.list.length) throw new Error('empty');
+    _renderXqHotGrid(data);
+    console.log('[XqHot] 同源 JSON 加载成功，', data.list.length, '只');
+  } catch(e) {
+    console.warn('[XqHot] 加载失败:', e.message);
+    if (grid)  grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px">暂无数据，可点击「⚡ 立即触发刷新」生成</div>';
+    if (guide) guide.style.display = 'block';
   }
-
   if (btn) { btn.disabled = false; btn.textContent = '↻'; }
 }
 
-// 复制 PowerShell 一键刷新命令到剪贴板
-function copyXqRefreshCmd() {
-  const token = localStorage.getItem('xq_token') || 'YOUR_XQ_A_TOKEN';
-  const dashPath = location.pathname.replace(/\/[^/]*$/, '').replace(/^\//, '').replace(/\//g, '\\');
-  const outPath = (dashPath ? dashPath + '\\' : 'C:\\Users\\xuepe\\Desktop\\') + 'xq_hot.js';
-  const cmd = `$r=Invoke-WebRequest -Uri "${_XQ_HOT_URL}" -Headers @{"Cookie"="xq_a_token=${token}";"User-Agent"="Mozilla/5.0";"Referer"="https://xueqiu.com/"} -UseBasicParsing; $d=($r.Content|ConvertFrom-Json).data.list; $rank=1; $items=$d|%{$o=$_;[PSCustomObject]@{rank=$rank++;symbol=$o.symbol;name=$o.name;current=$o.current;percent=$o.percent;value=$o.value}}; $ts=Get-Date -Format 'yyyy-MM-dd HH:mm'; $json=$items|ConvertTo-Json -Compress; [IO.File]::WriteAllText('${outPath}',"window._xqHot={ts:'$ts',list:$json};",[Text.Encoding]::UTF8); echo "✅ 完成"`;
-  navigator.clipboard.writeText(cmd).then(() => {
-    const btn = document.getElementById('xqCopyBtn');
-    if (btn) { btn.textContent = '✅ 已复制！'; setTimeout(() => btn.textContent = '📋 复制一键刷新命令', 2000); }
-  });
+// 触发 GitHub Actions 刷新热股榜数据（↻ 引导区 button）
+async function triggerHotRefresh() {
+  const btn = document.getElementById('xqTriggerBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 触发中…'; }
+  try {
+    await _triggerGhAction();
+    if (btn) { btn.textContent = '✅ 已触发！约1分钟后刷新页面'; btn.disabled = false; }
+    setTimeout(() => fetchXqHot(), 70000);
+  } catch(e) {
+    console.warn('[TriggerAction] 热股触发失败:', e.message);
+    if (btn) { btn.textContent = '❌ 触发失败（检查 token）'; btn.disabled = false; }
+  }
 }
 
 // ── 主力净流入 TOP 20 ──────────────────────────────────────────
@@ -7178,8 +7049,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   portInit();   // 优先从 GitHub 云端加载组合数据
   fetchMainFlow();      // 初始化时立即拉取主力净流入榜
   fetchMarketBreadth(); // 市场涨跌统计（主要用腾讯 API，极少命中东方财富限流）
-  fetchXqHot();              // 雪球热股榜（近1小时 Top20）
-  _tryLoadSentimentSilent(); // 权重股舆情：仅加载本地缓存，不触发 API 请求
+  fetchXqHot();       // 雪球热股榜（近1小时 Top20）
+  fetchXqSentiment(); // 权重股舆情：从 data/xq_sentiment.json 加载
   // 30s 后检查是否成功，若仍是占位文字则自动重试一次
   setTimeout(()=>{
     const mfEl = document.getElementById('mfList');
