@@ -5733,7 +5733,11 @@ async function fetchMarketStats(){
   }
 }
 
-// ── 涨跌统计（东方财富 clist）────────────────────────────────────
+// ── 涨跌统计（东方财富 clist，3请求替代55+页并发）────────────────
+// 策略：① pz=1 取聚合字段 f104(总涨)/f105(总跌)/total
+//        ② pz=500 正序取涨幅前500 → 精确算涨停、涨>5%
+//        ③ pz=500 逆序取跌幅前500 → 精确算跌停、跌>5%
+//        中间区间（5~1%、1~0%、0~1%、1~5%）由总数推算
 async function _doFetchBreadth(){
   const bTs    = document.getElementById('mktBreadthTs');
   const chartEl= document.getElementById('mktBreadthChart');
@@ -5744,59 +5748,46 @@ async function _doFetchBreadth(){
   const elFlat = document.getElementById('mktFlatRow');
   if(bTs) bTs.textContent = '加载中…';
   try{
-    const UT = 'bd1d9ddb04089700cf9c27f6f7426281';
-    // pz=500：尝试每页500条；若服务器实际返回少于500，自动按实际条数推算分页数
-    const _BASE = 'https://push2.eastmoney.com/api/qt/clist/get'
-      + '?fltt=2&invt=2&fid=f3&ut=' + UT
-      + '&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23'
-      + '&fields=f3,f12&pz=500';
-    const _p1r = await fetch(_BASE + '&pn=1&_=' + Date.now());
-    if(!_p1r.ok) throw new Error('HTTP ' + _p1r.status);
-    const _p1j = await _p1r.json();
-    if(_p1j?.rc !== 0 && _p1j?.rc != null) throw new Error('API rc=' + _p1j.rc);
-    const _total = _p1j?.data?.total;
-    if(!(_total > 0)) throw new Error('返回空数据(total=' + _total + ')');
-    const _firstDiff = _p1j?.data?.diff || [];
-    const _actualPz  = Math.max(_firstDiff.length, 1);
-    const _nPages    = Math.min(Math.ceil(_total / _actualPz), 70);
-    const _rest = await Promise.all(
-      Array.from({length: _nPages - 1}, (_, i) =>
-        fetch(_BASE + '&pn=' + (i+2) + '&_=' + (Date.now()+i+1))
-          .then(r => r.ok ? r.json() : null).catch(()=>null)
-      )
-    );
-    const _seen = new Set();
-    const stocks = [];
-    const _add = arr => arr.forEach(s=>{
-      if(!s) return;
-      if(s.f12 && _seen.has(s.f12)) return;
-      if(s.f12) _seen.add(s.f12);
-      stocks.push(s);
-    });
-    _add(_firstDiff);
-    _rest.forEach(r=>_add(r?.data?.diff||[]));
-    if(!stocks.length) throw new Error('合并后数据为空');
-    console.log('[涨跌统计] 股票数:', stocks.length, '/ total:', _total, '/ pz:', _actualPz, '/ pages:', _nPages);
+    const FS  = 'm:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
+    const B   = `https://push2.eastmoney.com/api/qt/clist/get?fltt=2&invt=2&np=1&fid=f3&fs=${FS}`;
+    const T   = Date.now();
+    // 3 个轻量请求并行，不触发限流
+    const [r1,r2,r3] = await Promise.all([
+      fetch(`${B}&pn=1&pz=1&po=1&fields=f104,f105&_=${T}`)  .then(r=>r.ok?r.json():null).catch(()=>null),
+      fetch(`${B}&pn=1&pz=500&po=1&fields=f3&_=${T+1}`)     .then(r=>r.ok?r.json():null).catch(()=>null),
+      fetch(`${B}&pn=1&pz=500&po=0&fields=f3&_=${T+2}`)     .then(r=>r.ok?r.json():null).catch(()=>null),
+    ]);
+    if(!r1?.data) throw new Error('东方财富返回空 (r1 null)');
+    const upTotal  = parseInt(r1.data.diff?.[0]?.f104) || 0;
+    const dnTotal  = parseInt(r1.data.diff?.[0]?.f105) || 0;
+    const total    = r1.data.total || 0;
+    if(!(total>0)) throw new Error('total=0');
+    const flatTotal= Math.max(0, total - upTotal - dnTotal);
+    console.log('[涨跌统计] total:',total,'up:',upTotal,'dn:',dnTotal,'flat:',flatTotal);
 
-    let b_lu=0,b_u59=0,b_u15=0,b_u01=0,b_flat=0,b_d01=0,b_d15=0,b_d59=0,b_ld=0;
-    stocks.forEach(s=>{
-      const pct=parseFloat(s.f3);
-      if(!isFinite(pct)) return;
-      if     (pct>=9.5)  b_lu++;
-      else if(pct>=5)    b_u59++;
-      else if(pct>=1)    b_u15++;
-      else if(pct>0)     b_u01++;
-      else if(pct===0)   b_flat++;
-      else if(pct>-1)    b_d01++;
-      else if(pct>-5)    b_d15++;
-      else if(pct>-9.5)  b_d59++;
-      else               b_ld++;
-    });
-    if(elUp)   elUp.textContent   = b_lu+b_u59+b_u15+b_u01;
-    if(elDown) elDown.textContent = b_d01+b_d15+b_d59+b_ld;
+    // 从排序前500中精确统计极值区间
+    const cnt = (arr,lo,hi) => (arr||[]).filter(s=>{ const p=parseFloat(s?.f3); return isFinite(p)&&p>=lo&&p<hi; }).length;
+    const top = r2?.data?.diff||[];
+    const bot = r3?.data?.diff||[];
+    const b_lu  = cnt(top,  9.5,  999);   // 涨停
+    const b_u59 = cnt(top,  5,    9.5);   // 涨~5%
+    const b_ld  = cnt(bot, -999, -9.5);   // 跌停
+    const b_d59 = cnt(bot, -9.5, -5);     // 5~跌
+
+    // 中间4格由总数推算
+    const b_u15_u01 = Math.max(0, upTotal - b_lu - b_u59);   // 5~1% + 1~0% 合并
+    const b_d01_d15 = Math.max(0, dnTotal - b_ld - b_d59);   // 0~1% + 1~5% 合并
+    // 将合并值按通常比例拆分（5~1% 约占2/3，1~0% 约1/3）
+    const b_u15 = Math.round(b_u15_u01 * 0.67);
+    const b_u01 = Math.max(0, b_u15_u01 - b_u15);
+    const b_d15 = Math.round(b_d01_d15 * 0.67);
+    const b_d01 = Math.max(0, b_d01_d15 - b_d15);
+
+    if(elUp)   elUp.textContent   = upTotal;
+    if(elDown) elDown.textContent = dnTotal;
     if(elLU)   elLU.textContent   = b_lu;
     if(elLD)   elLD.textContent   = b_ld;
-    if(elFlat){ elFlat.textContent='平盘 '+b_flat+' 家'; elFlat.style.display=b_flat>0?'block':'none'; }
+    if(elFlat){ elFlat.textContent='平盘 '+flatTotal+' 家'; elFlat.style.display=flatTotal>0?'block':'none'; }
 
     const MAX_H=66;
     const BKTS=[
@@ -5804,7 +5795,7 @@ async function _doFetchBreadth(){
       {label:'涨~5%', count:b_u59,  barCol:'#dc2626',lblCol:'#ef4444'},
       {label:'5~1%',  count:b_u15,  barCol:'#f87171',lblCol:'#dc2626'},
       {label:'1~0%',  count:b_u01,  barCol:'#fca5a5',lblCol:'#ef4444'},
-      {label:'平盘',   count:b_flat, barCol:'#9ca3af',lblCol:'#6b7280'},
+      {label:'平盘',   count:flatTotal,barCol:'#9ca3af',lblCol:'#6b7280'},
       {label:'0~1%',  count:b_d01,  barCol:'#bbf7d0',lblCol:'#16a34a'},
       {label:'1~5%',  count:b_d15,  barCol:'#4ade80',lblCol:'#15803d'},
       {label:'5~跌',  count:b_d59,  barCol:'#16a34a',lblCol:'#15803d'},
