@@ -5733,10 +5733,9 @@ async function fetchMarketStats(){
   }
 }
 
-// ── 涨跌统计（东方财富 clist，逐区间 total 计数法）────────────────
-// 策略：对9个涨跌区间分别构造 b:f3:lo:hi 范围过滤请求（pz=1），
-//        用服务端 data.total 作精确计数；再加1个无过滤请求取总市场数 → 10个轻量并行请求
-//        不依赖 f104/f105 聚合字段（非交易时段该字段为"-"，不可靠）
+// ── 涨跌统计（东方财富 clist，分批分页拉取全量 f3 精确计数）────────
+// 策略：先取第1页获得 total，再按 total 算出页数，
+//        每8页一批顺序拉取（避免55+并发触发限流），前端对 f3 精确分档
 async function _doFetchBreadth(){
   const bTs    = document.getElementById('mktBreadthTs');
   const chartEl= document.getElementById('mktBreadthChart');
@@ -5747,60 +5746,69 @@ async function _doFetchBreadth(){
   const elFlat = document.getElementById('mktFlatRow');
   if(bTs) bTs.textContent = '加载中…';
   try{
-    // b:f3:lo:hi 语法：东方财富选股条件，对每个市场段追加范围过滤
-    // 同一市场段内多个条件用 + 连接（AND），不同市场段用 , 分隔（OR）
-    const SEGS = ['m:0+t:6','m:0+t:13','m:0+t:80','m:1+t:2','m:1+t:23'];
-    const fsR  = (lo,hi) => SEGS.map(s=>s+`+b:f3:${lo}:${hi}`).join(',');
-    const fsAll= SEGS.join(',');
-    const B    = 'https://push2.eastmoney.com/api/qt/clist/get?fltt=2&invt=2&np=1&pn=1&pz=1&fields=f3';
-    const T    = Date.now();
-    const gt   = r => Math.max(0, parseInt(r?.data?.total)||0);
+    const FS   = 'm:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
+    // np=1：与已知可用的第4810行参数一致；fields=f3 最小响应体
+    const BASE = `https://push2.eastmoney.com/api/qt/clist/get`
+      + `?fltt=2&invt=2&np=1&fid=f3&fs=${FS}&fields=f3&pz=100`;
 
-    // 9个区间 + 1个总量，共10个轻量请求并行
-    const [rA,rT,rLu,rU5,rU1,rU0,rD0,rD1,rD5,rLd] = await Promise.all([
-      fetch(`${B}&fid=f3&fs=${fsAll}&_=${T}`)         .then(r=>r.ok?r.json():null).catch(()=>null), // total
-      fetch(`${B}&fid=f3&fs=${fsAll}&fields=f104,f105&_=${T+1}`).then(r=>r.ok?r.json():null).catch(()=>null), // 聚合字段（备用）
-      fetch(`${B}&fid=f3&fs=${fsR(9.5,100)}&_=${T+2}`)   .then(r=>r.ok?r.json():null).catch(()=>null), // 涨停
-      fetch(`${B}&fid=f3&fs=${fsR(5,9.5)}&_=${T+3}`)     .then(r=>r.ok?r.json():null).catch(()=>null), // 涨~5%
-      fetch(`${B}&fid=f3&fs=${fsR(1,5)}&_=${T+4}`)       .then(r=>r.ok?r.json():null).catch(()=>null), // 5~1%
-      fetch(`${B}&fid=f3&fs=${fsR(0.005,1)}&_=${T+5}`)   .then(r=>r.ok?r.json():null).catch(()=>null), // 1~0%
-      fetch(`${B}&fid=f3&fs=${fsR(-1,-0.005)}&_=${T+6}`) .then(r=>r.ok?r.json():null).catch(()=>null), // 0~1%
-      fetch(`${B}&fid=f3&fs=${fsR(-5,-1)}&_=${T+7}`)     .then(r=>r.ok?r.json():null).catch(()=>null), // 1~5%
-      fetch(`${B}&fid=f3&fs=${fsR(-9.5,-5)}&_=${T+8}`)   .then(r=>r.ok?r.json():null).catch(()=>null), // 5~跌
-      fetch(`${B}&fid=f3&fs=${fsR(-100,-9.5)}&_=${T+9}`) .then(r=>r.ok?r.json():null).catch(()=>null), // 跌停
-    ]);
+    // 第1页：取 total + 首批数据
+    const r1 = await fetch(`${BASE}&pn=1&_=${Date.now()}`).then(r=>r.ok?r.json():null).catch(()=>null);
+    if(!r1?.data?.total) throw new Error('首页请求失败');
+    const total  = r1.data.total;
+    const nPages = Math.min(Math.ceil(total / 100), 60);
+    console.log('[涨跌统计] total:', total, 'pages:', nPages);
 
-    const total = gt(rA);
-    if(!(total>0)) throw new Error('东方财富返回空数据(total='+total+')');
+    const allF3 = [];
+    const push  = arr => (arr||[]).forEach(s=>{ const v=parseFloat(s?.f3); if(isFinite(v)) allF3.push(v); });
+    push(r1.data.diff);
 
-    const b_lu  = gt(rLu);
-    const b_u59 = gt(rU5);
-    const b_u15 = gt(rU1);
-    const b_u01 = gt(rU0);
-    const b_d01 = gt(rD0);
-    const b_d15 = gt(rD1);
-    const b_d59 = gt(rD5);
-    const b_ld  = gt(rLd);
-
-    // 验证：若范围过滤未生效（所有桶都等于 total），退回到聚合字段估算
-    const sumBuckets = b_lu+b_u59+b_u15+b_u01+b_d01+b_d15+b_d59+b_ld;
-    let b_flat;
-    if(sumBuckets > total * 2){
-      // 范围过滤失效，改用聚合字段
-      console.warn('[涨跌统计] 范围过滤未生效，切换到聚合字段');
-      const f104 = parseInt(rT?.data?.diff?.[0]?.f104); // 总涨
-      const f105 = parseInt(rT?.data?.diff?.[0]?.f105); // 总跌
-      if(!isFinite(f104)||!isFinite(f105)||f104<0) throw new Error('聚合字段也不可用');
-      b_flat = Math.max(0, total - f104 - f105);
-      // 重新用近似拆分（无法细分各桶）
-    } else {
-      b_flat = Math.max(0, total - sumBuckets);
+    // 剩余页：每8页一批顺序执行（单批内并发≤8，批间无等待，浏览器连接池自动限速）
+    for(let pg = 2; pg <= nPages; pg += 8){
+      const pages = [];
+      for(let i=pg; i<pg+8 && i<=nPages; i++) pages.push(i);
+      const batch = await Promise.all(
+        pages.map(pn => fetch(`${BASE}&pn=${pn}&_=${Date.now()+pn}`)
+          .then(r=>r.ok?r.json():null).catch(()=>null))
+      );
+      batch.forEach(r => push(r?.data?.diff));
     }
 
+    if(!allF3.length) throw new Error('合并后数据为空');
+    console.log('[涨跌统计] 实际获取:', allF3.length, '只');
+
+    // 前端精确分9档
+    let b_lu=0,b_u59=0,b_u15=0,b_u01=0,b_flat=0,b_d01=0,b_d15=0,b_d59=0,b_ld=0;
+    allF3.forEach(pct=>{
+      if     (pct>=9.5)  b_lu++;
+      else if(pct>=5)    b_u59++;
+      else if(pct>=1)    b_u15++;
+      else if(pct>0)     b_u01++;
+      else if(pct===0)   b_flat++;
+      else if(pct>-1)    b_d01++;
+      else if(pct>-5)    b_d15++;
+      else if(pct>-9.5)  b_d59++;
+      else               b_ld++;
+    });
     const totalUp   = b_lu+b_u59+b_u15+b_u01;
     const totalDown = b_d01+b_d15+b_d59+b_ld;
-    console.log('[涨跌统计] total:',total,'↑',totalUp,'→',b_flat,'↓',totalDown,
-                '涨停:',b_lu,'跌停:',b_ld,'sum:',sumBuckets);
+    console.log('[涨跌统计] ↑',totalUp,'平',b_flat,'↓',totalDown,'涨停',b_lu,'跌停',b_ld);
+
+    // 检测非交易时段：若85%以上股票 f3=0，说明行情未开或已收盘（f3 在非交易时段全归零）
+    const flatRatio = allF3.length > 50 ? b_flat / allF3.length : 0;
+    if(flatRatio > 0.85){
+      const tNow = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+      if(chartEl) chartEl.innerHTML=`<div style="text-align:center;padding:14px 4px 10px">`
+        +`<div style="font-size:14px;color:#94a3b8;margin-bottom:6px">📊 非交易时段</div>`
+        +`<div style="font-size:10px;color:#9ca3af;line-height:1.7">`
+        +`交易时间 9:30~11:30 / 13:00~15:00<br>届时可查看实时涨跌分布</div></div>`;
+      if(bTs) bTs.textContent = tNow + ' 非交易时段';
+      if(elUp)   elUp.textContent   = '—';
+      if(elDown) elDown.textContent = '—';
+      if(elLU)   elLU.textContent   = '—';
+      if(elLD)   elLD.textContent   = '—';
+      if(elFlat){ elFlat.textContent=''; elFlat.style.display='none'; }
+      return;
+    }
 
     if(elUp)   elUp.textContent   = totalUp;
     if(elDown) elDown.textContent = totalDown;
