@@ -5746,35 +5746,40 @@ async function _doFetchBreadth(){
   const elFlat = document.getElementById('mktFlatRow');
   if(bTs) bTs.textContent = '加载中…';
   try{
-    const FS   = 'm:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
-    // np=1：与已知可用的第4810行参数一致；fields=f3 最小响应体
-    const BASE = `https://push2.eastmoney.com/api/qt/clist/get`
-      + `?fltt=2&invt=2&np=1&fid=f3&fs=${FS}&fields=f3&pz=100`;
+    const FS      = 'm:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
+    const API     = 'https://push2.eastmoney.com/api/qt/clist/get';
+    const FIXED   = `?fltt=2&invt=2&np=1&fid=f3&fs=${FS}&fields=f3`;
 
-    // 第1页：取 total + 首批数据
-    const r1 = await fetch(`${BASE}&pn=1&_=${Date.now()}`).then(r=>r.ok?r.json():null).catch(()=>null);
-    if(!r1?.data?.total) throw new Error('首页请求失败');
-    const total  = r1.data.total;
-    const nPages = Math.min(Math.ceil(total / 100), 60);
-    console.log('[涨跌统计] total:', total, 'pages:', nPages);
+    // ① 先用 pz=5000 尝试一次性拉全量（若 EM 实际限制 ≤100/页则退回分页）
+    const rBig = await fetch(`${API}${FIXED}&pz=5000&pn=1&_=${Date.now()}`)
+      .then(r=>r.ok?r.json():null).catch(()=>null);
+    if(!rBig?.data?.total) throw new Error('首页请求失败');
 
-    const allF3 = [];
-    const push  = arr => (arr||[]).forEach(s=>{ const v=parseFloat(s?.f3); if(isFinite(v)) allF3.push(v); });
-    push(r1.data.diff);
+    const total    = rBig.data.total;
+    const allF3    = [];
+    const push     = arr => (arr||[]).forEach(s=>{ const v=parseFloat(s?.f3); if(isFinite(v)) allF3.push(v); });
+    push(rBig.data.diff);
 
-    // 剩余页：每8页一批顺序执行（单批内并发≤8，批间无等待，浏览器连接池自动限速）
-    for(let pg = 2; pg <= nPages; pg += 8){
-      const pages = [];
-      for(let i=pg; i<pg+8 && i<=nPages; i++) pages.push(i);
-      const batch = await Promise.all(
-        pages.map(pn => fetch(`${BASE}&pn=${pn}&_=${Date.now()+pn}`)
-          .then(r=>r.ok?r.json():null).catch(()=>null))
-      );
-      batch.forEach(r => push(r?.data?.diff));
+    const gotFirst = allF3.length;   // EM 实际每页返回量（可能是 100、500 等）
+    console.log('[涨跌统计] total:', total, '首批实际:', gotFirst);
+
+    // ② 若还没拿够（EM 限制了 pz），按实际页大小分页补全
+    if(gotFirst > 0 && allF3.length < total * 0.95){
+      const actualPz = Math.max(gotFirst, 50);          // 用首批实际量做页大小
+      const nPages   = Math.min(Math.ceil(total / actualPz), 120);
+      for(let pg = 2; pg <= nPages; pg += 6){
+        const pages = [];
+        for(let i=pg; i<pg+6 && i<=nPages; i++) pages.push(i);
+        const batch = await Promise.all(
+          pages.map(pn => fetch(`${API}${FIXED}&pz=${actualPz}&pn=${pn}&_=${Date.now()+pn}`)
+            .then(r=>r.ok?r.json():null).catch(()=>null))
+        );
+        batch.forEach(r => push(r?.data?.diff));
+      }
     }
 
     if(!allF3.length) throw new Error('合并后数据为空');
-    console.log('[涨跌统计] 实际获取:', allF3.length, '只');
+    console.log('[涨跌统计] 实际获取:', allF3.length, '只 / 总计:', total);
 
     // 前端精确分9档
     let b_lu=0,b_u59=0,b_u15=0,b_u01=0,b_flat=0,b_d01=0,b_d15=0,b_d59=0,b_ld=0;
@@ -5838,7 +5843,10 @@ async function _doFetchBreadth(){
         +`<div style="width:100%;height:${bh}px;background:${b.barCol};border-radius:${r}px ${r}px 0 0"></div></div>`
         +`<div style="font-size:7.5px;color:#6b7280;text-align:center;margin-top:3px;white-space:nowrap;line-height:1.2">${b.label}</div></div>`;
     }).join('');
-    if(chartEl) chartEl.innerHTML=`<div style="display:flex;align-items:stretch;gap:1px;padding:0 2px">${bars}</div>`;
+    const coverNote = allF3.length < total * 0.9
+      ? `<div style="font-size:9px;color:#f59e0b;text-align:center;margin-top:4px">⚠ 仅加载 ${allF3.length}/${total} 家</div>`
+      : `<div style="font-size:9px;color:#9ca3af;text-align:center;margin-top:4px">共 ${allF3.length} 家</div>`;
+    if(chartEl) chartEl.innerHTML=`<div style="display:flex;align-items:stretch;gap:1px;padding:0 2px">${bars}</div>${coverNote}`;
     if(bTs) bTs.textContent=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
   }catch(e){
     console.warn('[涨跌统计]', e.message);
