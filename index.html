@@ -5692,31 +5692,40 @@ async function fetchMarketStats(){
   if(tTs) tTs.textContent='加载中…';
 
   try{
-    // ── ① 东方财富 clist：6页并行，每页1000只，覆盖全部沪深A股（约5500只）──
-    // fs：深圳主板(t:6) + 创业板(t:13) + 上海主板(t:2) + 科创板(t:23)
-    // 不含B股(t:80)；f12=股票代码用于去重
-    const _EM = 'https://push2.eastmoney.com/api/qt/clist/get'
-      + '?np=1&fltt=2&invt=2&fid=f3'
+    // ── ① 东方财富 clist：动态分页并行拉取全部沪深A股 ──
+    // 每页100条（服务端上限）；先取第1页同时获得 data.total，
+    // 再按总数算出剩余页数，全部并行请求（浏览器自动批次化，不超6并发）
+    const _EMBL = 'https://push2.eastmoney.com/api/qt/clist/get'
+      + '?fltt=2&invt=2&fid=f3'
       + '&fs=m:0+t:6,m:0+t:13,m:1+t:2,m:1+t:23'
-      + '&fields=f3,f12&pz=1000';
-    const _pages = await Promise.all(
-      [1,2,3,4,5,6].map(pn =>
-        fetch(`${_EM}&pn=${pn}&_=${Date.now()+pn}`)
+      + '&fields=f3,f12&pz=100';
+    const _p1r = await fetch(_EMBL + '&pn=1&_=' + Date.now());
+    if(!_p1r.ok) throw new Error('HTTP ' + _p1r.status);
+    const _p1j = await _p1r.json();
+    const _total = _p1j?.data?.total;
+    if(!(_total > 0)) throw new Error('东方财富返回空数据');
+    // 剩余页并行（上限70页，覆盖7000只；超过实际数量的页返回空数组，无副作用）
+    const _nPages = Math.min(Math.ceil(_total / 100), 70);
+    const _rest = await Promise.all(
+      Array.from({length: _nPages - 1}, (_, i) =>
+        fetch(_EMBL + '&pn=' + (i + 2) + '&_=' + (Date.now() + i + 1))
           .then(r => r.ok ? r.json() : null)
           .catch(() => null)
       )
     );
-    // 合并并按 f12（代码）去重
+    // 合并，按 f12(代码) 去重
     const _seen = new Set();
     const stocks = [];
-    for(const r of _pages){
-      for(const s of (r?.data?.diff || [])){
-        if(!s.f12 || _seen.has(s.f12)) continue;
-        _seen.add(s.f12);
-        stocks.push(s);
-      }
-    }
-    if(!stocks.length) throw new Error('东方财富返回空数据，请稍后重试');
+    const _add = arr => arr.forEach(s => {
+      if(!s) return;
+      if(s.f12 && _seen.has(s.f12)) return;
+      if(s.f12) _seen.add(s.f12);
+      stocks.push(s);
+    });
+    _add(_p1j?.data?.diff || []);
+    _rest.forEach(r => _add(r?.data?.diff || []));
+    if(!stocks.length) throw new Error('合并后数据为空，请稍后重试');
+    console.log('[涨跌统计] 总股票数:', stocks.length, '/ API报告总数:', _total);
 
     // ── ② JS 端分9档计数（与东方财富牛熊风向标一致）──
     let b_lu=0, b_u59=0, b_u15=0, b_u01=0, b_flat=0,
