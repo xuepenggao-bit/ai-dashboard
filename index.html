@@ -5688,89 +5688,98 @@ async function fetchMarketStats(){
   if(tTs) tTs.textContent='加载中…';
 
   try{
-    // ── ① 腾讯行情简版 API（GBK，与 fetchIndexPrices 相同模式）──
-    // s_sh000001 = 上证综指：覆盖全部上海 A 股
-    // s_sz399106 = 深证综指：覆盖全部深圳 A 股
-    // 字段：[0]类型 [1]名称 [2]代码 [3]现价 [4]涨跌额 [5]涨跌幅%
-    //       [6]成交量(手) [7]成交额(万元) [8]上涨数 [9]下跌数 [10]平盘数
-    const tUrl = 'https://qt.gtimg.cn/q=s_sh000001,s_sz399106&_=' + Date.now();
-    const tResp = await fetch(tUrl);
-    const tTxt  = new TextDecoder('gbk').decode(await tResp.arrayBuffer());
+    // ── ① 东方财富 clist 一次拉取全部 A 股涨跌幅 ──
+    // fs = 沪A主板+科创 + 深A主板+创业板+北交所
+    // fields = f3（涨跌幅 %），pz=6000 一页覆盖全部约5500只
+    const emUrl = 'https://push2.eastmoney.com/api/qt/clist/get'
+      + '?pn=1&pz=6000&np=1&fltt=2&invt=2&fid=f3'
+      + '&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23'
+      + '&fields=f3&_=' + Date.now();
+    const emResp = await fetch(emUrl);
+    if(!emResp.ok) throw new Error('HTTP ' + emResp.status);
+    const emJson = await emResp.json();
+    const stocks = emJson?.data?.diff;
+    if(!stocks?.length) throw new Error('东方财富返回空数据');
 
-    const _parseSq = code => {
-      const m = tTxt.match(new RegExp('v_s_' + code + '="([^"]+)"'));
-      if(!m) return null;
-      const p = m[1].split('~');
-      return {
-        up:  parseInt(p[8])   || 0,
-        dn:  parseInt(p[9])   || 0,
-        fl:  parseInt(p[10])  || 0,
-        wan: parseFloat(p[7]) || 0,   // 成交额，万元
-      };
-    };
-    const shD = _parseSq('sh000001');
-    const szD = _parseSq('sz399106');
-    if(!shD && !szD) throw new Error('腾讯行情返回空数据，请稍后重试');
+    // ── ② JS 端分9档计数（与东方财富牛熊风向标一致）──
+    let b_lu=0, b_u59=0, b_u15=0, b_u01=0, b_flat=0,
+        b_d01=0, b_d15=0, b_d59=0, b_ld=0;
+    stocks.forEach(s=>{
+      const pct = parseFloat(s.f3);
+      if(!isFinite(pct)) return;             // 停牌/无数据跳过
+      if     (pct >= 9.5)  b_lu++;           // 涨停（含20%板）
+      else if(pct >= 5)    b_u59++;          // 涨停~5%
+      else if(pct >= 1)    b_u15++;          // 5%~1%
+      else if(pct >  0)    b_u01++;          // 1%~0%
+      else if(pct === 0)   b_flat++;         // 平盘
+      else if(pct >  -1)   b_d01++;          // 0%~1%（下跌）
+      else if(pct >  -5)   b_d15++;          // 1%~5%（下跌）
+      else if(pct >  -9.5) b_d59++;          // 5%~跌停
+      else                 b_ld++;           // 跌停
+    });
+    const totalUp   = b_lu + b_u59 + b_u15 + b_u01;
+    const totalDown = b_d01 + b_d15 + b_d59 + b_ld;
+    const totalFlat = b_flat;
 
-    const totalUp   = (shD?.up  || 0) + (szD?.up  || 0);
-    const totalDown = (shD?.dn  || 0) + (szD?.dn  || 0);
-    const totalFlat = (shD?.fl  || 0) + (szD?.fl  || 0);
-    const totalYi   = ((shD?.wan || 0) + (szD?.wan || 0)) / 10000; // 万元 → 亿元
-
-    // ── ② 东方财富 clist（2次并行请求）：涨停 / 跌停 家数 ──
-    // 按 f3 从两端排序，数第1页中 >=9.9 / <=-9.9 的只数
-    let limitUp = 0, limitDown = 0;
+    // ── ③ 腾讯行情：成交额（字段[7]万元，两指数相加）──
+    let totalYi = 0;
     try{
-      const EM = 'https://push2.eastmoney.com/api/qt/clist/get'
-        + '?fid=f62&np=1&fltt=2&invt=2&fields=f3'
-        + '&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
-      const [upR, dnR] = await Promise.all([
-        fetch(EM + '&po=1&pz=100&pn=1&_=' + Date.now()).then(r=>r.json()).catch(()=>null),
-        fetch(EM + '&po=0&pz=100&pn=1&_=' + (Date.now()+1)).then(r=>r.json()).catch(()=>null),
-      ]);
-      if(upR?.data?.diff) for(const s of upR.data.diff){ if(parseFloat(s.f3)>=9.9) limitUp++; else break; }
-      if(dnR?.data?.diff) for(const s of dnR.data.diff){ if(parseFloat(s.f3)<=-9.9) limitDown++; else break; }
-    }catch(e){ /* 涨跌停获取失败，忽略，主数据不受影响 */ }
+      const tTxt = new TextDecoder('gbk').decode(
+        await (await fetch('https://qt.gtimg.cn/q=s_sh000001,s_sz399106&_=' + Date.now())).arrayBuffer());
+      const _wan = code => {
+        const m = tTxt.match(new RegExp('v_s_' + code + '="([^"]+)"'));
+        return m ? (parseFloat(m[1].split('~')[7]) || 0) : 0;
+      };
+      totalYi = (_wan('sh000001') + _wan('sz399106')) / 10000; // 万元 → 亿元
+    }catch(e){ /* 成交额失败，不影响涨跌统计 */ }
 
-    // ── 填充涨跌统计卡片 ──
+    // ── 填充家数卡片 ──
     const elUp   = document.getElementById('mktUp');
     const elDown = document.getElementById('mktDown');
     const elLU   = document.getElementById('mktLimitUp');
     const elLD   = document.getElementById('mktLimitDown');
     const elFlat = document.getElementById('mktFlatRow');
-    if(elUp)   elUp.textContent   = totalUp   || '—';
-    if(elDown) elDown.textContent = totalDown || '—';
-    if(elLU)   elLU.textContent   = limitUp;
-    if(elLD)   elLD.textContent   = limitDown;
+    if(elUp)   elUp.textContent   = totalUp;
+    if(elDown) elDown.textContent = totalDown;
+    if(elLU)   elLU.textContent   = b_lu;
+    if(elLD)   elLD.textContent   = b_ld;
     if(elFlat){
       elFlat.textContent = '平盘 ' + totalFlat + ' 家';
       elFlat.style.display = totalFlat > 0 ? 'block' : 'none';
     }
 
-    // ── 分布直方图（5档：涨停 | 其他上涨 | 平盘 | 其他下跌 | 跌停）──
-    const MAX_H  = 64;
-    const upOther = Math.max(totalUp   - limitUp,   0);
-    const dnOther = Math.max(totalDown - limitDown, 0);
-    const BKTS_D = [
-      {label:'涨停',  count:limitUp,   col:'#b91c1c', tc:'#dc2626'},
-      {label:'上涨',  count:upOther,   col:'#ef4444', tc:'#dc2626'},
-      {label:'平盘',  count:totalFlat, col:'#94a3b8', tc:'#64748b'},
-      {label:'下跌',  count:dnOther,   col:'#4ade80', tc:'#15803d'},
-      {label:'跌停',  count:limitDown, col:'#14532d', tc:'#15803d'},
+    // ── 分布直方图（9档，仿东方财富牛熊风向标）──
+    // 颜色：A股惯例 红=涨(深→浅) 灰=平盘 绿=跌(浅→深)
+    const MAX_H = 66;
+    const BKTS = [
+      {label:'涨停',    count:b_lu,   barCol:'#b91c1c', lblCol:'#ef4444'},
+      {label:'涨~5%',  count:b_u59,  barCol:'#dc2626', lblCol:'#ef4444'},
+      {label:'5~1%',   count:b_u15,  barCol:'#f87171', lblCol:'#dc2626'},
+      {label:'1~0%',   count:b_u01,  barCol:'#fca5a5', lblCol:'#ef4444'},
+      {label:'平盘',    count:b_flat, barCol:'#9ca3af', lblCol:'#6b7280'},
+      {label:'0~1%',   count:b_d01,  barCol:'#bbf7d0', lblCol:'#16a34a'},
+      {label:'1~5%',   count:b_d15,  barCol:'#4ade80', lblCol:'#15803d'},
+      {label:'5~跌',   count:b_d59,  barCol:'#16a34a', lblCol:'#15803d'},
+      {label:'跌停',    count:b_ld,   barCol:'#14532d', lblCol:'#166534'},
     ];
-    const maxCnt = Math.max(...BKTS_D.map(b=>b.count), 1);
-    const bars = BKTS_D.map(b=>{
-      const bh = Math.max(3, Math.round((b.count/maxCnt)*MAX_H));
-      const r  = Math.min(6, Math.ceil(bh/2));
-      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;gap:1px">
-        <div style="font-size:8.5px;font-weight:800;color:${b.tc};min-height:11px;text-align:center;line-height:1">${b.count||''}</div>
-        <div style="display:flex;flex-direction:column;justify-content:flex-end;height:${MAX_H}px;width:100%">
-          <div style="width:100%;height:${bh}px;background:${b.col};border-radius:${r}px ${r}px 0 0"></div>
+    const maxCnt = Math.max(...BKTS.map(b=>b.count), 1);
+    const bars = BKTS.map(b=>{
+      const bh = Math.max(2, Math.round((b.count / maxCnt) * MAX_H));
+      const r  = Math.min(5, Math.ceil(bh / 2));
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0">
+        <div style="font-size:8px;font-weight:800;color:${b.lblCol};min-height:12px;
+                    text-align:center;line-height:1.2;margin-bottom:1px">${b.count || ''}</div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;
+                    height:${MAX_H}px;width:88%">
+          <div style="width:100%;height:${bh}px;background:${b.barCol};
+                      border-radius:${r}px ${r}px 0 0"></div>
         </div>
-        <div style="font-size:8px;color:var(--text2);white-space:nowrap;overflow:hidden;max-width:100%;text-align:center;margin-top:1px">${b.label}</div>
+        <div style="font-size:7.5px;color:#6b7280;text-align:center;margin-top:3px;
+                    white-space:nowrap;line-height:1.2">${b.label}</div>
       </div>`;
     }).join('');
-    if(chartEl) chartEl.innerHTML = `<div style="display:flex;align-items:stretch;gap:2px">${bars}</div>`;
+    if(chartEl) chartEl.innerHTML =
+      `<div style="display:flex;align-items:stretch;gap:1px;padding:0 2px">${bars}</div>`;
 
     const timeStr = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
     if(bTs) bTs.textContent = timeStr;
