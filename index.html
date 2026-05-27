@@ -3322,6 +3322,12 @@ function renderPortfolio(){
   const total = PORT.sectors.reduce((a,s)=>a+s.stocks.length,0);
   const secWeights = PORT.sectors.map(s=>s.stocks.reduce((a,sk)=>a+(sk.w||0),0));
   const wSum  = secWeights.reduce((a,w)=>a+w,0);
+  // 各分类仓位加权涨跌幅：Σ(w_i × pct_i) / Σw_i（仅纳入有实时价格且w>0的标的）
+  const secAvgPcts = PORT.sectors.map(sec=>{
+    let ws=0, wps=0;
+    sec.stocks.forEach(sk=>{ const pi=_PORT_PRICES[sk.code]; if(pi&&(sk.w||0)>0&&pi.pct!=null){ws+=sk.w;wps+=sk.w*pi.pct;} });
+    return ws>0 ? wps/ws : null;
+  });
   const hkCnt = PORT.sectors.reduce((a,s)=>a+s.stocks.filter(sk=>sk.mkt==='HK').length,0);
   document.getElementById('pKpiStocks').textContent  = total;
   document.getElementById('pKpiSectors').textContent = PORT.sectors.length;
@@ -3340,11 +3346,12 @@ function renderPortfolio(){
     const allWeights  = [...secWeights];
     const allColors   = [...chartColors];
     const allNames    = [...chartLabels];
+    const allPcts     = [...secAvgPcts];
     if(cash > 0.05){
       chartLabels.push('现金');
       chartData.push(cash);
       chartColors.push('#cbd5e1cc');
-      allWeights.push(cash); allColors.push('#cbd5e1cc'); allNames.push('现金');
+      allWeights.push(cash); allColors.push('#cbd5e1cc'); allNames.push('现金'); allPcts.push(null);
     }
     CH.portAlloc = new Chart(actx.getContext('2d'),{
       type:'doughnut',
@@ -3352,15 +3359,20 @@ function renderPortfolio(){
       options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
                plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.label+' '+ctx.parsed.toFixed(1)+'%'}}}}
     });
-    // 自定义图例：一行一个分类，显示仓位
+    // 自定义图例：一行一个分类，显示仓位 + 加权涨跌幅
     const legendEl = document.getElementById('portAllocLegend');
     if(legendEl){
-      legendEl.innerHTML = allNames.map((name,i)=>`
-        <div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid #f1f5f9">
+      legendEl.innerHTML = allNames.map((name,i)=>{
+        const pct = allPcts[i];
+        const pctTxt = pct!=null ? (pct>0?'+':'')+pct.toFixed(2)+'%' : '—';
+        const pctCol = pct==null ? '#94a3b8' : pct>0 ? '#059669' : pct<0 ? '#dc2626' : '#475569';
+        return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #f1f5f9">
           <span style="width:10px;height:10px;border-radius:2px;flex-shrink:0;background:${allColors[i]}"></span>
           <span style="font-size:12px;font-weight:600;color:#334155;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</span>
-          <span style="font-size:12px;font-weight:700;color:#475569;flex-shrink:0">${allWeights[i].toFixed(1)}%</span>
-        </div>`).join('');
+          <span style="font-size:11px;font-weight:700;color:${pctCol};flex-shrink:0;min-width:46px;text-align:right">${pctTxt}</span>
+          <span style="font-size:12px;font-weight:700;color:#475569;flex-shrink:0;min-width:36px;text-align:right">${allWeights[i].toFixed(1)}%</span>
+        </div>`;
+      }).join('');
     }
   }
   // ── 仓位分配（按行业）饼图 ──────────────────────────────────────
