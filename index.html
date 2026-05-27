@@ -749,63 +749,103 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ════════════════ TAB 投资组合 ════════════════ -->
 <div class="tab-content active" id="tPort">
-  <div class="stitle" style="position:relative">
-    投资组合管理
-    <span id="portClock" style="position:absolute;left:50%;transform:translateX(-50%);
-      font-size:26px;font-weight:800;letter-spacing:.06em;color:var(--text);
-      font-variant-numeric:tabular-nums;pointer-events:none">--:--:--</span>
-    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;min-width:0">
+  <!-- ══ 投资组合页眉 ══ -->
+  <div style="display:flex;align-items:center;justify-content:space-between;
+              padding:18px 26px 16px;margin-bottom:20px;
+              background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 45%,#1a3a5c 100%);
+              border-radius:16px;position:relative;overflow:hidden;
+              box-shadow:0 6px 28px rgba(15,23,42,.28)">
+    <!-- 装饰光晕 -->
+    <div style="position:absolute;top:-50px;left:140px;width:200px;height:200px;
+                background:rgba(139,92,246,.16);border-radius:50%;filter:blur(55px);pointer-events:none"></div>
+    <div style="position:absolute;bottom:-40px;right:200px;width:160px;height:160px;
+                background:rgba(59,130,246,.13);border-radius:50%;filter:blur(45px);pointer-events:none"></div>
 
-      <!-- ① 同步到云端 + 状态文字 -->
-      <button onclick="portForcePush()" title="将当前浏览器的仓位数据推送到云端"
-        style="flex-shrink:0;background:linear-gradient(135deg,#5b21b6 0%,#7c3aed 100%);color:#fff;
-               border:none;border-radius:8px;padding:6px 15px;cursor:pointer;font-size:12px;
-               font-family:inherit;font-weight:700;white-space:nowrap;letter-spacing:.03em;
-               box-shadow:0 2px 8px rgba(109,40,217,.38);transition:opacity .18s,transform .1s"
-        onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'"
-        onmousedown="this.style.transform='scale(.96)'" onmouseup="this.style.transform='scale(1)'">
-        ☁ 同步
-      </button>
-      <span id="portSyncTs"
-        style="font-size:10px;color:var(--text2);white-space:nowrap;max-width:120px;
-               overflow:hidden;text-overflow:ellipsis;flex-shrink:1">☁️ 加载中…</span>
+    <!-- 左：标题 -->
+    <div style="flex-shrink:0;z-index:1">
+      <div style="font-size:9.5px;font-weight:500;color:rgba(148,163,184,.55);
+                  letter-spacing:.16em;text-transform:uppercase;margin-bottom:5px">Portfolio</div>
+      <div style="font-size:19px;color:#fff;letter-spacing:.02em;line-height:1;
+                  font-family:'PingFang SC','Microsoft YaHei',sans-serif">
+        <span style="font-weight:300">投资</span><span style="font-weight:700">组合</span><span style="font-weight:300">管理</span>
+      </div>
+    </div>
+
+    <!-- 中：时钟（绝对居中） -->
+    <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;z-index:1;pointer-events:none">
+      <div id="portClock"
+        style="font-size:36px;font-weight:200;color:#fff;letter-spacing:.1em;
+               font-variant-numeric:tabular-nums;
+               font-family:'SF Mono','Consolas','Courier New',monospace;
+               text-shadow:0 0 28px rgba(139,92,246,.75),0 0 56px rgba(59,130,246,.35)">--:--:--</div>
+      <div style="font-size:9px;color:rgba(148,163,184,.45);letter-spacing:.1em;margin-top:3px">实时时钟</div>
+    </div>
+
+    <!-- 右：操作区 -->
+    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;z-index:1">
+
+      <!-- ① 同步 -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <button onclick="portForcePush()" title="将当前浏览器的仓位数据推送到云端"
+          style="background:rgba(139,92,246,.22);color:#c4b5fd;
+                 border:1px solid rgba(139,92,246,.42);border-radius:10px;
+                 padding:8px 20px;cursor:pointer;font-size:12px;font-family:inherit;
+                 font-weight:600;white-space:nowrap;letter-spacing:.05em;
+                 transition:all .18s"
+          onmouseover="this.style.background='rgba(139,92,246,.38)';this.style.borderColor='rgba(167,139,250,.65)'"
+          onmouseout="this.style.background='rgba(139,92,246,.22)';this.style.borderColor='rgba(139,92,246,.42)'"
+          onmousedown="this.style.transform='scale(.95)'" onmouseup="this.style.transform='scale(1)'">☁ 同步</button>
+        <span id="portSyncTs"
+          style="font-size:9px;color:rgba(148,163,184,.5);white-space:nowrap;
+                 max-width:110px;overflow:hidden;text-overflow:ellipsis;text-align:center">☁️ 加载中…</span>
+      </div>
 
       <!-- 分割线 -->
-      <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
+      <div style="width:1px;height:44px;background:rgba(255,255,255,.1);flex-shrink:0"></div>
 
-      <!-- ② 刷新股价 + 时间戳 -->
-      <button id="portPriceBtn" class="rbtn" onclick="fetchPortPrices()"
-        style="flex-shrink:0;padding:6px 13px;font-size:12px">
-        <span class="ricon">↻</span> 刷新股价
-      </button>
-      <span id="portPriceTs"
-        style="font-size:10px;color:var(--text2);white-space:nowrap;max-width:100px;
-               overflow:hidden;text-overflow:ellipsis;flex-shrink:1">股价未加载</span>
+      <!-- ② 刷新股价 -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <button id="portPriceBtn" onclick="fetchPortPrices()"
+          style="background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);color:#fff;
+                 border:none;border-radius:10px;padding:8px 20px;cursor:pointer;
+                 font-size:12px;font-family:inherit;font-weight:600;
+                 letter-spacing:.05em;white-space:nowrap;
+                 box-shadow:0 2px 16px rgba(37,99,235,.42);transition:all .18s"
+          onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 5px 20px rgba(37,99,235,.6)'"
+          onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 16px rgba(37,99,235,.42)'"
+          onmousedown="this.style.transform='scale(.95)'" onmouseup="this.style.transform='translateY(-1px)'">
+          <span class="ricon">↻</span> 刷新股价</button>
+        <span id="portPriceTs"
+          style="font-size:9px;color:rgba(148,163,184,.5);white-space:nowrap;
+                 max-width:110px;overflow:hidden;text-overflow:ellipsis;text-align:center">股价未加载</span>
+      </div>
 
       <!-- 分割线 -->
-      <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
+      <div style="width:1px;height:44px;background:rgba(255,255,255,.1);flex-shrink:0"></div>
 
       <!-- ③ 自动刷新 -->
-      <div id="autoRefreshBox"
-        style="flex-shrink:0;display:flex;align-items:center;gap:5px;
-               background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;
-               padding:4px 9px;white-space:nowrap">
-        <span style="font-size:11px;color:#0369a1;font-weight:700">⏱</span>
-        <select id="autoRefreshSel" onchange="setAutoRefresh(this.value)"
-          style="font-size:11px;font-family:inherit;border:1px solid #bae6fd;border-radius:5px;
-                 background:#fff;color:#0369a1;font-weight:600;padding:2px 4px;
-                 cursor:pointer;outline:none">
-          <option value="0">手动</option>
-          <option value="1">1分钟</option>
-          <option value="2">2分钟</option>
-          <option value="3">3分钟</option>
-          <option value="5">5分钟</option>
-          <option value="10">10分钟</option>
-          <option value="15">15分钟</option>
-          <option value="30">30分钟</option>
-        </select>
-        <span id="autoRefreshCd"
-          style="font-size:10px;color:#0284c7;font-weight:600;min-width:34px"></span>
+      <div id="autoRefreshBox" style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div style="display:flex;align-items:center;gap:6px;
+                    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+                    border-radius:10px;padding:7px 12px;white-space:nowrap">
+          <span style="font-size:11px;color:rgba(148,163,184,.65)">⏱</span>
+          <select id="autoRefreshSel" onchange="setAutoRefresh(this.value)"
+            style="font-size:11px;font-family:inherit;border:none;background:transparent;
+                   color:rgba(203,213,225,.85);font-weight:600;padding:0 2px;
+                   cursor:pointer;outline:none">
+            <option value="0"  style="color:#1e293b;background:#fff">手动</option>
+            <option value="1"  style="color:#1e293b;background:#fff">1分钟</option>
+            <option value="2"  style="color:#1e293b;background:#fff">2分钟</option>
+            <option value="3"  style="color:#1e293b;background:#fff">3分钟</option>
+            <option value="5"  style="color:#1e293b;background:#fff">5分钟</option>
+            <option value="10" style="color:#1e293b;background:#fff">10分钟</option>
+            <option value="15" style="color:#1e293b;background:#fff">15分钟</option>
+            <option value="30" style="color:#1e293b;background:#fff">30分钟</option>
+          </select>
+          <span id="autoRefreshCd"
+            style="font-size:10px;color:rgba(96,165,250,.8);font-weight:600;min-width:34px"></span>
+        </div>
+        <span style="font-size:9px;color:rgba(148,163,184,.4);letter-spacing:.04em">自动刷新</span>
       </div>
 
     </div>
