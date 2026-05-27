@@ -5692,18 +5692,31 @@ async function fetchMarketStats(){
   if(tTs) tTs.textContent='加载中…';
 
   try{
-    // ── ① 东方财富 clist 一次拉取全部 A 股涨跌幅 ──
-    // fs = 沪A主板+科创 + 深A主板+创业板+北交所
-    // fields = f3（涨跌幅 %），pz=6000 一页覆盖全部约5500只
-    const emUrl = 'https://push2.eastmoney.com/api/qt/clist/get'
-      + '?pn=1&pz=6000&np=1&fltt=2&invt=2&fid=f3'
-      + '&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23'
-      + '&fields=f3&_=' + Date.now();
-    const emResp = await fetch(emUrl);
-    if(!emResp.ok) throw new Error('HTTP ' + emResp.status);
-    const emJson = await emResp.json();
-    const stocks = emJson?.data?.diff;
-    if(!stocks?.length) throw new Error('东方财富返回空数据');
+    // ── ① 东方财富 clist：6页并行，每页1000只，覆盖全部沪深A股（约5500只）──
+    // fs：深圳主板(t:6) + 创业板(t:13) + 上海主板(t:2) + 科创板(t:23)
+    // 不含B股(t:80)；f12=股票代码用于去重
+    const _EM = 'https://push2.eastmoney.com/api/qt/clist/get'
+      + '?np=1&fltt=2&invt=2&fid=f3'
+      + '&fs=m:0+t:6,m:0+t:13,m:1+t:2,m:1+t:23'
+      + '&fields=f3,f12&pz=1000';
+    const _pages = await Promise.all(
+      [1,2,3,4,5,6].map(pn =>
+        fetch(`${_EM}&pn=${pn}&_=${Date.now()+pn}`)
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null)
+      )
+    );
+    // 合并并按 f12（代码）去重
+    const _seen = new Set();
+    const stocks = [];
+    for(const r of _pages){
+      for(const s of (r?.data?.diff || [])){
+        if(!s.f12 || _seen.has(s.f12)) continue;
+        _seen.add(s.f12);
+        stocks.push(s);
+      }
+    }
+    if(!stocks.length) throw new Error('东方财富返回空数据，请稍后重试');
 
     // ── ② JS 端分9档计数（与东方财富牛熊风向标一致）──
     let b_lu=0, b_u59=0, b_u15=0, b_u01=0, b_flat=0,
