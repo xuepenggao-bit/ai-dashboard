@@ -1299,7 +1299,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div>
       <strong>实时数据：</strong>
       A股 — 东方财富（PE/价格/涨跌） &nbsp;·&nbsp;
-      美股 — 东方财富实时行情；韩/日/台股 — 参考价格 &nbsp;·&nbsp;
+      美股 — 东方财富实时行情；韩/日股 — Yahoo Finance实时行情；台股 — 参考价格 &nbsp;·&nbsp;
       增速为历史季报数据（静态） &nbsp;·&nbsp;
       最后刷新：<span id="storageTs">—</span>
     </div>
@@ -1684,15 +1684,15 @@ const BASE = {
     {co:'SoftBank',    tkr:'9984.T',type:'AI基础设施LP',  capex:'$1,000亿承诺',   fwd:'5年滚动',         yoy:'N/A',   src:'Stargate公告', pub:true},
   ],
 
-  // 存储监控 — 数据来源：东方财富(美股/A股)、静态参考价格(韩/日/台)
-  // 价格基准日期：2026-05-21；韩/日/台股价格为收盘参考值，不实时刷新
+  // 存储监控 — 数据来源：东方财富(美股/A股)、Yahoo Finance(韩/日股实时)、静态参考价格(台)
+  // 韩/日股价格实时刷新；台股参考价（NT$748）为静态值
   storage:{
     intl:[
       {name:'美光科技',  tkr:'MU',        mkt:'Nasdaq', region:'美国', pe:16.2,  fwdPe:6.7,  growth:null,  peg:null, sig:'buy',  price:'$110.50',   note:'HBM3E主力供应商，fwdPE=6.7x反映AI内存超级周期'},
       {name:'闪迪',     tkr:'SNDK',       mkt:'Nasdaq', region:'美国', pe:22.8,  fwdPe:7.6,  growth:null,  peg:null, sig:'hold', price:'$54.80',    note:'2025-02从WD分拆，NAND Flash纯玩法'},
-      {name:'SK海力士', tkr:'000660.KS',  mkt:'KOSPI',  region:'韩国', pe:11.3,  fwdPe:null, growth:-5.16, peg:null, sig:'buy',  price:'₩205,000',  note:'HBM龙头，PE极低，增速转负系高基数效应'},
-      {name:'三星电子', tkr:'005930.KS',  mkt:'KOSPI',  region:'韩国', pe:15.2,  fwdPe:null, growth:-1.96, peg:null, sig:'hold', price:'₩63,800',   note:'HBM竞争力落后海力士，DRAM逻辑均衡'},
-      {name:'铠侠',     tkr:'285A.T',     mkt:'TSE',    region:'日本', pe:48.5,  fwdPe:null, growth:null,  peg:null, sig:'watch',price:'¥5,180',    note:'2024-12东交所上市，全球第三大NAND供应商'},
+      {name:'SK海力士', tkr:'000660.KS',  mkt:'KOSPI',  region:'韩国', pe:11.3,  fwdPe:null, growth:-5.16, peg:null, sig:'buy',  price:'₩2,255,000', note:'HBM龙头，PE极低，增速转负系高基数效应'},
+      {name:'三星电子', tkr:'005930.KS',  mkt:'KOSPI',  region:'韩国', pe:15.2,  fwdPe:null, growth:-1.96, peg:null, sig:'hold', price:'₩319,250',   note:'HBM竞争力落后海力士，DRAM逻辑均衡'},
+      {name:'铠侠',     tkr:'285A.T',     mkt:'TSE',    region:'日本', pe:48.5,  fwdPe:null, growth:null,  peg:null, sig:'watch',price:'¥63,880',    note:'2024-12东交所上市，全球第三大NAND供应商'},
       {name:'群联电子', tkr:'8299.TW',    mkt:'TWSE',   region:'台湾', pe:21.5,  fwdPe:null, growth:18.2,  peg:1.18, sig:'watch',price:'NT$748',    note:'NAND主控IC龙头，AI SSD受益标的'},
     ],
     domestic:[
@@ -2755,12 +2755,45 @@ async function fetchStoreLive(){
       if(pe>0) s.pe = Math.round(pe*10)/10;
     });
     iOk = true;
-    // 韩/日/台股使用 BASE.storage.intl 中的静态参考价，标注非实时
-    ['000660.KS','005930.KS','285A.T','8299.TW'].forEach(tkr=>{
-      const s=intl.find(x=>x.tkr===tkr);
-      if(s && !s._live){ s._ref=true; }  // 标记为参考价（非实时）
-    });
+    // 台股暂无实时接口，标注参考价
+    const s8299=intl.find(x=>x.tkr==='8299.TW');
+    if(s8299 && !s8299._live) s8299._ref=true;
   }catch(e){ console.warn('fetchStoreLive 国际:',e); }
+
+  // ③ Yahoo Finance：韩/日股实时行情（SK海力士 / 三星电子 / 铠侠）
+  // query1 对 005930.KS 有数据；285A.T / 000660.KS 用 query2
+  try{
+    const KR_JP = [
+      {tkr:'000660.KS', cur:'₩', host:'query2'},
+      {tkr:'005930.KS', cur:'₩', host:'query1'},
+      {tkr:'285A.T',    cur:'¥', host:'query2'},
+    ];
+    const yfFetches = KR_JP.map(cfg=>
+      fetch(`https://${cfg.host}.finance.yahoo.com/v8/finance/chart/${cfg.tkr}?interval=1d&range=1d`)
+        .then(r=>r.json())
+        .then(json=>({cfg, json}))
+        .catch(()=>null)
+    );
+    const yfRes = await Promise.all(yfFetches);
+    for(const item of yfRes){
+      if(!item) continue;
+      const {cfg, json} = item;
+      const meta = json?.chart?.result?.[0]?.meta;
+      if(!meta) continue;
+      const price = meta.regularMarketPrice;
+      const prev  = meta.chartPreviousClose;
+      if(!isFinite(price) || price <= 0) continue;
+      const pct = (isFinite(prev) && prev > 0) ? (price - prev) / prev * 100 : null;
+      const s = BASE.storage.intl.find(x=>x.tkr===cfg.tkr);
+      if(!s) continue;
+      // 韩股单位：₩ 整数价格，万以上加逗号；日股：¥整数
+      s.price = cfg.cur + Math.round(price).toLocaleString('en-US');
+      s._pct  = pct;
+      s._live = true;
+      s._ref  = false;
+      iOk = true;
+    }
+  }catch(e){ console.warn('fetchStoreLive 韩/日:', e); }
 
   // 重绘表格与图表
   renderIntlStore();
@@ -2771,7 +2804,7 @@ async function fetchStoreLive(){
   const now=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
   document.getElementById('storageTs').textContent=now;
   if(ts){
-    if(aOk&&iOk)     ts.textContent='A股+美股实时 · 韩/日/台参考价 '+now;
+    if(aOk&&iOk)     ts.textContent='A股+美股+韩/日实时 · 台股参考价 '+now;
     else if(aOk)     ts.textContent='A股已更新 '+now+'（美股行情受限）';
     else if(iOk)     ts.textContent='美股已更新 '+now+'（A股行情受限）';
     else             ts.textContent='⚠ 加载失败，显示静态数据';
@@ -4769,16 +4802,21 @@ async function fetchMacroKpis(){
   });
 
   // ── 1. 沪深A股总市值 ─────────────────────────────────────────────
-  // ulist.np API：f20 对指数代码返回交易所全市场总市值（单位：元）
-  // 1.000001 = 上证综指（含全部沪市A股）  0.399106 = 深证综合（含全部深市A股）
+  // 腾讯行情全量接口：sh000002(上证A股指数) + sz399107(深证总指)
+  // 字段[43] = 总市值（亿元）；两市相加后转换为万亿元
   try{
-    const r = await fetch(
-      `https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&secids=1.000001,0.399106&fields=f20&_=${Date.now()}`
-    ).then(r=>r.json());
-    const diff = r?.data?.diff;
-    const mc1 = diff?.[0]?.f20, mc2 = diff?.[1]?.f20;
+    const tMcResp = await fetch('https://qt.gtimg.cn/q=sh000002,sz399107&_=' + Date.now());
+    const tMcTxt  = new TextDecoder('gbk').decode(await tMcResp.arrayBuffer());
+    const _parseMc = code => {
+      const m = tMcTxt.match(new RegExp('v_' + code + '="([^"]+)"'));
+      if(!m) return 0;
+      const f = m[1].split('~');
+      return parseFloat(f[43]) || 0; // 亿元
+    };
+    const mc1 = _parseMc('sh000002'); // 上海A股总市值（亿元）
+    const mc2 = _parseMc('sz399107'); // 深圳A股总市值（亿元）
     if(mc1 > 0 && mc2 > 0){
-      const total = (mc1 + mc2) / 1e12; // 元 → 万亿
+      const total = (mc1 + mc2) / 10000; // 亿元 → 万亿元
       const el = document.getElementById('kTmc');
       if(el) el.textContent = '¥' + total.toFixed(0) + '万亿';
       const de = document.getElementById('kTmcDate');
