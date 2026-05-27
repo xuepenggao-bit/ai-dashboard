@@ -5736,6 +5736,9 @@ async function fetchMarketStats(){
 // ── 涨跌统计（东方财富 clist，分批分页拉取全量 f3 精确计数）────────
 // 策略：先取第1页获得 total，再按 total 算出页数，
 //        每8页一批顺序拉取（避免55+并发触发限流），前端对 f3 精确分档
+// ── 涨跌统计：9 档区间计数法 ────────────────────────────────────────
+// 策略：不拉取逐股数据，改为 9 次 pz=1 的区间查询，每次只取 total 计数。
+// EM 内部 f3 单位为整数 centipercent（9.5% = 950），过滤器值须与之一致。
 async function _doFetchBreadth(){
   const bTs    = document.getElementById('mktBreadthTs');
   const chartEl= document.getElementById('mktBreadthChart');
@@ -5746,111 +5749,97 @@ async function _doFetchBreadth(){
   const elFlat = document.getElementById('mktFlatRow');
   if(bTs) bTs.textContent = '加载中…';
   try{
-    const FS      = 'm:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
-    const API     = 'https://push2.eastmoney.com/api/qt/clist/get';
-    const FIXED   = `?fltt=2&invt=2&np=1&fid=f3&fs=${FS}&fields=f3`;
+    const FS  = 'm:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
+    const API = 'https://push2.eastmoney.com/api/qt/clist/get';
+    // 不加 fltt，保留 EM 内部整数格式，与 b:f3 过滤器单位一致
+    const BP  = 'np=1&invt=2&pn=1&pz=1&fid=f3&fields=f3';
 
-    // ① 先用 pz=5000 尝试一次性拉全量（若 EM 实际限制 ≤100/页则退回分页）
-    const rBig = await fetch(`${API}${FIXED}&pz=5000&pn=1&_=${Date.now()}`)
+    // ① 获取全市场总家数（不加区间过滤）
+    const rT = await fetch(`${API}?${BP}&fs=${FS}&_=${Date.now()}`)
       .then(r=>r.ok?r.json():null).catch(()=>null);
-    if(!rBig?.data?.total) throw new Error('首页请求失败');
+    if(!rT?.data?.total) throw new Error('获取总数失败');
+    const total = rT.data.total;
 
-    const total    = rBig.data.total;
-    const allF3    = [];
-    const push     = arr => (arr||[]).forEach(s=>{ const v=parseFloat(s?.f3); if(isFinite(v)) allF3.push(v); });
-    push(rBig.data.diff);
+    // ② 9 档并发区间查询（centipercent: 9.5%=950, 5%=500, 1%=100）
+    //    涨停 ≥950 | 涨5~9.5% 500~949 | 涨1~5% 100~499 | 微涨 1~99
+    //    平盘 0~0  | 微跌 -99~-1 | 跌1~5% -499~-100 | 跌5~9.5% -949~-500 | 跌停 ≤-950
+    const BKTS = [
+      {label:'涨停',  lo: 950,     hi: 100000, barCol:'#b91c1c', lblCol:'#ef4444'},
+      {label:'涨~5%', lo: 500,     hi: 949,    barCol:'#dc2626', lblCol:'#ef4444'},
+      {label:'1~5%',  lo: 100,     hi: 499,    barCol:'#f87171', lblCol:'#dc2626'},
+      {label:'0~1%',  lo: 1,       hi: 99,     barCol:'#fca5a5', lblCol:'#ef4444'},
+      {label:'平盘',   lo: 0,       hi: 0,      barCol:'#9ca3af', lblCol:'#6b7280'},
+      {label:'0~1%',  lo: -99,     hi: -1,     barCol:'#bbf7d0', lblCol:'#16a34a'},
+      {label:'1~5%',  lo: -499,    hi: -100,   barCol:'#4ade80', lblCol:'#15803d'},
+      {label:'5~跌',  lo: -949,    hi: -500,   barCol:'#16a34a', lblCol:'#15803d'},
+      {label:'跌停',   lo: -100000, hi: -950,   barCol:'#14532d', lblCol:'#166534'},
+    ];
+    const counts = await Promise.all(
+      BKTS.map((b, i) => {
+        const fs = `${FS}+b:f3:${b.lo}:${b.hi}`;
+        return fetch(`${API}?${BP}&fs=${fs}&_=${Date.now()+i*13}`)
+          .then(r=>r.ok?r.json():null).catch(()=>null)
+          .then(d => parseInt(d?.data?.total)||0);
+      })
+    );
+    const sumCounts  = counts.reduce((a,c)=>a+c, 0);
+    const activeStks = sumCounts - counts[4];   // 非平盘（有涨跌）家数
+    console.log('[涨跌统计] total:', total, 'sum:', sumCounts, 'active:', activeStks, 'buckets:', counts);
 
-    const gotFirst = allF3.length;   // EM 实际每页返回量（可能是 100、500 等）
-    console.log('[涨跌统计] total:', total, '首批实际:', gotFirst);
-
-    // ② 若还没拿够（EM 限制了 pz），按实际页大小分页补全
-    if(gotFirst > 0 && allF3.length < total * 0.95){
-      const actualPz = Math.max(gotFirst, 50);          // 用首批实际量做页大小
-      const nPages   = Math.min(Math.ceil(total / actualPz), 120);
-      for(let pg = 2; pg <= nPages; pg += 6){
-        const pages = [];
-        for(let i=pg; i<pg+6 && i<=nPages; i++) pages.push(i);
-        const batch = await Promise.all(
-          pages.map(pn => fetch(`${API}${FIXED}&pz=${actualPz}&pn=${pn}&_=${Date.now()+pn}`)
-            .then(r=>r.ok?r.json():null).catch(()=>null))
-        );
-        batch.forEach(r => push(r?.data?.diff));
-      }
-    }
-
-    if(!allF3.length) throw new Error('合并后数据为空');
-    console.log('[涨跌统计] 实际获取:', allF3.length, '只 / 总计:', total);
-
-    // 前端精确分9档
-    let b_lu=0,b_u59=0,b_u15=0,b_u01=0,b_flat=0,b_d01=0,b_d15=0,b_d59=0,b_ld=0;
-    allF3.forEach(pct=>{
-      if     (pct>=9.5)  b_lu++;
-      else if(pct>=5)    b_u59++;
-      else if(pct>=1)    b_u15++;
-      else if(pct>0)     b_u01++;
-      else if(pct===0)   b_flat++;
-      else if(pct>-1)    b_d01++;
-      else if(pct>-5)    b_d15++;
-      else if(pct>-9.5)  b_d59++;
-      else               b_ld++;
-    });
-    const totalUp   = b_lu+b_u59+b_u15+b_u01;
-    const totalDown = b_d01+b_d15+b_d59+b_ld;
-    console.log('[涨跌统计] ↑',totalUp,'平',b_flat,'↓',totalDown,'涨停',b_lu,'跌停',b_ld);
-
-    // 检测非交易时段：若85%以上股票 f3=0，说明行情未开或已收盘（f3 在非交易时段全归零）
-    const flatRatio = allF3.length > 50 ? b_flat / allF3.length : 0;
-    if(flatRatio > 0.85){
-      const tNow = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
-      if(chartEl) chartEl.innerHTML=`<div style="text-align:center;padding:14px 4px 10px">`
+    // ③ 非交易时段检测：有效涨跌家数 < 50 且总家数正常
+    if(activeStks < 50 && total > 500){
+      const tn = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+      if(chartEl) chartEl.innerHTML=
+        `<div style="text-align:center;padding:14px 4px 10px">`
         +`<div style="font-size:14px;color:#94a3b8;margin-bottom:6px">📊 非交易时段</div>`
         +`<div style="font-size:10px;color:#9ca3af;line-height:1.7">`
         +`交易时间 9:30~11:30 / 13:00~15:00<br>届时可查看实时涨跌分布</div></div>`;
-      if(bTs) bTs.textContent = tNow + ' 非交易时段';
-      if(elUp)   elUp.textContent   = '—';
-      if(elDown) elDown.textContent = '—';
-      if(elLU)   elLU.textContent   = '—';
-      if(elLD)   elLD.textContent   = '—';
+      if(bTs) bTs.textContent = tn + ' 非交易时段';
+      [elUp,elDown,elLU,elLD].forEach(el=>{ if(el) el.textContent='—'; });
       if(elFlat){ elFlat.textContent=''; elFlat.style.display='none'; }
       return;
     }
+
+    // ④ 区间过滤完全无效保护（sumCounts 极小且非交易检测未触发）
+    if(sumCounts < 50) throw new Error(`区间统计异常(sum=${sumCounts},total=${total})`);
+
+    // ⑤ 平盘：若 b:f3:0:0 返回 0（退化区间），用差值补算
+    const bFlat   = counts[4] > 0 ? counts[4] : Math.max(0, total - sumCounts + counts[4]);
+    const b_lu    = counts[0];
+    const b_ld    = counts[8];
+    const totalUp   = counts[0]+counts[1]+counts[2]+counts[3];
+    const totalDown = counts[5]+counts[6]+counts[7]+counts[8];
+    console.log('[涨跌统计] ↑',totalUp,'平',bFlat,'↓',totalDown,'涨停',b_lu,'跌停',b_ld);
 
     if(elUp)   elUp.textContent   = totalUp;
     if(elDown) elDown.textContent = totalDown;
     if(elLU)   elLU.textContent   = b_lu;
     if(elLD)   elLD.textContent   = b_ld;
-    if(elFlat){ elFlat.textContent='平盘 '+b_flat+' 家'; elFlat.style.display=b_flat>0?'block':'none'; }
+    if(elFlat){ elFlat.textContent='平盘 '+bFlat+' 家'; elFlat.style.display=bFlat>0?'block':'none'; }
 
-    const MAX_H=66;
-    const BKTS=[
-      {label:'涨停',  count:b_lu,   barCol:'#b91c1c',lblCol:'#ef4444'},
-      {label:'涨~5%', count:b_u59,  barCol:'#dc2626',lblCol:'#ef4444'},
-      {label:'5~1%',  count:b_u15,  barCol:'#f87171',lblCol:'#dc2626'},
-      {label:'1~0%',  count:b_u01,  barCol:'#fca5a5',lblCol:'#ef4444'},
-      {label:'平盘',   count:b_flat, barCol:'#9ca3af',lblCol:'#6b7280'},
-      {label:'0~1%',  count:b_d01,  barCol:'#bbf7d0',lblCol:'#16a34a'},
-      {label:'1~5%',  count:b_d15,  barCol:'#4ade80',lblCol:'#15803d'},
-      {label:'5~跌',  count:b_d59,  barCol:'#16a34a',lblCol:'#15803d'},
-      {label:'跌停',   count:b_ld,   barCol:'#14532d',lblCol:'#166534'},
-    ];
-    const maxCnt=Math.max(...BKTS.map(b=>b.count),1);
-    const bars=BKTS.map(b=>{
-      const bh=Math.max(2,Math.round((b.count/maxCnt)*MAX_H));
-      const r=Math.min(5,Math.ceil(bh/2));
+    // ⑥ 渲染直方图
+    const displayCounts = [...counts.slice(0,4), bFlat, ...counts.slice(5)];
+    const MAX_H  = 66;
+    const maxCnt = Math.max(...displayCounts, 1);
+    const bars   = BKTS.map((b, i) => {
+      const cnt = displayCounts[i];
+      const bh  = Math.max(2, Math.round((cnt/maxCnt)*MAX_H));
+      const r   = Math.min(5, Math.ceil(bh/2));
       return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0">`
-        +`<div style="font-size:8px;font-weight:800;color:${b.lblCol};min-height:12px;text-align:center;line-height:1.2;margin-bottom:1px">${b.count||''}</div>`
+        +`<div style="font-size:8px;font-weight:800;color:${b.lblCol};min-height:12px;text-align:center;line-height:1.2;margin-bottom:1px">${cnt||''}</div>`
         +`<div style="display:flex;flex-direction:column;justify-content:flex-end;height:${MAX_H}px;width:88%">`
         +`<div style="width:100%;height:${bh}px;background:${b.barCol};border-radius:${r}px ${r}px 0 0"></div></div>`
         +`<div style="font-size:7.5px;color:#6b7280;text-align:center;margin-top:3px;white-space:nowrap;line-height:1.2">${b.label}</div></div>`;
     }).join('');
-    const coverNote = allF3.length < total * 0.9
-      ? `<div style="font-size:9px;color:#f59e0b;text-align:center;margin-top:4px">⚠ 仅加载 ${allF3.length}/${total} 家</div>`
-      : `<div style="font-size:9px;color:#9ca3af;text-align:center;margin-top:4px">共 ${allF3.length} 家</div>`;
-    if(chartEl) chartEl.innerHTML=`<div style="display:flex;align-items:stretch;gap:1px;padding:0 2px">${bars}</div>${coverNote}`;
+    if(chartEl) chartEl.innerHTML=
+      `<div style="display:flex;align-items:stretch;gap:1px;padding:0 2px">${bars}</div>`
+      +`<div style="font-size:9px;color:#9ca3af;text-align:center;margin-top:4px">共 ${total} 家</div>`;
     if(bTs) bTs.textContent=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
   }catch(e){
     console.warn('[涨跌统计]', e.message);
-    if(chartEl) chartEl.innerHTML=`<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">获取失败：${e.message}<br><span style="font-size:10px">请点击↻重试</span></div>`;
+    if(chartEl) chartEl.innerHTML=
+      `<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">`
+      +`获取失败：${e.message}<br><span style="font-size:10px">请点击↻重试</span></div>`;
     if(bTs) bTs.textContent='';
   }
 }
