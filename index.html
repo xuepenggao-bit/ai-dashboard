@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<!-- X关注账号列表 Google Sheet ID: 17JrhIvIneHSI5P4SAf4jIB8xg_GIXAWjm2xAOQR8jV8
+     直接打开: https://docs.google.com/spreadsheets/d/17JrhIvIneHSI5P4SAf4jIB8xg_GIXAWjm2xAOQR8jV8
+     在此表格中维护X关注账号，列：账号(Handle)/显示名/关注主题/备注/是否启用/添加时间 -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -536,33 +539,33 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- KPI Row -->
   <div class="g5 mb16">
     <div class="card">
-      <div class="klabel">沪深A股总市值 <span id="kTmcDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
-      <div class="kval tb" id="kTmc">¥109万亿</div>
-      <div class="kchange up" id="kTmcChange">↑ YoY +24% · 较年初+7.2%</div>
+      <div class="klabel">沪深A股总市值 <span id="kTmcDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
+      <div class="kval tb" id="kTmc" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kchange neu" id="kTmcChange">--</div>
       <div class="tx3 mt4">沪市+深市，含科创/创业板 · 日频估算</div>
     </div>
     <div class="card">
-      <div class="klabel">上证综指 PE(TTM) <span id="kSsePeDate" style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
-      <div class="kval" id="kSsePe">16.8x</div>
-      <div class="kchange neu" id="kSsePeHint">历史均值 ~12x · 偏高区间</div>
+      <div class="klabel">上证综指 PE(TTM) <span id="kSsePeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
+      <div class="kval" id="kSsePe" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kchange neu" id="kSsePeHint">历史均值 ~12x</div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
     <div class="card">
-      <div class="klabel">深证成指 PE(TTM) <span id="kSzePeDate" style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
-      <div class="kval ty" id="kSzePe">31.5x</div>
-      <div class="kchange neu" id="kSzePeHint">历史均值 ~25x · 偏高区间</div>
+      <div class="klabel">深证成指 PE(TTM) <span id="kSzePeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
+      <div class="kval ty" id="kSzePe" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kchange neu" id="kSzePeHint">历史均值 ~25x</div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
     <div class="card">
-      <div class="klabel">创业板指 PE(TTM) <span id="kGemPeDate" style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
-      <div class="kval tp" id="kGemPe">42.3x</div>
-      <div class="kchange neu" id="kGemPeHint">历史均值 ~35x · 偏高区间</div>
+      <div class="klabel">创业板指 PE(TTM) <span id="kGemPeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
+      <div class="kval tp" id="kGemPe" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kchange neu" id="kGemPeHint">历史均值 ~35x</div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
     <div class="card">
-      <div class="klabel">科创50 PE(TTM) <span id="kStarPeDate" style="background:#d1fae5;color:#065f46;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2026-05-21</span></div>
-      <div class="kval tp" id="kStarPe">53.8x</div>
-      <div class="kchange neu" id="kStarPeHint">历史均值 ~45x · 合理区间</div>
+      <div class="klabel">科创50 PE(TTM) <span id="kStarPeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
+      <div class="kval tp" id="kStarPe" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kchange neu" id="kStarPeHint">历史均值 ~45x</div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
   </div>
@@ -620,10 +623,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="card">
       <div class="ch">
         <span class="ct">前10股票成交额占全市场比 (日频·%)</span>
-        <span class="cbadge" style="background:#d1fae5;color:#065f46">沪深交易所 · 日频</span>
+        <span id="concBadge" class="cbadge" style="background:#fef9c3;color:#92400e">历史估算数据</span>
       </div>
       <div style="height:210px"><canvas id="cConc"></canvas></div>
-      <div class="tx3 mt4">来源: 沪深交易所 · 近48交易日(2026-03-10至2026-05-21) · 成交集中度越高代表龙头效应越强 · 趋势参考</div>
+      <div class="tx3 mt4" id="concFooter">来源: 估算数据 · 成交集中度越高代表龙头效应越强 · 趋势参考 · 点击"刷新宏观数据"尝试获取最新数据</div>
     </div>
   </div>
 
@@ -637,15 +640,15 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div style="display:flex;align-items:flex-end;gap:20px;margin-bottom:10px;padding:10px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
         <div>
           <div class="tx3" style="margin-bottom:2px">最新日净买入</div>
-          <div style="font-size:22px;font-weight:800;line-height:1;color:var(--green)">+72亿</div>
+          <div id="northKpiVal" style="font-size:22px;font-weight:800;line-height:1;color:var(--green)">--</div>
         </div>
         <div style="flex:1">
-          <div class="kchange up" style="font-size:12px">近5日合计 +298亿</div>
-          <div class="tx3 mt4" style="color:#94a3b8">最新日期 2026-05-21</div>
+          <div id="northKpi5d" class="kchange neu" style="font-size:12px">近5日合计 --</div>
+          <div id="northKpiDate" class="tx3 mt4" style="color:#94a3b8">最新日期 --</div>
         </div>
       </div>
       <div style="height:200px"><canvas id="cNorth"></canvas></div>
-      <div class="tx3 mt4">来源: 沪深港通统计 · 近48个交易日北向净流入（2026-03-10 至 2026-05-21）</div>
+      <div class="tx3 mt4" id="northFooter">来源: 沪深港通统计 · 加载中…</div>
     </div>
   </div>
 
@@ -668,10 +671,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="card" style="border-top:3px solid #7c3aed">
       <div class="ch">
         <span class="ct">计算机、通信和其他电子设备制造业 营业利润 累计同比增速 (%)</span>
-        <span class="cbadge" style="background:#ede9fe;color:#5b21b6">国家统计局 · 最新2026-03</span>
+        <span id="electronicProfitBadge" class="cbadge" style="background:#fef9c3;color:#92400e">历史估算数据</span>
       </div>
       <div style="height:210px"><canvas id="cElectronicProfit"></canvas></div>
-      <div class="tx3 mt4">规模以上计算机、通信和其他电子设备制造业营业利润累计同比 · 2024-01至2026-03 · 来源: 国家统计局 · 注: 2024年上半年及2026年初受低基数效应影响增速偏高</div>
+      <div class="tx3 mt4" id="electronicProfitFooter">规模以上计算机、通信和其他电子设备制造业营业利润累计同比 · 来源: 国家统计局 · 注: 2024年上半年及2026年初受低基数效应影响增速偏高</div>
     </div>
   </div>
 
@@ -680,18 +683,18 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="card">
       <div class="ch">
         <span class="ct">新增A股投资者人数 (万人·季度)</span>
-        <span class="cbadge" style="background:#dbeafe;color:#1e40af">中国证监会</span>
+        <span class="cbadge" style="background:#fef9c3;color:#92400e">历史数据 · 2023Q1-2024Q4</span>
       </div>
       <div style="height:210px"><canvas id="cNewInv"></canvas></div>
-      <div class="tx3 mt4">2023Q1—2024Q4 · 来源: 中国证监会投资者季度报告 · 2024Q4受924行情驱动大幅增加</div>
+      <div class="tx3 mt4">2023Q1—2024Q4 · 来源: 中国证监会投资者季度报告（无公开实时API，不自动刷新）· 2024Q4受924行情驱动大幅增加</div>
     </div>
     <div class="card">
       <div class="ch">
         <span class="ct">A股主要指数PE(TTM)走势 (月末)</span>
-        <span class="cbadge" style="background:#dbeafe;color:#1e40af">Wind/交易所</span>
+        <span id="mktPeBadge" class="cbadge" style="background:#fef9c3;color:#92400e">历史估算数据</span>
       </div>
       <div style="height:210px"><canvas id="cMktPe"></canvas></div>
-      <div class="tx3 mt4">蓝=上证综指 · 绿=深证成指 · 2024-01至2025-03 · 来源: Wind/沪深交易所</div>
+      <div class="tx3 mt4" id="mktPeFooter">蓝=上证综指 · 绿=深证成指 · 历史确认数据至2025-03 · 点击"刷新宏观数据"获取最新数据</div>
     </div>
   </div>
 
@@ -1085,6 +1088,67 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
+  <!-- Row 4: 雪球热股榜 -->
+  <div class="card mb16" style="border-top:3px solid #f97316">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:800;color:#374151">🔥 雪球热股榜</span>
+        <span style="font-size:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;padding:1px 7px;border-radius:10px;font-weight:600">近1小时 Top20</span>
+        <span id="xqHotTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
+      </div>
+      <button onclick="fetchXqHot()" id="xqHotBtn"
+        style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
+               padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+    </div>
+    <!-- 4列×5行网格 -->
+    <div id="xqHotGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
+      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">
+        点击「↻」加载雪球热股榜
+      </div>
+    </div>
+    <!-- 数据源不可用时的引导提示 -->
+    <div id="xqHotGuide" style="display:none;margin-top:10px;padding:10px 12px;background:#fff7ed;border-radius:8px;border:1px solid #fed7aa">
+      <div style="font-size:11px;color:#92400e;margin-bottom:6px;font-weight:600">⚠️ 浏览器 CORS 限制，需运行本地刷新脚本</div>
+      <div style="font-size:10px;color:#78350f;margin-bottom:8px">在桌面找到「刷新雪球热股.ps1」，右键→用 PowerShell 运行，完成后点击↻</div>
+      <button onclick="copyXqRefreshCmd()" id="xqCopyBtn"
+        style="background:#f97316;color:#fff;border:none;border-radius:5px;padding:4px 12px;
+               cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">📋 复制一键刷新命令</button>
+    </div>
+  </div>
+
+  <!-- Row 5: 权重股舆情分析 -->
+  <div class="card mb16" style="border-top:3px solid #7c3aed">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:800;color:#374151">🗣️ 权重股舆情分析</span>
+        <span style="font-size:10px;background:#f3e8ff;color:#7c3aed;border:1px solid #ddd6fe;
+                     padding:1px 7px;border-radius:10px;font-weight:600">Top5持仓 · 各50条讨论</span>
+        <span id="sentTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
+      </div>
+      <button onclick="fetchXqSentiment(true)" id="sentBtn"
+        style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
+               padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+    </div>
+    <!-- 5列网格，每格一只权重股 -->
+    <div id="sentGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">
+        点击「↻」分析 Top5 权重股舆情（各取最新 50 条讨论）
+      </div>
+    </div>
+    <!-- CORS 限制时的引导提示 -->
+    <div id="sentGuide" style="display:none;margin-top:10px;padding:10px 12px;
+         background:#f5f3ff;border-radius:8px;border:1px solid #ddd6fe">
+      <div style="font-size:11px;color:#5b21b6;margin-bottom:5px;font-weight:600">
+        ⚠️ 浏览器 CORS 限制，需运行本地刷新脚本</div>
+      <div style="font-size:10px;color:#4c1d95;margin-bottom:8px">
+        在桌面找到「刷新舆情分析.ps1」，右键→用 PowerShell 运行，完成后点击↻<br>
+        或点击下方按钮复制命令（自动嵌入当前 Top5 代码），在 PowerShell 窗口粘贴执行：</div>
+      <button onclick="copySentimentCmd()" id="sentCopyBtn"
+        style="background:#7c3aed;color:#fff;border:none;border-radius:5px;padding:4px 12px;
+               cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">📋 复制刷新命令（含当前Top5）</button>
+    </div>
+  </div>
+
   <!-- Sector cards (rendered by JS) -->
   <div id="portSectors"></div>
 
@@ -1208,10 +1272,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- Gauge + Radar -->
   <div class="g2 mb16">
     <div class="card">
-      <div class="ch"><span class="ct">综合风险评分</span><span class="cbadge" id="riskBadge">中高风险</span></div>
+      <div class="ch"><span class="ct">综合风险评分</span><span class="cbadge" id="riskBadge" style="background:#e0e7ff;color:#3730a3">加载中…</span></div>
       <div class="gaugeouter" style="height:180px"><canvas id="cGauge"></canvas></div>
       <div class="gaugenum">
-        <div class="kval ty" id="overallRisk">62</div>
+        <div class="kval" id="overallRisk" style="color:#94a3b8;font-size:20px">--</div>
         <div class="tx2">综合风险指数（0=极低 · 100=极高）</div>
       </div>
       <div class="divider"></div>
@@ -1678,14 +1742,14 @@ const BASE = {
   ],
 
   risks:[
-    {name:'趋势/共识集中度', metric:'AI叙事覆盖率',    val:'85%',  thr:'70%',    lvl:'high',sc:80},
-    {name:'泡沫估值',        metric:'AI ETF PE/PEG',  val:'78x/97',thr:'50x/70', lvl:'high',sc:75},
-    {name:'宏观/货币政策',   metric:'利率/流动性环境',val:'中性',  thr:'收紧',    lvl:'med', sc:45},
-    {name:'估值/资金配置',   metric:'PCB PE(2026)',   val:'20x',   thr:'30x',    lvl:'med', sc:50},
-    {name:'产业链供应集中',  metric:'供应商集中度',   val:'62%',   thr:'70%',    lvl:'med', sc:55},
-    {name:'AI技术进展',      metric:'技术竞争强度',   val:'正常',  thr:'急剧变化',lvl:'low', sc:25},
-    {name:'组合分散度不足',  metric:'单一行业暴露',   val:'42%',   thr:'50%',    lvl:'med', sc:40},
-    {name:'监管/地缘政治',   metric:'政策不确定性',   val:'中高',  thr:'高',      lvl:'high',sc:65},
+    {name:'趋势/共识集中度', metric:'产业链均值动量(20日)', val:'--', thr:'+8%',              lvl:'unknown', sc:null, _live:false},
+    {name:'泡沫估值',        metric:'AI ETF PE(TTM)',      val:'--', thr:'50x',              lvl:'unknown', sc:null, _live:false},
+    {name:'宏观/货币政策',   metric:'CN10Y/利差/VIX',      val:'--', thr:'CN10Y>2.5%/利差>3%',lvl:'unknown', sc:null, _live:false},
+    {name:'估值/资金配置',   metric:'PCB均值PE(动态)',      val:'--', thr:'80x',              lvl:'unknown', sc:null, _live:false},
+    {name:'产业链供应集中',  metric:'TOP2板块动量占比',     val:'--', thr:'72%',              lvl:'unknown', sc:null, _live:false},
+    {name:'AI技术进展',      metric:'AI ETF(515980)20日动量',val:'--',thr:'+22%',             lvl:'unknown', sc:null, _live:false},
+    {name:'组合分散度不足',  metric:'最大单板块仓位',       val:'--', thr:'50%',              lvl:'unknown', sc:null, _live:false},
+    {name:'监管/地缘政治',   metric:'A/H溢价指数',          val:'--', thr:'135',              lvl:'unknown', sc:null, _live:false},
   ],
 
   steps:[
@@ -1702,12 +1766,12 @@ const BASE = {
   ],
 
   switchConds:[
-    {cond:'AI ETF PE',          s4:'< 50x',  curr:'78x',  s5:'> 70x',  ok:false},
-    {cond:'PEG指标',             s4:'< 70',   curr:'97',   s5:'> 95',   ok:false},
-    {cond:'Hyperscaler Capex增速',s4:'> 30%', curr:'+77%', s5:'< 20%',  ok:true},
-    {cond:'PCB PE (2027E)',      s4:'< 15x',  curr:'10x',  s5:'> 20x',  ok:true},
-    {cond:'AI叙事集中度',        s4:'< 70%',  curr:'85%',  s5:'> 80%',  ok:false},
-    {cond:'综合动量(30日)',       s4:'> 0',    curr:'+6.9%',s5:'< -5%',  ok:true},
+    {cond:'AI ETF PE',            s4:'< 50x',  curr:'--', s5:'> 70x',  ok:null, _live:false},
+    {cond:'PEG指标',              s4:'< 70',   curr:'--', s5:'> 95',   ok:null, _live:false},
+    {cond:'Hyperscaler Capex增速',s4:'> 30%',  curr:'--', s5:'< 20%',  ok:null, _live:false},
+    {cond:'PCB均值PE(动态)',       s4:'< 50x',  curr:'--', s5:'> 80x',  ok:null, _live:false},
+    {cond:'AI叙事集中度',          s4:'< +8%',  curr:'--', s5:'> +15%', ok:null, _live:false},
+    {cond:'综合动量(20日均值)',     s4:'> 0',    curr:'--', s5:'< -5%',  ok:null, _live:false},
   ],
 
   // Neo Cloud Capex — 单位：亿美元($100M)，与Hyperscaler chart同比例
@@ -1818,9 +1882,10 @@ const BASE = {
       vals:  [293, 268, 311, 327, 338, 292, 382, 476, 318, 258, 375, 452, 296],
     },
     mktPe:{
-      labels:['24-01','24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02','26-03','26-04','26-05'],
-      sse:   [11.2,11.8,12.0,11.5,11.8,11.2,12.1,12.8,12.8,16.2,15.4,14.5,15.0,15.2,13.8,14.5,14.8,15.0,15.3,15.9,16.5,17.0,16.8,16.5,16.8,16.9,16.5,16.6,16.8],
-      sze:   [23.5,24.6,25.1,23.8,24.5,22.8,24.0,25.6,25.8,32.1,30.2,28.5,29.0,28.8,25.6,27.0,27.5,28.0,28.5,29.5,31.0,31.0,30.5,29.8,31.0,32.2,31.0,30.5,31.5],
+      // 截至2025-03的Wind/交易所确认历史数据；2025-04及之后由 refreshMacro API 动态填入
+      labels:['24-01','24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-01','25-02','25-03'],
+      sse:   [11.2,11.8,12.0,11.5,11.8,11.2,12.1,12.8,12.8,16.2,15.4,14.5,15.0,15.2,13.8],
+      sze:   [23.5,24.6,25.1,23.8,24.5,22.8,24.0,25.6,25.8,32.1,30.2,28.5,29.0,28.8,25.6],
     },
     // ── 融资融券余额 (日频·亿元) 2026-03-10→2026-05-26 · 来源:沪深交易所 ──
     margin:{
@@ -1967,7 +2032,7 @@ function mkRadar(){
     data:{
       labels:['趋势/共识','估值泡沫','宏观/货币','资金配置','产业链','AI进展','组合分散','监管风险'],
       datasets:[
-        {label:'当前风险',data:BASE.risks.map(r=>r.sc),borderColor:'rgba(59,130,246,.8)',backgroundColor:'rgba(59,130,246,.12)',pointBackgroundColor:'#3b82f6',pointRadius:4},
+        {label:'当前风险',data:BASE.risks.map(()=>0),borderColor:'rgba(59,130,246,.8)',backgroundColor:'rgba(59,130,246,.12)',pointBackgroundColor:'#3b82f6',pointRadius:4},
         {label:'2021峰值参考',data:[95,92,70,85,60,30,25,40],borderColor:'rgba(239,68,68,.45)',backgroundColor:'rgba(239,68,68,.05)',pointBackgroundColor:'#ef4444',pointRadius:4,borderDash:[4,4]},
       ]
     },
@@ -1981,11 +2046,10 @@ function mkRadar(){
 
 function mkGauge(){
   const ctx = document.getElementById('cGauge').getContext('2d');
-  const sc = parseInt(document.getElementById('overallRisk').textContent)||62;
-  const col = sc>70?'rgba(220,38,38,.75)':sc>50?'rgba(217,119,6,.75)':'rgba(5,150,105,.75)';
+  // 初始空盘：数据未到时显示全灰，等 updateRiskDashboard 更新
   CH.gauge = new Chart(ctx,{
     type:'doughnut',
-    data:{datasets:[{data:[sc,100-sc],backgroundColor:[col,'rgba(226,232,240,.7)'],borderWidth:0,circumference:180,rotation:270}]},
+    data:{datasets:[{data:[0,100],backgroundColor:['rgba(226,232,240,0)','rgba(226,232,240,.7)'],borderWidth:0,circumference:180,rotation:270}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}}}
   });
 }
@@ -1998,7 +2062,7 @@ function mkBubble(){
       labels:['T-12M','T-9M','T-6M','T-3M','T-0'],
       datasets:[
         {label:'2021科技泡沫 PE',data:[45,62,85,95,90],borderColor:'rgba(156,163,175,.55)',backgroundColor:'rgba(156,163,175,.06)',fill:true,tension:.4,pointRadius:4,borderDash:[4,4]},
-        {label:'当前AI PE',data:[30,45,62,74,78],borderColor:'rgba(59,130,246,.8)',backgroundColor:'rgba(59,130,246,.07)',fill:true,tension:.4,pointRadius:4},
+        {label:'当前AI PE',data:[30,45,62,74,null],borderColor:'rgba(59,130,246,.8)',backgroundColor:'rgba(59,130,246,.07)',fill:true,tension:.4,pointRadius:4},
       ]
     },
     options:{
@@ -2425,22 +2489,42 @@ function updateRiskDashboard(){
     BASE.risks[7]._live=true;
   }
 
-  // ── 综合风险评分 = 所有 sc 均值，更新仪表盘 ───────────────────
-  const avgSc=Math.round(BASE.risks.reduce((s,r)=>s+r.sc,0)/BASE.risks.length);
-  const elSc=document.getElementById('overallRisk');
-  if(elSc) elSc.textContent=avgSc;
-  const badge=document.getElementById('riskBadge');
-  if(badge) badge.textContent=avgSc>70?'高风险':avgSc>50?'中高风险':avgSc>30?'中等风险':'低风险';
-  if(CH.gauge){
-    const col=avgSc>70?'rgba(220,38,38,.75)':avgSc>50?'rgba(217,119,6,.75)':'rgba(5,150,105,.75)';
-    CH.gauge.data.datasets[0].data=[avgSc,100-avgSc];
-    CH.gauge.data.datasets[0].backgroundColor=[col,'rgba(226,232,240,.7)'];
-    CH.gauge.update();
+  // ── 综合风险评分：只计算已有实时数据的维度（_live=true 且 sc 不为 null）──
+  const liveRisks = BASE.risks.filter(r=>r._live && r.sc !== null);
+  const elSc  = document.getElementById('overallRisk');
+  const badge = document.getElementById('riskBadge');
+  if(liveRisks.length > 0){
+    const avgSc = Math.round(liveRisks.reduce((s,r)=>s+r.sc,0)/liveRisks.length);
+    if(elSc){
+      elSc.textContent = avgSc;
+      elSc.style.color = '';    // 清除灰色
+      elSc.style.fontSize = ''; // 恢复正常尺寸
+    }
+    if(badge){
+      badge.textContent = avgSc>70?'高风险':avgSc>50?'中高风险':avgSc>30?'中等风险':'低风险';
+      badge.style.background = avgSc>70?'#fee2e2':avgSc>50?'#fef9c3':'#d1fae5';
+      badge.style.color      = avgSc>70?'#991b1b':avgSc>50?'#92400e':'#065f46';
+    }
+    if(CH.gauge){
+      const col=avgSc>70?'rgba(220,38,38,.75)':avgSc>50?'rgba(217,119,6,.75)':'rgba(5,150,105,.75)';
+      CH.gauge.data.datasets[0].data=[avgSc,100-avgSc];
+      CH.gauge.data.datasets[0].backgroundColor=[col,'rgba(226,232,240,.7)'];
+      CH.gauge.update();
+    }
+    // 更新 cBubble "当前AI PE" T-0 点（用实时 _aiEtfPe，若无数据则保持 null）
+    if(CH.bubble && _aiEtfPe && _aiEtfPe>0){
+      const ds1 = CH.bubble.data.datasets[1];
+      if(ds1) { ds1.data[4] = parseFloat(_aiEtfPe.toFixed(1)); CH.bubble.update('none'); }
+    }
+  } else {
+    // 尚无任何维度有实时数据
+    if(elSc && elSc.textContent !== '--'){ /* keep '--' */ }
+    if(badge){ badge.textContent='加载中…'; badge.style.background='#e0e7ff'; badge.style.color='#3730a3'; }
   }
-  // 同步雷达图数据
+  // 同步雷达图数据（null 替换为 0 避免渲染错误）
   if(CH.radar){
-    CH.radar.data.datasets[0].data=BASE.risks.map(r=>r.sc);
-    CH.radar.update();
+    CH.radar.data.datasets[0].data = BASE.risks.map(r=>r.sc!==null?r.sc:0);
+    CH.radar.update('none');
   }
 
   renderRisk();
@@ -2481,36 +2565,48 @@ function renderMon(){
 }
 
 function renderRisk(){
-  const lvlC={low:'s-buy',med:'s-hold',high:'s-sell'};
-  const lvlT={low:'低',med:'中',high:'高'};
+  const lvlC={low:'s-buy',med:'s-hold',high:'s-sell',unknown:'s-watch'};
+  const lvlT={low:'低',med:'中',high:'高',unknown:'--'};
   const dot='<span style="font-size:7px;vertical-align:super;color:#10b981;margin-left:2px">●</span>';
-  document.getElementById('riskBody').innerHTML = BASE.risks.map(r=>`<tr>
-    <td><strong>${r.name}</strong>${r._live?dot:''}</td>
-    <td class="tx3">${r.metric}</td>
-    <td style="font-weight:600">${r.val}</td>
-    <td class="tx3" style="color:var(--text2)">${r.thr}</td>
-    <td><span class="sig ${lvlC[r.lvl]}">${lvlT[r.lvl]}</span></td>
-    <td>
-      <div style="display:flex;align-items:center;gap:6px">
-        <div class="rbar" style="width:100px;flex:1"><div class="rfill r${r.lvl.charAt(0)}" style="width:${r.sc}%"></div></div>
-        <span class="tx3">${r.sc}</span>
-      </div>
-    </td>
-    <td style="font-size:16px">${r.lvl==='high'?'🔴':r.lvl==='med'?'🟡':'🟢'}</td>
-  </tr>`).join('');
+  document.getElementById('riskBody').innerHTML = BASE.risks.map(r=>{
+    const hasData = r.sc !== null && r._live;
+    const scDisp  = hasData ? r.sc : '--';
+    const lvlKey  = hasData ? r.lvl : 'unknown';
+    const barHtml = hasData
+      ? `<div class="rbar" style="width:100px;flex:1"><div class="rfill r${r.lvl.charAt(0)}" style="width:${r.sc}%"></div></div><span class="tx3">${r.sc}</span>`
+      : `<span class="tx3" style="color:#94a3b8">待获取</span>`;
+    const icon = !hasData?'⚪':r.lvl==='high'?'🔴':r.lvl==='med'?'🟡':'🟢';
+    return `<tr>
+      <td><strong>${r.name}</strong>${r._live?dot:''}</td>
+      <td class="tx3">${r.metric}</td>
+      <td style="font-weight:600;color:${hasData?'inherit':'#94a3b8'}">${r.val}</td>
+      <td class="tx3" style="color:var(--text2)">${r.thr}</td>
+      <td><span class="sig ${lvlC[lvlKey]}">${lvlT[lvlKey]}</span></td>
+      <td><div style="display:flex;align-items:center;gap:6px">${barHtml}</div></td>
+      <td style="font-size:16px">${icon}</td>
+    </tr>`;
+  }).join('');
 }
 
 function renderAlerts(){
-  const high = BASE.risks.filter(r=>r.lvl==='high');
+  const liveRisks = BASE.risks.filter(r=>r._live);
+  const high = liveRisks.filter(r=>r.lvl==='high');
   const el = document.getElementById('riskAlerts');
-  el.innerHTML = high.map(r=>`
-    <div class="alert a-danger">
-      <span>⚠</span>
-      <div><strong>${r.name}</strong>：当前 ${r.val}，超警戒线 ${r.thr}，建议评估仓位</div>
-    </div>`).join('') + `
+  if(liveRisks.length === 0){
+    el.innerHTML = `<div class="alert a-info"><span>ℹ</span><span>数据加载中，请点击「产业链监控」标签刷新后返回查看</span></div>`;
+    return;
+  }
+  el.innerHTML = (high.length > 0
+    ? high.map(r=>`
+      <div class="alert a-danger">
+        <span>⚠</span>
+        <div><strong>${r.name}</strong>：当前 ${r.val}，超警戒线 ${r.thr}，建议评估仓位</div>
+      </div>`).join('')
+    : `<div class="alert a-info"><span>✅</span><span>当前无高风险维度触发警报（已加载 ${liveRisks.length}/8 项）</span></div>`
+  ) + `
     <div class="alert a-warn mt8">
       <span>ℹ</span>
-      <span>当前AI市场与2021科技泡沫顶部相似度约 <strong>70-75%</strong>，建议逐步降低高PE标的敞口</span>
+      <span>综合评分基于 ${liveRisks.length}/8 个实时维度 · 数据来源：东方财富/Yahoo Finance/NBS</span>
     </div>`;
 }
 
@@ -2533,13 +2629,22 @@ function renderSteps(){
 function renderSwitch(){
   const el = document.getElementById('switchBody'); if(!el) return;
   const dot='<span style="font-size:7px;vertical-align:super;color:#10b981;margin-left:2px">●</span>';
-  el.innerHTML = BASE.switchConds.map(c=>`<tr>
-    <td><strong>${c.cond}</strong>${c._live?dot:''}</td>
-    <td class="tg tx2">${c.s4}</td>
-    <td style="font-weight:600;color:${c.ok?'var(--green)':'var(--red)'}">${c.curr}</td>
-    <td class="tr tx2">${c.s5}</td>
-    <td>${c.ok?'<span class="sig s-buy">✓ 阶段4</span>':'<span class="sig s-sell">⚠ 触发阶段5</span>'}</td>
-  </tr>`).join('');
+  el.innerHTML = BASE.switchConds.map(c=>{
+    const hasData = c._live && c.ok !== null;
+    const valColor = !hasData ? '#94a3b8' : c.ok ? 'var(--green)' : 'var(--red)';
+    const statusHtml = !hasData
+      ? '<span class="sig s-watch">待获取</span>'
+      : c.ok
+        ? '<span class="sig s-buy">✓ 阶段4</span>'
+        : '<span class="sig s-sell">⚠ 触发阶段5</span>';
+    return `<tr>
+      <td><strong>${c.cond}</strong>${c._live?dot:''}</td>
+      <td class="tg tx2">${c.s4}</td>
+      <td style="font-weight:600;color:${valColor}">${c.curr}</td>
+      <td class="tr tx2">${c.s5}</td>
+      <td>${statusHtml}</td>
+    </tr>`;
+  }).join('');
 }
 
 function mkIntlPe(){
@@ -4649,7 +4754,7 @@ function _tabRefresh(idx){
   if(_TAB_TS[idx] && now-_TAB_TS[idx]<_TAB_THROTTLE) return; // 节流
   _TAB_TS[idx]=now;
   // 按标签页类型调用对应的动态数据刷新函数
-  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); } // finally 内会链式调用 fetchIndexPrices
+  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); fetchXqHot(); _tryLoadSentimentSilent(); } // finally 内会链式调用 fetchIndexPrices
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tStage') fetchStageData();
   else if(tab==='tAM')    refreshMacro();
@@ -4798,8 +4903,28 @@ async function fetchDailyCharts(){
         d.vals.map(v=>v==null?'rgba(148,163,184,.4)':v>=0?'rgba(5,150,105,.7)':'rgba(220,38,38,.6)');
       CH.north.update('none');
     }
+    // 更新北向资金 KPI 区块（最新日净买入 / 近5日合计 / 日期）
+    if(d.latestVal!=null && d.vals.length>0){
+      const v=d.latestVal;
+      const kv=document.getElementById('northKpiVal');
+      if(kv){ kv.textContent=(v>=0?'+':'')+v.toFixed(0)+'亿'; kv.style.color=v>=0?'var(--green)':'var(--red)'; }
+      const last5=d.vals.slice(-5).filter(x=>x!=null);
+      const sum5=last5.reduce((a,b)=>a+b,0);
+      const k5=document.getElementById('northKpi5d');
+      if(k5){ k5.textContent='近5日合计 '+(sum5>=0?'+':'')+sum5.toFixed(0)+'亿'; k5.className='kchange '+(sum5>=0?'up':'down'); }
+      const kd=document.getElementById('northKpiDate');
+      if(kd) kd.textContent='最新日期 '+d.latestDate;
+      const kf=document.getElementById('northFooter');
+      if(kf) kf.textContent='来源: 沪深港通统计 · 近'+d.labels.length+'交易日北向净流入（'+d.labels[0]+' 至 '+d.latestDate+'）';
+    }
     console.log('[Daily] 北向资金 OK | 字段:'+d.usedField+' 最新:'+d.latestDate,d.latestVal+'亿');
-  }catch(e){ console.warn('[Daily] 北向资金失败:',e.message); }
+  }catch(e){
+    console.warn('[Daily] 北向资金失败:',e.message);
+    const kf=document.getElementById('northFooter');
+    if(kf) kf.textContent='来源: 沪深港通统计 · 数据获取失败，显示历史数据';
+    const kv=document.getElementById('northKpiVal'); if(kv&&kv.textContent==='--') kv.textContent='获取失败';
+    const kd=document.getElementById('northKpiDate'); if(kd&&kd.textContent==='最新日期 --') kd.textContent='获取失败';
+  }
 
   // ── 3. 涨跌家数：EM DataCenter 历史数据（60交易日）+ 实时今日覆盖 ──
   // DataCenter 候选 report/列名（依次尝试，取第一个有效的）
@@ -4863,6 +4988,46 @@ async function fetchDailyCharts(){
       if(foot) foot.textContent='涨跌家数：非交易时段暂无数据';
     }
   }catch(e){ console.warn('[Daily] 涨跌家数失败:',e.message); }
+
+  // ── 4. 前10成交占比（集中度）— EM DataCenter 历史数据 ──────────────
+  // 说明：东方财富无直接"前N成交占比"字段，此处尝试从个股成交额排行估算集中度
+  // 若接口失败，保留历史估算数据并标注，不做误导性显示
+  try{
+    // 尝试从 EM DataCenter 获取近60日涨幅前10成交额（RPT_ASHARE_MKTSTAT）
+    const concUrl = _DC60
+      + 'reportName=RPT_ASHARE_MKTSTAT&columns=TRADE_DATE,TOP10_AMT_RATIO,CONCENTRATION,AMT_RATIO'
+      + '&sortColumns=TRADE_DATE';
+    const concRes = await fetch(concUrl,{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
+    const concData = concRes?.result?.data;
+    // 尝试字段名 TOP10_AMT_RATIO / CONCENTRATION / AMT_RATIO
+    const concField = ['TOP10_AMT_RATIO','CONCENTRATION','AMT_RATIO']
+      .find(f=>concData?.length && concData[0][f]!=null);
+    if(concField && concData.length>=5){
+      const sorted=[...concData].sort((a,b)=>String(a.TRADE_DATE)>String(b.TRADE_DATE)?1:-1);
+      const labels=sorted.map(d=>_fmtDayLabel(d.TRADE_DATE));
+      const vals=sorted.map(d=>{ const v=parseFloat(d[concField]); return isFinite(v)?v:null; });
+      if(CH.conc){
+        CH.conc.data.labels=labels;
+        CH.conc.data.datasets[0].data=vals;
+        CH.conc.update('none');
+      }
+      const latestDate=labels[labels.length-1];
+      const badge=document.getElementById('concBadge');
+      if(badge){ badge.textContent='东方财富·日频'; badge.style.background='#d1fae5'; badge.style.color='#065f46'; }
+      const footer=document.getElementById('concFooter');
+      if(footer) footer.textContent=`来源: 东方财富 · 近${labels.length}交易日(${labels[0]}至${latestDate}) · 成交集中度越高代表龙头效应越强`;
+      console.log('[Daily] 成交集中度 OK | 字段:'+concField+' 最新:'+latestDate);
+    } else {
+      // 接口无此字段 → 保留历史估算数据，明确标注
+      console.log('[Daily] 成交集中度：DataCenter无对应字段，保留历史估算数据');
+      const footer=document.getElementById('concFooter');
+      if(footer) footer.textContent='来源: 历史估算数据（2026-03至2026-05）· 东方财富无直接集中度字段 · 趋势参考';
+    }
+  }catch(e){
+    console.warn('[Daily] 成交集中度失败:',e.message);
+    const footer=document.getElementById('concFooter');
+    if(footer) footer.textContent='来源: 历史估算数据 · 数据获取失败 · 趋势参考';
+  }
 }
 const MACRO_CFGS={
   cpi:{
@@ -4933,12 +5098,10 @@ async function fetchMacroKpis(){
   const _pad = n => String(n).padStart(2,'0');
   // 日期格式：YYYY-MM-DD
   const todayStr = `${_now.getFullYear()}-${_pad(_now.getMonth()+1)}-${_pad(_now.getDate())}`;
-  // 刷新时间格式：MM-DD HH:MM（PE 卡片刷新时间标记）
-  const refreshTs = `${_pad(_now.getMonth()+1)}-${_pad(_now.getDate())} ${_pad(_now.getHours())}:${_pad(_now.getMinutes())}`;
-
-  // ── 0. PE 卡片刷新时间（API 对指数均不返回实时 PE，始终以刷新触发时间为准）
+  // ── 0. PE 卡片日期标签先标记"加载中…"，等数据源返回后由 _applyPe 写入真实数据日期
   ['kSsePeDate','kSzePeDate','kGemPeDate','kStarPeDate'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.textContent=refreshTs;
+    const el=document.getElementById(id);
+    if(el){ el.textContent='加载中…'; el.style.background='#e0e7ff'; el.style.color='#3730a3'; }
   });
 
   // ── 1. 沪深A股总市值（日频，localStorage 缓存当日数据）────────────
@@ -4952,9 +5115,9 @@ async function fetchMacroKpis(){
       const cached = JSON.parse(localStorage.getItem(MC_KEY)||'null');
       if(cached?.date === todayStr && cached.wanYi > 30){
         const el = document.getElementById('kTmc');
-        if(el) el.textContent = '¥' + Math.round(cached.wanYi) + '万亿';
+        if(el){ el.textContent = '¥' + Math.round(cached.wanYi) + '万亿'; el.style.color=''; el.style.fontSize=''; }
         const de = document.getElementById('kTmcDate');
-        if(de) de.textContent = todayStr;
+        if(de){ de.textContent = todayStr+' 缓存'; de.style.background='#fef9c3'; de.style.color='#92400e'; }
       }
     }catch(e2){}
 
@@ -5004,53 +5167,168 @@ async function fetchMacroKpis(){
 
     if(wanYi > 30 && wanYi < 500){
       const el = document.getElementById('kTmc');
-      if(el) el.textContent = '¥' + Math.round(wanYi) + '万亿';
+      if(el){ el.textContent = '¥' + Math.round(wanYi) + '万亿'; el.style.color=''; el.style.fontSize=''; }
       const de = document.getElementById('kTmcDate');
-      if(de) de.textContent = todayStr;
+      if(de){
+        const t2=new Date();
+        const hms2=`${String(t2.getHours()).padStart(2,'0')}:${String(t2.getMinutes()).padStart(2,'0')}:${String(t2.getSeconds()).padStart(2,'0')}`;
+        de.textContent = todayStr+' '+hms2+'获取';
+        de.style.background='#d1fae5'; de.style.color='#065f46';
+      }
       try{ localStorage.setItem(MC_KEY, JSON.stringify({date:todayStr, wanYi})); }catch(e2){}
     } else {
       console.warn('[MacroKpi] 总市值未获取到有效数据 wanYi=', wanYi);
+      const el = document.getElementById('kTmc');
+      if(el && el.textContent==='--'){ el.textContent='获取失败'; el.style.color='#dc2626'; el.style.fontSize='14px'; }
+      const de = document.getElementById('kTmcDate');
+      if(de && de.textContent==='加载中…'){ de.textContent='获取失败'; de.style.background='#fee2e2'; de.style.color='#991b1b'; }
     }
   }catch(e){ console.warn('[MacroKpi] 总市值:', e.message); }
 
-  // ── 2. 指数 PE(TTM) ─────────────────────────────────────────────────
-  // 注：push2 ulist.np 对所有指数代码的 f162 均返回 "-"，无法自动刷新。
-  // 下方代码保留结构，若将来找到可用 API 可在此处替换；否则 PE 卡片显示静态值。
-  // secids 顺序：上证综指(1.000001) / 深证成指(0.399001) / 创业板指(0.399006) / 科创50(1.000688)
+  // ── 2. 指数 PE(TTM) — 多数据源日频 ──────────────────────────────
+  // 主数据源: 腾讯行情 qt.gtimg.cn field[39] = PE（每日盘后更新，经验证有效）
+  // 备用数据源: EM DataCenter 报告接口（当前暂时失效，保留以备恢复）
+  // 注: EM push2 f162 对指数返回"-"无效，不再使用
+  // 均失败则显示"获取失败"，避免保留误导性的静态硬编码值
   try{
-    const r = await fetch(
-      `https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&secids=1.000001,0.399001,0.399006,1.000688&fields=f162&_=${Date.now()}`
-    ).then(r=>r.json());
-    const diff = r?.data?.diff;
-    const ssePe  = parseFloat(diff?.[0]?.f162); // 上证综指，对指数恒为 NaN，静默跳过
-    const szePe  = parseFloat(diff?.[1]?.f162); // 深证成指
-    const gemPe  = parseFloat(diff?.[2]?.f162); // 创业板指
-    const starPe = parseFloat(diff?.[3]?.f162); // 科创50
-    // 若 API 日后支持指数 PE，则自动更新数值和区间判断
-    if(ssePe > 0){
-      const el = document.getElementById('kSsePe');
-      if(el) el.textContent = ssePe.toFixed(1) + 'x';
-      const he = document.getElementById('kSsePeHint');
-      if(he) he.textContent = ssePe < 12 ? '历史均值 ~12x · 低估区间' : ssePe < 16 ? '历史均值 ~12x · 合理区间' : '历史均值 ~12x · 偏高区间';
+    // 指数配置：SECUCODE → { 元素ID, 历史均值, [低估上限, 偏高下限], 腾讯代码 }
+    // 科创50(000688.SH)为科技创新板，PE历史均值远高于主板，阈值相应调整
+    const PE_CFG = {
+      '000001.SH': {elPe:'kSsePe',  elDate:'kSsePeDate',  elHint:'kSsePeHint',  avg:13, lo:11, hi:17, txCode:'sh000001'},
+      '399001.SZ': {elPe:'kSzePe',  elDate:'kSzePeDate',  elHint:'kSzePeHint',  avg:28, lo:22, hi:38, txCode:'sz399001'},
+      '399006.SZ': {elPe:'kGemPe',  elDate:'kGemPeDate',  elHint:'kGemPeHint',  avg:45, lo:35, hi:65, txCode:'sz399006'},
+      '000688.SH': {elPe:'kStarPe', elDate:'kStarPeDate', elHint:'kStarPeHint', avg:90, lo:60, hi:150, txCode:'sh000688'},
+    };
+
+    // 更新 PE 卡片显示，同时更新数据日期标签
+    const _applyPe = (secucode, pe, dataDate) => {
+      const cfg = PE_CFG[secucode]; if(!cfg||!(pe>0)) return false;
+      const el = document.getElementById(cfg.elPe);
+      if(el){
+        el.textContent = pe.toFixed(1)+'x';
+        // 清除"加载中"时设置的灰色，恢复正常字色
+        el.style.color = '';
+        el.style.fontSize = '';
+      }
+      const he = document.getElementById(cfg.elHint);
+      if(he) he.textContent = pe<cfg.lo ? `历史均值 ~${cfg.avg}x · 低估区间`
+                            : pe<cfg.hi ? `历史均值 ~${cfg.avg}x · 合理区间`
+                            :             `历史均值 ~${cfg.avg}x · 偏高区间`;
+      // 更新数据日期标签：显示"数据日期 HH:MM:SS获取"，秒数变化可证明是实时数据
+      const de = document.getElementById(cfg.elDate);
+      if(de){
+        const dateStr = dataDate
+          ? String(dataDate).replace(/^(\d{4})(\d{2})(\d{2}).*/, '$1-$2-$3').replace(/^(\d{4}-\d{2}-\d{2}).*/, '$1')
+          : todayStr;
+        const t = new Date();
+        const hms = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')}`;
+        de.textContent = `${dateStr} ${hms}获取`;
+        de.style.background = '#d1fae5'; de.style.color = '#065f46';
+      }
+      return true;
+    };
+
+    // 全部数据源失败时：值显示"获取失败"，日期标签变红
+    const _markPeFailed = (secucode) => {
+      const cfg = PE_CFG[secucode]; if(!cfg) return;
+      const el = document.getElementById(cfg.elPe);
+      // 只要当前值不是有效PE（即不以数字+x结尾），就标为失败
+      if(el && !/^\d/.test(el.textContent)){
+        el.textContent = '获取失败';
+        el.style.color = '#dc2626';
+        el.style.fontSize = '14px';
+      }
+      const de = document.getElementById(cfg.elDate);
+      if(de){ de.textContent='获取失败'; de.style.background='#fee2e2'; de.style.color='#991b1b'; }
+    };
+
+    let peLoaded = 0; // 已成功更新的指数数
+
+    // ── 主数据源: 腾讯行情 qt.gtimg.cn field[39] = PE ─────────────────
+    // 验证：贵州茅台 field[39]=19.73✓；指数返回每日盘后更新的市场PE值
+    // EM push2 f162 对指数代码返回"-"（无效），已弃用
+    try{
+      const txCodes = Object.values(PE_CFG).map(c=>c.txCode).join(',');
+      // 构建 腾讯代码 → SECUCODE 映射（反查）
+      const txReverseMap = {};
+      Object.entries(PE_CFG).forEach(([sc, cfg])=>{ txReverseMap[cfg.txCode]=sc; });
+
+      const txRaw = await fetch(
+        `https://qt.gtimg.cn/q=${txCodes}&_=${Date.now()}`,
+        {cache:'no-store'}
+      ).then(r=>r.arrayBuffer()).catch(()=>null);
+
+      if(txRaw){
+        const txTxt = new TextDecoder('gbk').decode(txRaw);
+        Object.entries(txReverseMap).forEach(([txCode, secucode])=>{
+          const m = txTxt.match(new RegExp('v_'+txCode+'="([^"]+)"'));
+          if(!m) return;
+          const f = m[1].split('~');
+          const pe = parseFloat(f[39]);
+          // 指数PE可能达数百倍（科创50等），上限放宽至2000
+          if(pe > 3 && pe < 2000){
+            if(_applyPe(secucode, pe, todayStr)) peLoaded++;
+          }
+        });
+        console.log('[MacroKpi] PE TX field[39] loaded:', peLoaded,
+          Object.entries(txReverseMap).map(([tc,sc])=>{
+            const m2 = txTxt.match(new RegExp('v_'+tc+'="([^"]+)"'));
+            const f2 = m2?m2[1].split('~'):[];
+            return {code:tc, pe:f2[39]};
+          })
+        );
+      }
+    }catch(e2){ console.warn('[MacroKpi] PE 数据源(TX field[39]):', e2.message); }
+
+    // ── 备用数据源: EM DataCenter（当前暂时失效，保留以备自动恢复）──────
+    if(peLoaded < 2){
+      const CODES = Object.keys(PE_CFG);
+      const filterStr = `(SECUCODE IN ("${CODES.join('","')}"))`;
+      // 尝试多个报表名（EM DataCenter报表名可能随版本变化）
+      const DC_PE_CANDS = [
+        {report:'RPT_INDEX_ESTIMATE',       peCol:'PE_TTM'},
+        {report:'RPT_IDXS_VALUATION',       peCol:'PE_TTM'},
+        {report:'RPT_ASHARE_INDEX_ESTIMATE', peCol:'PE_TTM'},
+        {report:'RPT_INDEX_VALUATION',       peCol:'PE_TTM'},
+        {report:'RPT_INDEX_VALUATION',       peCol:'PE1'   },
+      ];
+      for(const c of DC_PE_CANDS){
+        const url = `https://datacenter-web.eastmoney.com/api/data/v1/get?source=WEB&client=WEB`
+          + `&pageSize=10&sortTypes=-1&sortColumns=TRADE_DATE`
+          + `&reportName=${c.report}&columns=TRADE_DATE,SECUCODE,${c.peCol}`
+          + `&filter=${encodeURIComponent(filterStr)}&_=${Date.now()}`;
+        const res = await fetch(url,{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
+        const data = res?.result?.data;
+        if(!data?.length || data[0][c.peCol]==null) continue;
+        const latest = {};
+        data.forEach(row=>{
+          const sc=row.SECUCODE;
+          if(!latest[sc]||row.TRADE_DATE>latest[sc].TRADE_DATE) latest[sc]=row;
+        });
+        let dcLoaded = 0;
+        Object.entries(latest).forEach(([sc,row])=>{
+          if(_applyPe(sc, parseFloat(row[c.peCol]), row.TRADE_DATE)) dcLoaded++;
+        });
+        peLoaded += dcLoaded;
+        console.log('[MacroKpi] PE DC OK report:',c.report,'col:',c.peCol,'dcLoaded:',dcLoaded);
+        if(peLoaded >= 2) break;
+      }
     }
-    if(szePe > 0){
-      const el = document.getElementById('kSzePe');
-      if(el) el.textContent = szePe.toFixed(1) + 'x';
-      const he = document.getElementById('kSzePeHint');
-      if(he) he.textContent = szePe < 20 ? '历史均值 ~25x · 低估区间' : szePe < 30 ? '历史均值 ~25x · 合理区间' : '历史均值 ~25x · 偏高区间';
+
+    // 两个数据源均失败时，将仍显示静态值的卡片标记为获取失败
+    if(peLoaded < 4){
+      Object.keys(PE_CFG).forEach(sc => {
+        const cfg = PE_CFG[sc];
+        const el = document.getElementById(cfg.elPe);
+        // 如果值未被更新（仍是硬编码静态值，末尾有'x'且 de 仍是旧日期），标记失败
+        const de = document.getElementById(cfg.elDate);
+        if(el && de && de.style.background !== 'rgb(209, 250, 229)'){ // 非成功绿色
+          _markPeFailed(sc);
+        }
+      });
     }
-    if(gemPe > 0){
-      const el = document.getElementById('kGemPe');
-      if(el) el.textContent = gemPe.toFixed(1) + 'x';
-      const he = document.getElementById('kGemPeHint');
-      if(he) he.textContent = gemPe < 25 ? '历史均值 ~35x · 低估区间' : gemPe < 40 ? '历史均值 ~35x · 合理区间' : '历史均值 ~35x · 偏高区间';
-    }
-    if(starPe > 0){
-      const el = document.getElementById('kStarPe');
-      if(el) el.textContent = starPe.toFixed(1) + 'x';
-      const he = document.getElementById('kStarPeHint');
-      if(he) he.textContent = starPe < 30 ? '历史均值 ~45x · 低估区间' : starPe < 55 ? '历史均值 ~45x · 合理区间' : '历史均值 ~45x · 偏高区间';
-    }
+
+    console.log('[MacroKpi] PE 最终 peLoaded:', peLoaded);
   }catch(e){ console.warn('[MacroKpi] 指数PE:', e.message); }
 }
 
@@ -5134,9 +5412,75 @@ async function refreshMacro(){
       }
       const lbl=pairs[pairs.length-1].lbl;
       ok.push({key:'electronicProfit',latest:lbl,name:'计算机电子营业利润累计同比',field:'NBS A0E0G'});
+      // 更新badge和footer
+      const epBadge=document.getElementById('electronicProfitBadge');
+      if(epBadge){ epBadge.textContent='国家统计局·最新'+lbl; epBadge.style.background='#ede9fe'; epBadge.style.color='#5b21b6'; }
+      const epFooter=document.getElementById('electronicProfitFooter');
+      if(epFooter) epFooter.textContent=`规模以上计算机、通信和其他电子设备制造业营业利润累计同比 · ${pairs[0].lbl}至${lbl} · 来源: 国家统计局`;
     }catch(e){
       console.warn('[Macro] NBS电子行业利润:',e.message);
-      // 静态数据保持不变
+      // NBS接口失败，更新badge明确提示为历史静态数据
+      const epBadge=document.getElementById('electronicProfitBadge');
+      if(epBadge){ epBadge.textContent='历史估算数据·获取失败'; epBadge.style.background='#fee2e2'; epBadge.style.color='#991b1b'; }
+      fail.push({key:'electronicProfit', err:e.message, name:'计算机电子营业利润累计同比'});
+    }
+  })();
+
+  // ── 主要指数PE走势图历史数据刷新 — EM DataCenter ──────────────────
+  await (async()=>{
+    // 用 RPT_INDEX_ESTIMATE 或备选接口拉取上证+深证历史月末PE（近30条）
+    const PE_HIST_CANDS = [
+      {report:'RPT_INDEX_ESTIMATE',    peCol:'PE_TTM'},
+      {report:'RPT_INDEX_ESTIMATE',    peCol:'PE1'   },
+      {report:'RPT_IDXS_VALUATION',    peCol:'PE_TTM'},
+      {report:'RPT_INDEX_VALUATION',   peCol:'PE_TTM'},
+    ];
+    const HIST_CODES=['000001.SH','399001.SZ'];
+    const histFilter=`(SECUCODE IN ("${HIST_CODES.join('","')}"))`;
+    for(const c of PE_HIST_CANDS){
+      try{
+        const url=`https://datacenter-web.eastmoney.com/api/data/v1/get?source=WEB&client=WEB`
+          +`&pageSize=40&sortTypes=-1&sortColumns=TRADE_DATE`
+          +`&reportName=${c.report}&columns=TRADE_DATE,SECUCODE,${c.peCol}`
+          +`&filter=${encodeURIComponent(histFilter)}&_=${Date.now()}`;
+        const res=await fetch(url,{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
+        const data=res?.result?.data;
+        if(!data?.length||data[0][c.peCol]==null) continue;
+        // 按日期排序，对每个月只取最后一条（月末）
+        const sorted=[...data].sort((a,b)=>String(a.TRADE_DATE)<String(b.TRADE_DATE)?-1:1);
+        const sseByMon={}, szeByMon={};
+        sorted.forEach(row=>{
+          const dt=String(row.TRADE_DATE).slice(0,10);
+          const mon=dt.slice(2,4)+'-'+dt.slice(5,7); // YY-MM
+          const pe=parseFloat(row[c.peCol]);
+          if(!isFinite(pe)||pe<=0) return;
+          if(row.SECUCODE==='000001.SH') sseByMon[mon]=pe;
+          else if(row.SECUCODE==='399001.SZ') szeByMon[mon]=pe;
+        });
+        const allMons=[...new Set([...Object.keys(sseByMon),...Object.keys(szeByMon)])].sort();
+        if(allMons.length<3) continue;
+        const sseVals=allMons.map(m=>sseByMon[m]||null);
+        const szeVals=allMons.map(m=>szeByMon[m]||null);
+        const ch=CH.mktPe;
+        if(ch){
+          ch.data.labels=allMons;
+          ch.data.datasets[0].data=sseVals;
+          ch.data.datasets[1].data=szeVals;
+          ch.update('none');
+        }
+        const latest=allMons[allMons.length-1];
+        const badge=document.getElementById('mktPeBadge');
+        if(badge){ badge.textContent='东方财富·历史月末'; badge.style.background='#dbeafe'; badge.style.color='#1e40af'; }
+        const footer=document.getElementById('mktPeFooter');
+        if(footer) footer.textContent=`蓝=上证综指 · 绿=深证成指 · ${allMons[0]}至${latest} · 来源: 东方财富 DataCenter`;
+        ok.push({key:'mktPe', latest, name:'主要指数PE走势', field:c.peCol});
+        console.log('[Macro] 主要指数PE走势 OK report:',c.report,'col:',c.peCol,'点数:',allMons.length);
+        break;
+      }catch(e2){ console.warn('[Macro] PE走势 cand失败:',e2.message); }
+    }
+    // 全部失败时保留静态数据+标注
+    if(!ok.find(r=>r.key==='mktPe')){
+      console.log('[Macro] 主要指数PE走势：所有接口失败，保留历史静态数据');
     }
   })();
 
@@ -5983,6 +6327,359 @@ function fetchMarketTurnover() { fetchMarketStats(); }
 var _mktAutoRetried = false;
 var _mfAutoRetried  = false;
 
+// ── 权重股舆情分析 ─────────────────────────────────────────────
+// 正负面关键词词库（A股语境）
+const _SENT_POS = ['看多','买入','值得买','上涨','利好','突破','强势','增持','超预期','大涨',
+  '新高','建仓','加仓','推荐','机会','低吸','看好','有望','涨停','放量','优质',
+  '高成长','底部','翻倍','增长','分红','回调买','低估','绩优','主升浪','继续持有'];
+const _SENT_NEG = ['看空','卖出','下跌','利空','破位','弱势','减持','不及预期','大跌','新低',
+  '出局','减仓','风险','警惕','跌停','套牢','亏损','压力','见顶','悲观',
+  '泡沫','担忧','不确定','跌破','暴跌','高估','缩量','割肉','筑顶','主跌浪'];
+
+let _sentimentCache = null; // { ts:epoch, analyses:{xqCode:{pos,neg,total}} }
+
+// 根据 portfolio sk 对象拼接雪球 symbol（如 SH600519 / HK00700）
+function _xqSym(sk) {
+  if (sk.mkt === 'HK') return 'HK' + String(sk.code).padStart(5, '0');
+  return (sk.mkt || '') + sk.code;
+}
+
+// HTML 特殊字符转义
+function _escH(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// 计算一段文本的情感分值
+function _scoreSentiment(text) {
+  if (!text) return 0;
+  let s = 0;
+  for (const w of _SENT_POS) { if (text.includes(w)) s++; }
+  for (const w of _SENT_NEG) { if (text.includes(w)) s--; }
+  return s;
+}
+
+// 从 PORT 中获取权重 Top5 股票
+function _getSentimentTop5() {
+  if (!PORT || !PORT.sectors) return [];
+  return PORT.sectors
+    .flatMap(sec => sec.stocks)
+    .filter(sk => (sk.w || 0) > 0)
+    .sort((a, b) => (b.w || 0) - (a.w || 0))
+    .slice(0, 5);
+}
+
+// 拉取一只股票的最新 3 页讨论（约 50-60 条）
+async function _fetchStockPosts(xqCode) {
+  const posts = [];
+  for (let page = 1; page <= 3; page++) {
+    const url = `https://xueqiu.com/query/v1/symbol/search/status?symbol=${xqCode}`
+              + `&page=${page}&size=20&type=status&_=${Date.now()}`;
+    const r = await fetch(url, { credentials: 'include', cache: 'no-store' });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j = await r.json();
+    const list = j.list || j.statuses || [];
+    posts.push(...list);
+    if (list.length < 20) break;
+    if (page < 3) await new Promise(res => setTimeout(res, 300));
+  }
+  return posts;
+}
+
+// 对帖子列表做情感分析，提取 Top3 正面/负面
+function _analyzeStockPosts(posts) {
+  const scored = posts.map(p => {
+    let txt = p.description || p.text || '';
+    txt = txt.replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
+    const display = txt.slice(0, 52);
+    const eng = ((p.like_count||0)*3) + ((p.reply_count||0)*2) + Math.round((p.view_count||0)/300);
+    return { display, score: _scoreSentiment(txt), eng };
+  });
+  const pos = scored.filter(x=>x.score>0).sort((a,b)=>b.eng-a.eng).slice(0,3).map(x=>x.display).filter(Boolean);
+  const neg = scored.filter(x=>x.score<0).sort((a,b)=>b.eng-a.eng).slice(0,3).map(x=>x.display).filter(Boolean);
+  return { pos, neg, total: posts.length };
+}
+
+// 渲染 5 格情感看板
+function _renderSentimentGrid(top5, analyses) {
+  const grid  = document.getElementById('sentGrid');
+  const tsEl  = document.getElementById('sentTs');
+  const guide = document.getElementById('sentGuide');
+  if (!grid) return;
+  if (guide) guide.style.display = 'none';
+  if (!top5.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px">投资组合为空，暂无数据</div>';
+    return;
+  }
+  grid.innerHTML = top5.map(sk => {
+    const code = _xqSym(sk);
+    const a    = analyses[code] || { pos:[], neg:[], total:0, error:true };
+    const mkItems = (arr, borderColor) => arr.length
+      ? arr.map(t => `<div style="font-size:10px;color:#1e293b;line-height:1.5;margin-bottom:3px;
+               padding:2px 4px 2px 7px;border-left:2px solid ${borderColor};
+               word-break:break-all">${_escH(t)}</div>`).join('')
+      : `<div style="color:#94a3b8;font-size:10px;padding:1px 0">暂无明显观点</div>`;
+    const posH = a.error ? '<div style="color:#94a3b8;font-size:10px">获取失败，请刷新</div>' : mkItems(a.pos, '#6ee7b7');
+    const negH = a.error ? '' : mkItems(a.neg, '#fca5a5');
+    return `<div style="border-radius:8px;border:1px solid #e5e7eb;padding:9px 8px 6px;background:#fafafa;
+                  min-width:0;display:flex;flex-direction:column">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+    <span style="font-size:12px;font-weight:700;color:#1e293b;overflow:hidden;
+                 text-overflow:ellipsis;white-space:nowrap;max-width:65%">${_escH(sk.name)}</span>
+    ${sk.w!=null?`<span style="font-size:9px;background:#f3e8ff;color:#7c3aed;border-radius:10px;
+        padding:1px 5px;flex-shrink:0;font-weight:700">${Number(sk.w).toFixed(1)}%</span>`:''}
+  </div>
+  <div style="font-size:9px;color:#94a3b8;margin-bottom:7px">${_escH(code)}</div>
+  <div style="margin-bottom:7px">
+    <div style="font-size:10px;font-weight:700;color:#059669;margin-bottom:3px">🟢 正面观点</div>
+    ${posH}
+  </div>
+  <div style="flex:1">
+    <div style="font-size:10px;font-weight:700;color:#dc2626;margin-bottom:3px">🔴 负面观点</div>
+    ${negH}
+  </div>
+  <div style="font-size:9px;color:#cbd5e1;text-align:right;margin-top:5px;border-top:1px solid #f1f5f9;padding-top:4px">
+    基于 ${a.total||0} 条讨论</div>
+</div>`;
+  }).join('');
+  const now = new Date();
+  const hm  = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  if (tsEl) tsEl.textContent = hm + ' 更新';
+}
+
+// 显示 CORS 引导
+function _showSentimentGuide() {
+  const grid  = document.getElementById('sentGrid');
+  const guide = document.getElementById('sentGuide');
+  if (grid)  grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px">跨域受限，请运行本地刷新脚本后再试</div>';
+  if (guide) guide.style.display = 'block';
+}
+
+// 静默加载本地 xq_sentiment.js（动态 script tag）
+function _loadSentimentLocal() {
+  return new Promise((resolve, reject) => {
+    const old = document.getElementById('_sentData');
+    if (old) old.remove();
+    delete window._xqSentiment;
+    const s = document.createElement('script');
+    s.id  = '_sentData';
+    s.src = 'xq_sentiment.js?' + Date.now();
+    s.onload  = () => window._xqSentiment ? resolve(window._xqSentiment) : reject(new Error('格式错误'));
+    s.onerror = () => reject(new Error('文件不存在'));
+    document.head.appendChild(s);
+  });
+}
+
+// 仅尝试加载本地缓存文件，不触发网络请求（供 tab 切换时静默调用）
+async function _tryLoadSentimentSilent() {
+  if (!PORT || !PORT.sectors) return;
+  // 已有有效缓存则直接渲染
+  if (_sentimentCache && Date.now() - _sentimentCache.ts < 30*60*1000) {
+    _renderSentimentGrid(_getSentimentTop5(), _sentimentCache.analyses);
+    return;
+  }
+  try {
+    const data = await _loadSentimentLocal();
+    const analyses = {};
+    (data.stocks || []).forEach(item => { analyses[item.code] = item; });
+    _sentimentCache = { ts: Date.now(), analyses };
+    const top5 = _getSentimentTop5();
+    _renderSentimentGrid(top5, analyses);
+    const tsEl = document.getElementById('sentTs');
+    if (tsEl && data.ts) tsEl.textContent = data.ts + ' 更新';
+  } catch(e) { /* 本地文件不存在，保持默认提示 */ }
+}
+
+// 主刷新函数（↻ 按钮触发）
+async function fetchXqSentiment(force) {
+  force = (force === true);
+  // 30分钟缓存，非强制刷新时直接使用
+  if (!force && _sentimentCache && Date.now() - _sentimentCache.ts < 30*60*1000) {
+    _renderSentimentGrid(_getSentimentTop5(), _sentimentCache.analyses);
+    return;
+  }
+  const btn  = document.getElementById('sentBtn');
+  const grid = document.getElementById('sentGrid');
+  const guide = document.getElementById('sentGuide');
+  if (btn)   { btn.disabled = true; btn.textContent = '…'; }
+  if (guide)  guide.style.display = 'none';
+
+  const top5 = _getSentimentTop5();
+  if (!top5.length) {
+    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px">请先加载投资组合，稍后重试</div>';
+    if (btn) { btn.disabled = false; btn.textContent = '↻'; }
+    return;
+  }
+
+  // ① 尝试直接 fetch（浏览器已登录雪球时 credentials:include 可能成功）
+  try {
+    const analyses = {};
+    for (const sk of top5) {
+      const xqCode = _xqSym(sk);
+      if (grid) grid.innerHTML = `<div style="grid-column:1/-1;color:#7c3aed;font-size:11px;text-align:center;padding:20px">
+        正在分析 <strong>${_escH(sk.name)}</strong> 的讨论…（${top5.indexOf(sk)+1}/5）</div>`;
+      const posts = await _fetchStockPosts(xqCode);
+      analyses[xqCode] = _analyzeStockPosts(posts);
+    }
+    _sentimentCache = { ts: Date.now(), analyses };
+    _renderSentimentGrid(top5, analyses);
+    console.log('[Sentiment] 直接 fetch 成功');
+  } catch (e1) {
+    console.warn('[Sentiment] 直接 fetch 失败:', e1.message, '→ 尝试本地缓存');
+    // ② 回退到本地 xq_sentiment.js
+    try {
+      const data = await _loadSentimentLocal();
+      const analyses = {};
+      (data.stocks || []).forEach(item => { analyses[item.code] = item; });
+      _sentimentCache = { ts: Date.now(), analyses };
+      _renderSentimentGrid(top5, analyses);
+      const tsEl = document.getElementById('sentTs');
+      if (tsEl && data.ts) tsEl.textContent = data.ts + ' 更新';
+      console.log('[Sentiment] 本地缓存加载成功');
+    } catch (e2) {
+      console.warn('[Sentiment] 本地缓存失败:', e2.message);
+      // ③ 显示引导
+      _showSentimentGuide();
+    }
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '↻'; }
+}
+
+// 生成 PS 刷新命令并复制到剪贴板（含当前 Top5 代码）
+function copySentimentCmd() {
+  const top5 = _getSentimentTop5();
+  if (!top5.length) { alert('请先加载投资组合数据后再试'); return; }
+  const symbols  = top5.map(sk => _xqSym(sk)).join(',');
+  const dashPath = location.pathname.replace(/\/[^/]*$/, '').replace(/^\//, '').replace(/\//g,'\\');
+  const dir      = dashPath || 'C:\\Users\\xuepe\\Desktop';
+  const top5File = dir + '\\xq_top5.txt';
+  const psFile   = dir + '\\刷新舆情分析.ps1';
+  const cmd = `[IO.File]::WriteAllText('${top5File}','${symbols}',[Text.Encoding]::UTF8); & '${psFile}'`;
+  navigator.clipboard.writeText(cmd).then(() => {
+    const b = document.getElementById('sentCopyBtn');
+    if (b) { b.textContent = '✅ 已复制！在 PowerShell 粘贴执行'; setTimeout(()=>{ b.textContent='📋 复制刷新命令（含当前Top5）'; }, 3000); }
+  }).catch(() => {
+    prompt('请手动复制下方命令：', cmd);
+  });
+}
+
+// ── 雪球热股榜 ────────────────────────────────────────────────
+const _XQ_HOT_URL = 'https://stock.xueqiu.com/v5/stock/screener/quote/list.json'
+                  + '?market=CN&order=desc&order_by=value&page=1&size=20&type=hot_1h';
+
+function _renderXqHotGrid(data) {
+  const grid = document.getElementById('xqHotGrid');
+  const tsEl = document.getElementById('xqHotTs');
+  const guide = document.getElementById('xqHotGuide');
+  if (!grid) return;
+  if (guide) guide.style.display = 'none';
+
+  const list = data.list || [];
+  if (!list.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px">暂无数据</div>';
+    return;
+  }
+
+  grid.innerHTML = list.map(s => {
+    const up = s.percent >= 0;
+    const pct = (up ? '+' : '') + Number(s.percent).toFixed(2) + '%';
+    const pctColor = up ? '#dc2626' : '#16a34a';
+    const bg = up ? '#fff5f5' : '#f0fdf4';
+    const border = up ? '#fecaca' : '#bbf7d0';
+    const name = (s.name || '').slice(0, 5);
+    const code = (s.symbol || '').replace(/^[A-Z]+/, '');
+    const price = s.current != null ? Number(s.current).toFixed(2) : '--';
+    const hot = s.value || 0;
+    return `<div style="display:flex;align-items:center;gap:4px;padding:5px 6px;
+                 border-radius:6px;background:${bg};border:1px solid ${border};min-width:0">
+      <span style="font-size:10px;color:#9ca3af;width:18px;text-align:right;
+                   flex-shrink:0;font-weight:600">${s.rank}</span>
+      <div style="flex:1;min-width:0;overflow:hidden">
+        <div style="font-size:12px;font-weight:700;color:#1e293b;
+                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
+        <div style="font-size:9px;color:#94a3b8">${code}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:11px;font-weight:700;color:${pctColor}">${pct}</div>
+        <div style="font-size:9px;color:#d1d5db">热${hot}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const t = new Date();
+  const hms = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+  if (tsEl) { tsEl.textContent = (data.ts || hms) + ' 更新'; }
+}
+
+function _showXqHotGuide() {
+  const grid = document.getElementById('xqHotGrid');
+  const guide = document.getElementById('xqHotGuide');
+  if (grid) grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px">本地缓存文件不存在，请运行刷新脚本后重试</div>';
+  if (guide) guide.style.display = 'block';
+}
+
+// 从同目录 xq_hot.js 加载本地缓存（动态 script tag，兼容 file:// 协议）
+function _loadXqHotLocal() {
+  return new Promise((resolve, reject) => {
+    const old = document.getElementById('_xqHotData');
+    if (old) old.remove();
+    delete window._xqHot;
+    const s = document.createElement('script');
+    s.id = '_xqHotData';
+    s.src = 'xq_hot.js?' + Date.now();
+    s.onload = () => {
+      if (window._xqHot && window._xqHot.list) resolve(window._xqHot);
+      else reject(new Error('格式错误'));
+    };
+    s.onerror = () => reject(new Error('文件不存在'));
+    document.head.appendChild(s);
+  });
+}
+
+async function fetchXqHot() {
+  const btn  = document.getElementById('xqHotBtn');
+  const grid = document.getElementById('xqHotGrid');
+  const guide = document.getElementById('xqHotGuide');
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  if (guide) guide.style.display = 'none';
+  if (grid) grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px">加载中…</div>';
+
+  try {
+    // ① 先试直接 fetch（浏览器登录雪球时 credentials:include 可能成功）
+    const resp = await fetch(_XQ_HOT_URL, { credentials: 'include', cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const json = await resp.json();
+    const raw  = json?.data?.list || [];
+    if (!raw.length) throw new Error('空数据');
+    _renderXqHotGrid({ ts: '', list: raw.map((s, i) => ({ rank: i+1, ...s })) });
+    console.log('[XqHot] 直接 fetch 成功，', raw.length, '只');
+  } catch (e1) {
+    console.warn('[XqHot] 直接 fetch 失败:', e1.message, '→ 尝试本地缓存');
+    try {
+      // ② 回退到本地 xq_hot.js 缓存文件
+      const data = await _loadXqHotLocal();
+      _renderXqHotGrid(data);
+      console.log('[XqHot] 本地缓存加载成功');
+    } catch (e2) {
+      console.warn('[XqHot] 本地缓存也失败:', e2.message);
+      _showXqHotGuide();
+    }
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = '↻'; }
+}
+
+// 复制 PowerShell 一键刷新命令到剪贴板
+function copyXqRefreshCmd() {
+  const token = localStorage.getItem('xq_token') || 'YOUR_XQ_A_TOKEN';
+  const dashPath = location.pathname.replace(/\/[^/]*$/, '').replace(/^\//, '').replace(/\//g, '\\');
+  const outPath = (dashPath ? dashPath + '\\' : 'C:\\Users\\xuepe\\Desktop\\') + 'xq_hot.js';
+  const cmd = `$r=Invoke-WebRequest -Uri "${_XQ_HOT_URL}" -Headers @{"Cookie"="xq_a_token=${token}";"User-Agent"="Mozilla/5.0";"Referer"="https://xueqiu.com/"} -UseBasicParsing; $d=($r.Content|ConvertFrom-Json).data.list; $rank=1; $items=$d|%{$o=$_;[PSCustomObject]@{rank=$rank++;symbol=$o.symbol;name=$o.name;current=$o.current;percent=$o.percent;value=$o.value}}; $ts=Get-Date -Format 'yyyy-MM-dd HH:mm'; $json=$items|ConvertTo-Json -Compress; [IO.File]::WriteAllText('${outPath}',"window._xqHot={ts:'$ts',list:$json};",[Text.Encoding]::UTF8); echo "✅ 完成"`;
+  navigator.clipboard.writeText(cmd).then(() => {
+    const btn = document.getElementById('xqCopyBtn');
+    if (btn) { btn.textContent = '✅ 已复制！'; setTimeout(() => btn.textContent = '📋 复制一键刷新命令', 2000); }
+  });
+}
+
 // ── 主力净流入 TOP 20 ──────────────────────────────────────────
 async function fetchMainFlow(){
   const listEl = document.getElementById('mfList');
@@ -6476,9 +7173,13 @@ document.addEventListener('DOMContentLoaded',()=>{
     setInterval(tick, 1000);
   })();
 
+  // 保存雪球 token（供复制命令时使用）
+  if (!localStorage.getItem('xq_token')) localStorage.setItem('xq_token','e288b77b0cfc260278ce68a979f01534a8e8b923');
   portInit();   // 优先从 GitHub 云端加载组合数据
   fetchMainFlow();      // 初始化时立即拉取主力净流入榜
   fetchMarketBreadth(); // 市场涨跌统计（主要用腾讯 API，极少命中东方财富限流）
+  fetchXqHot();              // 雪球热股榜（近1小时 Top20）
+  _tryLoadSentimentSilent(); // 权重股舆情：仅加载本地缓存，不触发 API 请求
   // 30s 后检查是否成功，若仍是占位文字则自动重试一次
   setTimeout(()=>{
     const mfEl = document.getElementById('mfList');
