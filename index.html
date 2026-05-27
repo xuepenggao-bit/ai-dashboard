@@ -5714,12 +5714,12 @@ async function fetchMarketStats(){
     if(tTs)    tTs.textContent  = timeStr;
 
   }catch(e){
-    console.error('fetchMarketStats:', e);
-    const errHtml = `<div style="color:#ef4444;font-size:11px;text-align:center;padding:10px 0">获取失败: ${e.message}</div>`;
+    console.warn('fetchMarketStats:', e.message);
+    const errHtml = `<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">数据加载中，请稍后点击↻刷新</div>`;
     if(chartEl) chartEl.innerHTML = errHtml;
     if(bodyEl)  bodyEl.innerHTML  = errHtml;
-    if(bTs) bTs.textContent = '失败';
-    if(tTs) tTs.textContent = '失败';
+    if(bTs) bTs.textContent = '';
+    if(tTs) tTs.textContent = '';
   }finally{
     _mktStatsFetching = false;
     [bBtn,tBtn].forEach(b=>{ if(b){ b.disabled=false; b.textContent='↻'; } });
@@ -5729,6 +5729,10 @@ async function fetchMarketStats(){
 // 兼容旧调用（tab 切换、股价刷新后联动）
 function fetchMarketBreadth()  { fetchMarketStats(); }
 function fetchMarketTurnover() { fetchMarketStats(); }
+
+// 自动重试：首次加载失败时，30 秒后静默重试一次
+var _mktAutoRetried = false;
+var _mfAutoRetried  = false;
 
 // ── 主力净流入 TOP 20 ──────────────────────────────────────────
 async function fetchMainFlow(){
@@ -5745,7 +5749,13 @@ async function fetchMainFlow(){
       + `?fid=f62&po=1&pz=20&pn=1&np=1&fltt=2&invt=2`
       + `&fields=f12,f14,f3,f62,f184`
       + `&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23&_=${_t}`;
-    const data = await fetch(url).then(r=>r.json());
+    const resp = await fetch(url);
+    if(!resp.ok){
+      // 非 200（如服务端 502 限流）→ 优雅降级，不抛异常
+      listEl.innerHTML='<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">数据加载中，请稍后点击↻刷新</div>';
+      return;
+    }
+    const data = await resp.json();
     const list = data?.data?.diff;
     if(!list || !list.length){
       listEl.innerHTML='<div style="color:var(--text2);font-size:11px;text-align:center;padding:10px 0">暂无数据</div>';
@@ -5777,8 +5787,8 @@ async function fetchMainFlow(){
 
     if(tsEl) tsEl.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
   }catch(err){
-    listEl.innerHTML=`<div style="color:var(--red);font-size:11px;text-align:center;padding:10px 0">获取失败</div>`;
-    console.error('fetchMainFlow:', err);
+    listEl.innerHTML=`<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">数据加载中，请稍后点击↻刷新</div>`;
+    console.warn('fetchMainFlow:', err.message);
   }finally{
     if(btn){ btn.disabled=false; btn.textContent='↻'; }
   }
@@ -6208,8 +6218,14 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   portInit();   // 优先从 GitHub 云端加载组合数据
   fetchMainFlow();      // 初始化时立即拉取主力净流入榜
-  fetchMarketBreadth(); // 市场涨跌统计
-  fetchMarketTurnover();// 三市成交分析
+  fetchMarketBreadth(); // 市场涨跌统计（主要用腾讯 API，极少命中东方财富限流）
+  // 30s 后检查是否成功，若仍是占位文字则自动重试一次
+  setTimeout(()=>{
+    const mfEl = document.getElementById('mfList');
+    if(mfEl && mfEl.querySelector && mfEl.textContent.includes('加载中')) fetchMainFlow();
+    const bEl = document.getElementById('mktBreadthChart');
+    if(bEl && bEl.textContent.includes('加载中')) fetchMarketStats();
+  }, 30000);
   // 兜底：1秒后若股价仍未加载（portInit 异步路径失败），强制触发一次
   setTimeout(()=>{
     const ts=document.getElementById('portPriceTs');
