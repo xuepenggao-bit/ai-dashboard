@@ -749,8 +749,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ════════════════ TAB 投资组合 ════════════════ -->
 <div class="tab-content active" id="tPort">
-  <div class="stitle">
-    投资组合管理 <span class="stag">A股 · 港股 · 可编辑</span>
+  <div class="stitle" style="position:relative">
+    投资组合管理
+    <span id="portClock" style="position:absolute;left:50%;transform:translateX(-50%);
+      font-size:26px;font-weight:800;letter-spacing:.06em;color:var(--text);
+      font-variant-numeric:tabular-nums;pointer-events:none">--:--:--</span>
     <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;min-width:0">
 
       <!-- ① 同步到云端 + 状态文字 -->
@@ -6274,6 +6277,19 @@ document.addEventListener('DOMContentLoaded',()=>{
   _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);_safe(mkPort);
   _safe(mkNeoCapex);_safe(mkOptGrowth);_safe(mkPcbGrowth);
   _safe(mkIntlPe);_safe(mkDomStorePe);_safe(mkArr);
+
+  // 实时时钟（精确到秒），仅在投资组合 tab 顶部显示
+  (function _startClock(){
+    const el = document.getElementById('portClock');
+    if(!el) return;
+    const tick = ()=>{
+      const n=new Date();
+      const p=v=>String(v).padStart(2,'0');
+      el.textContent = p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds());
+    };
+    tick();
+    setInterval(tick, 1000);
+  })();
 
   portInit();   // 优先从 GitHub 云端加载组合数据
   fetchMainFlow();      // 初始化时立即拉取主力净流入榜
