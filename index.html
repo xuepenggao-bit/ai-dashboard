@@ -3457,9 +3457,18 @@ function renderPortfolio(){
       const spCell = sp!=null
         ? `<span style="font-weight:700;font-size:14px;color:${spCol}">${sp>0?'+':''}${Number(sp).toFixed(2)}%</span>`
         : `<span style="color:var(--text2);font-size:13px">—</span>`;
+      const _emUrl = sk.mkt==='SH' ? `https://quote.eastmoney.com/sh${sk.code}.html`
+                   : sk.mkt==='SZ' ? `https://quote.eastmoney.com/sz${sk.code}.html`
+                   : sk.mkt==='HK' ? `https://quote.eastmoney.com/hk${String(sk.code).padStart(5,'0')}.html`
+                   : null;
+      const _codeCell = _emUrl
+        ? `<a href="${_emUrl}" target="_blank" rel="noopener"
+             style="font-family:monospace;font-size:13px;color:var(--blue);text-decoration:none;
+                    border-bottom:1px dashed var(--blue);padding-bottom:1px">${sk.code}</a>`
+        : `<span style="font-family:monospace;font-size:13px;color:var(--text2)">${sk.code}</span>`;
       return `<tr>
         <td style="font-weight:700;font-size:15px;color:var(--text)">${sk.name}</td>
-        <td class="col-code" style="font-family:monospace;font-size:13px;color:var(--text2)">${sk.code}</td>
+        <td class="col-code">${_codeCell}</td>
         <td class="col-mkt"><span class="mkt-badge" style="${mktStyle[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span></td>
         <td class="col-industry" style="color:var(--text2);font-size:13px">${sk.industry||''}</td>
         <td class="col-price" style="text-align:right">${priceCell}</td>
