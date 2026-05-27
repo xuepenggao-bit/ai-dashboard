@@ -4908,25 +4908,25 @@ async function fetchMacroKpis(){
   });
 
   // ── 1. 沪深A股总市值 ─────────────────────────────────────────────
-  // 腾讯行情全量接口：sh000002(上证A股指数) + sz399107(深证总指)
-  // 字段[43] = 总市值（亿元）；两市相加后转换为万亿元
+  // 东方财富 ulist.np: 上证A股(1.000002) + 深证综合(0.399107)
+  // f116 = 总市值(元, fltt=2), 两市相加后除以 1e12 换算为万亿元
   try{
-    const tMcResp = await fetch('https://qt.gtimg.cn/q=sh000002,sz399107&_=' + Date.now());
-    const tMcTxt  = new TextDecoder('gbk').decode(await tMcResp.arrayBuffer());
-    const _parseMc = code => {
-      const m = tMcTxt.match(new RegExp('v_' + code + '="([^"]+)"'));
-      if(!m) return 0;
-      const f = m[1].split('~');
-      return parseFloat(f[43]) || 0; // 亿元
-    };
-    const mc1 = _parseMc('sh000002'); // 上海A股总市值（亿元）
-    const mc2 = _parseMc('sz399107'); // 深圳A股总市值（亿元）
-    if(mc1 > 0 && mc2 > 0){
-      const total = (mc1 + mc2) / 10000; // 亿元 → 万亿元
-      const el = document.getElementById('kTmc');
-      if(el) el.textContent = '¥' + total.toFixed(0) + '万亿';
-      const de = document.getElementById('kTmcDate');
-      if(de) de.textContent = todayStr;
+    const rMc = await fetch(
+      `https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&np=1`
+      +`&secids=1.000002,0.399107&fields=f116&_=${Date.now()}`
+    ).then(r=>r.ok?r.json():null).catch(()=>null);
+    const diff = rMc?.data?.diff;
+    const mc1  = parseFloat(diff?.[0]?.f116)||0;   // 沪市A股总市值（元）
+    const mc2  = parseFloat(diff?.[1]?.f116)||0;   // 深市A股总市值（元）
+    console.log('[MacroKpi] 总市值 mc1=', mc1, 'mc2=', mc2);
+    if(mc1 > 1e10 && mc2 > 1e10){
+      const totalWanYi = (mc1+mc2)/1e12;           // 元 → 万亿元
+      if(totalWanYi > 30 && totalWanYi < 500){     // 合理范围校验
+        const el = document.getElementById('kTmc');
+        if(el) el.textContent = '¥' + totalWanYi.toFixed(0) + '万亿';
+        const de = document.getElementById('kTmcDate');
+        if(de) de.textContent = todayStr;
+      }
     }
   }catch(e){ console.warn('[MacroKpi] 总市值:', e.message); }
 
