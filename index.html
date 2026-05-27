@@ -5733,11 +5733,10 @@ async function fetchMarketStats(){
   }
 }
 
-// ── 涨跌统计（东方财富 clist，3请求替代55+页并发）────────────────
-// 策略：① pz=1 取聚合字段 f104(总涨)/f105(总跌)/total
-//        ② pz=500 正序取涨幅前500 → 精确算涨停、涨>5%
-//        ③ pz=500 逆序取跌幅前500 → 精确算跌停、跌>5%
-//        中间区间（5~1%、1~0%、0~1%、1~5%）由总数推算
+// ── 涨跌统计（东方财富 clist，逐区间 total 计数法）────────────────
+// 策略：对9个涨跌区间分别构造 b:f3:lo:hi 范围过滤请求（pz=1），
+//        用服务端 data.total 作精确计数；再加1个无过滤请求取总市场数 → 10个轻量并行请求
+//        不依赖 f104/f105 聚合字段（非交易时段该字段为"-"，不可靠）
 async function _doFetchBreadth(){
   const bTs    = document.getElementById('mktBreadthTs');
   const chartEl= document.getElementById('mktBreadthChart');
@@ -5748,46 +5747,66 @@ async function _doFetchBreadth(){
   const elFlat = document.getElementById('mktFlatRow');
   if(bTs) bTs.textContent = '加载中…';
   try{
-    const FS  = 'm:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
-    const B   = `https://push2.eastmoney.com/api/qt/clist/get?fltt=2&invt=2&np=1&fid=f3&fs=${FS}`;
-    const T   = Date.now();
-    // 3 个轻量请求并行，不触发限流
-    const [r1,r2,r3] = await Promise.all([
-      fetch(`${B}&pn=1&pz=1&po=1&fields=f104,f105&_=${T}`)  .then(r=>r.ok?r.json():null).catch(()=>null),
-      fetch(`${B}&pn=1&pz=500&po=1&fields=f3&_=${T+1}`)     .then(r=>r.ok?r.json():null).catch(()=>null),
-      fetch(`${B}&pn=1&pz=500&po=0&fields=f3&_=${T+2}`)     .then(r=>r.ok?r.json():null).catch(()=>null),
+    // b:f3:lo:hi 语法：东方财富选股条件，对每个市场段追加范围过滤
+    // 同一市场段内多个条件用 + 连接（AND），不同市场段用 , 分隔（OR）
+    const SEGS = ['m:0+t:6','m:0+t:13','m:0+t:80','m:1+t:2','m:1+t:23'];
+    const fsR  = (lo,hi) => SEGS.map(s=>s+`+b:f3:${lo}:${hi}`).join(',');
+    const fsAll= SEGS.join(',');
+    const B    = 'https://push2.eastmoney.com/api/qt/clist/get?fltt=2&invt=2&np=1&pn=1&pz=1&fields=f3';
+    const T    = Date.now();
+    const gt   = r => Math.max(0, parseInt(r?.data?.total)||0);
+
+    // 9个区间 + 1个总量，共10个轻量请求并行
+    const [rA,rT,rLu,rU5,rU1,rU0,rD0,rD1,rD5,rLd] = await Promise.all([
+      fetch(`${B}&fid=f3&fs=${fsAll}&_=${T}`)         .then(r=>r.ok?r.json():null).catch(()=>null), // total
+      fetch(`${B}&fid=f3&fs=${fsAll}&fields=f104,f105&_=${T+1}`).then(r=>r.ok?r.json():null).catch(()=>null), // 聚合字段（备用）
+      fetch(`${B}&fid=f3&fs=${fsR(9.5,100)}&_=${T+2}`)   .then(r=>r.ok?r.json():null).catch(()=>null), // 涨停
+      fetch(`${B}&fid=f3&fs=${fsR(5,9.5)}&_=${T+3}`)     .then(r=>r.ok?r.json():null).catch(()=>null), // 涨~5%
+      fetch(`${B}&fid=f3&fs=${fsR(1,5)}&_=${T+4}`)       .then(r=>r.ok?r.json():null).catch(()=>null), // 5~1%
+      fetch(`${B}&fid=f3&fs=${fsR(0.005,1)}&_=${T+5}`)   .then(r=>r.ok?r.json():null).catch(()=>null), // 1~0%
+      fetch(`${B}&fid=f3&fs=${fsR(-1,-0.005)}&_=${T+6}`) .then(r=>r.ok?r.json():null).catch(()=>null), // 0~1%
+      fetch(`${B}&fid=f3&fs=${fsR(-5,-1)}&_=${T+7}`)     .then(r=>r.ok?r.json():null).catch(()=>null), // 1~5%
+      fetch(`${B}&fid=f3&fs=${fsR(-9.5,-5)}&_=${T+8}`)   .then(r=>r.ok?r.json():null).catch(()=>null), // 5~跌
+      fetch(`${B}&fid=f3&fs=${fsR(-100,-9.5)}&_=${T+9}`) .then(r=>r.ok?r.json():null).catch(()=>null), // 跌停
     ]);
-    if(!r1?.data) throw new Error('东方财富返回空 (r1 null)');
-    const upTotal  = parseInt(r1.data.diff?.[0]?.f104) || 0;
-    const dnTotal  = parseInt(r1.data.diff?.[0]?.f105) || 0;
-    const total    = r1.data.total || 0;
-    if(!(total>0)) throw new Error('total=0');
-    const flatTotal= Math.max(0, total - upTotal - dnTotal);
-    console.log('[涨跌统计] total:',total,'up:',upTotal,'dn:',dnTotal,'flat:',flatTotal);
 
-    // 从排序前500中精确统计极值区间
-    const cnt = (arr,lo,hi) => (arr||[]).filter(s=>{ const p=parseFloat(s?.f3); return isFinite(p)&&p>=lo&&p<hi; }).length;
-    const top = r2?.data?.diff||[];
-    const bot = r3?.data?.diff||[];
-    const b_lu  = cnt(top,  9.5,  999);   // 涨停
-    const b_u59 = cnt(top,  5,    9.5);   // 涨~5%
-    const b_ld  = cnt(bot, -999, -9.5);   // 跌停
-    const b_d59 = cnt(bot, -9.5, -5);     // 5~跌
+    const total = gt(rA);
+    if(!(total>0)) throw new Error('东方财富返回空数据(total='+total+')');
 
-    // 中间4格由总数推算
-    const b_u15_u01 = Math.max(0, upTotal - b_lu - b_u59);   // 5~1% + 1~0% 合并
-    const b_d01_d15 = Math.max(0, dnTotal - b_ld - b_d59);   // 0~1% + 1~5% 合并
-    // 将合并值按通常比例拆分（5~1% 约占2/3，1~0% 约1/3）
-    const b_u15 = Math.round(b_u15_u01 * 0.67);
-    const b_u01 = Math.max(0, b_u15_u01 - b_u15);
-    const b_d15 = Math.round(b_d01_d15 * 0.67);
-    const b_d01 = Math.max(0, b_d01_d15 - b_d15);
+    const b_lu  = gt(rLu);
+    const b_u59 = gt(rU5);
+    const b_u15 = gt(rU1);
+    const b_u01 = gt(rU0);
+    const b_d01 = gt(rD0);
+    const b_d15 = gt(rD1);
+    const b_d59 = gt(rD5);
+    const b_ld  = gt(rLd);
 
-    if(elUp)   elUp.textContent   = upTotal;
-    if(elDown) elDown.textContent = dnTotal;
+    // 验证：若范围过滤未生效（所有桶都等于 total），退回到聚合字段估算
+    const sumBuckets = b_lu+b_u59+b_u15+b_u01+b_d01+b_d15+b_d59+b_ld;
+    let b_flat;
+    if(sumBuckets > total * 2){
+      // 范围过滤失效，改用聚合字段
+      console.warn('[涨跌统计] 范围过滤未生效，切换到聚合字段');
+      const f104 = parseInt(rT?.data?.diff?.[0]?.f104); // 总涨
+      const f105 = parseInt(rT?.data?.diff?.[0]?.f105); // 总跌
+      if(!isFinite(f104)||!isFinite(f105)||f104<0) throw new Error('聚合字段也不可用');
+      b_flat = Math.max(0, total - f104 - f105);
+      // 重新用近似拆分（无法细分各桶）
+    } else {
+      b_flat = Math.max(0, total - sumBuckets);
+    }
+
+    const totalUp   = b_lu+b_u59+b_u15+b_u01;
+    const totalDown = b_d01+b_d15+b_d59+b_ld;
+    console.log('[涨跌统计] total:',total,'↑',totalUp,'→',b_flat,'↓',totalDown,
+                '涨停:',b_lu,'跌停:',b_ld,'sum:',sumBuckets);
+
+    if(elUp)   elUp.textContent   = totalUp;
+    if(elDown) elDown.textContent = totalDown;
     if(elLU)   elLU.textContent   = b_lu;
     if(elLD)   elLD.textContent   = b_ld;
-    if(elFlat){ elFlat.textContent='平盘 '+flatTotal+' 家'; elFlat.style.display=flatTotal>0?'block':'none'; }
+    if(elFlat){ elFlat.textContent='平盘 '+b_flat+' 家'; elFlat.style.display=b_flat>0?'block':'none'; }
 
     const MAX_H=66;
     const BKTS=[
@@ -5795,7 +5814,7 @@ async function _doFetchBreadth(){
       {label:'涨~5%', count:b_u59,  barCol:'#dc2626',lblCol:'#ef4444'},
       {label:'5~1%',  count:b_u15,  barCol:'#f87171',lblCol:'#dc2626'},
       {label:'1~0%',  count:b_u01,  barCol:'#fca5a5',lblCol:'#ef4444'},
-      {label:'平盘',   count:flatTotal,barCol:'#9ca3af',lblCol:'#6b7280'},
+      {label:'平盘',   count:b_flat, barCol:'#9ca3af',lblCol:'#6b7280'},
       {label:'0~1%',  count:b_d01,  barCol:'#bbf7d0',lblCol:'#16a34a'},
       {label:'1~5%',  count:b_d15,  barCol:'#4ade80',lblCol:'#15803d'},
       {label:'5~跌',  count:b_d59,  barCol:'#16a34a',lblCol:'#15803d'},
