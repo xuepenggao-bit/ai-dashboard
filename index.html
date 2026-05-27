@@ -3128,10 +3128,10 @@ let _portSort = {col:'w', dir:1};
 let _portDirty = false;   // 有本地修改未同步到云端时为 true
 
 function togglePortSort(col){
-  // 首次点击某列，或从升序再次点击：重置为降序（从大到小）
-  // 只有当前列已是降序时，再次点击才切换为升序
-  if(_portSort.col===col && _portSort.dir===-1) _portSort.dir=1;
-  else{ _portSort.col=col; _portSort.dir=-1; }
+  // 首次点击某列：降序（dir=1，即 b-a，由高到低）
+  // 已是降序时再次点击：切换为升序（dir=-1，由低到高）
+  if(_portSort.col===col && _portSort.dir===1) _portSort.dir=-1;
+  else{ _portSort.col=col; _portSort.dir=1; }
   renderPortfolio();
 }
 
@@ -3510,14 +3510,14 @@ function renderPortfolio(){
   // Sectors
   const mktStyle = {SH:'background:#dbeafe;color:#1e40af',SZ:'background:#ede9fe;color:#5b21b6',HK:'background:#fee2e2;color:#991b1b'};
   const mktLabel = {SH:'沪A',SZ:'深A',HK:'港股'};
-  const pctArrow  = _portSort.col==='pct' ? (_portSort.dir<0?'↓':'↑') : '↕';
-  const wArrow    = _portSort.col==='w'   ? (_portSort.dir<0?'↓':'↑') : '↕';
-  const vrArrow   = _portSort.col==='vr'    ? (_portSort.dir<0?'↓':'↑') : '↕';
-  const spArrow   = _portSort.col==='speed' ? (_portSort.dir<0?'↓':'↑') : '↕';
-  const pctThCls  = 'th-sort'+(_portSort.col==='pct'  ?(_portSort.dir<0?' th-desc':' th-asc'):'');
-  const wThCls    = 'th-sort'+(_portSort.col==='w'    ?(_portSort.dir<0?' th-desc':' th-asc'):'');
-  const vrThCls   = 'th-sort'+(_portSort.col==='vr'   ?(_portSort.dir<0?' th-desc':' th-asc'):'');
-  const spThCls   = 'th-sort'+(_portSort.col==='speed'?(_portSort.dir<0?' th-desc':' th-asc'):'');
+  const pctArrow  = _portSort.col==='pct' ? (_portSort.dir>0?'↓':'↑') : '↕';
+  const wArrow    = _portSort.col==='w'   ? (_portSort.dir>0?'↓':'↑') : '↕';
+  const vrArrow   = _portSort.col==='vr'    ? (_portSort.dir>0?'↓':'↑') : '↕';
+  const spArrow   = _portSort.col==='speed' ? (_portSort.dir>0?'↓':'↑') : '↕';
+  const pctThCls  = 'th-sort'+(_portSort.col==='pct'  ?(_portSort.dir>0?' th-desc':' th-asc'):'');
+  const wThCls    = 'th-sort'+(_portSort.col==='w'    ?(_portSort.dir>0?' th-desc':' th-asc'):'');
+  const vrThCls   = 'th-sort'+(_portSort.col==='vr'   ?(_portSort.dir>0?' th-desc':' th-asc'):'');
+  const spThCls   = 'th-sort'+(_portSort.col==='speed'?(_portSort.dir>0?' th-desc':' th-asc'):'');
 
   document.getElementById('portSectors').innerHTML = PORT.sectors.map((sec,si)=>{
     const secW = secWeights[si];
