@@ -5565,11 +5565,9 @@ function deleteHistRecord(idx){
   renderHistTable();
 }
 
-// ── 市场涨跌统计（分布直方图）──────────────────────────────────
-// ── 市场统计：涨跌分布 + 两市成交额（合并一次请求）──────────────
-// 一次拉全 A 股 f3(涨跌幅)+f6(成交额)，同时填充两张卡片
-// 涨跌统计 + 成交分析
-// API限制：每页最多100条，全市场约5500只，需要多页并行抓取
+// ── 市场涨跌统计 + 两市成交额 ───────────────────────────────────
+// 数据来源：腾讯行情 API（上涨/下跌/平盘家数 + 成交额，仅1次请求，与fetchIndexPrices同源）
+//          东方财富 clist（涨停/跌停家数，2次请求，极值排序第1页）
 var _mktStatsFetching = false;
 
 async function fetchMarketStats(){
@@ -5588,125 +5586,84 @@ async function fetchMarketStats(){
   if(tTs) tTs.textContent='加载中…';
 
   try{
-    const BASE = 'https://push2.eastmoney.com/api/qt/clist/get'
-      + '?fid=f3&po=1&pz=100&np=1&fltt=2&invt=2'
-      + '&fields=f3,f6'
-      + '&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
+    // ── ① 腾讯行情简版 API（GBK，与 fetchIndexPrices 相同模式）──
+    // s_sh000001 = 上证综指：覆盖全部上海 A 股
+    // s_sz399106 = 深证综指：覆盖全部深圳 A 股
+    // 字段：[0]类型 [1]名称 [2]代码 [3]现价 [4]涨跌额 [5]涨跌幅%
+    //       [6]成交量(手) [7]成交额(万元) [8]上涨数 [9]下跌数 [10]平盘数
+    const tUrl = 'https://qt.gtimg.cn/q=s_sh000001,s_sz399106&_=' + Date.now();
+    const tResp = await fetch(tUrl);
+    const tTxt  = new TextDecoder('gbk').decode(await tResp.arrayBuffer());
 
-    // 第一页：拿 total 和第一批 diff（与 fetchMainFlow 完全相同的写法）
-    const first = await fetch(BASE + '&pn=1&_=' + Date.now()).then(r=>r.json());
-    const total = first?.data?.total || 0;
-    const pages = Math.ceil(total / 100);
+    const _parseSq = code => {
+      const m = tTxt.match(new RegExp('v_s_' + code + '="([^"]+)"'));
+      if(!m) return null;
+      const p = m[1].split('~');
+      return {
+        up:  parseInt(p[8])   || 0,
+        dn:  parseInt(p[9])   || 0,
+        fl:  parseInt(p[10])  || 0,
+        wan: parseFloat(p[7]) || 0,   // 成交额，万元
+      };
+    };
+    const shD = _parseSq('sh000001');
+    const szD = _parseSq('sz399106');
+    if(!shD && !szD) throw new Error('腾讯行情返回空数据，请稍后重试');
 
-    // 分批并行拉取其余页（每批5页）
-    let diff = Array.from(first?.data?.diff || []);
-    const BATCH = 5;
-    for(let bStart = 2; bStart <= pages; bStart += BATCH){
-      const bEnd = Math.min(bStart + BATCH - 1, pages);
-      const bFetches = [];
-      for(let pn = bStart; pn <= bEnd; pn++){
-        bFetches.push(
-          fetch(BASE + '&pn=' + pn + '&_=' + (Date.now() + pn))
-            .then(r=>r.json()).catch(()=>null)
-        );
-      }
-      const bResults = await Promise.all(bFetches);
-      for(const r of bResults){
-        const d = r?.data?.diff;
-        if(d && d.length) diff = diff.concat(d);
-      }
-      if(bTs) bTs.textContent = '加载中… ' + Math.round(diff.length / Math.max(total, 1) * 100) + '%';
-    }
+    const totalUp   = (shD?.up  || 0) + (szD?.up  || 0);
+    const totalDown = (shD?.dn  || 0) + (szD?.dn  || 0);
+    const totalFlat = (shD?.fl  || 0) + (szD?.fl  || 0);
+    const totalYi   = ((shD?.wan || 0) + (szD?.wan || 0)) / 10000; // 万元 → 亿元
 
-    // 单独补取北交所（fs=m:0+t:81）；失败不影响主数据
-    try {
-      const BJ_BASE = 'https://push2.eastmoney.com/api/qt/clist/get'
-        + '?fid=f3&po=1&pz=100&np=1&fltt=2&invt=2'
-        + '&fields=f3,f6'
-        + '&fs=m:0+t:81';
-      // 先拿第1页取北交所 total
-      const bjFirst = await fetch(BJ_BASE + '&pn=1&_=' + Date.now()).then(r=>r.json()).catch(()=>null);
-      if(bjFirst?.data?.diff?.length){
-        diff = diff.concat(bjFirst.data.diff);
-        const bjTotal = bjFirst.data.total || 0;
-        const bjPages = Math.ceil(bjTotal / 100);
-        if(bjPages > 1){
-          const bjFetches = [];
-          for(let pn = 2; pn <= bjPages; pn++){
-            bjFetches.push(fetch(BJ_BASE + '&pn=' + pn + '&_=' + (Date.now()+pn)).then(r=>r.json()).catch(()=>null));
-          }
-          const bjRest = await Promise.all(bjFetches);
-          for(const r of bjRest){ const d=r?.data?.diff; if(d&&d.length) diff=diff.concat(d); }
-        }
-      }
-    } catch(e){ /* 北交所数据获取失败，忽略 */ }
+    // ── ② 东方财富 clist（2次并行请求）：涨停 / 跌停 家数 ──
+    // 按 f3 从两端排序，数第1页中 >=9.9 / <=-9.9 的只数
+    let limitUp = 0, limitDown = 0;
+    try{
+      const EM = 'https://push2.eastmoney.com/api/qt/clist/get'
+        + '?fid=f62&np=1&fltt=2&invt=2&fields=f3'
+        + '&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
+      const [upR, dnR] = await Promise.all([
+        fetch(EM + '&po=1&pz=100&pn=1&_=' + Date.now()).then(r=>r.json()).catch(()=>null),
+        fetch(EM + '&po=0&pz=100&pn=1&_=' + (Date.now()+1)).then(r=>r.json()).catch(()=>null),
+      ]);
+      if(upR?.data?.diff) for(const s of upR.data.diff){ if(parseFloat(s.f3)>=9.9) limitUp++; else break; }
+      if(dnR?.data?.diff) for(const s of dnR.data.diff){ if(parseFloat(s.f3)<=-9.9) limitDown++; else break; }
+    }catch(e){ /* 涨跌停获取失败，忽略，主数据不受影响 */ }
 
-    // ── 分布分桶（9档，与东方财富牛熊风向标一致）──
-    // 上涨侧标签从外到内：涨停 | 涨停~5% | 5~1% | 1~0%
-    // 下跌侧标签从内到外：0~1% | 1~5% | 5%~跌停 | 跌停
-    const BKTS=[
-      {label:'涨停',    side:'up',  lim:true,  min:9.9,      max:Infinity},
-      {label:'涨停~5%', side:'up',             min:5,        max:9.9},
-      {label:'5~1%',   side:'up',             min:1,        max:5},
-      {label:'1~0%',   side:'up',             min:0.001,    max:1},
-      {label:'平盘',    side:'flat',           min:-0.001,   max:0.001},
-      {label:'0~1%',   side:'down',           min:-1,       max:-0.001},
-      {label:'1~5%',   side:'down',           min:-5,       max:-1},
-      {label:'5%~跌停', side:'down',           min:-9.9,     max:-5},
-      {label:'跌停',    side:'down',lim:true,  min:-Infinity, max:-9.9},
-    ];
-    for(const b of BKTS) b.count=0;
-    const LU = BKTS[0], LD = BKTS[8];   // 涨停 / 跌停桶
-
-    // 成交额累加（f6 单位：元，fltt=2 下为原值）
-    let totalYuan = 0;
-
-    for(const s of diff){
-      const p = parseFloat(s.f3);
-      const v = parseFloat(s.f6);
-      if(isFinite(v) && v > 0) totalYuan += v;
-      if(!isFinite(p)) continue;
-      // 先判断涨停/跌停（避免边界被中间桶截走）
-      if(p >= 9.9)  { LU.count++; continue; }
-      if(p <= -9.9) { LD.count++; continue; }
-      // 其余 7 个桶正常匹配
-      for(let i=1; i<=7; i++){
-        const b = BKTS[i];
-        if(p >= b.min && p < b.max){ b.count++; break; }
-      }
-    }
-
-    // ── 涨跌统计卡片 ──
-    const upCnt   = BKTS.filter(b=>b.side==='up').reduce((s,b)=>s+b.count,0);
-    const downCnt = BKTS.filter(b=>b.side==='down').reduce((s,b)=>s+b.count,0);
-    const flatCnt = BKTS.find(b=>b.side==='flat').count;
+    // ── 填充涨跌统计卡片 ──
     const elUp   = document.getElementById('mktUp');
     const elDown = document.getElementById('mktDown');
     const elLU   = document.getElementById('mktLimitUp');
     const elLD   = document.getElementById('mktLimitDown');
     const elFlat = document.getElementById('mktFlatRow');
-    if(elUp)   elUp.textContent   = upCnt;
-    if(elDown) elDown.textContent = downCnt;
-    if(elLU)   elLU.textContent   = BKTS.find(b=>b.side==='up'  &&b.lim).count;
-    if(elLD)   elLD.textContent   = BKTS.find(b=>b.side==='down'&&b.lim).count;
-    // 平盘家数（小行提示）
+    if(elUp)   elUp.textContent   = totalUp   || '—';
+    if(elDown) elDown.textContent = totalDown || '—';
+    if(elLU)   elLU.textContent   = limitUp;
+    if(elLD)   elLD.textContent   = limitDown;
     if(elFlat){
-      elFlat.textContent = '平盘 ' + flatCnt + ' 家';
-      elFlat.style.display = flatCnt > 0 ? 'block' : 'none';
+      elFlat.textContent = '平盘 ' + totalFlat + ' 家';
+      elFlat.style.display = totalFlat > 0 ? 'block' : 'none';
     }
 
-    // 直方图（带穹顶圆角，柱越矮圆越大）
-    const maxCnt = Math.max(...BKTS.map(b=>b.count), 1);
+    // ── 分布直方图（5档：涨停 | 其他上涨 | 平盘 | 其他下跌 | 跌停）──
     const MAX_H  = 64;
-    const COL = ['#b91c1c','#dc2626','#ef4444','#fca5a5','#94a3b8','#bbf7d0','#4ade80','#16a34a','#14532d'];
-    const TC  = ['#dc2626','#dc2626','#dc2626','#dc2626','#64748b','#15803d','#15803d','#15803d','#15803d'];
-    const bars = BKTS.map((b,i)=>{
+    const upOther = Math.max(totalUp   - limitUp,   0);
+    const dnOther = Math.max(totalDown - limitDown, 0);
+    const BKTS_D = [
+      {label:'涨停',  count:limitUp,   col:'#b91c1c', tc:'#dc2626'},
+      {label:'上涨',  count:upOther,   col:'#ef4444', tc:'#dc2626'},
+      {label:'平盘',  count:totalFlat, col:'#94a3b8', tc:'#64748b'},
+      {label:'下跌',  count:dnOther,   col:'#4ade80', tc:'#15803d'},
+      {label:'跌停',  count:limitDown, col:'#14532d', tc:'#15803d'},
+    ];
+    const maxCnt = Math.max(...BKTS_D.map(b=>b.count), 1);
+    const bars = BKTS_D.map(b=>{
       const bh = Math.max(3, Math.round((b.count/maxCnt)*MAX_H));
       const r  = Math.min(6, Math.ceil(bh/2));
       return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;gap:1px">
-        <div style="font-size:8.5px;font-weight:800;color:${TC[i]};min-height:11px;text-align:center;line-height:1">${b.count||''}</div>
+        <div style="font-size:8.5px;font-weight:800;color:${b.tc};min-height:11px;text-align:center;line-height:1">${b.count||''}</div>
         <div style="display:flex;flex-direction:column;justify-content:flex-end;height:${MAX_H}px;width:100%">
-          <div style="width:100%;height:${bh}px;background:${COL[i]};border-radius:${r}px ${r}px 0 0"></div>
+          <div style="width:100%;height:${bh}px;background:${b.col};border-radius:${r}px ${r}px 0 0"></div>
         </div>
         <div style="font-size:8px;color:var(--text2);white-space:nowrap;overflow:hidden;max-width:100%;text-align:center;margin-top:1px">${b.label}</div>
       </div>`;
@@ -5714,22 +5671,20 @@ async function fetchMarketStats(){
     if(chartEl) chartEl.innerHTML = `<div style="display:flex;align-items:stretch;gap:2px">${bars}</div>`;
 
     const timeStr = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
-    // 显示实际抓到的只数，方便核对
-    if(bTs) bTs.textContent = timeStr + ' · ' + diff.length + '只' + (diff.length < total * 0.95 ? ' ⚠️' : '');
+    if(bTs) bTs.textContent = timeStr;
 
     // ── 成交分析卡片 ──
-    const totalBi = totalYuan / 1e8;   // 元 → 亿元
-    const now     = new Date();
-    const curMin  = now.getHours()*60 + now.getMinutes();
+    const now    = new Date();
+    const curMin = now.getHours()*60 + now.getMinutes();
     // 计算已交易分钟数（上午9:30-11:30，下午13:00-15:00）
     let elapsed = 0;
-    if(curMin < 570)       elapsed = 0;           // 未开盘
-    else if(curMin <= 690) elapsed = curMin - 570; // 上午盘中
-    else if(curMin < 780)  elapsed = 120;          // 午休
-    else if(curMin <= 900) elapsed = 120 + (curMin - 780); // 下午盘中
-    else                   elapsed = 240;          // 收盘
+    if(curMin < 570)       elapsed = 0;
+    else if(curMin <= 690) elapsed = curMin - 570;
+    else if(curMin < 780)  elapsed = 120;
+    else if(curMin <= 900) elapsed = 120 + (curMin - 780);
+    else                   elapsed = 240;
 
-    // 格式化：亿→千亿→万亿，保留2位小数
+    // 格式化：亿→千亿→万亿
     const fmt = v => {
       if(v >= 10000) return (v/10000).toFixed(2) + '万亿元';
       if(v >= 1000)  return (v/1000).toFixed(2) + '千亿元';
@@ -5739,11 +5694,11 @@ async function fetchMarketStats(){
     let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
       <div style="background:#dbeafe;border-radius:10px;padding:11px 12px">
         <div style="font-size:10px;color:#1d4ed8;font-weight:700;margin-bottom:6px">沪深两市成交额</div>
-        <div style="font-size:22px;font-weight:900;color:#1e40af;line-height:1.1;letter-spacing:-.02em">${fmt(totalBi)}</div>
+        <div style="font-size:22px;font-weight:900;color:#1e40af;line-height:1.1;letter-spacing:-.02em">${fmt(totalYi)}</div>
         <div style="font-size:10px;color:#3b82f6;margin-top:5px">实时 · ${timeStr}</div>
       </div>`;
     if(elapsed > 15 && elapsed < 235){
-      const pred = totalBi * (240 / elapsed);
+      const pred = totalYi * (240 / elapsed);
       html += `<div style="background:#e0f2fe;border-radius:10px;padding:11px 12px">
         <div style="font-size:10px;color:#0369a1;font-weight:700;margin-bottom:6px">预测全天成交额</div>
         <div style="font-size:22px;font-weight:900;color:#075985;line-height:1.1;letter-spacing:-.02em">${fmt(pred)}</div>
@@ -5754,7 +5709,7 @@ async function fetchMarketStats(){
         <span style="font-size:11px;color:#94a3b8">${elapsed===0?'未开盘':'已收盘'}</span>
       </div>`;
     }
-    html += `</div><div style="font-size:10px;color:#94a3b8;text-align:center">统计自 ${diff.length} 只沪深 A 股</div>`;
+    html += `</div><div style="font-size:10px;color:#94a3b8;text-align:center">沪综指+深综指 · 腾讯行情</div>`;
     if(bodyEl) bodyEl.innerHTML = html;
     if(tTs)    tTs.textContent  = timeStr;
 
