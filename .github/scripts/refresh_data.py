@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Refresh Xueqiu hot stocks and portfolio Top5 sentiment data.
-Uses a pre-warmed requests.Session to bypass Xueqiu bot detection.
+Discussion posts: Xueqiu (with session warm-up) → fallback to EastMoney Guba.
 Outputs: data/xq_hot.json  data/xq_sentiment.json
 """
 import os, json, time, datetime, re, requests
@@ -9,9 +9,9 @@ import os, json, time, datetime, re, requests
 XQ_TOKEN     = os.environ.get('XQ_TOKEN', '')
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '')
 
-UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-      'AppleWebKit/537.36 (KHTML, like Gecko) '
-      'Chrome/124.0.0.0 Safari/537.36')
+UA_BROWSER = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+              'AppleWebKit/537.36 (KHTML, like Gecko) '
+              'Chrome/124.0.0.0 Safari/537.36')
 
 POS_WORDS = ['看多','买入','值得买','上涨','利好','突破','强势','增持','超预期','大涨',
              '新高','建仓','加仓','推荐','机会','低吸','看好','有望','涨停','放量','优质',
@@ -20,176 +20,161 @@ NEG_WORDS = ['看空','卖出','下跌','利空','破位','弱势','减持','不
              '出局','减仓','风险','警惕','跌停','套牢','亏损','压力','见顶','悲观',
              '泡沫','担忧','不确定','跌破','暴跌','高估','缩量','割肉','筑顶','主跌浪']
 
-# ── Session（全局单例，首次调用时预热） ─────────────────────────
-
-_sess = None
-
-def get_session():
-    global _sess
-    if _sess is not None:
-        return _sess
-
-    _sess = requests.Session()
-    _sess.headers.update({
-        'User-Agent':      UA,
-        'Accept':          'application/json, text/plain, */*',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Referer':         'https://xueqiu.com/',
-        'Origin':          'https://xueqiu.com',
-    })
-
-    # 预热：访问首页，获取 device_id / xq_is_login 等必要 Cookie
-    try:
-        r = _sess.get('https://xueqiu.com/', timeout=12)
-        print(f'  [Session] 首页预热 HTTP {r.status_code}，'
-              f'cookies: {list(_sess.cookies.keys())}')
-    except Exception as e:
-        print(f'  [Session] 首页预热失败: {e}')
-
-    # 注入用户 Token
-    if XQ_TOKEN:
-        _sess.cookies.set('xq_a_token',  XQ_TOKEN, domain='.xueqiu.com')
-        _sess.cookies.set('xq_is_login', '1',       domain='.xueqiu.com')
-        print(f'  [Session] 已注入 xq_a_token')
-    else:
-        print('  [Session] ⚠️  XQ_TOKEN 未设置，部分接口可能受限')
-
-    return _sess
-
-# ── 工具函数 ────────────────────────────────────────────────────
+# ── 工具 ────────────────────────────────────────────────────────
 
 def now_ts():
     tz8 = datetime.timezone(datetime.timedelta(hours=8))
     return datetime.datetime.now(tz8).strftime('%Y-%m-%d %H:%M')
 
 def clean_html(html):
-    if not html:
-        return ''
+    if not html: return ''
     t = re.sub(r'<[^>]+>', '', html)
-    for src, dst in [('&lt;','<'),('&gt;','>'),('&amp;','&'),('&quot;','"')]:
-        t = t.replace(src, dst)
+    for s, d in [('&lt;','<'),('&gt;','>'),('&amp;','&'),('&quot;','"')]:
+        t = t.replace(s, d)
     return re.sub(r'\s+', ' ', t).strip()
 
 def score_sentiment(text):
     if not text: return 0
-    s = 0
-    for w in POS_WORDS:
-        if w in text: s += 1
-    for w in NEG_WORDS:
-        if w in text: s -= 1
-    return s
+    return sum(1 for w in POS_WORDS if w in text) - sum(1 for w in NEG_WORDS if w in text)
 
 def xq_symbol(sk):
-    mkt  = sk.get('mkt', '')
-    code = str(sk.get('code', ''))
-    if mkt == 'HK':
-        return 'HK' + code.zfill(5)
-    return mkt + code
+    mkt, code = sk.get('mkt',''), str(sk.get('code',''))
+    return ('HK' + code.zfill(5)) if mkt == 'HK' else (mkt + code)
 
-# ── 热股榜 ──────────────────────────────────────────────────────
+# ── Xueqiu Session（预热首页，绕过 bot 检测） ────────────────────
+
+_xq_sess = None
+
+def xq_session():
+    global _xq_sess
+    if _xq_sess:
+        return _xq_sess
+    s = requests.Session()
+    s.headers.update({
+        'User-Agent': UA_BROWSER,
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'zh-CN,zh;q=0.9',
+        'Referer': 'https://xueqiu.com/',
+        'Origin':  'https://xueqiu.com',
+    })
+    try:
+        r = s.get('https://xueqiu.com/', timeout=12)
+        print(f'  [XQ-Session] 首页预热 HTTP {r.status_code}，'
+              f'cookies: {list(s.cookies.keys())}')
+    except Exception as e:
+        print(f'  [XQ-Session] 首页预热失败: {e}')
+    if XQ_TOKEN:
+        s.cookies.set('xq_a_token',  XQ_TOKEN, domain='.xueqiu.com')
+        s.cookies.set('xq_is_login', '1',       domain='.xueqiu.com')
+        print('  [XQ-Session] 已注入 xq_a_token')
+    _xq_sess = s
+    return s
+
+def _is_html(r):
+    ct = r.headers.get('Content-Type', '')
+    return 'html' in ct or r.text.lstrip().startswith('<')
+
+# ── 热股榜（Xueqiu） ────────────────────────────────────────────
 
 def fetch_hot_stocks():
     url = ('https://stock.xueqiu.com/v5/stock/screener/quote/list.json'
            '?market=CN&order=desc&order_by=value&page=1&size=20&type=hot_1h')
     try:
-        r = get_session().get(url, timeout=15)
+        r = xq_session().get(url, timeout=15)
         print(f'  [热股榜] HTTP {r.status_code}')
         r.raise_for_status()
         raw = r.json().get('data', {}).get('list', [])
-        return [{'rank': i+1,
-                 'symbol':  s.get('symbol',''),
-                 'name':    s.get('name',''),
-                 'current': s.get('current'),
-                 'percent': s.get('percent'),
-                 'value':   s.get('value'),
-                 'chg':     s.get('chg')} for i, s in enumerate(raw)]
+        return [{'rank':i+1,'symbol':s.get('symbol',''),'name':s.get('name',''),
+                 'current':s.get('current'),'percent':s.get('percent'),
+                 'value':s.get('value'),'chg':s.get('chg')} for i,s in enumerate(raw)]
     except Exception as e:
-        print(f'  [热股榜] 获取失败: {e}')
+        print(f'  [热股榜] 失败: {e}')
         return []
 
-# ── 讨论帖子抓取 ───────────────────────────────────────────────
+# ── 讨论帖子：Xueqiu → EastMoney 自动降级 ──────────────────────
 
 def fetch_stock_posts(symbol, pages=3):
-    """
-    尝试两个 endpoint（预热 session 后均可访问）：
-    1. v4/statuses/user_timeline.json  ← 主接口
-    2. query/v1/symbol/search/status   ← 备用接口
-    """
-    posts = _fetch_via_timeline(symbol, pages)
+    """先尝试雪球，失败则降级到东方财富股吧。"""
+    posts = _xueqiu_posts(symbol, pages)
     if posts:
+        print(f'  [{symbol}] 雪球获取成功 {len(posts)} 条')
         return posts
-
-    print(f'  [{symbol}] timeline 无结果，尝试 search 接口…')
-    return _fetch_via_search(symbol, pages)
-
-
-def _safe_json(r, symbol, page, endpoint):
-    """解析 JSON，若响应是 HTML 则打印诊断信息并返回 None。"""
-    ct = r.headers.get('Content-Type', '')
-    if 'html' in ct or (r.text and r.text.lstrip().startswith('<')):
-        print(f'  [{symbol}] {endpoint} 第{page}页返回 HTML（未登录/Bot检测），Content-Type={ct}')
-        return None
-    try:
-        return r.json()
-    except Exception as e:
-        print(f'  [{symbol}] {endpoint} 第{page}页 JSON 解析失败: {e}，'
-              f'前100字节: {r.text[:100]!r}')
-        return None
+    print(f'  [{symbol}] 雪球无数据，切换到东方财富股吧…')
+    posts = _eastmoney_posts(symbol, pages)
+    if posts:
+        print(f'  [{symbol}] 东方财富获取成功 {len(posts)} 条')
+    return posts
 
 
-def _fetch_via_timeline(symbol, pages):
+def _xueqiu_posts(symbol, pages):
     posts = []
+    sess = xq_session()
     for page in range(1, pages + 1):
         url = (f'https://xueqiu.com/v4/statuses/user_timeline.json'
                f'?page={page}&count=20&symbol={symbol}&_={int(time.time()*1000)}')
         try:
-            r = get_session().get(url, timeout=15)
-            print(f'  [{symbol}] timeline 第{page}页 HTTP {r.status_code}')
+            r = sess.get(url, timeout=15)
+            print(f'  [{symbol}] XQ timeline 第{page}页 HTTP {r.status_code}')
             if r.status_code in (401, 403):
-                print(f'  [{symbol}] 认证失败，停止')
                 break
             r.raise_for_status()
-            data = _safe_json(r, symbol, page, 'timeline')
-            if data is None:
+            if _is_html(r):
+                print(f'  [{symbol}] XQ 返回 HTML（Bot 检测），停止')
                 break
+            data = r.json()
             lst = data.get('statuses', data.get('list', []))
-            print(f'  [{symbol}] timeline 第{page}页 {len(lst)} 条')
             posts.extend(lst)
-            if len(lst) < 15:
-                break
+            if len(lst) < 15: break
         except Exception as e:
-            print(f'  [{symbol}] timeline 第{page}页异常: {e}')
+            print(f'  [{symbol}] XQ 第{page}页异常: {e}')
             break
-        if page < pages:
-            time.sleep(0.5)
+        if page < pages: time.sleep(0.5)
     return posts
 
 
-def _fetch_via_search(symbol, pages):
+def _em_code(symbol):
+    """SH600519 → '600519'  SZ300394 → '300394'  HK02476 → 'hk02476'"""
+    if symbol.startswith('HK'):
+        return 'hk' + symbol[2:]
+    return re.sub(r'^[A-Z]+', '', symbol)
+
+
+def _eastmoney_posts(symbol, pages):
+    """东方财富股吧 JSONP 接口（公开，无需登录）。"""
+    code = _em_code(symbol)
     posts = []
+    hdrs = {
+        'User-Agent': UA_BROWSER,
+        'Referer': 'https://guba.eastmoney.com/',
+        'Accept': '*/*',
+        'Accept-Language': 'zh-CN,zh;q=0.9',
+    }
     for page in range(1, pages + 1):
-        url = (f'https://xueqiu.com/query/v1/symbol/search/status'
-               f'?symbol={symbol}&page={page}&size=20&type=status'
-               f'&_={int(time.time()*1000)}')
+        url = (f'https://guba.eastmoney.com/interface/api/css_pc_new_list.js'
+               f'?block={code}&pageno={page}&pnl=1&biz=BKGUBA'
+               f'&product=guba&callback=cb&_={int(time.time()*1000)}')
         try:
-            r = get_session().get(url, timeout=15)
-            print(f'  [{symbol}] search 第{page}页 HTTP {r.status_code}')
-            if r.status_code in (401, 403):
-                break
+            r = requests.get(url, headers=hdrs, timeout=15)
+            print(f'  [{symbol}] EM Guba 第{page}页 HTTP {r.status_code}')
             r.raise_for_status()
-            data = _safe_json(r, symbol, page, 'search')
-            if data is None:
+            m = re.search(r'\{.*\}', r.text, re.DOTALL)
+            if not m:
+                print(f'  [{symbol}] EM 无有效JSON: {r.text[:120]!r}')
                 break
-            lst = data.get('list', data.get('statuses', []))
-            print(f'  [{symbol}] search 第{page}页 {len(lst)} 条')
-            posts.extend(lst)
-            if len(lst) < 20:
-                break
+            data = json.loads(m.group())
+            threads = data.get('data', {}).get('thread_list', [])
+            print(f'  [{symbol}] EM 第{page}页 {len(threads)} 条')
+            for t in threads:
+                posts.append({
+                    'description': t.get('post_title', ''),
+                    'like_count':  int(t.get('digg_count',  0) or 0),
+                    'reply_count': int(t.get('reply_count', 0) or 0),
+                })
+            if len(threads) < 20: break
         except Exception as e:
-            print(f'  [{symbol}] search 第{page}页异常: {e}')
+            print(f'  [{symbol}] EM 第{page}页异常: {e}')
             break
-        if page < pages:
-            time.sleep(0.5)
+        if page < pages: time.sleep(0.4)
     return posts
 
 # ── 情感分析（关键词） ─────────────────────────────────────────
@@ -200,19 +185,15 @@ def keyword_analyze(posts):
         raw  = p.get('description') or p.get('text') or p.get('title') or ''
         txt  = clean_html(raw)
         disp = txt[:60]
-        eng  = (p.get('like_count') or 0) * 3 + (p.get('reply_count') or 0) * 2
+        eng  = (p.get('like_count') or 0)*3 + (p.get('reply_count') or 0)*2
         scored.append({'disp': disp, 'score': score_sentiment(txt), 'eng': eng})
 
     pos = [x['disp'] for x in sorted(
-               [x for x in scored if x['score'] > 0], key=lambda x: -x['eng'])[:3]
-           if x['disp']]
+               [x for x in scored if x['score']>0], key=lambda x:-x['eng'])[:3] if x['disp']]
     neg = [x['disp'] for x in sorted(
-               [x for x in scored if x['score'] < 0], key=lambda x: -x['eng'])[:3]
-           if x['disp']]
-
+               [x for x in scored if x['score']<0], key=lambda x:-x['eng'])[:3] if x['disp']]
     if not pos and scored:
-        pos = [x['disp'] for x in sorted(scored, key=lambda x: -x['eng'])[:2] if x['disp']]
-
+        pos = [x['disp'] for x in sorted(scored, key=lambda x:-x['eng'])[:2] if x['disp']]
     return pos, neg, len(posts)
 
 # ── 情感分析（GitHub Models / gpt-4o-mini） ───────────────────
@@ -220,80 +201,56 @@ def keyword_analyze(posts):
 def ai_analyze(name, symbol, posts):
     if not GITHUB_TOKEN:
         return keyword_analyze(posts)
-
-    texts = []
-    for p in posts[:40]:
-        raw = p.get('description') or p.get('text') or p.get('title') or ''
-        txt = clean_html(raw)[:120]
-        if txt:
-            texts.append(txt)
-
+    texts = [clean_html(p.get('description') or p.get('text') or '')[:120]
+             for p in posts[:40]]
+    texts = [t for t in texts if t]
     if not texts:
         return keyword_analyze(posts)
 
-    sample = '\n'.join(f'{i+1}. {t}' for i, t in enumerate(texts[:30]))
-    prompt = (f'以下是雪球上关于{name}（{symbol}）的最新讨论帖子（共{len(texts)}条精选）：\n\n'
+    sample = '\n'.join(f'{i+1}. {t}' for i,t in enumerate(texts[:30]))
+    prompt = (f'以下是关于{name}（{symbol}）的最新股票讨论帖子标题（共{len(texts)}条）：\n\n'
               f'{sample}\n\n'
               f'请从中提取：\n'
               f'1. 最具代表性的3条正面/看多观点（简洁概括，每条不超过40字）\n'
               f'2. 最具代表性的3条负面/看空观点（简洁概括，每条不超过40字）\n\n'
-              f'如果某方向不足3条可以少于3条，完全没有则返回空列表。\n\n'
-              f'请以JSON格式回复（不要有其他文字）：\n'
-              f'{{"pos": ["...", "..."], "neg": ["...", "..."]}}')
-
+              f'如不足3条可以少于3条，完全没有则返回空列表。\n\n'
+              f'仅返回JSON，格式：{{"pos":["..."],"neg":["..."]}}')
     try:
         r = requests.post(
             'https://models.inference.ai.azure.com/chat/completions',
-            headers={
-                'Authorization': f'Bearer {GITHUB_TOKEN}',
-                'Content-Type':  'application/json',
-            },
-            json={
-                'model':       'gpt-4o-mini',
-                'messages':    [{'role': 'user', 'content': prompt}],
-                'max_tokens':  500,
-                'temperature': 0.3,
-            },
-            timeout=30,
-        )
+            headers={'Authorization':f'Bearer {GITHUB_TOKEN}','Content-Type':'application/json'},
+            json={'model':'gpt-4o-mini','messages':[{'role':'user','content':prompt}],
+                  'max_tokens':500,'temperature':0.3},
+            timeout=30)
         r.raise_for_status()
-        raw_resp = r.json()['choices'][0]['message']['content'].strip()
-        m = re.search(r'\{.*\}', raw_resp, re.DOTALL)
+        raw = r.json()['choices'][0]['message']['content'].strip()
+        m = re.search(r'\{.*\}', raw, re.DOTALL)
         if m:
             j = json.loads(m.group())
-            pos = [x for x in j.get('pos', []) if x and x != '...'][:3]
-            neg = [x for x in j.get('neg', []) if x and x != '...'][:3]
+            pos = [x for x in j.get('pos',[]) if x and x!='...'][:3]
+            neg = [x for x in j.get('neg',[]) if x and x!='...'][:3]
             return pos, neg, len(posts)
     except Exception as e:
-        print(f'  [AI] GitHub Models 失败: {e}，回退关键词分析')
-
+        print(f'  [AI] GitHub Models 失败: {e}，回退关键词')
     return keyword_analyze(posts)
 
 # ── 读取组合 ───────────────────────────────────────────────────
 
 def load_portfolio():
-    # 脚本在 .github/scripts/，仓库根在 ../..
-    candidates = [
-        os.path.join(os.getcwd(), 'portfolio.json'),
-        os.path.normpath(os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), '..', '..', 'portfolio.json')),
-    ]
-    for path in candidates:
+    for path in [os.path.join(os.getcwd(),'portfolio.json'),
+                 os.path.normpath(os.path.join(
+                     os.path.dirname(os.path.abspath(__file__)),'..','..','portfolio.json'))]:
         if os.path.exists(path):
             print(f'  [组合] 读取 {path}')
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(path,'r',encoding='utf-8') as f:
                 return json.load(f)
-    print(f'  [组合] portfolio.json 未找到，候选: {candidates}')
+    print('  [组合] portfolio.json 未找到')
     return None
 
 def get_top5(portfolio):
-    all_stocks = []
-    for sec in portfolio.get('sectors', []):
-        for sk in sec.get('stocks', []):
-            if (sk.get('w') or 0) > 0:
-                all_stocks.append(sk)
-    all_stocks.sort(key=lambda x: -(x.get('w') or 0))
-    return all_stocks[:5]
+    stocks = [sk for sec in portfolio.get('sectors',[])
+              for sk in sec.get('stocks',[]) if (sk.get('w') or 0)>0]
+    return sorted(stocks, key=lambda x:-(x.get('w') or 0))[:5]
 
 # ── 主程序 ─────────────────────────────────────────────────────
 
@@ -302,58 +259,49 @@ def main():
     ts = now_ts()
     print(f'\n=== Xueqiu 数据刷新  {ts} ===\n')
 
-    # 预热 Session（只做一次）
-    get_session()
+    xq_session()  # 预热一次
 
     # 1. 热股榜
     print('\n📊 获取雪球热股榜…')
-    hot_list = fetch_hot_stocks()
-    with open('data/xq_hot.json', 'w', encoding='utf-8') as f:
-        json.dump({'ts': ts, 'list': hot_list}, f, ensure_ascii=False, indent=2)
-    print(f'   ✅ {len(hot_list)} 只 → data/xq_hot.json')
+    hot = fetch_hot_stocks()
+    with open('data/xq_hot.json','w',encoding='utf-8') as f:
+        json.dump({'ts':ts,'list':hot}, f, ensure_ascii=False, indent=2)
+    print(f'   ✅ {len(hot)} 只 → data/xq_hot.json')
 
     # 2. 权重股舆情
     print('\n🔍 获取 Top5 权重股舆情…')
     portfolio = load_portfolio()
     if not portfolio:
-        with open('data/xq_sentiment.json', 'w', encoding='utf-8') as f:
-            json.dump({'ts': ts, 'stocks': []}, f, ensure_ascii=False)
+        with open('data/xq_sentiment.json','w',encoding='utf-8') as f:
+            json.dump({'ts':ts,'stocks':[]}, f, ensure_ascii=False)
         return
 
     top5 = get_top5(portfolio)
     if not top5:
         print('   ⚠️  portfolio 中无权重股')
-        with open('data/xq_sentiment.json', 'w', encoding='utf-8') as f:
-            json.dump({'ts': ts, 'stocks': []}, f, ensure_ascii=False)
+        with open('data/xq_sentiment.json','w',encoding='utf-8') as f:
+            json.dump({'ts':ts,'stocks':[]}, f, ensure_ascii=False)
         return
 
     use_ai = bool(GITHUB_TOKEN)
     print(f'   分析方式: {"GitHub Models / gpt-4o-mini" if use_ai else "关键词匹配"}')
 
-    stocks_result = []
+    results = []
     for sk in top5:
         sym  = xq_symbol(sk)
         name = sk.get('name', sym)
         w    = sk.get('w', 0)
         print(f'\n   [{sym}] {name} ({w}%) …')
         posts = fetch_stock_posts(sym)
-        print(f'   [{sym}] 共获取 {len(posts)} 条')
-
-        if use_ai:
-            pos, neg, total = ai_analyze(name, sym, posts)
-        else:
-            pos, neg, total = keyword_analyze(posts)
-
-        print(f'   [{sym}] 🟢 正面 {len(pos)} 条  🔴 负面 {len(neg)} 条')
-        stocks_result.append({
-            'code': sym, 'name': name, 'w': w,
-            'pos': pos, 'neg': neg, 'total': total,
-        })
+        print(f'   [{sym}] 共 {len(posts)} 条')
+        pos, neg, total = ai_analyze(name, sym, posts) if use_ai else keyword_analyze(posts)
+        print(f'   [{sym}] 🟢 {len(pos)}  🔴 {len(neg)}')
+        results.append({'code':sym,'name':name,'w':w,'pos':pos,'neg':neg,'total':total})
         time.sleep(0.8)
 
-    with open('data/xq_sentiment.json', 'w', encoding='utf-8') as f:
-        json.dump({'ts': ts, 'stocks': stocks_result}, f, ensure_ascii=False, indent=2)
-    print(f'\n✅ 完成 → data/xq_sentiment.json  ({len(stocks_result)} 只  {ts})\n')
+    with open('data/xq_sentiment.json','w',encoding='utf-8') as f:
+        json.dump({'ts':ts,'stocks':results}, f, ensure_ascii=False, indent=2)
+    print(f'\n✅ 完成 → data/xq_sentiment.json  ({len(results)} 只  {ts})\n')
 
 if __name__ == '__main__':
     main()
