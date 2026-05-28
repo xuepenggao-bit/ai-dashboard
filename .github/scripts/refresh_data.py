@@ -184,16 +184,63 @@ def _yahoo_news_posts(symbol, name=''):
 
 # ── 顶层帖子获取（降级链） ───────────────────────────────────────
 
+def _em_announcements(symbol):
+    """
+    东方财富公告接口（np-anotice-stock.eastmoney.com）。
+    公告为中文，可直接用关键词情感分析；标题含年报/半年报/回购/增减持等。
+    """
+    code = _em_code(symbol)
+    # EastMoney fs 格式：sz.300394 / sh.603986 / hk.02476
+    if symbol.startswith('HK'):
+        fs = f'hk.{code}'
+    elif symbol.startswith('SH'):
+        fs = f'sh.{code}'
+    else:
+        fs = f'sz.{code}'
+    url = (f'https://np-anotice-stock.eastmoney.com/api/security/ann'
+           f'?sr=-1&page=1&num=20&an_nums=5&type=A&fs={fs}')
+    hdrs = {
+        'User-Agent': UA_BROWSER,
+        'Referer': 'https://data.eastmoney.com/',
+        'Accept': 'application/json',
+    }
+    try:
+        r = requests.get(url, headers=hdrs, timeout=15)
+        print(f'  [{symbol}] EM公告 HTTP {r.status_code} (fs={fs})')
+        r.raise_for_status()
+        items = r.json().get('data', {}).get('list', []) or []
+        posts = []
+        for it in items:
+            title = (it.get('title') or '').strip()
+            if title:
+                posts.append({
+                    'description': title,
+                    'like_count':  3,
+                    'reply_count': 1,
+                })
+        print(f'  [{symbol}] EM公告 获取 {len(posts)} 条')
+        return posts
+    except Exception as e:
+        print(f'  [{symbol}] EM公告 失败: {e}')
+        return []
+
+
 def fetch_stock_posts(symbol, name=''):
-    """雪球 timeline → Yahoo Finance 新闻（两级降级）。"""
+    """雪球 timeline → 东方财富公告 → Yahoo Finance 新闻（三级降级）。"""
     # 1. Xueqiu（需要 XQ_TOKEN；GitHub Actions IP 通常被 Bot 检测）
     posts = _xueqiu_posts(symbol, pages=3)
     if posts:
         print(f'  [{symbol}] 雪球获取成功 {len(posts)} 条')
         return posts
 
-    # 2. Yahoo Finance：股票代码 + 中文名双查询，合并去重
-    print(f'  [{symbol}] 雪球无数据，切换 Yahoo Finance…')
+    # 2. 东方财富公告（中文，关键词分析友好）
+    print(f'  [{symbol}] 雪球无数据，切换东方财富公告…')
+    posts = _em_announcements(symbol)
+    if posts:
+        return posts
+
+    # 3. Yahoo Finance：股票代码 + 中文名双查询，合并去重（英文，AI 分析）
+    print(f'  [{symbol}] 公告接口失败，切换 Yahoo Finance…')
     posts = _yahoo_news_posts(symbol, name=name)
     if posts:
         return posts
@@ -232,19 +279,18 @@ def ai_analyze(name, symbol, posts):
         return keyword_analyze(posts)
 
     sample = '\n'.join(f'{i+1}. {t}' for i,t in enumerate(texts[:30]))
-    prompt = (f'以下是 Yahoo Finance 针对股票代码 {symbol}（{name}）搜索返回的新闻标题'
-              f'（共{len(texts)}条，部分可能为英文，部分可能与该股票无关）：\n\n'
+    prompt = (f'以下是关于 {name}（{symbol}）的最新新闻标题或公告摘要'
+              f'（共{len(texts)}条，可能含中文公告或英文新闻）：\n\n'
               f'{sample}\n\n'
-              f'【关键规则】请严格按以下步骤处理：\n'
-              f'第一步：识别哪些标题与 {name} 或其直接相关行业有实质联系。\n'
-              f'第二步：只从"有实质联系"的标题中提取看多/看空观点。\n'
-              f'第三步：对于与 {name} 毫无关系的通用市场新闻（如其他行业、其他公司、'
-              f'体育/娱乐等），一律忽略，不得基于它们生成观点。\n'
-              f'第四步：如果没有任何与 {name} 直接相关的新闻，两个列表都返回空数组。\n\n'
-              f'输出格式（仅返回JSON，不要任何解释）：{{"pos":["..."],"neg":["..."]}}\n'
-              f'- 看多观点不超过3条，每条用中文，不超过40字\n'
-              f'- 看空观点不超过3条，每条用中文，不超过40字\n'
-              f'- 无相关新闻时返回：{{"pos":[],"neg":[]}}')
+              f'请分析这些内容并提取投资观点，规则如下：\n'
+              f'1. 仅分析与 {name} 或其直接所在行业相关的内容\n'
+              f'2. 中文公告（年报/半年报/回购/增减持/业绩预告等）请据实分析其含义\n'
+              f'3. 英文新闻请翻译理解后再归纳\n'
+              f'4. 与该股无关的通用市场新闻一律忽略\n'
+              f'5. 无相关内容时两个列表均返回空数组\n\n'
+              f'输出（仅返回JSON，不要任何解释）：\n'
+              f'{{"pos":["正面观点，中文，≤40字"],"neg":["负面观点，中文，≤40字"]}}\n'
+              f'- 看多/看空各不超过3条，无相关内容时返回 []')
     try:
         r = requests.post(
             'https://models.inference.ai.azure.com/chat/completions',
