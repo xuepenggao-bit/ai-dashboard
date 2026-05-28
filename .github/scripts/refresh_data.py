@@ -184,45 +184,78 @@ def _yahoo_news_posts(symbol, name=''):
 
 # ── 顶层帖子获取（降级链） ───────────────────────────────────────
 
-def _em_announcements(symbol):
+def _cn_announcements(symbol):
     """
-    东方财富公告接口（np-anotice-stock.eastmoney.com）。
-    公告为中文，可直接用关键词情感分析；标题含年报/半年报/回购/增减持等。
+    获取中文公告标题作为情感信号（两个接口依次尝试）：
+    ① 东方财富 np-anotice-stock（fs 格式：sz,300394）
+    ② 巨潮资讯 CNINFO（国家监管要求公开，国际 IP 可访问）
     """
     code = _em_code(symbol)
-    # EastMoney fs 格式：sz.300394 / sh.603986 / hk.02476
     if symbol.startswith('HK'):
-        fs = f'hk.{code}'
+        mkt = 'hk'
     elif symbol.startswith('SH'):
-        fs = f'sh.{code}'
+        mkt = 'sh'
     else:
-        fs = f'sz.{code}'
-    url = (f'https://np-anotice-stock.eastmoney.com/api/security/ann'
-           f'?sr=-1&page=1&num=20&an_nums=5&type=A&fs={fs}')
-    hdrs = {
+        mkt = 'sz'
+
+    hdrs_em = {
         'User-Agent': UA_BROWSER,
         'Referer': 'https://data.eastmoney.com/',
         'Accept': 'application/json',
     }
+
+    # ── ① 东方财富（fs 格式修正：逗号分隔，无 an_nums）──────────
+    fs  = f'{mkt},{code}'
+    url_em = (f'https://np-anotice-stock.eastmoney.com/api/security/ann'
+              f'?sr=-1&page=1&num=20&type=A&fs={fs}')
     try:
-        r = requests.get(url, headers=hdrs, timeout=15)
+        r = requests.get(url_em, headers=hdrs_em, timeout=15)
         print(f'  [{symbol}] EM公告 HTTP {r.status_code} (fs={fs})')
-        r.raise_for_status()
-        items = r.json().get('data', {}).get('list', []) or []
-        posts = []
-        for it in items:
-            title = (it.get('title') or '').strip()
-            if title:
-                posts.append({
-                    'description': title,
-                    'like_count':  3,
-                    'reply_count': 1,
-                })
-        print(f'  [{symbol}] EM公告 获取 {len(posts)} 条')
-        return posts
+        if r.status_code == 200:
+            items = r.json().get('data', {}).get('list', []) or []
+            posts = [{'description': (it.get('title') or '').strip(),
+                      'like_count': 3, 'reply_count': 1}
+                     for it in items if it.get('title')]
+            if posts:
+                print(f'  [{symbol}] EM公告 获取 {len(posts)} 条')
+                return posts
     except Exception as e:
         print(f'  [{symbol}] EM公告 失败: {e}')
-        return []
+
+    # ── ② 巨潮资讯 CNINFO ─────────────────────────────────────
+    # orgId 可通过 CNINFO 搜索获取，此处用 stockCode 方式查询
+    cninfo_mkt = 'sz' if mkt == 'sz' else 'sh'
+    cninfo_code = f'{cninfo_mkt}{code}'
+    url_cn = 'http://www.cninfo.com.cn/new/hisAnnouncement/query'
+    data_cn = {
+        'stock':    cninfo_code,
+        'category': 'category_ndbg_szsh;category_bndbg_szsh;category_yjdbg_szsh',
+        'pageNum':  1,
+        'pageSize': 20,
+        'column':   'szse',
+        'tabName':  'fulltext',
+    }
+    hdrs_cn = {
+        'User-Agent': UA_BROWSER,
+        'Referer':    'http://www.cninfo.com.cn/',
+        'Accept':     'application/json, text/javascript, */*',
+        'Content-Type': 'application/x-www-form-urlencoded',
+    }
+    try:
+        r = requests.post(url_cn, data=data_cn, headers=hdrs_cn, timeout=15)
+        print(f'  [{symbol}] CNINFO HTTP {r.status_code}')
+        if r.status_code == 200:
+            announcements = r.json().get('announcements') or []
+            posts = [{'description': (a.get('announcementTitle') or '').strip(),
+                      'like_count': 3, 'reply_count': 1}
+                     for a in announcements if a.get('announcementTitle')]
+            if posts:
+                print(f'  [{symbol}] CNINFO 获取 {len(posts)} 条')
+                return posts
+    except Exception as e:
+        print(f'  [{symbol}] CNINFO 失败: {e}')
+
+    return []
 
 
 def fetch_stock_posts(symbol, name=''):
@@ -233,9 +266,9 @@ def fetch_stock_posts(symbol, name=''):
         print(f'  [{symbol}] 雪球获取成功 {len(posts)} 条')
         return posts
 
-    # 2. 东方财富公告（中文，关键词分析友好）
-    print(f'  [{symbol}] 雪球无数据，切换东方财富公告…')
-    posts = _em_announcements(symbol)
+    # 2. 公告（东方财富/巨潮）：中文标题，关键词分析友好
+    print(f'  [{symbol}] 雪球无数据，切换公告接口…')
+    posts = _cn_announcements(symbol)
     if posts:
         return posts
 
