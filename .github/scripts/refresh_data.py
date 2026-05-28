@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
 Refresh Xueqiu hot stocks and portfolio Top5 sentiment data.
-Discussion posts: Xueqiu (with session warm-up) → fallback to EastMoney Guba.
+Sentiment pipeline:
+  1. Xueqiu user_timeline (requires XQ_TOKEN; GitHub Actions IPs are bot-detected)
+  2. EastMoney Datacenter analyst ratings (stable public API, accessible globally)
+  3. Keyword-based fallback on whatever posts are available
+
 Outputs: data/xq_hot.json  data/xq_sentiment.json
 """
 import os, json, time, datetime, re, requests
@@ -40,6 +44,12 @@ def score_sentiment(text):
 def xq_symbol(sk):
     mkt, code = sk.get('mkt',''), str(sk.get('code',''))
     return ('HK' + code.zfill(5)) if mkt == 'HK' else (mkt + code)
+
+def _em_code(symbol):
+    """SH600519 → '600519'  SZ300394 → '300394'  HK02476 → '02476'"""
+    if symbol.startswith('HK'):
+        return symbol[2:]          # keep leading zeros for HK
+    return re.sub(r'^[A-Z]+', '', symbol)
 
 # ── Xueqiu Session（预热首页，绕过 bot 检测） ────────────────────
 
@@ -91,24 +101,10 @@ def fetch_hot_stocks():
         print(f'  [热股榜] 失败: {e}')
         return []
 
-# ── 讨论帖子：Xueqiu → EastMoney 自动降级 ──────────────────────
+# ── 情感来源 1：Xueqiu 用户时间线 ───────────────────────────────
 
-def fetch_stock_posts(symbol, pages=3):
-    """雪球 → 东方财富（多变体）→ 新浪财经 三级降级。"""
-    posts = _xueqiu_posts(symbol, pages)
-    if posts:
-        print(f'  [{symbol}] 雪球获取成功 {len(posts)} 条')
-        return posts
-    print(f'  [{symbol}] 雪球无数据，切换东方财富/新浪…')
-    posts = _eastmoney_posts(symbol, pages)  # 内部已含新浪降级
-    if posts:
-        print(f'  [{symbol}] 备用源获取成功 {len(posts)} 条')
-    else:
-        print(f'  [{symbol}] 所有数据源均失败，返回空')
-    return posts
-
-
-def _xueqiu_posts(symbol, pages):
+def _xueqiu_posts(symbol, pages=3):
+    """尝试雪球 user_timeline（GitHub Actions IP 通常被 Bot 检测拦截）。"""
     posts = []
     sess = xq_session()
     for page in range(1, pages + 1):
@@ -126,142 +122,91 @@ def _xueqiu_posts(symbol, pages):
             data = r.json()
             lst = data.get('statuses', data.get('list', []))
             posts.extend(lst)
-            if len(lst) < 15: break
+            if len(lst) < 15:
+                break
         except Exception as e:
             print(f'  [{symbol}] XQ 第{page}页异常: {e}')
             break
-        if page < pages: time.sleep(0.5)
+        if page < pages:
+            time.sleep(0.5)
     return posts
 
+# ── 情感来源 2：东方财富数据中心分析师评级 ──────────────────────
 
-def _em_code(symbol):
-    """SH600519 → '600519'  SZ300394 → '300394'  HK02476 → 'hk02476'"""
-    if symbol.startswith('HK'):
-        return 'hk' + symbol[2:]
-    return re.sub(r'^[A-Z]+', '', symbol)
-
-def _sina_code(symbol):
-    """SH600519 → 'sh600519'  SZ300394 → 'sz300394'  HK02476 → 'hk02476'"""
-    if symbol.startswith('HK'):
-        return 'hk' + symbol[2:].lstrip('0') if False else 'hk' + symbol[2:]
-    m = re.match(r'^(SH|SZ)(\d+)$', symbol)
-    return (m.group(1).lower() + m.group(2)) if m else symbol.lower()
-
-
-def _eastmoney_posts(symbol, pages):
-    """东方财富股吧多端点轮询（公开无需登录）。"""
+def _em_analyst_posts(symbol):
+    """
+    从东方财富数据中心（datacenter-web.eastmoney.com）获取近期分析师评级。
+    评级本身即为高质量情感信号：买入/增持 → 正面，减持/卖出 → 负面。
+    """
     code = _em_code(symbol)
+    # HK 股：东方财富代码带市场前缀
+    if symbol.startswith('HK'):
+        filter_val = f'(HKCODE%3D%22{code}%22)'
+    else:
+        filter_val = f'(SECURITY_CODE%3D%22{code}%22)'
+
+    url = ('https://datacenter-web.eastmoney.com/api/data/v1/get'
+           '?reportName=RPT_ANALYST_ALLRATINGNEW'
+           '&columns=SECURITY_CODE,SECURITY_NAME,RATING_NAME,RATING_CHANGE,'
+           'ORG_NAME,CREATE_TIME,TARGET_PRICE_ADJ'
+           f'&filter={filter_val}'
+           '&pageIndex=1&pageSize=20'
+           '&sortColumns=CREATE_TIME&sortTypes=-1')
     hdrs = {
         'User-Agent': UA_BROWSER,
-        'Referer': 'https://guba.eastmoney.com/',
-        'Accept': '*/*',
+        'Referer': 'https://data.eastmoney.com/report/stock.jshtml',
+        'Accept': 'application/json',
         'Accept-Language': 'zh-CN,zh;q=0.9',
     }
-
-    # 依次尝试多个 URL 变体
-    def _try_url(url_tmpl, parse_fn):
+    try:
+        r = requests.get(url, headers=hdrs, timeout=15)
+        print(f'  [{symbol}] EM Analyst HTTP {r.status_code}')
+        r.raise_for_status()
+        items = (r.json().get('result') or {}).get('data') or []
         posts = []
-        for page in range(1, pages + 1):
-            url = url_tmpl.format(code=code, page=page, ts=int(time.time() * 1000))
-            try:
-                r = requests.get(url, headers=hdrs, timeout=15)
-                print(f'  [{symbol}] EM 第{page}页 HTTP {r.status_code} → {url[:80]}')
-                if r.status_code != 200:
-                    return posts  # 此变体失败
-                batch = parse_fn(r.text)
-                if batch is None:
-                    return posts
-                posts.extend(batch)
-                if len(batch) < 15:
-                    break
-            except Exception as e:
-                print(f'  [{symbol}] EM 异常: {e}')
-                return posts
-            if page < pages:
-                time.sleep(0.4)
+        for it in items:
+            rating  = (it.get('RATING_NAME')  or '').strip()
+            org     = (it.get('ORG_NAME')      or '').strip()
+            change  = (it.get('RATING_CHANGE') or '').strip()
+            target  = it.get('TARGET_PRICE_ADJ')
+            title   = f'{org}：{rating}'
+            if target:
+                try:
+                    title += f'，目标价 {float(target):.2f} 元'
+                except (TypeError, ValueError):
+                    pass
+            if change:
+                title += f'（{change}）'
+            is_pos = any(w in rating for w in ['买入', '增持', '强推', '强烈推荐', '推荐'])
+            posts.append({
+                'description':  title,
+                'like_count':   10 if is_pos else 3,
+                'reply_count':  2,
+            })
+        print(f'  [{symbol}] EM Analyst 获取 {len(posts)} 条评级')
+        return posts
+    except Exception as e:
+        print(f'  [{symbol}] EM Analyst 失败: {e}')
+        return []
+
+# ── 顶层帖子获取（降级链） ───────────────────────────────────────
+
+def fetch_stock_posts(symbol):
+    """雪球 timeline → 东方财富分析师评级（两级降级）。"""
+    # 1. Xueqiu（需要 XQ_TOKEN，GitHub Actions IP 常被拦截）
+    posts = _xueqiu_posts(symbol, pages=3)
+    if posts:
+        print(f'  [{symbol}] 雪球获取成功 {len(posts)} 条')
         return posts
 
-    # 解析 JSONP 包裹的 thread_list 结构
-    def parse_guba_jsonp(text):
-        m = re.search(r'\{.*\}', text, re.DOTALL)
-        if not m:
-            return None
-        try:
-            data = json.loads(m.group())
-        except Exception:
-            return None
-        threads = data.get('data', {}).get('thread_list', [])
-        return [{'description': t.get('post_title', ''),
-                 'like_count':  int(t.get('digg_count',  0) or 0),
-                 'reply_count': int(t.get('reply_count', 0) or 0)} for t in threads]
+    # 2. EastMoney Datacenter 分析师评级（全球可访问）
+    print(f'  [{symbol}] 雪球无数据，切换东方财富分析师评级…')
+    posts = _em_analyst_posts(symbol)
+    if posts:
+        return posts
 
-    url_variants = [
-        # 变体1：pnl=0（个股，非板块）
-        'https://guba.eastmoney.com/interface/api/css_pc_new_list.js?block={code}&pageno={page}&pnl=0&callback=cb&_={ts}',
-        # 变体2：pnl=1（原始参数，去掉 biz/product）
-        'https://guba.eastmoney.com/interface/api/css_pc_new_list.js?block={code}&pageno={page}&pnl=1&callback=cb&_={ts}',
-        # 变体3：完整参数（原始版本）
-        'https://guba.eastmoney.com/interface/api/css_pc_new_list.js?block={code}&pageno={page}&pnl=1&biz=BKGUBA&product=guba&callback=cb&_={ts}',
-        # 变体4：dfcfw CDN 域名
-        'https://gubacdn.dfcfw.com/search/v2/post/list.json?code={code}&plate=1&sort=1&pageIndex={page}&pageSize=20&callback=cb&_={ts}',
-    ]
-
-    for url_tmpl in url_variants:
-        posts = _try_url(url_tmpl, parse_guba_jsonp)
-        if posts:
-            print(f'  [{symbol}] EM 获取成功 {len(posts)} 条 via {url_tmpl[:60]}')
-            return posts
-
-    # 所有股吧接口均失败 → 降级到新浪财经评论
-    print(f'  [{symbol}] 股吧接口全部失败，切换新浪财经…')
-    return _sina_posts(symbol, pages)
-
-
-def _sina_posts(symbol, pages):
-    """新浪财经股票评论区（公开，无需登录）。"""
-    code = _sina_code(symbol)
-    posts = []
-    hdrs = {
-        'User-Agent': UA_BROWSER,
-        'Referer': 'https://finance.sina.com.cn/',
-        'Accept': '*/*',
-        'Accept-Language': 'zh-CN,zh;q=0.9',
-    }
-    for page in range(1, pages + 1):
-        url = (f'https://comment5.finance.sina.com.cn/pc/api.php'
-               f'?act=getCommentLists&type=hs_s&code={code}'
-               f'&page={page}&num=20&hot_comment=1'
-               f'&callback=cb&_={int(time.time() * 1000)}')
-        try:
-            r = requests.get(url, headers=hdrs, timeout=15)
-            print(f'  [{symbol}] Sina 第{page}页 HTTP {r.status_code}')
-            if r.status_code != 200:
-                break
-            m = re.search(r'\{.*\}', r.text, re.DOTALL)
-            if not m:
-                break
-            data = json.loads(m.group())
-            # 新浪评论可能的结构：data.result.cmntlist 或 data.data.commentList
-            raw = (data.get('result') or data.get('data') or {})
-            clist = (raw.get('cmntlist') or raw.get('commentList')
-                     or raw.get('list') or [])
-            print(f'  [{symbol}] Sina 第{page}页 {len(clist)} 条')
-            for c in clist:
-                text = (c.get('content') or c.get('text')
-                        or c.get('msg') or c.get('rootcommentcontent', ''))
-                posts.append({
-                    'description': text,
-                    'like_count':  int(c.get('like', c.get('digg', 0)) or 0),
-                    'reply_count': int(c.get('reply', c.get('reply_count', 0)) or 0),
-                })
-            if len(clist) < 15:
-                break
-        except Exception as e:
-            print(f'  [{symbol}] Sina 第{page}页异常: {e}')
-            break
-        if page < pages:
-            time.sleep(0.4)
-    return posts
+    print(f'  [{symbol}] 所有数据源均失败，返回空列表')
+    return []
 
 # ── 情感分析（关键词） ─────────────────────────────────────────
 
@@ -294,7 +239,7 @@ def ai_analyze(name, symbol, posts):
         return keyword_analyze(posts)
 
     sample = '\n'.join(f'{i+1}. {t}' for i,t in enumerate(texts[:30]))
-    prompt = (f'以下是关于{name}（{symbol}）的最新股票讨论帖子标题（共{len(texts)}条）：\n\n'
+    prompt = (f'以下是关于{name}（{symbol}）的最新分析师评级与市场观点（共{len(texts)}条）：\n\n'
               f'{sample}\n\n'
               f'请从中提取：\n'
               f'1. 最具代表性的3条正面/看多观点（简洁概括，每条不超过40字）\n'
@@ -343,7 +288,7 @@ def get_top5(portfolio):
 def main():
     os.makedirs('data', exist_ok=True)
     ts = now_ts()
-    print(f'\n=== Xueqiu 数据刷新  {ts} ===\n')
+    print(f'\n=== 数据刷新  {ts} ===\n')
 
     xq_session()  # 预热一次
 
@@ -354,8 +299,8 @@ def main():
         json.dump({'ts':ts,'list':hot}, f, ensure_ascii=False, indent=2)
     print(f'   ✅ {len(hot)} 只 → data/xq_hot.json')
 
-    # 2. 权重股舆情
-    print('\n🔍 获取 Top5 权重股舆情…')
+    # 2. 权重股舆情（分析师评级）
+    print('\n🔍 获取 Top5 权重股分析师评级…')
     portfolio = load_portfolio()
     if not portfolio:
         with open('data/xq_sentiment.json','w',encoding='utf-8') as f:
