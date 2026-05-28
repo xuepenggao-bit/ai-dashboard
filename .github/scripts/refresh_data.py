@@ -187,30 +187,28 @@ def _yahoo_news_posts(symbol, name=''):
 def _cn_announcements(symbol):
     """
     获取中文公告标题作为情感信号（两个接口依次尝试）：
-    ① 东方财富 np-anotice-stock（fs 格式：sz,300394）
-    ② 巨潮资讯 CNINFO（国家监管要求公开，国际 IP 可访问）
+    ① 东方财富 np-anotice-stock（SECID 格式：0.300394 / 1.603986）
+    ② 巨潮资讯 CNINFO（stock 仅用纯数字代码，column=szse/sse）
+    HK 股跳过（A 股公告 API 不覆盖港股）。
     """
-    code = _em_code(symbol)
     if symbol.startswith('HK'):
-        mkt = 'hk'
-    elif symbol.startswith('SH'):
-        mkt = 'sh'
-    else:
-        mkt = 'sz'
+        return []   # HK 股无 A 股公告数据库覆盖
 
+    code = _em_code(symbol)   # 纯数字，如 '300394'
+    is_sh = symbol.startswith('SH')
+    secid = f'{"1" if is_sh else "0"}.{code}'   # EastMoney SECID 格式
+
+    # ── ① 东方财富（SECID 格式） ─────────────────────────────────
     hdrs_em = {
         'User-Agent': UA_BROWSER,
         'Referer': 'https://data.eastmoney.com/',
         'Accept': 'application/json',
     }
-
-    # ── ① 东方财富（fs 格式修正：逗号分隔，无 an_nums）──────────
-    fs  = f'{mkt},{code}'
     url_em = (f'https://np-anotice-stock.eastmoney.com/api/security/ann'
-              f'?sr=-1&page=1&num=20&type=A&fs={fs}')
+              f'?sr=-1&page=1&num=20&type=A&fs={secid}')
     try:
         r = requests.get(url_em, headers=hdrs_em, timeout=15)
-        print(f'  [{symbol}] EM公告 HTTP {r.status_code} (fs={fs})')
+        print(f'  [{symbol}] EM公告 HTTP {r.status_code} (fs={secid})')
         if r.status_code == 200:
             items = r.json().get('data', {}).get('list', []) or []
             posts = [{'description': (it.get('title') or '').strip(),
@@ -222,17 +220,15 @@ def _cn_announcements(symbol):
     except Exception as e:
         print(f'  [{symbol}] EM公告 失败: {e}')
 
-    # ── ② 巨潮资讯 CNINFO ─────────────────────────────────────
-    # orgId 可通过 CNINFO 搜索获取，此处用 stockCode 方式查询
-    cninfo_mkt = 'sz' if mkt == 'sz' else 'sh'
-    cninfo_code = f'{cninfo_mkt}{code}'
+    # ── ② 巨潮资讯 CNINFO（stock 只传数字代码）────────────────────
+    column = 'sse' if is_sh else 'szse'
     url_cn = 'http://www.cninfo.com.cn/new/hisAnnouncement/query'
     data_cn = {
-        'stock':    cninfo_code,
-        'category': 'category_ndbg_szsh;category_bndbg_szsh;category_yjdbg_szsh',
+        'stock':    code,          # 只传数字：'300394'（不带市场前缀）
+        'category': '',            # 空=全部类型
         'pageNum':  1,
         'pageSize': 20,
-        'column':   'szse',
+        'column':   column,        # 'sse' 上海 / 'szse' 深圳
         'tabName':  'fulltext',
     }
     hdrs_cn = {
@@ -252,6 +248,8 @@ def _cn_announcements(symbol):
             if posts:
                 print(f'  [{symbol}] CNINFO 获取 {len(posts)} 条')
                 return posts
+            else:
+                print(f'  [{symbol}] CNINFO 返回空列表')
     except Exception as e:
         print(f'  [{symbol}] CNINFO 失败: {e}')
 
