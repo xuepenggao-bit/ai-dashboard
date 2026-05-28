@@ -145,43 +145,46 @@ def _xueqiu_posts(symbol, pages=3):
 
 # ── 情感来源 2：Yahoo Finance 新闻（全球可达，无需认证） ─────────
 
-def _yahoo_news_posts(symbol):
+def _yahoo_news_posts(symbol, name=''):
     """
-    Yahoo Finance 新闻搜索接口（query2.finance.yahoo.com）。
-    GitHub Actions Azure IP 可正常访问，无需登录。
-    新闻标题多为英文，由后续 AI 分析归纳为中文观点。
+    Yahoo Finance 新闻搜索（query2.finance.yahoo.com）。
+    依次用 ①股票代码 ②中文公司名 搜索，合并去重，最多 30 条。
+    由 AI 过滤掉与该股无关的通用新闻。
     """
-    ys = _yahoo_symbol(symbol)
-    url = (f'https://query2.finance.yahoo.com/v1/finance/search'
-           f'?q={ys}&newsCount=20&quotesCount=0&enableFuzzyQuery=false')
+    ys   = _yahoo_symbol(symbol)
     hdrs = {
         'User-Agent': UA_BROWSER,
         'Accept': 'application/json',
         'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8',
     }
-    try:
-        r = requests.get(url, headers=hdrs, timeout=15)
-        print(f'  [{symbol}] Yahoo Finance HTTP {r.status_code} (ticker={ys})')
-        r.raise_for_status()
-        news = r.json().get('news', [])
-        posts = []
-        for n in news:
-            title = (n.get('title') or '').strip()
-            if title:
-                posts.append({
-                    'description': title,
-                    'like_count':  5,
-                    'reply_count': 1,
-                })
-        print(f'  [{symbol}] Yahoo Finance 获取 {len(posts)} 条新闻')
-        return posts
-    except Exception as e:
-        print(f'  [{symbol}] Yahoo Finance 失败: {e}')
-        return []
+    seen, posts = set(), []
+
+    for q in ([ys] + ([name] if name else [])):
+        import urllib.parse
+        url = (f'https://query2.finance.yahoo.com/v1/finance/search'
+               f'?q={urllib.parse.quote(q)}&newsCount=20&quotesCount=0&enableFuzzyQuery=false')
+        try:
+            r = requests.get(url, headers=hdrs, timeout=15)
+            print(f'  [{symbol}] Yahoo Finance q={q!r} HTTP {r.status_code}')
+            if r.status_code != 200:
+                continue
+            for n in r.json().get('news', []):
+                title = (n.get('title') or '').strip()
+                if title and title not in seen:
+                    seen.add(title)
+                    posts.append({'description': title, 'like_count': 5, 'reply_count': 1})
+        except Exception as e:
+            print(f'  [{symbol}] Yahoo Finance q={q!r} 失败: {e}')
+        if len(posts) >= 30:
+            break
+        time.sleep(0.3)
+
+    print(f'  [{symbol}] Yahoo Finance 合计 {len(posts)} 条（去重后）')
+    return posts
 
 # ── 顶层帖子获取（降级链） ───────────────────────────────────────
 
-def fetch_stock_posts(symbol):
+def fetch_stock_posts(symbol, name=''):
     """雪球 timeline → Yahoo Finance 新闻（两级降级）。"""
     # 1. Xueqiu（需要 XQ_TOKEN；GitHub Actions IP 通常被 Bot 检测）
     posts = _xueqiu_posts(symbol, pages=3)
@@ -189,9 +192,9 @@ def fetch_stock_posts(symbol):
         print(f'  [{symbol}] 雪球获取成功 {len(posts)} 条')
         return posts
 
-    # 2. Yahoo Finance 新闻（全球可达，GPT 可分析英文标题输出中文观点）
+    # 2. Yahoo Finance：股票代码 + 中文名双查询，合并去重
     print(f'  [{symbol}] 雪球无数据，切换 Yahoo Finance…')
-    posts = _yahoo_news_posts(symbol)
+    posts = _yahoo_news_posts(symbol, name=name)
     if posts:
         return posts
 
@@ -319,7 +322,7 @@ def main():
         name = sk.get('name', sym)
         w    = sk.get('w', 0)
         print(f'\n   [{sym}] {name} ({w}%) …')
-        posts = fetch_stock_posts(sym)
+        posts = fetch_stock_posts(sym, name=name)
         print(f'   [{sym}] 共 {len(posts)} 条')
         pos, neg, total = ai_analyze(name, sym, posts) if use_ai else keyword_analyze(posts)
         print(f'   [{sym}] 🟢 {len(pos)}  🔴 {len(neg)}')
