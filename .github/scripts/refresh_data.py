@@ -3,7 +3,8 @@
 Refresh Xueqiu hot stocks and portfolio Top5 sentiment data.
 Sentiment pipeline:
   1. Xueqiu user_timeline (requires XQ_TOKEN; GitHub Actions IPs are bot-detected)
-  2. EastMoney Datacenter analyst ratings (stable public API, accessible globally)
+  2. Yahoo Finance news search (globally accessible, no auth needed; English headlines
+     are handled by GPT-4o-mini which summarises them into Chinese pos/neg points)
   3. Keyword-based fallback on whatever posts are available
 
 Outputs: data/xq_hot.json  data/xq_sentiment.json
@@ -50,6 +51,17 @@ def _em_code(symbol):
     if symbol.startswith('HK'):
         return symbol[2:]          # keep leading zeros for HK
     return re.sub(r'^[A-Z]+', '', symbol)
+
+def _yahoo_symbol(symbol):
+    """SH600519 → '600519.SS'  SZ300394 → '300394.SZ'  HK02476 → '2476.HK'"""
+    if symbol.startswith('HK'):
+        code = symbol[2:].lstrip('0') or '0'
+        return f'{code}.HK'
+    m = re.match(r'^(SH|SZ)(\d+)$', symbol)
+    if m:
+        suffix = 'SS' if m.group(1) == 'SH' else 'SZ'
+        return f'{m.group(2)}.{suffix}'
+    return symbol
 
 # ── Xueqiu Session（预热首页，绕过 bot 检测） ────────────────────
 
@@ -131,77 +143,55 @@ def _xueqiu_posts(symbol, pages=3):
             time.sleep(0.5)
     return posts
 
-# ── 情感来源 2：东方财富数据中心分析师评级 ──────────────────────
+# ── 情感来源 2：Yahoo Finance 新闻（全球可达，无需认证） ─────────
 
-def _em_analyst_posts(symbol):
+def _yahoo_news_posts(symbol):
     """
-    从东方财富数据中心（datacenter-web.eastmoney.com）获取近期分析师评级。
-    评级本身即为高质量情感信号：买入/增持 → 正面，减持/卖出 → 负面。
+    Yahoo Finance 新闻搜索接口（query2.finance.yahoo.com）。
+    GitHub Actions Azure IP 可正常访问，无需登录。
+    新闻标题多为英文，由后续 AI 分析归纳为中文观点。
     """
-    code = _em_code(symbol)
-    # HK 股：东方财富代码带市场前缀
-    if symbol.startswith('HK'):
-        filter_val = f'(HKCODE%3D%22{code}%22)'
-    else:
-        filter_val = f'(SECURITY_CODE%3D%22{code}%22)'
-
-    url = ('https://datacenter-web.eastmoney.com/api/data/v1/get'
-           '?reportName=RPT_ANALYST_ALLRATINGNEW'
-           '&columns=SECURITY_CODE,SECURITY_NAME,RATING_NAME,RATING_CHANGE,'
-           'ORG_NAME,CREATE_TIME,TARGET_PRICE_ADJ'
-           f'&filter={filter_val}'
-           '&pageIndex=1&pageSize=20'
-           '&sortColumns=CREATE_TIME&sortTypes=-1')
+    ys = _yahoo_symbol(symbol)
+    url = (f'https://query2.finance.yahoo.com/v1/finance/search'
+           f'?q={ys}&newsCount=20&quotesCount=0&enableFuzzyQuery=false')
     hdrs = {
         'User-Agent': UA_BROWSER,
-        'Referer': 'https://data.eastmoney.com/report/stock.jshtml',
         'Accept': 'application/json',
-        'Accept-Language': 'zh-CN,zh;q=0.9',
+        'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8',
     }
     try:
         r = requests.get(url, headers=hdrs, timeout=15)
-        print(f'  [{symbol}] EM Analyst HTTP {r.status_code}')
+        print(f'  [{symbol}] Yahoo Finance HTTP {r.status_code} (ticker={ys})')
         r.raise_for_status()
-        items = (r.json().get('result') or {}).get('data') or []
+        news = r.json().get('news', [])
         posts = []
-        for it in items:
-            rating  = (it.get('RATING_NAME')  or '').strip()
-            org     = (it.get('ORG_NAME')      or '').strip()
-            change  = (it.get('RATING_CHANGE') or '').strip()
-            target  = it.get('TARGET_PRICE_ADJ')
-            title   = f'{org}：{rating}'
-            if target:
-                try:
-                    title += f'，目标价 {float(target):.2f} 元'
-                except (TypeError, ValueError):
-                    pass
-            if change:
-                title += f'（{change}）'
-            is_pos = any(w in rating for w in ['买入', '增持', '强推', '强烈推荐', '推荐'])
-            posts.append({
-                'description':  title,
-                'like_count':   10 if is_pos else 3,
-                'reply_count':  2,
-            })
-        print(f'  [{symbol}] EM Analyst 获取 {len(posts)} 条评级')
+        for n in news:
+            title = (n.get('title') or '').strip()
+            if title:
+                posts.append({
+                    'description': title,
+                    'like_count':  5,
+                    'reply_count': 1,
+                })
+        print(f'  [{symbol}] Yahoo Finance 获取 {len(posts)} 条新闻')
         return posts
     except Exception as e:
-        print(f'  [{symbol}] EM Analyst 失败: {e}')
+        print(f'  [{symbol}] Yahoo Finance 失败: {e}')
         return []
 
 # ── 顶层帖子获取（降级链） ───────────────────────────────────────
 
 def fetch_stock_posts(symbol):
-    """雪球 timeline → 东方财富分析师评级（两级降级）。"""
-    # 1. Xueqiu（需要 XQ_TOKEN，GitHub Actions IP 常被拦截）
+    """雪球 timeline → Yahoo Finance 新闻（两级降级）。"""
+    # 1. Xueqiu（需要 XQ_TOKEN；GitHub Actions IP 通常被 Bot 检测）
     posts = _xueqiu_posts(symbol, pages=3)
     if posts:
         print(f'  [{symbol}] 雪球获取成功 {len(posts)} 条')
         return posts
 
-    # 2. EastMoney Datacenter 分析师评级（全球可访问）
-    print(f'  [{symbol}] 雪球无数据，切换东方财富分析师评级…')
-    posts = _em_analyst_posts(symbol)
+    # 2. Yahoo Finance 新闻（全球可达，GPT 可分析英文标题输出中文观点）
+    print(f'  [{symbol}] 雪球无数据，切换 Yahoo Finance…')
+    posts = _yahoo_news_posts(symbol)
     if posts:
         return posts
 
@@ -239,12 +229,16 @@ def ai_analyze(name, symbol, posts):
         return keyword_analyze(posts)
 
     sample = '\n'.join(f'{i+1}. {t}' for i,t in enumerate(texts[:30]))
-    prompt = (f'以下是关于{name}（{symbol}）的最新分析师评级与市场观点（共{len(texts)}条）：\n\n'
+    prompt = (f'以下是关于{name}（{symbol}）的最新市场新闻与讨论标题'
+              f'（共{len(texts)}条，可能含英文）：\n\n'
               f'{sample}\n\n'
-              f'请从中提取：\n'
-              f'1. 最具代表性的3条正面/看多观点（简洁概括，每条不超过40字）\n'
-              f'2. 最具代表性的3条负面/看空观点（简洁概括，每条不超过40字）\n\n'
-              f'如不足3条可以少于3条，完全没有则返回空列表。\n\n'
+              f'请仔细阅读并分析这些标题的市场含义，然后提取：\n'
+              f'1. 最具代表性的3条正面/看多观点（用中文简洁概括，每条不超过40字）\n'
+              f'2. 最具代表性的3条负面/看空观点（用中文简洁概括，每条不超过40字）\n\n'
+              f'要求：\n'
+              f'- 英文标题请翻译理解后再归纳，不要直接照搬英文\n'
+              f'- 观点要反映新闻的实质内容，而不仅仅是标题描述\n'
+              f'- 如不足3条可以少于3条，完全没有则返回空列表\n\n'
               f'仅返回JSON，格式：{{"pos":["..."],"neg":["..."]}}')
     try:
         r = requests.post(
@@ -299,8 +293,8 @@ def main():
         json.dump({'ts':ts,'list':hot}, f, ensure_ascii=False, indent=2)
     print(f'   ✅ {len(hot)} 只 → data/xq_hot.json')
 
-    # 2. 权重股舆情（分析师评级）
-    print('\n🔍 获取 Top5 权重股分析师评级…')
+    # 2. 权重股舆情（Yahoo Finance 新闻 → GPT 归纳中文观点）
+    print('\n🔍 获取 Top5 权重股舆情…')
     portfolio = load_portfolio()
     if not portfolio:
         with open('data/xq_sentiment.json','w',encoding='utf-8') as f:
