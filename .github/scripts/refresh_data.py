@@ -164,7 +164,7 @@ def _yahoo_news_posts(symbol, name='', industry=''):
     """
     Yahoo Finance 新闻搜索（query2.finance.yahoo.com）。
     查询顺序：①股票代码  ②行业英文关键词（不用中文名，中文会返回 400）。
-    合并去重，最多 30 条，交由 AI 按股票+行业双维度过滤。
+    合并去重，最多 50 条，交由 AI 归纳当前观点。
     """
     import urllib.parse
     ys   = _yahoo_symbol(symbol)
@@ -181,7 +181,7 @@ def _yahoo_news_posts(symbol, name='', industry=''):
 
     for q in queries:
         url = (f'https://query2.finance.yahoo.com/v1/finance/search'
-               f'?q={urllib.parse.quote(q)}&newsCount=20&quotesCount=0&enableFuzzyQuery=false')
+               f'?q={urllib.parse.quote(q)}&newsCount=30&quotesCount=0&enableFuzzyQuery=false')
         try:
             r = requests.get(url, headers=hdrs, timeout=15)
             print(f'  [{symbol}] Yahoo q={q!r} HTTP {r.status_code}')
@@ -194,7 +194,7 @@ def _yahoo_news_posts(symbol, name='', industry=''):
                     posts.append({'description': title, 'like_count': 5, 'reply_count': 1})
         except Exception as e:
             print(f'  [{symbol}] Yahoo q={q!r} 失败: {e}')
-        if len(posts) >= 30:
+        if len(posts) >= 50:
             break
         time.sleep(0.3)
 
@@ -298,70 +298,76 @@ def fetch_stock_posts(symbol, name='', industry=''):
     print(f'  [{symbol}] 所有数据源均失败，返回空列表')
     return []
 
-# ── 情感分析（关键词） ─────────────────────────────────────────
+# ── 观点归纳（关键词降级方案） ───────────────────────────────────
 
 def keyword_analyze(posts):
+    """AI 不可用时的关键词降级，直接拼接最相关的若干条标题作为概况。"""
     scored = []
     for p in posts:
         raw  = p.get('description') or p.get('text') or p.get('title') or ''
         txt  = clean_html(raw)
-        disp = txt[:60]
+        if not txt:
+            continue
         eng  = (p.get('like_count') or 0)*3 + (p.get('reply_count') or 0)*2
-        scored.append({'disp': disp, 'score': score_sentiment(txt), 'eng': eng})
+        scored.append({'txt': txt[:80], 'score': score_sentiment(txt), 'eng': eng})
 
-    pos = [x['disp'] for x in sorted(
-               [x for x in scored if x['score']>0], key=lambda x:-x['eng'])[:3] if x['disp']]
-    neg = [x['disp'] for x in sorted(
-               [x for x in scored if x['score']<0], key=lambda x:-x['eng'])[:3] if x['disp']]
-    if not pos and scored:
-        pos = [x['disp'] for x in sorted(scored, key=lambda x:-x['eng'])[:2] if x['disp']]
-    return pos, neg, len(posts)
+    if not scored:
+        return '', len(posts)
 
-# ── 情感分析（GitHub Models / gpt-4o-mini） ───────────────────
+    # 取得分最高的 5 条拼成概况
+    top = sorted(scored, key=lambda x: -x['eng'])[:5]
+    summary = '；'.join(x['txt'] for x in top if x['txt'])
+    return summary, len(posts)
+
+# ── 观点归纳（GitHub Models / gpt-4o-mini） ──────────────────────
 
 def ai_analyze(name, symbol, posts, industry=''):
+    """
+    用 GPT-4o-mini 对最新 50 条讨论/新闻归纳当前市场观点。
+    返回 (summary:str, total:int)，summary 为 2-4 句中文概况（最多150字）。
+    """
     if not GITHUB_TOKEN:
         return keyword_analyze(posts)
-    texts = [clean_html(p.get('description') or p.get('text') or '')[:120]
-             for p in posts[:40]]
+
+    texts = [clean_html(p.get('description') or p.get('text') or '')[:150]
+             for p in posts[:50]]
     texts = [t for t in texts if t]
     if not texts:
         return keyword_analyze(posts)
 
     ind_en  = INDUSTRY_EN.get(industry, '') if industry else ''
     ind_ctx = f'，行业：{industry}（{ind_en}）' if industry else ''
-    sample  = '\n'.join(f'{i+1}. {t}' for i,t in enumerate(texts[:30]))
+    sample  = '\n'.join(f'{i+1}. {t}' for i, t in enumerate(texts[:50]))
 
     prompt = (
-        f'以下是与 {name}（{symbol}{ind_ctx}）相关的最新新闻标题或公告摘要'
-        f'（共{len(texts)}条，含中文公告和/或英文新闻）：\n\n'
+        f'以下是与 {name}（{symbol}{ind_ctx}）相关的最新讨论/新闻标题或公告摘要'
+        f'（共 {len(texts)} 条，含中文公告和/或英文新闻）：\n\n'
         f'{sample}\n\n'
-        f'请按下列规则提取投资观点：\n'
-        f'① 直接提及 {name} 或 {symbol} 的内容：直接归纳为看多/看空观点\n'
-        f'② 涉及"{industry}"行业趋势的英文新闻（如 {ind_en}）：\n'
-        f'   若明确影响该细分市场的需求/价格/竞争格局，可作为行业信号纳入（注明"行业"）\n'
-        f'③ 中文公告（年报/半年报/回购/增减持/业绩预告）：据实分析含义\n'
-        f'④ 与该股及行业均无直接关联的通用市场新闻：忽略\n'
-        f'⑤ 确实无相关内容时，两个列表均返回空数组\n\n'
-        f'输出（仅返回JSON，不要任何解释）：\n'
-        f'{{"pos":["正面观点，中文，≤40字"],"neg":["负面观点，中文，≤40字"]}}\n'
-        f'看多/看空各不超过3条'
+        f'请根据上述内容，用 2-4 句中文归纳当前市场对该股的主流观点和关注焦点。要求：\n'
+        f'① 直接提及 {name} 或 {symbol} 的内容优先归纳\n'
+        f'② 涉及"{industry}"行业趋势且明确影响该股的，可纳入（注明"行业"）\n'
+        f'③ 中文公告（回购/增减持/业绩预告等）据实解读含义\n'
+        f'④ 与该股及行业均无关联的通用新闻忽略不计\n'
+        f'⑤ 如确实无相关内容，返回空字符串\n'
+        f'语言风格：客观简洁，不加主观判断，不超过 150 字。\n\n'
+        f'输出（仅返回 JSON，不要任何解释）：\n'
+        f'{{"summary":"2-4句中文概况"}}'
     )
     try:
         r = requests.post(
             'https://models.inference.ai.azure.com/chat/completions',
-            headers={'Authorization':f'Bearer {GITHUB_TOKEN}','Content-Type':'application/json'},
-            json={'model':'gpt-4o-mini','messages':[{'role':'user','content':prompt}],
-                  'max_tokens':600,'temperature':0.3},
+            headers={'Authorization': f'Bearer {GITHUB_TOKEN}', 'Content-Type': 'application/json'},
+            json={'model': 'gpt-4o-mini',
+                  'messages': [{'role': 'user', 'content': prompt}],
+                  'max_tokens': 400, 'temperature': 0.3},
             timeout=30)
         r.raise_for_status()
         raw = r.json()['choices'][0]['message']['content'].strip()
         m = re.search(r'\{.*\}', raw, re.DOTALL)
         if m:
             j = json.loads(m.group())
-            pos = [x for x in j.get('pos',[]) if x and x!='...'][:3]
-            neg = [x for x in j.get('neg',[]) if x and x!='...'][:3]
-            return pos, neg, len(posts)
+            summary = (j.get('summary') or '').strip()
+            return summary, len(posts)
     except Exception as e:
         print(f'  [AI] GitHub Models 失败: {e}，回退关键词')
     return keyword_analyze(posts)
@@ -416,7 +422,7 @@ def main():
         return
 
     use_ai = bool(GITHUB_TOKEN)
-    print(f'   分析方式: {"GitHub Models / gpt-4o-mini" if use_ai else "关键词匹配"}')
+    print(f'   分析方式: {"GitHub Models / gpt-4o-mini 归纳总结" if use_ai else "关键词拼接"}')
 
     results = []
     for sk in top5:
@@ -429,11 +435,11 @@ def main():
         posts = fetch_stock_posts(sym, name=name, industry=industry)
         print(f'   [{sym}] 共 {len(posts)} 条')
         if use_ai:
-            pos, neg, total = ai_analyze(name, sym, posts, industry=industry)
+            summary, total = ai_analyze(name, sym, posts, industry=industry)
         else:
-            pos, neg, total = keyword_analyze(posts)
-        print(f'   [{sym}] 🟢 {len(pos)}  🔴 {len(neg)}')
-        results.append({'code':sym,'name':name,'w':w,'pos':pos,'neg':neg,'total':total})
+            summary, total = keyword_analyze(posts)
+        print(f'   [{sym}] 摘要({len(summary)}字): {summary[:60]}…' if summary else f'   [{sym}] 摘要: 暂无')
+        results.append({'code': sym, 'name': name, 'w': w, 'summary': summary, 'total': total})
         time.sleep(0.8)
 
     with open('data/xq_sentiment.json','w',encoding='utf-8') as f:

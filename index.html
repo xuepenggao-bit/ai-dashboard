@@ -6328,7 +6328,7 @@ var _mfAutoRetried  = false;
 
 // ── 权重股舆情分析 ─────────────────────────────────────────────
 
-let _sentimentCache = null; // { ts:epoch, analyses:{xqCode:{pos,neg,total}} }
+let _sentimentCache = null; // { ts:epoch, analyses:{xqCode:{summary,total}} }
 
 // 根据 portfolio sk 对象拼接雪球 symbol（如 SH600519 / HK00700）
 function _xqSym(sk) {
@@ -6384,14 +6384,21 @@ function _renderSentimentGrid(top5, analyses) {
   }
   grid.innerHTML = top5.map(sk => {
     const code = _xqSym(sk);
-    const a    = analyses[code] || { pos:[], neg:[], total:0, missing:true };
-    const mkItems = (arr, borderColor) => arr.length
-      ? arr.map(t => `<div style="font-size:10px;color:#1e293b;line-height:1.5;margin-bottom:3px;
-               padding:2px 4px 2px 7px;border-left:2px solid ${borderColor};
-               word-break:break-all">${_escH(t)}</div>`).join('')
-      : `<div style="color:#94a3b8;font-size:10px;padding:1px 0">暂无明显观点</div>`;
-    const posH = a.missing ? '<div style="color:#94a3b8;font-size:10px">等待 GitHub Actions 生成数据</div>' : mkItems(a.pos, '#6ee7b7');
-    const negH = a.missing ? '' : mkItems(a.neg, '#fca5a5');
+    const a    = analyses[code] || { summary:'', total:0, missing:true };
+    // 三种状态：①未生成 ②有讨论但 AI 过滤后无相关内容 ③有观点摘要
+    const noRelevant = !a.missing && a.total > 0 && !a.summary;
+    let bodyH;
+    if (a.missing) {
+      bodyH = '<div style="color:#94a3b8;font-size:10px;line-height:1.6">等待 GitHub Actions 生成数据</div>';
+    } else if (noRelevant) {
+      bodyH = '<div style="color:#94a3b8;font-size:10px;line-height:1.5;padding:2px 0">近期未找到与该股直接相关的讨论内容</div>';
+    } else {
+      bodyH = `<div style="font-size:10px;color:#1e293b;line-height:1.7;word-break:break-all">${_escH(a.summary)}</div>`;
+    }
+    // 底部来源标注
+    const srcLabel = a.total > 0
+      ? `Yahoo Finance · 最新 ${a.total} 条讨论`
+      : (a.missing ? '等待首次运行' : '暂无讨论');
     return `<div style="border-radius:8px;border:1px solid #e5e7eb;padding:9px 8px 6px;background:#fafafa;
                   min-width:0;display:flex;flex-direction:column">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
@@ -6401,16 +6408,11 @@ function _renderSentimentGrid(top5, analyses) {
         padding:1px 5px;flex-shrink:0;font-weight:700">${Number(sk.w).toFixed(1)}%</span>`:''}
   </div>
   <div style="font-size:9px;color:#94a3b8;margin-bottom:7px">${_escH(code)}</div>
-  <div style="margin-bottom:7px">
-    <div style="font-size:10px;font-weight:700;color:#059669;margin-bottom:3px">🟢 正面观点</div>
-    ${posH}
-  </div>
-  <div style="flex:1">
-    <div style="font-size:10px;font-weight:700;color:#dc2626;margin-bottom:3px">🔴 负面观点</div>
-    ${negH}
+  <div style="flex:1;margin-bottom:5px">
+    ${bodyH}
   </div>
   <div style="font-size:9px;color:#cbd5e1;text-align:right;margin-top:5px;border-top:1px solid #f1f5f9;padding-top:4px">
-    基于 ${a.total||0} 条讨论</div>
+    ${_escH(srcLabel)}</div>
 </div>`;
   }).join('');
   const now = new Date();
