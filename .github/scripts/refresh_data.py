@@ -25,6 +25,21 @@ NEG_WORDS = ['看空','卖出','下跌','利空','破位','弱势','减持','不
              '出局','减仓','风险','警惕','跌停','套牢','亏损','压力','见顶','悲观',
              '泡沫','担忧','不确定','跌破','暴跌','高估','缩量','割肉','筑顶','主跌浪']
 
+# 行业中文→英文关键词（用于 Yahoo Finance 行业维度搜索）
+INDUSTRY_EN = {
+    '光模块': 'optical transceiver 800G',
+    'PCB':   'PCB AI server circuit board',
+    '存储':   'memory chip HBM NAND DRAM',
+    '发电':   'oilfield equipment gas turbine',
+    '电源':   'power electronics supply AI server',
+    '液冷':   'liquid cooling data center',
+    'AI应用': 'AI application software',
+    '电动车': 'electric vehicle EV',
+    '锂电':   'lithium battery',
+    '储能':   'energy storage',
+    '生物药': 'biopharmaceuticals oncology',
+}
+
 # ── 工具 ────────────────────────────────────────────────────────
 
 def now_ts():
@@ -145,27 +160,31 @@ def _xueqiu_posts(symbol, pages=3):
 
 # ── 情感来源 2：Yahoo Finance 新闻（全球可达，无需认证） ─────────
 
-def _yahoo_news_posts(symbol, name=''):
+def _yahoo_news_posts(symbol, name='', industry=''):
     """
     Yahoo Finance 新闻搜索（query2.finance.yahoo.com）。
-    依次用 ①股票代码 ②中文公司名 搜索，合并去重，最多 30 条。
-    由 AI 过滤掉与该股无关的通用新闻。
+    查询顺序：①股票代码  ②行业英文关键词（不用中文名，中文会返回 400）。
+    合并去重，最多 30 条，交由 AI 按股票+行业双维度过滤。
     """
+    import urllib.parse
     ys   = _yahoo_symbol(symbol)
+    # 行业英文关键词（跳过中文名，中文查询 Yahoo Finance 返回 400）
+    ind_en = INDUSTRY_EN.get(industry, '') if industry else ''
+    queries = [ys] + ([ind_en] if ind_en else [])
+
     hdrs = {
         'User-Agent': UA_BROWSER,
         'Accept': 'application/json',
-        'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
     }
     seen, posts = set(), []
 
-    for q in ([ys] + ([name] if name else [])):
-        import urllib.parse
+    for q in queries:
         url = (f'https://query2.finance.yahoo.com/v1/finance/search'
                f'?q={urllib.parse.quote(q)}&newsCount=20&quotesCount=0&enableFuzzyQuery=false')
         try:
             r = requests.get(url, headers=hdrs, timeout=15)
-            print(f'  [{symbol}] Yahoo Finance q={q!r} HTTP {r.status_code}')
+            print(f'  [{symbol}] Yahoo q={q!r} HTTP {r.status_code}')
             if r.status_code != 200:
                 continue
             for n in r.json().get('news', []):
@@ -174,7 +193,7 @@ def _yahoo_news_posts(symbol, name=''):
                     seen.add(title)
                     posts.append({'description': title, 'like_count': 5, 'reply_count': 1})
         except Exception as e:
-            print(f'  [{symbol}] Yahoo Finance q={q!r} 失败: {e}')
+            print(f'  [{symbol}] Yahoo q={q!r} 失败: {e}')
         if len(posts) >= 30:
             break
         time.sleep(0.3)
@@ -256,7 +275,7 @@ def _cn_announcements(symbol):
     return []
 
 
-def fetch_stock_posts(symbol, name=''):
+def fetch_stock_posts(symbol, name='', industry=''):
     """雪球 timeline → 东方财富公告 → Yahoo Finance 新闻（三级降级）。"""
     # 1. Xueqiu（需要 XQ_TOKEN；GitHub Actions IP 通常被 Bot 检测）
     posts = _xueqiu_posts(symbol, pages=3)
@@ -270,9 +289,9 @@ def fetch_stock_posts(symbol, name=''):
     if posts:
         return posts
 
-    # 3. Yahoo Finance：股票代码 + 中文名双查询，合并去重（英文，AI 分析）
+    # 3. Yahoo Finance：股票代码 + 行业英文关键词双查询，合并去重
     print(f'  [{symbol}] 公告接口失败，切换 Yahoo Finance…')
-    posts = _yahoo_news_posts(symbol, name=name)
+    posts = _yahoo_news_posts(symbol, name=name, industry=industry)
     if posts:
         return posts
 
@@ -300,7 +319,7 @@ def keyword_analyze(posts):
 
 # ── 情感分析（GitHub Models / gpt-4o-mini） ───────────────────
 
-def ai_analyze(name, symbol, posts):
+def ai_analyze(name, symbol, posts, industry=''):
     if not GITHUB_TOKEN:
         return keyword_analyze(posts)
     texts = [clean_html(p.get('description') or p.get('text') or '')[:120]
@@ -309,25 +328,31 @@ def ai_analyze(name, symbol, posts):
     if not texts:
         return keyword_analyze(posts)
 
-    sample = '\n'.join(f'{i+1}. {t}' for i,t in enumerate(texts[:30]))
-    prompt = (f'以下是关于 {name}（{symbol}）的最新新闻标题或公告摘要'
-              f'（共{len(texts)}条，可能含中文公告或英文新闻）：\n\n'
-              f'{sample}\n\n'
-              f'请分析这些内容并提取投资观点，规则如下：\n'
-              f'1. 仅分析与 {name} 或其直接所在行业相关的内容\n'
-              f'2. 中文公告（年报/半年报/回购/增减持/业绩预告等）请据实分析其含义\n'
-              f'3. 英文新闻请翻译理解后再归纳\n'
-              f'4. 与该股无关的通用市场新闻一律忽略\n'
-              f'5. 无相关内容时两个列表均返回空数组\n\n'
-              f'输出（仅返回JSON，不要任何解释）：\n'
-              f'{{"pos":["正面观点，中文，≤40字"],"neg":["负面观点，中文，≤40字"]}}\n'
-              f'- 看多/看空各不超过3条，无相关内容时返回 []')
+    ind_en  = INDUSTRY_EN.get(industry, '') if industry else ''
+    ind_ctx = f'，行业：{industry}（{ind_en}）' if industry else ''
+    sample  = '\n'.join(f'{i+1}. {t}' for i,t in enumerate(texts[:30]))
+
+    prompt = (
+        f'以下是与 {name}（{symbol}{ind_ctx}）相关的最新新闻标题或公告摘要'
+        f'（共{len(texts)}条，含中文公告和/或英文新闻）：\n\n'
+        f'{sample}\n\n'
+        f'请按下列规则提取投资观点：\n'
+        f'① 直接提及 {name} 或 {symbol} 的内容：直接归纳为看多/看空观点\n'
+        f'② 涉及"{industry}"行业趋势的英文新闻（如 {ind_en}）：\n'
+        f'   若明确影响该细分市场的需求/价格/竞争格局，可作为行业信号纳入（注明"行业"）\n'
+        f'③ 中文公告（年报/半年报/回购/增减持/业绩预告）：据实分析含义\n'
+        f'④ 与该股及行业均无直接关联的通用市场新闻：忽略\n'
+        f'⑤ 确实无相关内容时，两个列表均返回空数组\n\n'
+        f'输出（仅返回JSON，不要任何解释）：\n'
+        f'{{"pos":["正面观点，中文，≤40字"],"neg":["负面观点，中文，≤40字"]}}\n'
+        f'看多/看空各不超过3条'
+    )
     try:
         r = requests.post(
             'https://models.inference.ai.azure.com/chat/completions',
             headers={'Authorization':f'Bearer {GITHUB_TOKEN}','Content-Type':'application/json'},
             json={'model':'gpt-4o-mini','messages':[{'role':'user','content':prompt}],
-                  'max_tokens':500,'temperature':0.3},
+                  'max_tokens':600,'temperature':0.3},
             timeout=30)
         r.raise_for_status()
         raw = r.json()['choices'][0]['message']['content'].strip()
@@ -395,13 +420,18 @@ def main():
 
     results = []
     for sk in top5:
-        sym  = xq_symbol(sk)
-        name = sk.get('name', sym)
-        w    = sk.get('w', 0)
-        print(f'\n   [{sym}] {name} ({w}%) …')
-        posts = fetch_stock_posts(sym, name=name)
+        sym      = xq_symbol(sk)
+        name     = sk.get('name', sym)
+        w        = sk.get('w', 0)
+        industry = sk.get('industry', '')
+        ind_en   = INDUSTRY_EN.get(industry, '')
+        print(f'\n   [{sym}] {name} ({w}%)  行业={industry}({ind_en}) …')
+        posts = fetch_stock_posts(sym, name=name, industry=industry)
         print(f'   [{sym}] 共 {len(posts)} 条')
-        pos, neg, total = ai_analyze(name, sym, posts) if use_ai else keyword_analyze(posts)
+        if use_ai:
+            pos, neg, total = ai_analyze(name, sym, posts, industry=industry)
+        else:
+            pos, neg, total = keyword_analyze(posts)
         print(f'   [{sym}] 🟢 {len(pos)}  🔴 {len(neg)}')
         results.append({'code':sym,'name':name,'w':w,'pos':pos,'neg':neg,'total':total})
         time.sleep(0.8)
