@@ -315,7 +315,13 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ════════════════ TAB 2.1 ════════════════ -->
 <div class="tab-content" id="t0">
-  <div class="stitle">AI"趋势"仪表板 <span class="stag">阶段定位</span></div>
+  <div class="stitle" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    AI"趋势"仪表板 <span class="stag">阶段定位</span>
+    <span id="aiTrendTs" style="font-size:11px;color:#94a3b8;font-weight:500"></span>
+    <button onclick="triggerAiTrendRefresh()" id="aiTrendBtn" title="触发后台AI联网抓取最新Capex/ARR/PE（约1-2分钟）"
+      style="margin-left:auto;background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
+             padding:3px 11px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700">↻ 刷新数据</button>
+  </div>
 
   <!-- Stage Flow -->
   <div class="card mb16">
@@ -3832,6 +3838,63 @@ function mkArr(){
   }});
 }
 
+// ── AI趋势：Capex / ARR / 7姐妹PE（外置 data/ai_trend.json，可↻触发后台AI抓取）──
+let _aiTrendCache = null;
+
+function _renderAiTrend(d){
+  if(!d) return;
+  const _set=(id,txt)=>{ const el=document.getElementById(id); if(el&&txt!=null) el.textContent=txt; };
+  // Hyperscaler Capex
+  if(d.hyperscaler_capex_2026e_yi!=null) _set('kCapex26','$'+Number(d.hyperscaler_capex_2026e_yi).toLocaleString()+'亿');
+  if(d.hyperscaler_capex_2025a_yi!=null) _set('kCapex25','$'+Number(d.hyperscaler_capex_2025a_yi).toLocaleString()+'亿');
+  if(d.hyperscaler_yoy_pct!=null)        _set('kYoy26','↑ +'+d.hyperscaler_yoy_pct+'% 同比');
+  // 美股7姐妹 PE
+  if(d.mag7_pe_median!=null) _set('kMag7Pe', d.mag7_pe_median+'x');
+  if(d.mag7_pe_avg!=null)    _set('kMag7Avg', d.mag7_pe_avg+'x');
+  // Amazon / Meta Capex 明细
+  if(d.amazon_capex_2025a_yi!=null) _set('kAmz25','¥'+Number(d.amazon_capex_2025a_yi).toLocaleString()+'亿');
+  if(d.amazon_capex_2026e_yi!=null) _set('kAmz26','¥'+Number(d.amazon_capex_2026e_yi).toLocaleString()+'亿');
+  if(d.meta_capex_low_yi!=null)     _set('kMetaL','¥'+Number(d.meta_capex_low_yi).toLocaleString()+'亿');
+  if(d.meta_capex_high_yi!=null)    _set('kMetaH','¥'+Number(d.meta_capex_high_yi).toLocaleString()+'亿');
+  // OpenAI / Anthropic ARR 图表
+  if(d.arr_labels && d.arr_openai && d.arr_anthropic){
+    if(typeof BASE!=='undefined' && BASE.aiArr){
+      BASE.aiArr.labels=d.arr_labels; BASE.aiArr.openai=d.arr_openai; BASE.aiArr.anthropic=d.arr_anthropic;
+    }
+    if(CH.arr){
+      CH.arr.data.labels=d.arr_labels;
+      CH.arr.data.datasets[0].data=d.arr_openai;
+      CH.arr.data.datasets[1].data=d.arr_anthropic;
+      CH.arr.update('none');
+    }
+  }
+  const tsEl=document.getElementById('aiTrendTs');
+  if(tsEl && d.updated) tsEl.textContent=d.updated+' 更新';
+}
+
+async function fetchAiTrend(){
+  try{
+    const r=await fetch('data/ai_trend.json?_='+Date.now(),{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    _aiTrendCache=d;
+    _renderAiTrend(d);
+    console.log('[AiTrend] 加载成功，updated:', d.updated);
+  }catch(e){ console.warn('[AiTrend] 加载失败:', e.message); }
+}
+
+// ↻：触发后台 AI 抓取最新 Capex/ARR/PE（GitHub Actions），完成后自动呈现
+function triggerAiTrendRefresh(){
+  _refreshViaWorkflow({
+    file:     'refresh-aitrend.yml',
+    dataUrl:  'data/ai_trend.json',
+    tsField:  'updated',
+    statusEl: document.getElementById('aiTrendTs'),
+    btn:      document.getElementById('aiTrendBtn'),
+    render:   _renderAiTrend
+  });
+}
+
 // ── A股宏观 Charts ───────────────────────────────────────────
 function mkNewInv(){
   const ctx=document.getElementById('cNewInv').getContext('2d');
@@ -4669,7 +4732,7 @@ function _tabRefresh(idx){
   else if(tab==='t5')     fetchStoreLive();
   else if(tab==='t2')  { fetchVixChart(); fetchMacroRates(); fetchMonLive(); }
   else if(tab==='tHist') renderHistTable();
-  else if(tab==='t0')    fetchMonLive();  // AI趋势：刷新 AI ETF 实时动量 + 产业链动量
+  else if(tab==='t0')  { fetchMonLive(); fetchAiTrend(); }  // AI趋势：实时动量 + Capex/ARR/PE
 }
 
 function switchTab(idx){
@@ -7197,6 +7260,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);_safe(mkPort);
   _safe(mkNeoCapex);_safe(mkOptGrowth);_safe(mkPcbGrowth);
   _safe(mkIntlPe);_safe(mkDomStorePe);_safe(mkArr);
+  fetchAiTrend();   // 从 data/ai_trend.json 加载最新 Capex/ARR/PE 并更新 ARR 图表
 
   // 实时时钟（精确到秒），仅在投资组合 tab 顶部显示
   (function _startClock(){
