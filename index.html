@@ -531,7 +531,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   <div class="alert a-info mb16">
     <span>ℹ</span>
-    <div><strong>上部分</strong>：A股市场<strong>日频</strong>动态指标（融资融券 · 涨跌家数 · 北向资金 · iVIX）&nbsp;·&nbsp; <strong>下部分</strong>：月度/季度指标（新增投资者 · 主要指数PE · 国家统计局 · 中国人民银行）</div>
+    <div><strong>上部分</strong>：A股市场<strong>日频</strong>动态指标（融资融券 · 涨跌家数 · iVIX）&nbsp;·&nbsp; <strong>下部分</strong>：月度/季度指标（新增投资者 · 主要指数PE · 国家统计局 · 中国人民银行）</div>
   </div>
 
   <!-- ── 上部分：A股市场监控 ── -->
@@ -630,27 +630,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- 日频：北向资金（全宽）-->
-  <div class="mb16">
-    <div class="card">
-      <div class="ch">
-        <span class="ct">沪深港通 北向资金 (日频·¥亿)</span>
-        <span class="cbadge" style="background:#d1fae5;color:#065f46">日频·历史数据</span>
-      </div>
-      <div style="display:flex;align-items:flex-end;gap:20px;margin-bottom:10px;padding:10px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
-        <div>
-          <div class="tx3" style="margin-bottom:2px">最新日净买入</div>
-          <div id="northKpiVal" style="font-size:22px;font-weight:800;line-height:1;color:var(--green)">--</div>
-        </div>
-        <div style="flex:1">
-          <div id="northKpi5d" class="kchange neu" style="font-size:12px">近5日合计 --</div>
-          <div id="northKpiDate" class="tx3 mt4" style="color:#94a3b8">最新日期 --</div>
-        </div>
-      </div>
-      <div style="height:200px"><canvas id="cNorth"></canvas></div>
-      <div class="tx3 mt4" id="northFooter">来源: 沪深港通统计 · 加载中…</div>
-    </div>
-  </div>
+  <!-- 北向资金指标已移除：沪深港通自 2024-08 起官方停止披露日度北向资金净流入，数据源已不存在 -->
 
   <!-- ── 分隔线：月度/季度宏观数据 ── -->
   <div style="margin:4px 0 20px;padding:12px 0 0;border-top:2px solid var(--border);display:flex;align-items:center;gap:12px">
@@ -3937,20 +3917,7 @@ function mkMargin(){
   }});
 }
 
-function mkNorth(){
-  const ctx=document.getElementById('cNorth').getContext('2d');
-  const d=BASE.ashare.north;
-  CH.north=new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[
-    {label:'北向净流入(¥亿)',data:d.vals,
-     backgroundColor:d.vals.map(v=>v>=0?'rgba(5,150,105,.7)':'rgba(220,38,38,.6)'),borderRadius:4},
-  ]},options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
-    scales:{
-      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:10}}},
-      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'亿'}},
-    }
-  }});
-}
+// mkNorth 已移除（北向资金净流入官方停止披露）
 
 function mkUpDown(){
   const ctx=document.getElementById('cUpDown').getContext('2d');
@@ -4882,41 +4849,7 @@ async function fetchDailyCharts(){
     console.log('[Daily] 融资融券 OK | 字段:'+d.usedField+' 最新:'+d.latestDate,d.latestVal+'亿');
   }catch(e){ console.warn('[Daily] 融资融券余额失败:',e.message); }
 
-  // ── 2. 北向资金净流入 ──────────────────────────────────────────
-  try{
-    const d=await _fetchDailySeries(
-      _DC60+'reportName=RPT_MUTUAL_FUND_SUM&columns=DATE,NORTH_MONEY,SH_NORTH_MONEY,SZ_NORTH_MONEY&sortColumns=DATE',
-      'DATE',['NORTH_MONEY','SH_NORTH_MONEY']
-    );
-    if(CH.north){
-      CH.north.data.labels=d.labels;
-      CH.north.data.datasets[0].data=d.vals;
-      CH.north.data.datasets[0].backgroundColor=
-        d.vals.map(v=>v==null?'rgba(148,163,184,.4)':v>=0?'rgba(5,150,105,.7)':'rgba(220,38,38,.6)');
-      CH.north.update('none');
-    }
-    // 更新北向资金 KPI 区块（最新日净买入 / 近5日合计 / 日期）
-    if(d.latestVal!=null && d.vals.length>0){
-      const v=d.latestVal;
-      const kv=document.getElementById('northKpiVal');
-      if(kv){ kv.textContent=(v>=0?'+':'')+v.toFixed(0)+'亿'; kv.style.color=v>=0?'var(--green)':'var(--red)'; }
-      const last5=d.vals.slice(-5).filter(x=>x!=null);
-      const sum5=last5.reduce((a,b)=>a+b,0);
-      const k5=document.getElementById('northKpi5d');
-      if(k5){ k5.textContent='近5日合计 '+(sum5>=0?'+':'')+sum5.toFixed(0)+'亿'; k5.className='kchange '+(sum5>=0?'up':'down'); }
-      const kd=document.getElementById('northKpiDate');
-      if(kd) kd.textContent='最新日期 '+d.latestDate;
-      const kf=document.getElementById('northFooter');
-      if(kf) kf.textContent='来源: 沪深港通统计 · 近'+d.labels.length+'交易日北向净流入（'+d.labels[0]+' 至 '+d.latestDate+'）';
-    }
-    console.log('[Daily] 北向资金 OK | 字段:'+d.usedField+' 最新:'+d.latestDate,d.latestVal+'亿');
-  }catch(e){
-    console.warn('[Daily] 北向资金失败:',e.message);
-    const kf=document.getElementById('northFooter');
-    if(kf) kf.textContent='来源: 沪深港通统计 · 数据获取失败，显示历史数据';
-    const kv=document.getElementById('northKpiVal'); if(kv&&kv.textContent==='--') kv.textContent='获取失败';
-    const kd=document.getElementById('northKpiDate'); if(kd&&kd.textContent==='最新日期 --') kd.textContent='获取失败';
-  }
+  // ── 2. 北向资金已移除（沪深港通自 2024-08 起官方停止披露日度北向净流入）──
 
   // ── 3. 涨跌家数：EM DataCenter 历史数据（60交易日）+ 实时今日覆盖 ──
   // DataCenter 候选 report/列名（依次尝试，取第一个有效的）
@@ -7298,7 +7231,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(ts && ts.textContent==='股价未加载'){ portLoad(); fetchPortPrices(); }
   }, 1000);
 
-  _safe(mkNewInv);_safe(mkMktPe);_safe(mkMargin);_safe(mkNorth);_safe(mkUpDown);_safe(mkConc);
+  _safe(mkNewInv);_safe(mkMktPe);_safe(mkMargin);_safe(mkUpDown);_safe(mkConc);
   _safe(mkCpi);_safe(mkTsf);_safe(mkFai);_safe(mkRetail);_safe(mkIndustrial);_safe(mkProfitAccum);_safe(mkElectronicProfit);
   _safe(mkStageMatrix);
   _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();});
