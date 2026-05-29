@@ -5812,8 +5812,26 @@ async function fetchIndexPrices(){
   };
   await Promise.all(_IDX_EM.map(_emFetchOne));
 
-  // 港股指数（恒生/恒生科技）只用东财 push2 实时源，不回退延迟的腾讯；
-  // 东财偶发失败时由下方粘性缓存回填上次的东财实时值（仍优于腾讯延迟源）。
+  // 港股指数兜底：东财 push2 优先(实时)；取不到恒生/恒生科技时用腾讯 hkHSI/hkHSTECH
+  // 保证有数据(盘中约延迟15分)，避免"取不到"；东财成功时仍是实时值。
+  const _hkMiss = [['恒生指数','hkHSI'],['恒生科技','hkHSTECH']].filter(x=>!rowMap[x[0]]);
+  if(_hkMiss.length){
+    try{
+      const tUrl = 'https://qt.gtimg.cn/q=' + _hkMiss.map(x=>x[1]).join(',') + '&_=' + Date.now();
+      const txt  = await _idxFetch(tUrl, {timeout:6000, retries:1, gbk:true});
+      _hkMiss.forEach(pair=>{
+        const m = txt.match(new RegExp('v_' + pair[1] + '="([^"]+)"'));
+        if(!m) return;
+        const p     = m[1].split('~');
+        const price = parseFloat(p[3]);
+        const prev  = parseFloat(p[4]);
+        let   pct   = parseFloat(p[32]);
+        if(!isFinite(pct) && isFinite(prev) && prev > 0) pct = (price - prev) / prev * 100;
+        if(isFinite(price) && price > 0)
+          rowMap[pair[0]] = {label:pair[0], price, pct:isFinite(pct)?pct:0, region:'hk'};
+      });
+    }catch(e){ /* 兜底失败则靠粘性缓存 */ }
+  }
 
   // ── ③ 粘性缓存合并：本次成功的写入缓存，本次缺失的用上次成功值回填 ──
   const _now = Date.now();
@@ -6874,13 +6892,10 @@ async function fetchPortPrices(){
         console.log('[HK] 东方财富 获取', Object.keys(hkDone).length, '/', hkStocks.length, '只');
       }
 
-      // ② 东财 push2 实时源重试（港股唯一最实时源；不回退延迟的腾讯/push2delay）
-      //    腾讯港股延迟约15分钟、push2delay 为延迟服务器，均不用于港股实时
+      // ② 东财 push2 重试 1 次（实时源，争取最新数据）
       var hkMissed = hkStocks.filter(function(s){ return !hkDone[s.code]; });
-      var _hkRetry = 0;
-      while(hkMissed.length && _hkRetry < 2){
-        _hkRetry++;
-        await new Promise(function(r){ setTimeout(r, 500); });   // 短暂退避后重试
+      if(hkMissed.length){
+        await new Promise(function(r){ setTimeout(r, 400); });
         try{
           var hkSids2 = hkMissed.map(function(s){ return '116.'+s.code; }).join(',');
           var emUrl2  = 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids2
@@ -6901,10 +6916,29 @@ async function fetchPortPrices(){
               hkDone[matched.code] = true;
             }
           });
-          hkMissed = hkStocks.filter(function(s){ return !hkDone[s.code]; });
-        }catch(e){ console.warn('[HK] push2 重试'+_hkRetry+':', e.message); }
+        }catch(e){ console.warn('[HK] 东财重试:', e.message); }
       }
-      console.log('[HK] 东财实时源 获取', Object.keys(hkDone).length, '/', hkStocks.length, '只（重试'+_hkRetry+'次）');
+
+      // ③ 腾讯 qt.gtimg.cn 兜底（hk+代码；东财取不到时保证有数据，盘中约延迟15分）
+      //    注：组合内港股 tc 字段为空，此处用 'hk'+code 直接构造腾讯港股代码
+      hkMissed = hkStocks.filter(function(s){ return !hkDone[s.code]; });
+      if(hkMissed.length){
+        try{
+          var qUrl2 = 'https://qt.gtimg.cn/q=' + hkMissed.map(function(s){ return 'hk'+s.code; }).join(',') + '&_=' + Date.now();
+          var resp2 = await fetch(qUrl2);
+          var txt2  = new TextDecoder('gbk').decode(await resp2.arrayBuffer());
+          hkMissed.forEach(function(s){
+            var m = txt2.match(new RegExp('v_hk' + s.code + '="([^"]+)"'));
+            if(!m) return;
+            var p = m[1].split('~');
+            var cur = parseFloat(p[3]), pct = parseFloat(p[32]);
+            if(cur > 0 && isFinite(pct))
+              _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w, src:'tc'};
+          });
+        }catch(e){ console.warn('[HK] 腾讯兜底:', e.message); }
+      }
+      var _hkOk = hkStocks.filter(function(s){ return _PORT_PRICES[s.code]; }).length;
+      console.log('[HK] 港股获取', _hkOk, '/', hkStocks.length, '只（东财实时优先，腾讯兜底）');
     }
 
     var n = Object.keys(_PORT_PRICES).length;
