@@ -353,10 +353,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="tx3 mt4">6只阶段4 · 1只阶段5(TSLA) · 无阶段3</div>
     </div>
     <div class="card">
-      <div class="klabel">AI ETF 综合PE / PEG <span style="background:#fee2e2;color:#7f1d1d;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">实时行情</span></div>
-      <div class="kval tr" id="kEtfPe">78x</div>
-      <div class="kchange down" id="kPeg">⚠ PEG > 97 · 阶段5信号</div>
-      <div class="tx3 mt4">与2021科技泡沫高度类似</div>
+      <div class="klabel">AI ETF 20日动量 <span style="background:#fee2e2;color:#7f1d1d;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">实时行情</span></div>
+      <div class="kval" id="kEtfPe">—</div>
+      <div class="kchange neu" id="kPeg">加载中…</div>
+      <div class="tx3 mt4">515980 华富中证AI产业ETF · 20日累计涨跌</div>
     </div>
   </div>
 
@@ -2064,8 +2064,21 @@ async function fetchMonLive(){
         const pe=parseFloat(it.f9);  if(!isNaN(pe)&&pe>0) pemap[String(it.f12)]=pe;
       }
     });
-    // 存入 ETF 515980 PE（华夏AI ETF）
+    // 存入 ETF 515980 PE（如有；ETF 多数无 PE 字段）
     if(pemap['515980']) _aiEtfPe=pemap['515980'];
+    // 更新 AI趋势 tab 的 AI ETF 实时表现：ETF 无 PE（基金），改用 20日动量(f25)反映板块热度
+    const _etfMom = cmap['515980'];
+    const _peEl = document.getElementById('kEtfPe');
+    if(_peEl && _etfMom!=null && !isNaN(_etfMom)){
+      _peEl.textContent = (_etfMom>=0?'+':'') + _etfMom.toFixed(1) + '%';
+      _peEl.style.color = _etfMom>=0 ? '#dc2626' : '#16a34a';
+    }
+    const _pegEl = document.getElementById('kPeg');
+    if(_pegEl && _etfMom!=null && !isNaN(_etfMom)){
+      _pegEl.textContent = _etfMom>=20 ? '⚠ 20日强势 · 阶段5过热信号'
+                         : _etfMom>=0  ? '20日上行 · 阶段4 景气延续'
+                         :               '20日回调 · 板块降温';
+    }
     BASE.monitors.forEach(mon=>{
       const cfg=MON_STOCKS[mon.id]; if(!cfg||!cfg.em) return;
       const vals=cfg.em.map(sid=>cmap[sid.split('.')[1]]).filter(v=>v!=null&&!isNaN(v));
@@ -4656,7 +4669,7 @@ function _tabRefresh(idx){
   else if(tab==='t5')     fetchStoreLive();
   else if(tab==='t2')  { fetchVixChart(); fetchMacroRates(); fetchMonLive(); }
   else if(tab==='tHist') renderHistTable();
-  // t0(AI趋势) 为静态内容，无需刷新
+  else if(tab==='t0')    fetchMonLive();  // AI趋势：刷新 AI ETF 实时动量 + 产业链动量
 }
 
 function switchTab(idx){
