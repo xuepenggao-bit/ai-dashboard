@@ -119,29 +119,38 @@ def _make_x_session():
     """Create a requests.Session pre-configured with X cookie auth."""
     s = requests.Session()
     s.headers.update({
-        'Authorization':            f'Bearer {_X_BEARER}',
-        'x-csrf-token':             TWITTER_CT0,
-        'x-twitter-active-user':    'yes',
-        'x-twitter-client-language':'en',
+        'Authorization':             f'Bearer {_X_BEARER}',
+        'x-csrf-token':              TWITTER_CT0,
+        'x-twitter-active-user':     'yes',
+        'x-twitter-auth-type':       'OAuth2Session',
+        'x-twitter-client-language': 'en',
         'User-Agent': ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                        'AppleWebKit/537.36 (KHTML, like Gecko) '
                        'Chrome/124.0.0.0 Safari/537.36'),
         'Accept':          '*/*',
         'Accept-Language': 'en-US,en;q=0.9',
-        'Referer':         'https://twitter.com/',
-        'Origin':          'https://twitter.com',
+        'Referer':         'https://x.com/',
+        'Origin':          'https://x.com',
+        'sec-fetch-site':  'same-origin',
+        'sec-fetch-mode':  'cors',
     })
-    s.cookies.update({'auth_token': TWITTER_AUTH_TOKEN, 'ct0': TWITTER_CT0})
+    # cookies 必须包含 auth_token + ct0
+    s.cookies.set('auth_token', TWITTER_AUTH_TOKEN, domain='.twitter.com')
+    s.cookies.set('ct0',        TWITTER_CT0,        domain='.twitter.com')
+    s.cookies.set('auth_token', TWITTER_AUTH_TOKEN, domain='.x.com')
+    s.cookies.set('ct0',        TWITTER_CT0,        domain='.x.com')
     return s
 
 def _fetch_user_tweets(session, handle, count=5):
     """
-    Fetch latest tweets for one account via X v1.1 REST API.
+    Fetch latest tweets for one account via X internal web API.
+    使用 twitter.com/i/api/1.1（内部 Web API，接受 cookie 认证）
     Returns list of tweet text strings.
     """
     try:
+        # 内部 Web API，与 api.twitter.com/1.1 不同，接受浏览器 cookie 认证
         r = session.get(
-            'https://api.twitter.com/1.1/statuses/user_timeline.json',
+            'https://twitter.com/i/api/1.1/statuses/user_timeline.json',
             params={
                 'screen_name':    handle,
                 'count':          count,
