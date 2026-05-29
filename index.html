@@ -1088,56 +1088,51 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 4: X关注意见领袖 + 雪球热股榜 -->
-  <div class="g2 mb16">
-
-    <!-- X关注意见领袖 -->
-    <div class="card" style="border-top:3px solid #1d9bf0">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-size:13px;font-weight:800;color:#374151">🐦 X关注意见领袖</span>
-          <span style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
-                       padding:1px 7px;border-radius:10px;font-weight:600">52人关注</span>
-          <span id="kolTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
-        </div>
-        <button onclick="fetchKolSummary(true)" id="kolBtn"
-          style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
-                 padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+  <!-- Row 4: X关注意见领袖 -->
+  <div class="card mb16" style="border-top:3px solid #1d9bf0">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:800;color:#374151">🐦 X关注意见领袖</span>
+        <span style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
+                     padding:1px 7px;border-radius:10px;font-weight:600">52人关注</span>
+        <span id="kolTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
       </div>
-      <div id="kolGrid" style="display:flex;flex-direction:column;gap:7px">
-        <div style="color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">
-          点击「↻」加载X关注意见领袖观点
-        </div>
+      <button onclick="fetchKolSummary(true)" id="kolBtn"
+        style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
+               padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+    </div>
+    <div id="kolGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:7px">
+      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">
+        点击「↻」加载X关注意见领袖观点
       </div>
     </div>
+  </div>
 
-    <!-- 雪球热股榜 -->
-    <div class="card" style="border-top:3px solid #f97316">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-size:13px;font-weight:800;color:#374151">🔥 雪球热股榜</span>
-          <span style="font-size:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;
-                       padding:1px 7px;border-radius:10px;font-weight:600">近1小时 Top20</span>
-          <span id="xqHotTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
-        </div>
-        <button onclick="fetchXqHot()" id="xqHotBtn"
-          style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
-                 padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+  <!-- Row 5: 雪球热股榜 -->
+  <div class="card mb16" style="border-top:3px solid #f97316">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:800;color:#374151">🔥 雪球热股榜</span>
+        <span style="font-size:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;
+                     padding:1px 7px;border-radius:10px;font-weight:600">近1小时 Top20</span>
+        <span id="xqHotTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
       </div>
-      <div id="xqHotGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
-        <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">
-          点击「↻」加载雪球热股榜
-        </div>
-      </div>
-      <div id="xqHotGuide" style="display:none;margin-top:10px;padding:10px 12px;background:#fff7ed;border-radius:8px;border:1px solid #fed7aa">
-        <div style="font-size:11px;color:#92400e;margin-bottom:6px;font-weight:600">⏳ 数据尚未生成 · 由 GitHub Actions 自动刷新</div>
-        <div style="font-size:10px;color:#78350f;margin-bottom:8px">每30分钟自动更新（交易时段），或点击下方按钮立即触发刷新（约1分钟后生效）</div>
-        <button onclick="triggerHotRefresh()" id="xqTriggerBtn"
-          style="background:#f97316;color:#fff;border:none;border-radius:5px;padding:4px 12px;
-                 cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">⚡ 立即触发刷新</button>
+      <button onclick="fetchXqHot()" id="xqHotBtn"
+        style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
+               padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+    </div>
+    <div id="xqHotGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
+      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">
+        点击「↻」加载雪球热股榜
       </div>
     </div>
-
+    <div id="xqHotGuide" style="display:none;margin-top:10px;padding:10px 12px;background:#fff7ed;border-radius:8px;border:1px solid #fed7aa">
+      <div style="font-size:11px;color:#92400e;margin-bottom:6px;font-weight:600">⏳ 数据尚未生成 · 由 GitHub Actions 自动刷新</div>
+      <div style="font-size:10px;color:#78350f;margin-bottom:8px">每30分钟自动更新（交易时段），或点击下方按钮立即触发刷新（约1分钟后生效）</div>
+      <button onclick="triggerHotRefresh()" id="xqTriggerBtn"
+        style="background:#f97316;color:#fff;border:none;border-radius:5px;padding:4px 12px;
+               cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">⚡ 立即触发刷新</button>
+    </div>
   </div>
 
   <!-- Sector cards (rendered by JS) -->
