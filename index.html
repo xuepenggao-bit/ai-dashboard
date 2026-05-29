@@ -5782,6 +5782,13 @@ async function fetchIndexPrices(){
     });
   }catch(e){ console.warn('[IDX] 腾讯API失败（将回填缓存）:', e); }
 
+  // ── ①b 港股指数新浪 rt 实时优先（恒生指数/恒生科技；成功则东财/腾讯自动跳过）──
+  try{
+    const sinaIdx = await _fetchSinaRT(['rt_hkHSI','rt_hkHSTECH']);
+    if(sinaIdx['rt_hkHSI'])    rowMap['恒生指数'] = {label:'恒生指数', price:sinaIdx['rt_hkHSI'].price,    pct:sinaIdx['rt_hkHSI'].pct,    region:'hk'};
+    if(sinaIdx['rt_hkHSTECH']) rowMap['恒生科技'] = {label:'恒生科技', price:sinaIdx['rt_hkHSTECH'].price, pct:sinaIdx['rt_hkHSTECH'].pct, region:'hk'};
+  }catch(e){ console.warn('[IDX] 新浪港股指数:', e.message); }
+
   // ── ② 东方财富 ulist API（仅补腾讯不提供的指数）──
   // 逐个候选 secid 单独请求（避免无效 secid 与有效 secid 拼在一起导致整批返回空），
   // 每个 secid 再配合多域名重试，命中即停。
@@ -6793,6 +6800,38 @@ async function fetchMainFlow(){
   }
 }
 
+// 新浪 rt_hk 实时港股行情（hq.sinajs.cn 有 CORS/Referer 限制，故用 JSONP/script 标签加载）
+// 返回 { sinaCode: {price, pct} }；字段：现价=f[6]、涨跌幅%=f[8]（个股/指数同结构）
+// 新浪返回 GBK，中文名会乱码，但数字字段为 ASCII 不受影响；超时/被拒则返回空对象由调用方回退
+function _fetchSinaRT(codes){
+  return new Promise(function(resolve){
+    if(!codes || !codes.length){ resolve({}); return; }
+    var sc = document.createElement('script');
+    sc.charset = 'gbk';
+    var done = false;
+    var cleanup = function(){ try{ if(sc.parentNode) sc.parentNode.removeChild(sc); }catch(e){} };
+    var finish = function(){
+      if(done) return; done = true; clearTimeout(timer);
+      var out = {};
+      codes.forEach(function(code){
+        var v = window['hq_str_' + code];
+        if(v && typeof v === 'string'){
+          var f = v.split(',');
+          var price = parseFloat(f[6]), pct = parseFloat(f[8]);
+          if(price > 0 && isFinite(pct)) out[code] = {price:price, pct:pct};
+        }
+        try{ delete window['hq_str_' + code]; }catch(e){ try{ window['hq_str_' + code] = undefined; }catch(_){} }
+      });
+      cleanup(); resolve(out);
+    };
+    var timer = setTimeout(finish, 5000);   // 5 秒超时（被 Referer 拒则空回退）
+    sc.onload  = finish;
+    sc.onerror = function(){ if(!done){ done = true; clearTimeout(timer); cleanup(); resolve({}); } };
+    sc.src = 'https://hq.sinajs.cn/list=' + codes.join(',') + '&_=' + Date.now();
+    document.head.appendChild(sc);
+  });
+}
+
 async function fetchPortPrices(){
   var btn = document.getElementById('portPriceBtn');
   var ts  = document.getElementById('portPriceTs');
@@ -6870,6 +6909,18 @@ async function fetchPortPrices(){
     // ── 处理港股：唯一数据源 = 东财 push2 实时（push2 偶发未返回则同源重试）──────
     if(hkStocks.length){
       var hkDone = {};   // code → true，记录已取到价格的港股
+
+      // ⓪ 新浪 rt_hk 实时主源（JSONP/script 绕 CORS，港股全程实时；被拒则回退东财/腾讯）
+      try{
+        var sinaRes = await _fetchSinaRT(hkStocks.map(function(s){ return 'rt_hk'+s.code; }));
+        hkStocks.forEach(function(s){
+          var d = sinaRes['rt_hk'+s.code];
+          if(d){ _PORT_PRICES[s.code] = {price:d.price, pct:d.pct, name:s.name, mkt:s.mkt, w:s.w, src:'sina'}; hkDone[s.code]=true; }
+        });
+        console.log('[HK] 新浪实时', Object.keys(hkDone).length, '/', hkStocks.length, '只');
+      }catch(e){ console.warn('[HK] 新浪:', e.message); }
+
+      // ① 东财 push2（新浪未取到的，仍是实时源）— 复用 Promise.all 的 emJson
       if(emJson){
         var diff = emJson?.data?.diff || [];
         diff.forEach(function(d){
@@ -6877,7 +6928,7 @@ async function fetchPortPrices(){
           var pct   = parseFloat(d.f3);
           if(!isFinite(price) || price <= 0 || !isFinite(pct)) return;
           var emCode  = String(d.f12 || '').padStart(5, '0');
-          var matched = hkStocks.find(function(s){ return s.code === emCode || s.code === String(d.f12); });
+          var matched = hkStocks.find(function(s){ return !hkDone[s.code] && (s.code === emCode || s.code === String(d.f12)); });
           if(matched){
             var mc = parseFloat(d.f20);
             var vr = parseFloat(d.f50);
