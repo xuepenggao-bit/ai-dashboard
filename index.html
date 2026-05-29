@@ -1470,6 +1470,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div style="font-size:12px;color:var(--text2);margin-top:3px">记录每日仓位与涨跌数据，自动同步至云端</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button onclick="recomputeHistReturns()" id="histRecalcBtn"
+        title="按「昨日收盘仓位 × 当日涨跌幅」重新计算所有历史记录的持仓涨跌幅（调仓当天更准确）"
+        style="background:var(--card2);border:1.5px solid var(--border);color:var(--text);border-radius:8px;
+               padding:7px 14px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600">
+        ↻ 重算涨跌幅
+      </button>
       <button onclick="addHistRecord()" id="histAddBtn" class="rbtn" style="padding:7px 16px;font-size:12px">
         <span>＋</span> 记录今日持仓
       </button>
@@ -5945,6 +5951,28 @@ async function fetchMacroRates(){
 
 // ── 历史持仓日志 ────────────────────────────────────────────────
 
+// 计算当日组合涨跌幅（业绩归因）：
+//   当日组合涨跌 = Σ(昨日收盘仓位 × 当日个股涨跌) / Σ(昨日收盘仓位)
+// 原理：昨日收盘仓位 = 今日开盘实际持有的份额，是承受当日涨跌的基准。
+//   若当天调仓（如把某股从 5% 降到 3%），当日涨跌仍按开盘的 5% 计，
+//   而非收盘的 3%，这样调仓当天的盈亏归因才准确。
+// 参数：curStocks 当日快照(含 pct)，prevStocks 昨日快照(含 w，作权重基准)。
+//   无昨日记录(首日)时退化为用当日仓位加权。
+function _computePortPct(curStocks, prevStocks){
+  if(!curStocks || !curStocks.length) return null;
+  // 当日个股涨跌映射 code → pct
+  const curPct = {};
+  curStocks.forEach(s=>{ if(s.pct!=null && isFinite(s.pct)) curPct[s.code] = s.pct; });
+  // 权重基准：优先用昨日收盘仓位；首日无昨日则用当日仓位
+  const basis = (prevStocks && prevStocks.length) ? prevStocks : curStocks;
+  let tw = 0, wp = 0;
+  basis.forEach(b=>{
+    const w = b.w;
+    if(w > 0 && curPct[b.code] != null){ wp += w * curPct[b.code]; tw += w; }
+  });
+  return tw > 0 ? parseFloat((wp / tw).toFixed(3)) : null;
+}
+
 function renderHistTable(){
   const el = document.getElementById('histTable');
   if(!el) return;
@@ -6119,15 +6147,7 @@ function addHistRecord(){
     PORT.history=PORT.history.filter(r=>r.date!==dateStr);
   }
 
-  // 加权持仓涨跌幅 = Σ(仓位% × 涨跌幅) / Σ(仓位%)
-  let totalW=0, wPct=0;
-  PORT.sectors.forEach(sec=>sec.stocks.forEach(sk=>{
-    const pi=_PORT_PRICES[sk.code];
-    if(pi&&isFinite(pi.pct)&&sk.w>0){ wPct+=sk.w*pi.pct; totalW+=sk.w; }
-  }));
-  const portPct=totalW>0?parseFloat((wPct/totalW).toFixed(3)):null;
-
-  // 抓取当前持仓快照（按仓位降序）
+  // 抓取当前持仓快照（含当日仓位 w 与当日涨跌 pct，按仓位降序）
   const _snapStocks=[];
   PORT.sectors.forEach(sec=>sec.stocks.forEach(sk=>{
     const pi=_PORT_PRICES[sk.code];
@@ -6144,9 +6164,22 @@ function addHistRecord(){
   }));
   _snapStocks.sort((a,b)=>(b.w||0)-(a.w||0));
 
+  // 今日收盘总仓位（用于"股票仓位"列显示）
+  let dispW=0;
+  _snapStocks.forEach(s=>{ if(s.w>0) dispW+=s.w; });
+
+  // 上一条历史记录（今日之前最近一天）= 今日开盘持仓基准
+  const _prevRec=PORT.history
+    .filter(r=>r.date < dateStr && r.stocks && r.stocks.length)
+    .sort((a,b)=>b.date.localeCompare(a.date))[0];
+
+  // 持仓涨跌幅 = Σ(昨日收盘仓位 × 今日涨跌) / Σ(昨日收盘仓位)
+  // 用"今日开盘持仓"承受今日涨跌，调仓当天的归因才准确
+  const portPct=_computePortPct(_snapStocks, _prevRec?_prevRec.stocks:null);
+
   const rec={
     date:    dateStr,
-    weight:  parseFloat(totalW.toFixed(2)),
+    weight:  parseFloat(dispW.toFixed(2)),
     portPct: portPct,
     csiPct:  _csiPct!=null?parseFloat(_csiPct.toFixed(3)):null,
     note:    '',
@@ -6179,6 +6212,27 @@ function deleteHistRecord(idx){
   portSave();
   portSaveRemote();
   renderHistTable();
+}
+
+// 重算所有历史记录的持仓涨跌幅（按「昨日收盘仓位 × 当日涨跌」业绩归因）
+// 利用每条记录快照中存储的 stocks[].w 与 stocks[].pct，用前一日仓位作权重重算。
+function recomputeHistReturns(){
+  if(!PORT||!PORT.history||!PORT.history.length){ alert('暂无历史记录'); return; }
+  const asc=[...PORT.history].sort((a,b)=>a.date.localeCompare(b.date));   // 升序便于取前一日
+  let changed=0, skipped=0;
+  for(let i=0;i<asc.length;i++){
+    const cur=asc[i];
+    if(!cur.stocks||!cur.stocks.length){ skipped++; continue; }   // 无快照无法重算
+    const prev=(i>0)?asc[i-1]:null;
+    const np=_computePortPct(cur.stocks, (prev&&prev.stocks&&prev.stocks.length)?prev.stocks:null);
+    if(np!=null && np!==cur.portPct){ cur.portPct=np; changed++; }   // 直接改引用，即 PORT.history 内对象
+  }
+  portSave();
+  portSaveRemote();
+  renderHistTable();
+  alert(`已按「昨日收盘仓位 × 当日涨跌」重算持仓涨跌幅\n更新 ${changed} 条`
+    + (skipped?`，${skipped} 条因缺持仓明细跳过`:'')
+    + '。\n注：首条记录无昨日基准，按当日仓位加权。');
 }
 
 // ── 市场涨跌统计 + 两市成交额 ───────────────────────────────────
