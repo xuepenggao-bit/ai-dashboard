@@ -1101,7 +1101,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
                padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
     </div>
-    <div id="kolGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:7px">
+    <div id="kolGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">
       <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">
         点击「↻」加载X关注意见领袖观点
       </div>
@@ -6354,6 +6354,14 @@ const _KOL_CAT_COLORS = {
   '科技行业':     '#0891b2',
 };
 
+// 折叠/展开成员列表
+function _kolToggle(bid, btn, n) {
+  var d = document.getElementById(bid);
+  var o = d.style.display === 'flex';
+  d.style.display = o ? 'none' : 'flex';
+  btn.textContent = o ? n + '人 ▸' : n + '人 ▾';
+}
+
 function _renderKolGrid(data) {
   const grid = document.getElementById('kolGrid');
   const tsEl = document.getElementById('kolTs');
@@ -6362,35 +6370,49 @@ function _renderKolGrid(data) {
 
   const cats = data.categories || [];
   if (!cats.length) {
-    grid.innerHTML = '<div style="color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">暂无分类数据</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">暂无数据</div>';
     return;
   }
 
-  grid.innerHTML = cats.map(cat => {
-    const color  = cat.color || _KOL_CAT_COLORS[cat.name] || '#374151';
-    const accts  = cat.accounts || [];
+  grid.innerHTML = cats.map((cat, i) => {
+    const color = cat.color || _KOL_CAT_COLORS[cat.name] || '#374151';
+    const accts = cat.accounts || [];
+    const n     = accts.length;
+    const bid   = 'kol-b-' + i;
+
+    // 成员 badge（默认折叠）
     const badges = accts.map(a =>
-      `<a href="https://x.com/${a.handle}" target="_blank" rel="noopener"
-          style="font-size:9px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;
-                 padding:1px 5px;border-radius:5px;text-decoration:none;white-space:nowrap;
-                 display:inline-block;line-height:1.4">@${_escH(a.handle)}</a>`
+      `<a href="https://x.com/${_escH(a.handle)}" target="_blank" rel="noopener"
+          style="font-size:9px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;
+                 padding:1px 6px;border-radius:4px;text-decoration:none;white-space:nowrap">@${_escH(a.handle)}</a>`
     ).join('');
 
+    // 摘要正文
     const hasSum = cat.summary && cat.summary.trim();
     const bodyH  = hasSum
-      ? `<div style="font-size:10.5px;color:#1e293b;line-height:1.65;margin-top:5px">${_escH(cat.summary)}</div>`
-      : `<div style="font-size:10px;color:#94a3b8;line-height:1.5;margin-top:4px;font-style:italic">等待 GitHub Actions 抓取近期推文后生成摘要</div>`;
+      ? `<p style="margin:0;font-size:11.5px;color:#334155;line-height:1.8">${_escH(cat.summary)}</p>`
+      : `<p style="margin:0;font-size:11px;color:#94a3b8;font-style:italic">等待下次刷新生成摘要…</p>`;
 
-    const cntTag = cat.tweet_count
-      ? `<span style="font-size:9px;color:#6b7280"> · ${cat.tweet_count}条推文</span>` : '';
+    // 数据来源注脚
+    const src = cat.tweet_count
+      ? `<div style="margin-top:8px;padding-top:6px;border-top:1px solid #f1f5f9;
+                     font-size:9px;color:#c8d0dc;text-align:right">
+           Google News &nbsp;·&nbsp; ${cat.tweet_count} 条近期报道</div>` : '';
 
-    return `<div style="background:#fafbfc;border-radius:8px;padding:8px 10px;border:1px solid #e5e7eb">
-  <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">
-    <span style="font-size:11px;font-weight:800;color:${color}">${_escH(cat.name)}</span>
-    <span style="font-size:9.5px;color:#9ca3af;font-weight:500">${accts.length}人</span>${cntTag}
+    return `<div style="background:#fff;border-radius:10px;padding:14px 16px;
+                 border:1px solid #eef0f4;border-left:3px solid ${color};
+                 box-shadow:0 1px 4px rgba(0,0,0,.04)">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <span style="font-size:12.5px;font-weight:800;color:${color};letter-spacing:.02em">${_escH(cat.name)}</span>
+    <span onclick="_kolToggle('${bid}',this,${n})"
+          style="font-size:10px;color:#94a3b8;cursor:pointer;padding:2px 9px;
+                 border:1px solid #e5e7eb;border-radius:10px;user-select:none;
+                 white-space:nowrap;transition:color .15s"
+          onmouseover="this.style.color='#64748b'" onmouseout="this.style.color='#94a3b8'">${n}人 ▸</span>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:3px">${badges}</div>
+  <div id="${bid}" style="display:none;flex-wrap:wrap;gap:3px;margin-bottom:10px">${badges}</div>
   ${bodyH}
+  ${src}
 </div>`;
   }).join('');
 }
@@ -6403,7 +6425,7 @@ async function fetchKolSummary(force) {
   const btn  = document.getElementById('kolBtn');
   const grid = document.getElementById('kolGrid');
   if (btn)  { btn.disabled = true; btn.textContent = '…'; }
-  if (grid) grid.innerHTML = '<div style="color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">加载中…</div>';
+  if (grid) grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">加载中…</div>';
   try {
     const r = await fetch('data/twitter_kol_summary.json?_=' + Date.now(), { cache: 'no-store' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -6413,7 +6435,7 @@ async function fetchKolSummary(force) {
     console.log('[KOL] 加载成功，has_tweets:', data.has_tweets);
   } catch(e) {
     console.warn('[KOL] 加载失败:', e.message);
-    if (grid) grid.innerHTML = '<div style="color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">数据加载失败，点击↻重试</div>';
+    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">数据加载失败，点击↻重试</div>';
   }
   if (btn) { btn.disabled = false; btn.textContent = '↻'; }
 }
