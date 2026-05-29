@@ -1,0 +1,49 @@
+name: Refresh KOL Tweet Summaries
+
+on:
+  schedule:
+    - cron: '0 1 * * *'   # 每天 09:00 CST (01:00 UTC)
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: '手动触发原因'
+        required: false
+        default: 'Manual KOL refresh'
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    permissions:
+      contents: write
+      models: read
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests twikit
+
+      - name: Run KOL refresh script
+        env:
+          GITHUB_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
+          TWITTER_AUTH_TOKEN:  ${{ secrets.TWITTER_AUTH_TOKEN }}
+          TWITTER_CT0:         ${{ secrets.TWITTER_CT0 }}
+        run: python .github/scripts/refresh_kol_tweets.py
+
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/twitter_kol_summary.json
+          git diff --staged --quiet && echo "No changes." && exit 0
+          git commit -m "chore: refresh KOL summary $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git pull --rebase origin main
+          git push
