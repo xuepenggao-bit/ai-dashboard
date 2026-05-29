@@ -6207,6 +6207,20 @@ async function fetchMarketStats(){
 // ── 涨跌统计：9 档区间计数法 ────────────────────────────────────────
 // 策略：不拉取逐股数据，改为 9 次 pz=1 的区间查询，每次只取 total 计数。
 // EM 内部 f3 单位为整数 centipercent（9.5% = 950），过滤器值须与之一致。
+// 东财 clist 请求：多域名 + 重试（_idxFetch 带超时与退避），单次成功率大幅提升
+async function _emClistGet(qs){
+  const hosts = ['https://push2.eastmoney.com','https://push2delay.eastmoney.com'];
+  for(const h of hosts){
+    try{
+      const d = await _idxFetch(h + '/api/qt/clist/get?' + qs + '&_=' + Date.now(), {timeout:7000, retries:1});
+      if(d && d.data) return d;
+    }catch(e){ /* 试下一个域名 */ }
+  }
+  return null;
+}
+
+let _breadthCache = null;   // 上次成功的渲染结果（粘性缓存，失败时保留不消失）
+
 async function _doFetchBreadth(){
   const bTs    = document.getElementById('mktBreadthTs');
   const chartEl= document.getElementById('mktBreadthChart');
@@ -6218,13 +6232,11 @@ async function _doFetchBreadth(){
   if(bTs) bTs.textContent = '加载中…';
   try{
     const FS  = 'm:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
-    const API = 'https://push2.eastmoney.com/api/qt/clist/get';
     // 不加 fltt，保留 EM 内部整数格式，与 b:f3 过滤器单位一致
     const BP  = 'np=1&invt=2&pn=1&pz=1&fid=f3&fields=f3';
 
-    // ① 获取全市场总家数（不加区间过滤）
-    const rT = await fetch(`${API}?${BP}&fs=${FS}&_=${Date.now()}`)
-      .then(r=>r.ok?r.json():null).catch(()=>null);
+    // ① 获取全市场总家数（不加区间过滤；多域名+重试）
+    const rT = await _emClistGet(`${BP}&fs=${FS}`);
     if(!rT?.data?.total) throw new Error('获取总数失败');
     const total = rT.data.total;
 
@@ -6242,14 +6254,15 @@ async function _doFetchBreadth(){
       {label:'5~跌',  lo: -949,    hi: -500,   barCol:'#16a34a', lblCol:'#15803d'},
       {label:'跌停',   lo: -100000, hi: -950,   barCol:'#14532d', lblCol:'#166534'},
     ];
+    // 多域名+重试拉取每档计数；失败档返回 -1 以便区分"0家"与"请求失败"
     const counts = await Promise.all(
-      BKTS.map((b, i) => {
-        const fs = `${FS}+b:f3:${b.lo}:${b.hi}`;
-        return fetch(`${API}?${BP}&fs=${fs}&_=${Date.now()+i*13}`)
-          .then(r=>r.ok?r.json():null).catch(()=>null)
-          .then(d => parseInt(d?.data?.total)||0);
-      })
+      BKTS.map(b => _emClistGet(`${BP}&fs=${FS}+b:f3:${b.lo}:${b.hi}`)
+        .then(d => d?.data ? (parseInt(d.data.total)||0) : -1))
     );
+    // 若过半档位请求失败，视为整体失败（走 catch 用缓存兜底）
+    const failed = counts.filter(c=>c<0).length;
+    if(failed > 4) throw new Error(`区间请求多数失败(${failed}/9)`);
+    for(let i=0;i<counts.length;i++) if(counts[i]<0) counts[i]=0;
     const sumCounts  = counts.reduce((a,c)=>a+c, 0);
     const activeStks = sumCounts - counts[4];   // 非平盘（有涨跌）家数
     console.log('[涨跌统计] total:', total, 'sum:', sumCounts, 'active:', activeStks, 'buckets:', counts);
@@ -6299,16 +6312,34 @@ async function _doFetchBreadth(){
         +`<div style="width:100%;height:${bh}px;background:${b.barCol};border-radius:${r}px ${r}px 0 0"></div></div>`
         +`<div style="font-size:7.5px;color:#6b7280;text-align:center;margin-top:3px;white-space:nowrap;line-height:1.2">${b.label}</div></div>`;
     }).join('');
+    const _hm = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
     if(chartEl) chartEl.innerHTML=
       `<div style="display:flex;align-items:stretch;gap:1px;padding:0 2px">${bars}</div>`
       +`<div style="font-size:9px;color:#9ca3af;text-align:center;margin-top:4px">共 ${total} 家</div>`;
-    if(bTs) bTs.textContent=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    if(bTs) bTs.textContent=_hm;
+
+    // 成功后写入粘性缓存（含各数字与直方图，供失败时回填）
+    _breadthCache = {
+      up:String(totalUp), down:String(totalDown), lu:String(b_lu), ld:String(b_ld),
+      flat:bFlat, chart:chartEl?chartEl.innerHTML:'', ts:_hm
+    };
   }catch(e){
     console.warn('[涨跌统计]', e.message);
-    if(chartEl) chartEl.innerHTML=
-      `<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">`
-      +`获取失败：${e.message}<br><span style="font-size:10px">请点击↻重试</span></div>`;
-    if(bTs) bTs.textContent='';
+    // 有缓存则回填上次成功值（不闪现消失），仅从未成功过时才显示重试提示
+    if(_breadthCache){
+      if(elUp)   elUp.textContent   = _breadthCache.up;
+      if(elDown) elDown.textContent = _breadthCache.down;
+      if(elLU)   elLU.textContent   = _breadthCache.lu;
+      if(elLD)   elLD.textContent   = _breadthCache.ld;
+      if(elFlat){ elFlat.textContent='平盘 '+_breadthCache.flat+' 家'; elFlat.style.display=_breadthCache.flat>0?'block':'none'; }
+      if(chartEl) chartEl.innerHTML = _breadthCache.chart;
+      if(bTs) bTs.textContent = _breadthCache.ts + ' (缓存)';
+    }else{
+      if(chartEl) chartEl.innerHTML=
+        `<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">`
+        +`暂未取到数据<br><span style="font-size:10px">请点击↻重试</span></div>`;
+      if(bTs) bTs.textContent='';
+    }
   }
 }
 
