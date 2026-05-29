@@ -5,7 +5,7 @@ Refresh X KOL (Key Opinion Leader) tweet summaries.
 Pipeline:
   1. Load account list from data/twitter_following.json
   2. Group accounts into 5 meta-categories
-  3. Fetch latest 5 tweets per account via twikit (uses X cookies)
+  3. Fetch latest 5 tweets per account via X internal v1.1 REST API (cookie auth)
   4. Per category: summarise collected tweets with GPT-4o-mini
   5. Write data/twitter_kol_summary.json
 
@@ -14,11 +14,9 @@ Credentials (GitHub Secrets):
   TWITTER_CT0         — value of ct0 cookie from x.com
   GITHUB_TOKEN        — auto-injected by GitHub Actions (for GPT-4o-mini)
 
-If Twitter credentials are absent the script still runs and writes the
-account-profile-only JSON (no tweet summaries), so the UI shows at least
-the grouped account badges.
+No third-party Twitter client library required — uses direct HTTP requests.
 """
-import os, json, re, asyncio, datetime, requests
+import os, json, re, datetime, time, requests
 
 # ── credentials ────────────────────────────────────────────────────
 TWITTER_AUTH_TOKEN = os.environ.get('TWITTER_AUTH_TOKEN', '').strip()
@@ -112,40 +110,79 @@ def build_cat_map(following):
             cats[meta].append(acc)
     return cats
 
-# ── tweet fetching via twikit ────────────────────────────────────────
-async def _fetch_tweets_twikit(accounts):
+# ── tweet fetching via X internal v1.1 API ──────────────────────────
+# X公共Bearer Token（所有网页端共用，读取公开Timeline无需用户OAuth）
+_X_BEARER = ('AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I7sGkNMHrp8%3D'
+              'hcLSKPJuW5U0iRFKZb6D7Xy1UerL3k0VxmTnMMLjxQSBqj0yLm')
+
+def _make_x_session():
+    """Create a requests.Session pre-configured with X cookie auth."""
+    s = requests.Session()
+    s.headers.update({
+        'Authorization':            f'Bearer {_X_BEARER}',
+        'x-csrf-token':             TWITTER_CT0,
+        'x-twitter-active-user':    'yes',
+        'x-twitter-client-language':'en',
+        'User-Agent': ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                       'AppleWebKit/537.36 (KHTML, like Gecko) '
+                       'Chrome/124.0.0.0 Safari/537.36'),
+        'Accept':          '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer':         'https://twitter.com/',
+        'Origin':          'https://twitter.com',
+    })
+    s.cookies.update({'auth_token': TWITTER_AUTH_TOKEN, 'ct0': TWITTER_CT0})
+    return s
+
+def _fetch_user_tweets(session, handle, count=5):
     """
-    Fetch latest 5 tweets for each account using twikit (unofficial X API).
-    Returns {handle: [tweet_text, ...]}
+    Fetch latest tweets for one account via X v1.1 REST API.
+    Returns list of tweet text strings.
     """
     try:
-        from twikit import Client
-    except ImportError:
-        print('[twikit] not installed — skipping tweet fetch')
-        return {}
+        r = session.get(
+            'https://api.twitter.com/1.1/statuses/user_timeline.json',
+            params={
+                'screen_name':    handle,
+                'count':          count,
+                'tweet_mode':     'extended',
+                'exclude_replies':'true',
+                'include_rts':    'false',
+            },
+            timeout=15,
+        )
+        if r.status_code == 200:
+            tweets = r.json()
+            if isinstance(tweets, list):
+                texts = [t.get('full_text', t.get('text', '')) for t in tweets]
+                texts = [t.strip() for t in texts if t.strip()][:count]
+                return texts
+            print(f'  [X API] @{handle}: unexpected response type')
+        else:
+            print(f'  [X API] @{handle}: HTTP {r.status_code}')
+    except Exception as e:
+        print(f'  [X API] @{handle}: {e}')
+    return []
 
+def _fetch_all_tweets(accounts):
+    """
+    Fetch tweets for all accounts.  Returns {handle: [tweet_text, ...]}
+    """
     if not TWITTER_AUTH_TOKEN or not TWITTER_CT0:
-        print('[twikit] TWITTER_AUTH_TOKEN / TWITTER_CT0 not set — skipping')
+        print('[X API] TWITTER_AUTH_TOKEN / TWITTER_CT0 not set — skipping')
         return {}
 
-    client = Client('en-US')
-    client.set_cookies({'auth_token': TWITTER_AUTH_TOKEN, 'ct0': TWITTER_CT0})
-
+    session = _make_x_session()
     results = {}
     for acc in accounts:
         handle = acc['handle']
-        try:
-            user   = await client.get_user_by_screen_name(handle)
-            tweets = await user.get_tweets('Tweets', count=5)
-            texts  = [t.text for t in tweets if t.text][:5]
-            if texts:
-                results[handle] = texts
-                print(f'  [twikit] @{handle}: {len(texts)} tweets fetched')
-            await asyncio.sleep(1.0)   # gentle rate limiting
-        except Exception as e:
-            print(f'  [twikit] @{handle}: {e}')
-            await asyncio.sleep(2.0)
-
+        texts  = _fetch_user_tweets(session, handle)
+        if texts:
+            results[handle] = texts
+            print(f'  [X API] @{handle}: {len(texts)} tweets')
+        else:
+            print(f'  [X API] @{handle}: no tweets')
+        time.sleep(0.5)   # gentle rate limiting
     return results
 
 # ── AI summarisation ─────────────────────────────────────────────────
@@ -195,22 +232,21 @@ def ai_summarise_category(cat_name, accounts_with_tweets):
     return ''
 
 # ── main ─────────────────────────────────────────────────────────────
-async def main():
+def main():
     print('=== refresh_kol_tweets.py start ===')
     following  = load_following()
     cat_map    = build_cat_map(following)
 
-    # Collect all enabled accounts in one list for tweet fetching
     all_accounts = []
     for accs in cat_map.values():
         all_accounts.extend(accs)
 
     print(f'  {len(all_accounts)} accounts loaded, {len(cat_map)} categories')
 
-    # Fetch tweets
-    tweet_map = await _fetch_tweets_twikit(all_accounts)
+    # Fetch tweets via X v1.1 API
+    tweet_map  = _fetch_all_tweets(all_accounts)
     has_tweets = bool(tweet_map)
-    print(f'  Tweets fetched for {len(tweet_map)} accounts')
+    print(f'  Tweets fetched for {len(tweet_map)}/{len(all_accounts)} accounts')
 
     # Build output categories
     output_cats = []
@@ -220,16 +256,10 @@ async def main():
         if not accs:
             continue
 
-        # Collect tweets for this category
-        cat_tweets = {}
-        total_tweets = 0
-        for acc in accs:
-            h = acc['handle']
-            if h in tweet_map:
-                cat_tweets[h] = tweet_map[h]
-                total_tweets += len(tweet_map[h])
+        cat_tweets   = {h: tweet_map[h] for a in accs
+                        if (h := a['handle']) in tweet_map}
+        total_tweets = sum(len(v) for v in cat_tweets.values())
 
-        # AI summary
         summary = ''
         if cat_tweets:
             print(f'  Summarising {cat_name} ({total_tweets} tweets)…')
@@ -259,4 +289,4 @@ async def main():
     print('=== done ===')
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
