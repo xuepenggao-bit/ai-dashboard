@@ -6582,6 +6582,8 @@ async function triggerHotRefresh() {
 }
 
 // ── 主力净流入 TOP 20 ──────────────────────────────────────────
+let _mfCache = null;   // 上次成功渲染的列表 HTML（粘性缓存，失败时保留不消失）
+
 async function fetchMainFlow(){
   const listEl = document.getElementById('mfList');
   const tsEl   = document.getElementById('mfTs');
@@ -6589,23 +6591,24 @@ async function fetchMainFlow(){
   if(!listEl) return;
   if(btn){ btn.disabled=true; btn.textContent='⏳'; }
 
+  const UT    = 'bd1d9ddb04089700cf9c27f6f7426281';
+  const path  = `/api/qt/clist/get?fid=f62&po=1&pz=20&pn=1&np=1&fltt=2&invt=2&ut=${UT}`
+              + `&fields=f12,f14,f3,f62,f184&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23`;
+  const hosts = ['https://push2.eastmoney.com','https://push2delay.eastmoney.com'];
+
   try{
-    const _t = Date.now();
-    const UT = 'bd1d9ddb04089700cf9c27f6f7426281';
-    // 东方财富 A股主力净流入排行：覆盖上交所主板+科创板、深交所主板+创业板
-    const url = `https://push2.eastmoney.com/api/qt/clist/get`
-      + `?fid=f62&po=1&pz=20&pn=1&np=1&fltt=2&invt=2&ut=${UT}`
-      + `&fields=f12,f14,f3,f62,f184`
-      + `&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23&_=${_t}`;
-    const resp = await fetch(url);
-    if(!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-    if(data?.rc !== 0 && data?.rc != null) throw new Error('API rc=' + data.rc);
-    const list = data?.data?.diff;
-    if(!list || !list.length){
-      listEl.innerHTML='<div style="color:var(--text2);font-size:11px;text-align:center;padding:10px 0">暂无数据</div>';
-      return;
+    // 多域名 + 重试（_idxFetch 带超时与退避重试）
+    let list = null;
+    for(const host of hosts){
+      try{
+        const data = await _idxFetch(host + path + '&_=' + Date.now(), {timeout:7000, retries:1});
+        if(data && (data.rc === 0 || data.rc == null)){
+          const d = data.data && data.data.diff;
+          if(d && d.length){ list = d; break; }   // 命中即停
+        }
+      }catch(e){ /* 试下一个域名 */ }
     }
+    if(!list || !list.length) throw new Error('empty');
 
     // 格式化金额：亿 / 万
     const _fmtFlow = v => {
@@ -6614,7 +6617,7 @@ async function fetchMainFlow(){
       return abs>=1e8 ? s+(abs/1e8).toFixed(1)+'亿' : s+(abs/1e4).toFixed(0)+'万';
     };
 
-    listEl.innerHTML = list.map((item,i)=>{
+    const html = list.map((item,i)=>{
       const pct  = parseFloat(item.f3);
       const flow = parseFloat(item.f62);
       const pctOk = isFinite(pct), flowOk = isFinite(flow);
@@ -6630,9 +6633,17 @@ async function fetchMainFlow(){
            + `</div>`;
     }).join('');
 
+    listEl.innerHTML = html;
+    _mfCache = html;   // 缓存本次成功结果
     if(tsEl) tsEl.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
   }catch(err){
-    listEl.innerHTML=`<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">获取失败：${err.message}<br><span style="font-size:10px">请点击↻重试</span></div>`;
+    // 失败时：有缓存则保留上次数据（不闪现消失），仅从未成功过时才显示重试提示
+    if(_mfCache){
+      if(!listEl.innerHTML || listEl.textContent.includes('加载中') || listEl.textContent.includes('获取失败'))
+        listEl.innerHTML = _mfCache;
+    }else{
+      listEl.innerHTML=`<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">暂未取到数据<br><span style="font-size:10px">请点击↻重试</span></div>`;
+    }
     console.warn('fetchMainFlow:', err.message);
   }finally{
     if(btn){ btn.disabled=false; btn.textContent='↻'; }
