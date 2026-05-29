@@ -6735,20 +6735,22 @@ function renderPortTop3(){
   var downEl = document.getElementById('portTop3Down');
   if(!upEl || !downEl) return;
 
-  // 收集所有已有价格的持仓
+  // 收集所有已有价格且仓位 >= 1% 的持仓
   var entries = [];
   if(typeof PORT !== 'undefined' && PORT && PORT.sectors){
     PORT.sectors.forEach(function(sec){
       sec.stocks.forEach(function(sk){
         var pi = _PORT_PRICES[sk.code];
         if(pi && isFinite(pi.pct)){
+          var w = (pi.w != null ? pi.w : sk.w);
+          if((w == null) || (w < 1)) return; // 仓位低于 1% 不进榜
           entries.push({
             name:  pi.name || sk.name,
             code:  sk.code,
             mkt:   pi.mkt  || sk.mkt,
             pct:   pi.pct,
             price: pi.price,
-            w:     (pi.w != null ? pi.w : sk.w)
+            w:     w
           });
         }
       });
