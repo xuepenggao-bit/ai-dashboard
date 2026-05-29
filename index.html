@@ -531,7 +531,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   <div class="alert a-info mb16">
     <span>ℹ</span>
-    <div><strong>上部分</strong>：A股市场<strong>日频</strong>动态指标（融资融券 · 涨跌家数 · iVIX）&nbsp;·&nbsp; <strong>下部分</strong>：月度/季度指标（新增投资者 · 主要指数PE · 国家统计局 · 中国人民银行）</div>
+    <div><strong>上部分</strong>：A股市场<strong>日频</strong>动态指标（融资融券 · 前10成交占比）&nbsp;·&nbsp; <strong>下部分</strong>：月度/季度指标（新增投资者 · 主要指数PE · 国家统计局 · 中国人民银行）</div>
   </div>
 
   <!-- ── 上部分：A股市场监控 ── -->
@@ -570,44 +570,22 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- 日频：iVIX + 融资融券 -->
-  <div class="g2 mb16">
-    <!-- iVIX 波动率指数历史走势 -->
-    <div class="card" style="border-top:3px solid #7c3aed">
-      <div class="ch">
-        <span class="ct">iVIX 上证波动率指数 (历史趋势)</span>
-        <span class="cbadge" id="vixBadge" style="background:#ede9fe;color:#5b21b6">加载中…</span>
-      </div>
-      <div style="display:flex;align-items:flex-end;gap:16px;margin-bottom:10px;padding:9px 12px;background:linear-gradient(135deg,#faf5ff,#ede9fe);border-radius:8px;border:1px solid #c4b5fd">
-        <div>
-          <div class="tx3" style="margin-bottom:2px">最新 iVIX</div>
-          <div style="font-size:22px;font-weight:800;line-height:1;color:#5b21b6" id="kVixVal">—</div>
-        </div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:700" id="kVixLevel"></div>
-          <div class="tx3 mt4" style="color:#8b5cf6" id="kVixDate"></div>
-        </div>
-      </div>
-      <div style="height:175px"><canvas id="cVix"></canvas></div>
-      <div class="tx3 mt4">来源: 东方财富 · 基于上证50ETF(510050)日线计算20日滚动已实现波动率（年化）· VIX&gt;30 高波动 · VIX&lt;12 低波动</div>
+  <!-- 日频：融资融券余额趋势（全宽）-->
+  <div class="card mb16">
+    <div class="ch">
+      <span class="ct">融资融券余额趋势 (日频·¥亿)</span>
+      <span class="cbadge" style="background:#d1fae5;color:#065f46">沪深交易所 · 日频</span>
     </div>
-    <!-- 融资融券 -->
-    <div class="card">
-      <div class="ch">
-        <span class="ct">融资融券余额趋势 (日频·¥亿)</span>
-        <span class="cbadge" style="background:#d1fae5;color:#065f46">沪深交易所 · 日频</span>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;padding:8px 12px;background:#fffbeb;border-radius:8px;border:1px solid #fde68a">
+      <div>
+        <span class="tx3">最新余额&nbsp;</span>
+        <span id="marginKpiVal" style="font-size:18px;font-weight:800;color:#d97706">—</span>
       </div>
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;padding:8px 12px;background:#fffbeb;border-radius:8px;border:1px solid #fde68a">
-        <div>
-          <span class="tx3">最新余额&nbsp;</span>
-          <span id="marginKpiVal" style="font-size:18px;font-weight:800;color:#d97706">¥28,780亿</span>
-        </div>
-        <span id="marginKpiDate" class="tx3" style="color:#94a3b8">2026-05-26</span>
-        <span id="marginKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8">近51交易日 · 2026-03-10起</span>
-      </div>
-      <div style="height:175px"><canvas id="cMargin"></canvas></div>
-      <div class="tx3 mt4">来源: 沪深交易所 · 日频余额数据 · <span id="marginKpiFooter">数据截至2026-05-26</span> · 趋势参考</div>
+      <span id="marginKpiDate" class="tx3" style="color:#94a3b8">加载中…</span>
+      <span id="marginKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
     </div>
+    <div style="height:200px"><canvas id="cMargin"></canvas></div>
+    <div class="tx3 mt4">来源: 东方财富 · 日频两融余额（沪深合计）· <span id="marginKpiFooter">加载中…</span></div>
   </div>
 
   <!-- 日频：前10成交占比（全宽）-->
@@ -4807,8 +4785,8 @@ async function fetchDailyCharts(){
   // ── 1. 融资融券余额 ──────────────────────────────────────────────
   try{
     const d=await _fetchDailySeries(
-      _DC60+'reportName=RPT_MARGIN_GGMX&columns=TRADE_DATE,RZRQYE&sortColumns=TRADE_DATE',
-      'TRADE_DATE',['RZRQYE','TOTAL_RZRQYE']
+      _DC60+'reportName=RPTA_RZRQ_LSHJ&columns=DIM_DATE,RZRQYE&sortColumns=DIM_DATE',
+      'DIM_DATE',['RZRQYE']
     );
     if(CH.margin){
       CH.margin.data.labels=d.labels;
@@ -4838,7 +4816,7 @@ async function fetchDailyCharts(){
     const kv=document.getElementById('marginKpiVal');    if(kv) kv.textContent='—';
     const kd=document.getElementById('marginKpiDate');   if(kd) kd.textContent='无法取得';
     const kc=document.getElementById('marginKpiCnt');    if(kc) kc.textContent='实时数据源暂不可用';
-    const kf=document.getElementById('marginKpiFooter'); if(kf) kf.textContent='⚠️ 东方财富数据接口已升级，融资融券实时数据暂无法取得';
+    const kf=document.getElementById('marginKpiFooter'); if(kf) kf.textContent='⚠️ 融资融券数据暂时取不到，请点「刷新宏观数据」重试';
   }
 
   // ── 2. 北向资金已移除（沪深港通自 2024-08 起官方停止披露日度北向净流入）──
