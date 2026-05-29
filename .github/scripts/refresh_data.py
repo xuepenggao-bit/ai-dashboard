@@ -130,24 +130,25 @@ def fetch_hot_stocks():
 
 # ── 情感来源 1：Xueqiu 用户时间线 ───────────────────────────────
 
-def _xueqiu_posts(symbol, pages=3):
-    """尝试雪球 user_timeline（GitHub Actions IP 通常被 Bot 检测拦截）。"""
+def _xueqiu_posts(symbol, pages=2):
+    """雪球个股讨论搜索接口 symbol/search/status.json（先 GET 首页取 cookie，
+    本地/常规 IP 可用；配 XQ_TOKEN 登录态可提升数据中心 IP 成功率）。"""
     posts = []
     sess = xq_session()
     for page in range(1, pages + 1):
-        url = (f'https://xueqiu.com/v4/statuses/user_timeline.json'
-               f'?page={page}&count=20&symbol={symbol}&_={int(time.time()*1000)}')
+        url = ('https://xueqiu.com/query/v1/symbol/search/status.json'
+               f'?count=20&comment=0&symbol={symbol}&hl=0&source=all'
+               f'&sort=time&page={page}&type=11&_={int(time.time()*1000)}')
         try:
-            r = sess.get(url, timeout=15)
-            print(f'  [{symbol}] XQ timeline 第{page}页 HTTP {r.status_code}')
-            if r.status_code in (401, 403):
+            r = sess.get(url, timeout=15, headers={'Referer': f'https://xueqiu.com/S/{symbol}'})
+            print(f'  [{symbol}] XQ status 第{page}页 HTTP {r.status_code}')
+            if r.status_code in (400, 401, 403):
                 break
             r.raise_for_status()
             if _is_html(r):
                 print(f'  [{symbol}] XQ 返回 HTML（Bot 检测），停止')
                 break
-            data = r.json()
-            lst = data.get('statuses', data.get('list', []))
+            lst = r.json().get('list', [])
             posts.extend(lst)
             if len(lst) < 15:
                 break
@@ -155,8 +156,34 @@ def _xueqiu_posts(symbol, pages=3):
             print(f'  [{symbol}] XQ 第{page}页异常: {e}')
             break
         if page < pages:
-            time.sleep(0.5)
+            time.sleep(0.6)
     return posts
+
+def _hk_to_ashare(name):
+    """港股名称 → 同名 A 股 symbol（雪球 suggest 接口）。
+    很多港股有同名 A 股且讨论更活跃，故用 A 股代抓。无同名 A 股返回 None。"""
+    if not name:
+        return None
+    try:
+        sess = xq_session()
+        url = 'https://xueqiu.com/query/v1/suggest_stock.json?q=' + requests.utils.quote(name)
+        r = sess.get(url, timeout=10, headers={'Referer': 'https://xueqiu.com/'})
+        if r.status_code != 200 or _is_html(r):
+            return None
+        data = r.json().get('data', [])
+        # 优先精确同名的 A 股（SH/SZ）
+        for it in data:
+            code = it.get('code', '')
+            if code[:2] in ('SH', 'SZ') and it.get('query', '') == name:
+                return code
+        # 放宽：第一个 A 股匹配
+        for it in data:
+            code = it.get('code', '')
+            if code[:2] in ('SH', 'SZ'):
+                return code
+    except Exception as e:
+        print(f'  [{name}] 港股→A股映射失败: {e}')
+    return None
 
 # ── 情感来源 2：Yahoo Finance 新闻（全球可达，无需认证） ─────────
 
@@ -276,11 +303,20 @@ def _cn_announcements(symbol):
 
 
 def fetch_stock_posts(symbol, name='', industry=''):
-    """雪球 timeline → 东方财富公告 → Yahoo Finance 新闻（三级降级）。"""
-    # 1. Xueqiu（需要 XQ_TOKEN；GitHub Actions IP 通常被 Bot 检测）
-    posts = _xueqiu_posts(symbol, pages=3)
+    """雪球讨论 → 东方财富公告 → Yahoo Finance 新闻（三级降级）。
+    港股用同名 A 股抓雪球讨论（A 股讨论更活跃）。"""
+    # 港股 → 同名 A 股 symbol（用于雪球讨论抓取）
+    xq_sym = symbol
+    if symbol.startswith('HK') and name:
+        a = _hk_to_ashare(name)
+        if a:
+            print(f'  [{symbol}] 港股→同名A股 {a} 抓雪球讨论')
+            xq_sym = a
+
+    # 1. 雪球个股讨论
+    posts = _xueqiu_posts(xq_sym, pages=2)
     if posts:
-        print(f'  [{symbol}] 雪球获取成功 {len(posts)} 条')
+        print(f'  [{symbol}] 雪球获取成功 {len(posts)} 条（symbol={xq_sym}）')
         return posts
 
     # 2. 公告（东方财富/巨潮）：中文标题，关键词分析友好
