@@ -101,56 +101,76 @@ def build_cat_map(following):
             cats[meta].append(acc)
     return cats
 
-# ── Bing News RSS fetch ──────────────────────────────────────────────
+# ── News RSS fetch ───────────────────────────────────────────────────
 
-def _bing_news_snippets(display_name, handle, count=4):
-    """
-    Search Bing News for recent mentions of this person.
-    Returns list of "title — summary" strings.
-    """
-    # Search by display name + twitter/x handle
-    q = f'"{display_name}" OR "x.com/{handle}" OR "twitter.com/{handle}"'
-    url = ('https://www.bing.com/news/search'
-           f'?q={urllib.parse.quote(q)}&format=rss&count={count}')
+def _parse_rss_items(xml_text, count):
+    """Parse RSS XML and return list of 'title — desc' strings."""
+    snippets = []
     try:
-        r = requests.get(url, headers={'User-Agent': UA}, timeout=12)
-        if r.status_code != 200:
-            return []
-        root = ET.fromstring(r.text)
-        ns   = {'media': 'http://search.yahoo.com/mrss/'}
-        items = root.findall('.//item')
-        snippets = []
-        for item in items[:count]:
+        root = ET.fromstring(xml_text)
+        for item in root.findall('.//item')[:count]:
             title = (item.findtext('title') or '').strip()
             desc  = (item.findtext('description') or '').strip()
-            # strip HTML tags from description
             desc  = re.sub(r'<[^>]+>', ' ', desc)
             desc  = re.sub(r'\s+', ' ', desc).strip()[:200]
             if title:
                 snippets.append(f'{title} — {desc}' if desc else title)
-        return snippets
     except Exception as e:
-        print(f'  [Bing] {display_name}: {e}')
-        return []
+        pass
+    return snippets
+
+def _fetch_google_news(display_name, handle, count=4):
+    """Google News RSS — public feed, no API key, accessible from cloud IPs."""
+    q   = urllib.parse.quote(f'"{display_name}"')
+    url = f'https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en'
+    try:
+        r = requests.get(url, headers={'User-Agent': UA,
+                                       'Accept': 'application/rss+xml, text/xml, */*'},
+                         timeout=15)
+        print(f'    [GNews] HTTP {r.status_code} ct={r.headers.get("Content-Type","?")[:30]}')
+        if r.status_code == 200:
+            items = _parse_rss_items(r.text, count)
+            return items
+    except Exception as e:
+        print(f'    [GNews] {display_name}: {e}')
+    return []
+
+def _fetch_bing_news(display_name, handle, count=4):
+    """Bing News RSS — fallback."""
+    q   = urllib.parse.quote(f'"{display_name}"')
+    url = f'https://www.bing.com/news/search?q={q}&format=rss&count={count}'
+    try:
+        r = requests.get(url, headers={'User-Agent': UA}, timeout=12)
+        print(f'    [Bing]  HTTP {r.status_code} ct={r.headers.get("Content-Type","?")[:30]}')
+        if r.status_code == 200:
+            return _parse_rss_items(r.text, count)
+    except Exception as e:
+        print(f'    [Bing]  {display_name}: {e}')
+    return []
+
+def _news_snippets(display_name, handle, count=4):
+    """Try Google News first, then Bing."""
+    items = _fetch_google_news(display_name, handle, count)
+    if not items:
+        items = _fetch_bing_news(display_name, handle, count)
+    return items
 
 def fetch_news_for_category(cat_name, accounts):
     """
-    Fetch Bing News snippets for up to 6 accounts in a category.
-    Focus on the most prominent ones (first 6 by list order).
+    Fetch news snippets for up to 6 prominent accounts in a category.
     Returns {handle: [snippet, ...]}
     """
     results = {}
-    # Limit to top 6 per category to avoid too many requests
     for acc in accounts[:6]:
         handle       = acc['handle']
         display_name = acc.get('display_name', handle)
-        snippets     = _bing_news_snippets(display_name, handle, count=4)
+        snippets     = _news_snippets(display_name, handle, count=4)
         if snippets:
             results[handle] = snippets
-            print(f'  [Bing] @{handle}: {len(snippets)} snippets')
+            print(f'  ✓ @{handle}: {len(snippets)} snippets')
         else:
-            print(f'  [Bing] @{handle}: no results')
-        time.sleep(0.4)  # gentle rate limiting
+            print(f'  ✗ @{handle}: no results')
+        time.sleep(0.5)
     return results
 
 # ── AI summarisation ─────────────────────────────────────────────────
