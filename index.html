@@ -610,24 +610,14 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- 日频：涨跌家数 + 前10成交占比 -->
-  <div class="g2 mb16">
-    <div class="card">
-      <div class="ch">
-        <span class="ct">A股每日涨跌家数 (日频·家)</span>
-        <span class="cbadge" style="background:#d1fae5;color:#065f46">沪深交易所 · 日频</span>
-      </div>
-      <div style="height:210px"><canvas id="cUpDown"></canvas></div>
-      <div id="cUpDownFooter" class="tx3 mt4">来源: 东方财富 · 加载中…</div>
+  <!-- 日频：前10成交占比（全宽）-->
+  <div class="card mb16">
+    <div class="ch">
+      <span class="ct">前10股票成交额占全市场比 (日频·%)</span>
+      <span id="concBadge" class="cbadge" style="background:#fef9c3;color:#92400e">历史估算数据</span>
     </div>
-    <div class="card">
-      <div class="ch">
-        <span class="ct">前10股票成交额占全市场比 (日频·%)</span>
-        <span id="concBadge" class="cbadge" style="background:#fef9c3;color:#92400e">历史估算数据</span>
-      </div>
-      <div style="height:210px"><canvas id="cConc"></canvas></div>
-      <div class="tx3 mt4" id="concFooter">来源: 估算数据 · 成交集中度越高代表龙头效应越强 · 趋势参考 · 点击"刷新宏观数据"尝试获取最新数据</div>
-    </div>
+    <div style="height:210px"><canvas id="cConc"></canvas></div>
+    <div class="tx3 mt4" id="concFooter">来源: 估算数据 · 成交集中度越高代表龙头效应越强 · 趋势参考 · 点击"刷新宏观数据"尝试获取最新数据</div>
   </div>
 
   <!-- 北向资金指标已移除：沪深港通自 2024-08 起官方停止披露日度北向资金净流入，数据源已不存在 -->
@@ -1450,12 +1440,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div style="font-size:12px;color:var(--text2);margin-top:3px">记录每日仓位与涨跌数据，自动同步至云端</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <button onclick="recomputeHistReturns()" id="histRecalcBtn"
-        title="按「昨日收盘仓位 × 当日涨跌幅」重新计算所有历史记录的持仓涨跌幅（调仓当天更准确）"
-        style="background:var(--card2);border:1.5px solid var(--border);color:var(--text);border-radius:8px;
-               padding:7px 14px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600">
-        ↻ 重算涨跌幅
-      </button>
       <button onclick="addHistRecord()" id="histAddBtn" class="rbtn" style="padding:7px 16px;font-size:12px">
         <span>＋</span> 记录今日持仓
       </button>
