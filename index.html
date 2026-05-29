@@ -6232,17 +6232,12 @@ async function _doFetchBreadth(){
   if(bTs) bTs.textContent = '加载中…';
   try{
     const FS  = 'm:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
-    // 不加 fltt，保留 EM 内部整数格式，与 b:f3 过滤器单位一致
-    const BP  = 'np=1&invt=2&pn=1&pz=1&fid=f3&fields=f3';
+    // 不加 fltt，f3 为 EM 内部整数 centipercent（-1.56% = -156），与 BKTS 阈值单位一致
+    const BP  = 'np=1&invt=2&fid=f12&po=0&fields=f3';
 
-    // ① 获取全市场总家数（不加区间过滤；多域名+重试）
-    const rT = await _emClistGet(`${BP}&fs=${FS}`);
-    if(!rT?.data?.total) throw new Error('获取总数失败');
-    const total = rT.data.total;
-
-    // ② 9 档并发区间查询（centipercent: 9.5%=950, 5%=500, 1%=100）
-    //    涨停 ≥950 | 涨5~9.5% 500~949 | 涨1~5% 100~499 | 微涨 1~99
-    //    平盘 0~0  | 微跌 -99~-1 | 跌1~5% -499~-100 | 跌5~9.5% -949~-500 | 跌停 ≤-950
+    // 9 档区间（centipercent: 9.5%=950, 5%=500, 1%=100）
+    //   涨停 ≥950 | 涨5~9.5% 500~949 | 涨1~5% 100~499 | 微涨 1~99
+    //   平盘 0 | 微跌 -99~-1 | 跌1~5% -499~-100 | 跌5~9.5% -949~-500 | 跌停 ≤-950
     const BKTS = [
       {label:'涨停',  lo: 950,     hi: 100000, barCol:'#b91c1c', lblCol:'#ef4444'},
       {label:'涨~5%', lo: 500,     hi: 949,    barCol:'#dc2626', lblCol:'#ef4444'},
@@ -6254,18 +6249,40 @@ async function _doFetchBreadth(){
       {label:'5~跌',  lo: -949,    hi: -500,   barCol:'#16a34a', lblCol:'#15803d'},
       {label:'跌停',   lo: -100000, hi: -950,   barCol:'#14532d', lblCol:'#166534'},
     ];
-    // 多域名+重试拉取每档计数；失败档返回 -1 以便区分"0家"与"请求失败"
-    const counts = await Promise.all(
-      BKTS.map(b => _emClistGet(`${BP}&fs=${FS}+b:f3:${b.lo}:${b.hi}`)
-        .then(d => d?.data ? (parseInt(d.data.total)||0) : -1))
-    );
-    // 若过半档位请求失败，视为整体失败（走 catch 用缓存兜底）
-    const failed = counts.filter(c=>c<0).length;
-    if(failed > 4) throw new Error(`区间请求多数失败(${failed}/9)`);
-    for(let i=0;i<counts.length;i++) if(counts[i]<0) counts[i]=0;
+
+    // ① 取全市场总家数（pz=1，多域名+重试）
+    const rT = await _emClistGet(`${BP}&pn=1&pz=1&fs=${FS}`);
+    if(!rT?.data?.total) throw new Error('获取总数失败');
+    const total = rT.data.total;
+    const PZ = 100, pages = Math.ceil(total / PZ);   // EM 单页上限 100 条
+
+    // ② 分页拉全市场 f3（每批 5 并发，多域名+重试；EM 不支持 b:f3 区间过滤，故全量拉取）
+    const allF3 = [];
+    let okPages = 0;
+    const _fetchPage = async (pn)=>{
+      const d = await _emClistGet(`${BP}&pn=${pn}&pz=${PZ}&fs=${FS}`);
+      const diff = d?.data?.diff;
+      if(Array.isArray(diff) && diff.length){
+        okPages++;
+        diff.forEach(x=>{ const v = parseInt(x.f3); if(isFinite(v)) allF3.push(v); });
+      }
+    };
+    const BATCH = 5;
+    for(let s=1; s<=pages; s+=BATCH){
+      const grp = [];
+      for(let p=s; p<Math.min(s+BATCH, pages+1); p++) grp.push(_fetchPage(p));
+      await Promise.all(grp);
+    }
+    if(okPages < pages*0.6) throw new Error(`分页拉取多数失败(${okPages}/${pages})`);
+
+    // ③ 前端按 BKTS 区间精确分 9 档
+    const counts = BKTS.map(()=>0);
+    allF3.forEach(v=>{
+      for(let k=0;k<BKTS.length;k++){ if(v>=BKTS[k].lo && v<=BKTS[k].hi){ counts[k]++; break; } }
+    });
     const sumCounts  = counts.reduce((a,c)=>a+c, 0);
     const activeStks = sumCounts - counts[4];   // 非平盘（有涨跌）家数
-    console.log('[涨跌统计] total:', total, 'sum:', sumCounts, 'active:', activeStks, 'buckets:', counts);
+    console.log('[涨跌统计] total:', total, 'pages:', pages, 'ok:', okPages, 'sum:', sumCounts, 'buckets:', counts);
 
     // ③ 非交易时段检测：有效涨跌家数 < 50 且总家数正常
     if(activeStks < 50 && total > 500){
