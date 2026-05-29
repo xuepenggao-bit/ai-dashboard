@@ -531,7 +531,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   <div class="alert a-info mb16">
     <span>ℹ</span>
-    <div><strong>上部分</strong>：A股市场<strong>日频</strong>动态指标（融资融券 · 前10成交占比）&nbsp;·&nbsp; <strong>下部分</strong>：月度/季度指标（新增投资者 · 主要指数PE · 国家统计局 · 中国人民银行）</div>
+    <div><strong>上部分</strong>：A股市场<strong>日频</strong>动态指标（沪深总市值 · 主要指数PE · 融资融券余额）&nbsp;·&nbsp; <strong>下部分</strong>：月度/季度指标（新增投资者 · 国家统计局 · 中国人民银行）</div>
   </div>
 
   <!-- ── 上部分：A股市场监控 ── -->
@@ -588,16 +588,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="tx3 mt4">来源: 东方财富 · 日频两融余额（沪深合计）· <span id="marginKpiFooter">加载中…</span></div>
   </div>
 
-  <!-- 日频：前10成交占比（全宽）-->
-  <div class="card mb16">
-    <div class="ch">
-      <span class="ct">前10股票成交额占全市场比 (日频·%)</span>
-      <span id="concBadge" class="cbadge" style="background:#fef9c3;color:#92400e">历史估算数据</span>
-    </div>
-    <div style="height:210px"><canvas id="cConc"></canvas></div>
-    <div class="tx3 mt4" id="concFooter">来源: 估算数据 · 成交集中度越高代表龙头效应越强 · 趋势参考 · 点击"刷新宏观数据"尝试获取最新数据</div>
-  </div>
-
+  <!-- 前10成交占比指标已移除：无公开的日频前10成交占比历史趋势数据源 -->
   <!-- 北向资金指标已移除：沪深港通自 2024-08 起官方停止披露日度北向资金净流入，数据源已不存在 -->
 
   <!-- ── 分隔线：月度/季度宏观数据 ── -->
@@ -1833,11 +1824,7 @@ const BASE = {
     },
     // ── A股涨跌家数 (日频·家) — 由 fetchDailyCharts 动态填充，此处留空 ──
     updown:{ labels:[], up:[], down:[] },
-    // ── 前10成交占比 (日频·%) 2026-03-10→2026-05-26 · 来源:沪深交易所统计 ──
-    conc:{
-      labels:['03-10','03-11','03-12','03-13','03-14','03-17','03-18','03-19','03-20','03-21','03-24','03-25','03-26','03-27','03-28','03-31','04-01','04-02','04-03','04-07','04-08','04-09','04-10','04-11','04-14','04-15','04-16','04-17','04-18','04-21','04-22','04-23','04-24','04-25','04-28','04-29','05-06','05-07','05-08','05-09','05-12','05-13','05-14','05-15','05-16','05-19','05-20','05-21','05-22','05-23','05-26'],
-      vals:  [35.2,34.8,33.5,36.2,37.8,35.5,36.8,34.2,37.5,38.9,36.2,35.0,37.2,38.5,35.8,37.0,36.5,34.8,38.2,36.5,35.8,34.2,36.8,34.5,36.2,37.5,38.8,39.2,37.5,36.2,38.0,37.5,39.5,40.2,38.8,37.2,38.5,39.2,37.8,39.5,40.8,38.2,37.5,39.8,41.2,39.5,38.2,39.8,40.2,39.5,40.8],
-    },
+    // 前10成交占比静态数据已移除（无日频趋势数据源，区块已删除）
     cpi:{
       labels:['24-01','24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02','26-03','26-04'],
       vals:  [0.7,0.7,0.1,0.3,0.3,0.2,0.5,0.6,0.4,0.3,0.2,0.1,0.5,-0.7,-0.1,-0.1,-0.1,0.1,0.0,-0.4,-0.3,0.2,0.7,0.8,0.2,1.3,1.0,1.2],
@@ -3896,20 +3883,6 @@ function mkUpDown(){
   }});
 }
 
-function mkConc(){
-  const ctx=document.getElementById('cConc').getContext('2d');
-  const d=BASE.ashare.conc;
-  CH.conc=new Chart(ctx,{type:'line',data:{labels:d.labels,datasets:[
-    {label:'前10成交占比(%)',data:d.vals,borderColor:'#0891b2',backgroundColor:'rgba(8,145,178,.1)',borderWidth:2,pointRadius:0,pointHoverRadius:4,fill:true,tension:0.3},
-  ]},options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
-    scales:{
-      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:9},maxTicksLimit:10,maxRotation:0}},
-      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'%'},suggestedMin:25,suggestedMax:45},
-    }
-  }});
-}
-
 function mkCpi(){
   const ctx=document.getElementById('cCpi').getContext('2d');
   const d=BASE.ashare.cpi;
@@ -4885,52 +4858,6 @@ async function fetchDailyCharts(){
       if(foot) foot.textContent='⚠️ 涨跌家数暂无法取得（历史与实时数据源均不可用）';
     }
   }catch(e){ console.warn('[Daily] 涨跌家数失败:',e.message); }
-
-  // ── 4. 前10成交占比（集中度）— EM DataCenter 历史数据 ──────────────
-  // 说明：东方财富无直接"前N成交占比"字段，此处尝试从个股成交额排行估算集中度
-  // 若接口失败，保留历史估算数据并标注，不做误导性显示
-  try{
-    // 尝试从 EM DataCenter 获取近60日涨幅前10成交额（RPT_ASHARE_MKTSTAT）
-    const concUrl = _DC60
-      + 'reportName=RPT_ASHARE_MKTSTAT&columns=TRADE_DATE,TOP10_AMT_RATIO,CONCENTRATION,AMT_RATIO'
-      + '&sortColumns=TRADE_DATE';
-    const concRes = await fetch(concUrl,{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
-    const concData = concRes?.result?.data;
-    // 尝试字段名 TOP10_AMT_RATIO / CONCENTRATION / AMT_RATIO
-    const concField = ['TOP10_AMT_RATIO','CONCENTRATION','AMT_RATIO']
-      .find(f=>concData?.length && concData[0][f]!=null);
-    if(concField && concData.length>=5){
-      const sorted=[...concData].sort((a,b)=>String(a.TRADE_DATE)>String(b.TRADE_DATE)?1:-1);
-      const labels=sorted.map(d=>_fmtDayLabel(d.TRADE_DATE));
-      const vals=sorted.map(d=>{ const v=parseFloat(d[concField]); return isFinite(v)?v:null; });
-      if(CH.conc){
-        CH.conc.data.labels=labels;
-        CH.conc.data.datasets[0].data=vals;
-        CH.conc.update('none');
-      }
-      const latestDate=labels[labels.length-1];
-      const badge=document.getElementById('concBadge');
-      if(badge){ badge.textContent='东方财富·日频'; badge.style.background='#d1fae5'; badge.style.color='#065f46'; }
-      const footer=document.getElementById('concFooter');
-      if(footer) footer.textContent=`来源: 东方财富 · 近${labels.length}交易日(${labels[0]}至${latestDate}) · 成交集中度越高代表龙头效应越强`;
-      console.log('[Daily] 成交集中度 OK | 字段:'+concField+' 最新:'+latestDate);
-    } else {
-      // 东财无此字段 → 无公开实时数据源，显示"无法取得"，不再用估算静态数据冒充
-      console.log('[Daily] 成交集中度：无对应数据源，显示无法取得');
-      if(CH.conc){ CH.conc.data.labels=[]; CH.conc.data.datasets[0].data=[]; CH.conc.update('none'); }
-      const badge=document.getElementById('concBadge');
-      if(badge){ badge.textContent='无数据'; badge.style.background='#f1f5f9'; badge.style.color='#94a3b8'; }
-      const footer=document.getElementById('concFooter');
-      if(footer) footer.textContent='⚠️ 无公开的实时成交集中度数据源，数据暂无法取得';
-    }
-  }catch(e){
-    console.warn('[Daily] 成交集中度失败:',e.message);
-    if(CH.conc){ CH.conc.data.labels=[]; CH.conc.data.datasets[0].data=[]; CH.conc.update('none'); }
-    const badge=document.getElementById('concBadge');
-    if(badge){ badge.textContent='无数据'; badge.style.background='#f1f5f9'; badge.style.color='#94a3b8'; }
-    const footer=document.getElementById('concFooter');
-    if(footer) footer.textContent='⚠️ 成交集中度数据暂无法取得';
-  }
 }
 const MACRO_CFGS={
   cpi:{
@@ -7291,7 +7218,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(ts && ts.textContent==='股价未加载'){ portLoad(); fetchPortPrices(); }
   }, 1000);
 
-  _safe(mkNewInv);_safe(mkMktPe);_safe(mkMargin);_safe(mkUpDown);_safe(mkConc);
+  _safe(mkNewInv);_safe(mkMktPe);_safe(mkMargin);
   _safe(mkCpi);_safe(mkTsf);_safe(mkFai);_safe(mkRetail);_safe(mkIndustrial);_safe(mkProfitAccum);_safe(mkElectronicProfit);
   _safe(mkStageMatrix);
   _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();});
