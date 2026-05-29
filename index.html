@@ -5768,27 +5768,25 @@ async function fetchVixRow(listEl){
 
 // ── 主要指数实时行情 ────────────────────────────────────────
 // ── 主要指数配置 ──────────────────────────────────────────────
-// 腾讯 API：A股四大指数（GBK解码）+ 尝试港股指数
+// 腾讯 API（GBK解码，连通性最稳定）：A股指数 + 港股指数（用名称代码 hkHSI/hkHSTECH，
+// 注意：港股指数腾讯只认名称代码，6位数字码 hk800000/hk800700 无效）
 const _IDX_TENCENT = [
   {tc:'sh000001', label:'上证指数', region:'a'},
   {tc:'sz399001', label:'深证成指', region:'a'},
   {tc:'sz399006', label:'创业板指', region:'a'},
   {tc:'sh000688', label:'科创 50',  region:'a'},
-  {tc:'hk800000', label:'恒生指数', region:'hk'},
-  {tc:'hk800700', label:'恒生科技', region:'hk'},
+  {tc:'sh000985', label:'中证全指', region:'a'},
+  {tc:'hkHSI',    label:'恒生指数', region:'hk'},
+  {tc:'hkHSTECH', label:'恒生科技', region:'hk'},
 ];
-// 东方财富 ulist API：A股补充 + 港股（已确认正确 secid）
-// HSI=100.HSI(f12='HSI')  HSTECH=124.HSTECH(f12='HSTECH')  A/H溢价=1.000061
+// 东方财富 ulist API：仅用于腾讯不提供的两个指数（A/H溢价、A50期指）
+// 逐个独立请求，单个 secid 失败不影响另一个
 const _IDX_EM = [
-  {secids:['1.000985'],   code:'000985', altCodes:[],        label:'中证全指', region:'a'},
-  {secids:['47.800005'],  code:'800005', altCodes:[],        label:'A股均价',  region:'a'},
-  {secids:['100.HSI'],    code:'HSI',    altCodes:['800000'],label:'恒生指数', region:'hk'},
-  {secids:['124.HSTECH'], code:'HSTECH', altCodes:[],        label:'恒生科技', region:'hk'},
-  {secids:['100.HSAHP'],  code:'HSAHP',  altCodes:[],        label:'A/H溢价',  region:'ah'},
-  {secids:['104.CN00Y'],  code:'CN00Y',  altCodes:[],        label:'A50期指',  region:'fut'},  // SGX A50期指当月连续
+  {secids:['100.HSAHP'], code:'HSAHP', altCodes:['HSCAHPI'], label:'A/H溢价', region:'ah'},
+  {secids:['104.CN00Y'], code:'CN00Y', altCodes:['CN00'],    label:'A50期指', region:'fut'},  // SGX A50期指当月连续
 ];
 // 渲染顺序固定（港股始终在 A/H溢价前，期指置底）
-const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股均价','恒生指数','恒生科技','A/H溢价','A50期指'];
+const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','恒生指数','恒生科技','A/H溢价','A50期指'];
 
 async function fetchIndexPrices(){
   const listEl = document.getElementById('portIndexList');
@@ -5819,26 +5817,25 @@ async function fetchIndexPrices(){
     }
   }catch(e){ console.warn('[IDX] 腾讯API:', e); }
 
-  // ── ② 东方财富 ulist API（补空缺）────────────────────────
-  try{
-    const allSecids = _IDX_EM.flatMap(i=>i.secids);
-    const emUrl = 'https://push2.eastmoney.com/api/qt/ulist.np/get'
-                + '?secids=' + allSecids.join(',')
+  // ── ② 东方财富 ulist API（仅补腾讯不提供的指数；逐个独立请求）──
+  const _emFetchOne = async (idx)=>{
+    if(rowMap[idx.label]) return;  // 已被腾讯填充则跳过
+    try{
+      const url = 'https://push2.eastmoney.com/api/qt/ulist.np/get'
+                + '?secids=' + idx.secids.join(',')
                 + '&fltt=2&invt=2&fields=f12,f14,f2,f3&_=' + Date.now();
-    const emResp = await fetch(emUrl);
-    if(emResp.ok){
-      const diff = (await emResp.json())?.data?.diff || [];
-      _IDX_EM.forEach(idx=>{
-        if(rowMap[idx.label]) return;
-        const allCodes = [idx.code, ...idx.altCodes].map(c=>c.toUpperCase());
-        const hit = diff.find(d=>{
-          const c = String(d.f12).toUpperCase();
-          return (allCodes.includes(c) || allCodes.includes(c.padStart(6,'0'))) && parseFloat(d.f2) > 0;
-        });
-        if(hit) rowMap[idx.label] = {label:idx.label, price:parseFloat(hit.f2), pct:parseFloat(hit.f3)||0, region:idx.region||'a'};
+      const r = await fetch(url);
+      if(!r.ok) return;
+      const diff = (await r.json())?.data?.diff || [];
+      const allCodes = [idx.code, ...idx.altCodes].map(c=>c.toUpperCase());
+      const hit = diff.find(d=>{
+        const c = String(d.f12).toUpperCase();
+        return (allCodes.includes(c) || allCodes.includes(c.padStart(6,'0'))) && parseFloat(d.f2) > 0;
       });
-    }
-  }catch(e){ console.warn('[IDX] 东方财富ulist:', e); }
+      if(hit) rowMap[idx.label] = {label:idx.label, price:parseFloat(hit.f2), pct:parseFloat(hit.f3)||0, region:idx.region||'a'};
+    }catch(e){ /* 单指数失败静默，不影响其它指数 */ }
+  };
+  await Promise.all(_IDX_EM.map(_emFetchOne));
 
   // ── 按固定顺序渲染 ────────────────────────────────────────
   const rows = _IDX_ORDER.map(lbl => rowMap[lbl]).filter(Boolean);
