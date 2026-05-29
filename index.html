@@ -5755,25 +5755,28 @@ async function fetchVixRow(listEl){
 
 // ── 主要指数实时行情 ────────────────────────────────────────
 // ── 主要指数配置 ──────────────────────────────────────────────
-// 腾讯 API（GBK解码，连通性最稳定）：A股指数 + 港股指数（用名称代码 hkHSI/hkHSTECH，
-// 注意：港股指数腾讯只认名称代码，6位数字码 hk800000/hk800700 无效）
+// 腾讯 API（GBK解码，连通性最稳定）：仅 A股指数
+// 注意：港股指数已改用东方财富实时源（腾讯港股延迟约15分钟）
 const _IDX_TENCENT = [
   {tc:'sh000001', label:'上证指数', region:'a'},
   {tc:'sz399001', label:'深证成指', region:'a'},
   {tc:'sz399006', label:'创业板指', region:'a'},
   {tc:'sh000688', label:'科创 50',  region:'a'},
   {tc:'sh000985', label:'中证全指', region:'a'},
-  {tc:'hkHSI',    label:'恒生指数', region:'hk'},
-  {tc:'hkHSTECH', label:'恒生科技', region:'hk'},
 ];
-// 东方财富 ulist API：仅用于腾讯不提供的两个指数（A/H溢价、A50期指）
+// 东方财富 ulist API：港股指数（实时，腾讯延迟15分）+ 平均股价 + A/H溢价 + A50期指
 // 逐个独立请求，单个 secid 失败不影响另一个
 const _IDX_EM = [
+  // 港股指数：东财为实时源（经实测时间戳=当前时刻），腾讯 hkHSI 延迟约15分钟
+  {secids:['100.HSI'],    code:'HSI',    altCodes:[], label:'恒生指数', region:'hk'},
+  {secids:['124.HSTECH'], code:'HSTECH', altCodes:[], label:'恒生科技', region:'hk'},
+  // A股平均股价（东财代码 800005）：47 段最可能，逐个候选单独请求，命中即用
+  {secids:['47.800005','90.800005','1.800005','100.800005'], code:'800005', altCodes:[], label:'A股平均股价', region:'a'},
   {secids:['100.HSAHP'], code:'HSAHP', altCodes:['HSCAHPI'], label:'A/H溢价', region:'ah'},
   {secids:['104.CN00Y'], code:'CN00Y', altCodes:['CN00'],    label:'A50期指', region:'fut'},  // SGX A50期指当月连续
 ];
-// 渲染顺序固定（港股始终在 A/H溢价前，期指置底）
-const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','恒生指数','恒生科技','A/H溢价','A50期指'];
+// 渲染顺序固定（A股平均股价紧随中证全指；港股在 A/H溢价前，期指置底）
+const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股平均股价','恒生指数','恒生科技','A/H溢价','A50期指'];
 
 // 粘性缓存：每个指数上次成功获取的值。某数据源偶发失败时回填，保证不闪现消失
 let _IDX_CACHE = {};   // label → {label, price, pct, region, ts}
@@ -5824,29 +5827,53 @@ async function fetchIndexPrices(){
     });
   }catch(e){ console.warn('[IDX] 腾讯API失败（将回填缓存）:', e); }
 
-  // ── ② 东方财富 ulist API（仅补腾讯不提供的指数；多域名 + 重试）──
+  // ── ② 东方财富 ulist API（仅补腾讯不提供的指数）──
+  // 逐个候选 secid 单独请求（避免无效 secid 与有效 secid 拼在一起导致整批返回空），
+  // 每个 secid 再配合多域名重试，命中即停。
   const _EM_HOSTS = ['https://push2.eastmoney.com','https://push2delay.eastmoney.com'];
   const _emFetchOne = async (idx)=>{
     if(rowMap[idx.label]) return;  // 已被腾讯填充则跳过
-    for(const host of _EM_HOSTS){
-      try{
-        const url = host + '/api/qt/ulist.np/get?secids=' + idx.secids.join(',')
-                  + '&fltt=2&invt=2&fields=f12,f14,f2,f3&_=' + Date.now();
-        const j = await _idxFetch(url, {timeout:6000, retries:1});
-        const diff = (j && j.data && j.data.diff) || [];
-        const allCodes = [idx.code, ...idx.altCodes].map(c=>c.toUpperCase());
-        const hit = diff.find(d=>{
-          const c = String(d.f12).toUpperCase();
-          return (allCodes.includes(c) || allCodes.includes(c.padStart(6,'0'))) && parseFloat(d.f2) > 0;
-        });
-        if(hit){
-          rowMap[idx.label] = {label:idx.label, price:parseFloat(hit.f2), pct:parseFloat(hit.f3)||0, region:idx.region||'a'};
-          return;  // 成功，无需尝试备用域名
-        }
-      }catch(e){ /* 试下一个备用域名 */ }
+    const allCodes = [idx.code, ...(idx.altCodes||[])].map(c=>c.toUpperCase());
+    for(const secid of idx.secids){          // 逐个候选 secid 单独请求
+      for(const host of _EM_HOSTS){
+        try{
+          const url = host + '/api/qt/ulist.np/get?secids=' + secid
+                    + '&fltt=2&invt=2&fields=f12,f14,f2,f3&_=' + Date.now();
+          const j = await _idxFetch(url, {timeout:6000, retries:1});
+          const diff = (j && j.data && j.data.diff) || [];
+          const hit = diff.find(d=>{
+            const c = String(d.f12).toUpperCase();
+            return (allCodes.includes(c) || allCodes.includes(c.padStart(6,'0'))) && parseFloat(d.f2) > 0;
+          });
+          if(hit){
+            rowMap[idx.label] = {label:idx.label, price:parseFloat(hit.f2), pct:parseFloat(hit.f3)||0, region:idx.region||'a'};
+            return;  // 命中，结束该指数
+          }
+        }catch(e){ /* 试下一个域名 / 下一个候选 secid */ }
+      }
     }
   };
   await Promise.all(_IDX_EM.map(_emFetchOne));
+
+  // ── ②b 港股兜底：东财未取到时，用腾讯 hkHSI/hkHSTECH 补（延迟15分，聊胜于无）──
+  const _hkMiss = [['恒生指数','hkHSI'],['恒生科技','hkHSTECH']].filter(x=>!rowMap[x[0]]);
+  if(_hkMiss.length){
+    try{
+      const tUrl = 'https://qt.gtimg.cn/q=' + _hkMiss.map(x=>x[1]).join(',') + '&_=' + Date.now();
+      const txt  = await _idxFetch(tUrl, {timeout:6000, retries:1, gbk:true});
+      _hkMiss.forEach(pair=>{
+        const m = txt.match(new RegExp('v_' + pair[1] + '="([^"]+)"'));
+        if(!m) return;
+        const p     = m[1].split('~');
+        const price = parseFloat(p[3]);
+        const prev  = parseFloat(p[4]);
+        let   pct   = parseFloat(p[32]);
+        if(!isFinite(pct) && isFinite(prev) && prev > 0) pct = (price - prev) / prev * 100;
+        if(isFinite(price) && price > 0)
+          rowMap[pair[0]] = {label:pair[0], price, pct:isFinite(pct)?pct:0, region:'hk'};
+      });
+    }catch(e){ /* 兜底失败则靠粘性缓存 */ }
+  }
 
   // ── ③ 粘性缓存合并：本次成功的写入缓存，本次缺失的用上次成功值回填 ──
   const _now = Date.now();
