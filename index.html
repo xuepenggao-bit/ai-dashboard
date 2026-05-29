@@ -1097,7 +1097,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
                      padding:1px 7px;border-radius:10px;font-weight:600">52人关注</span>
         <span id="kolTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
       </div>
-      <button onclick="fetchKolSummary(true)" id="kolBtn"
+      <button onclick="triggerKolRefresh()" id="kolBtn" title="触发后台抓取最新推文并归纳（约1-2分钟）"
         style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
                padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
     </div>
@@ -1117,7 +1117,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
                      padding:1px 7px;border-radius:10px;font-weight:600">近1小时 Top20</span>
         <span id="xqHotTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
       </div>
-      <button onclick="fetchXqHot()" id="xqHotBtn"
+      <button onclick="triggerHotViaWorkflow()" id="xqHotBtn" title="触发后台刷新雪球热股榜（约1-2分钟）"
         style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
                padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
     </div>
@@ -6627,6 +6627,95 @@ async function triggerHotRefresh() {
     console.warn('[TriggerAction] 热股触发失败:', e.message);
     if (btn) { btn.textContent = '❌ 触发失败（检查 token）'; btn.disabled = false; }
   }
+}
+
+const _sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// 点 ↻：触发后台 GitHub 工作流，轮询数据文件时间戳直到更新，自动呈现新数据。
+// 通过比较数据文件的时间戳变化来判断"工作流已完成且 Pages 已部署"，
+// 无需 actions:read 权限，且天然覆盖 Pages 部署延迟。
+async function _refreshViaWorkflow(cfg){
+  // cfg: {file, dataUrl, tsField, statusEl, btn, render, validate}
+  const owner = 'xuepenggao-bit', repo = 'ai-dashboard';
+  const setBtn    = (t,dis)=>{ if(cfg.btn){ cfg.btn.textContent=t; cfg.btn.disabled=!!dis; } };
+  const setStatus = t=>{ if(cfg.statusEl) cfg.statusEl.textContent=t; };
+  const pull = async ()=>{
+    const r = await fetch(cfg.dataUrl + '?_=' + Date.now(), { cache:'no-store' });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  };
+
+  // ① 先拉一次现有数据秒出，并记录旧时间戳
+  let oldUpd = '';
+  try{
+    const j = await pull();
+    oldUpd = j[cfg.tsField] || '';
+    if(!cfg.validate || cfg.validate(j)) cfg.render(j);
+  }catch(e){ /* 现有数据可能尚未生成，忽略 */ }
+
+  // ② 触发工作流（workflow_dispatch）
+  setBtn('⏳', true);
+  setStatus('⏳ 正在触发后台刷新…');
+  try{
+    const dr = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/${cfg.file}/dispatches`, {
+      method:'POST',
+      headers:{ 'Authorization':`token ${PORT_GH_TOKEN}`, 'Accept':'application/vnd.github+json', 'Content-Type':'application/json' },
+      body: JSON.stringify({ ref:'main' })
+    });
+    if(!dr.ok && dr.status !== 204) throw new Error('HTTP ' + dr.status);
+  }catch(e){
+    console.warn('[workflow] 触发失败:', e.message);
+    setStatus('✗ 触发失败（检查 token）');
+    setBtn('↻', false);
+    setTimeout(()=>setStatus(oldUpd ? oldUpd + ' 更新' : ''), 4000);
+    return;
+  }
+
+  // ③ 轮询数据文件，等时间戳变新（工作流 ~1-2 分钟 + Pages 部署，最多 5 分钟）
+  const t0 = Date.now(), MAX = 300000;
+  while(Date.now() - t0 < MAX){
+    await _sleep(10000);
+    setStatus(`⏳ 后台运行中…${Math.round((Date.now()-t0)/1000)}s`);
+    try{
+      const j  = await pull();
+      const nu = j[cfg.tsField] || '';
+      if(nu && nu !== oldUpd && (!cfg.validate || cfg.validate(j))){
+        cfg.render(j);                       // 数据已更新，呈现
+        setBtn('↻', false);
+        setStatus('✓ 已更新 ' + nu);
+        setTimeout(()=>setStatus(nu + ' 更新'), 3000);
+        return;
+      }
+    }catch(e){ /* 轮询期间偶发失败，继续等 */ }
+  }
+  // 超时：工作流可能仍在运行
+  setBtn('↻', false);
+  setStatus('⏳ 仍在运行，请稍后再点 ↻ 查看');
+}
+
+// X关注意见领袖 ↻：触发 refresh-kol.yml
+function triggerKolRefresh(){
+  _refreshViaWorkflow({
+    file:     'refresh-kol.yml',
+    dataUrl:  'data/twitter_kol_summary.json',
+    tsField:  'last_updated',
+    statusEl: document.getElementById('kolTs'),
+    btn:      document.getElementById('kolBtn'),
+    render:   _renderKolGrid
+  });
+}
+
+// 雪球热股榜 ↻：触发 refresh-xueqiu.yml
+function triggerHotViaWorkflow(){
+  _refreshViaWorkflow({
+    file:     'refresh-xueqiu.yml',
+    dataUrl:  'data/xq_hot.json',
+    tsField:  'ts',
+    statusEl: document.getElementById('xqHotTs'),
+    btn:      document.getElementById('xqHotBtn'),
+    render:   _renderXqHotGrid,
+    validate: j => j.list && j.list.length
+  });
 }
 
 // ── 主力净流入 TOP 20 ──────────────────────────────────────────
