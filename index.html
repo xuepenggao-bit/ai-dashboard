@@ -1088,64 +1088,56 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 4: 雪球热股榜 -->
-  <div class="card mb16" style="border-top:3px solid #f97316">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:13px;font-weight:800;color:#374151">🔥 雪球热股榜</span>
-        <span style="font-size:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;padding:1px 7px;border-radius:10px;font-weight:600">近1小时 Top20</span>
-        <span id="xqHotTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
-      </div>
-      <button onclick="fetchXqHot()" id="xqHotBtn"
-        style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
-               padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
-    </div>
-    <!-- 4列×5行网格 -->
-    <div id="xqHotGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
-      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">
-        点击「↻」加载雪球热股榜
-      </div>
-    </div>
-    <!-- 数据尚未生成时的引导提示 -->
-    <div id="xqHotGuide" style="display:none;margin-top:10px;padding:10px 12px;background:#fff7ed;border-radius:8px;border:1px solid #fed7aa">
-      <div style="font-size:11px;color:#92400e;margin-bottom:6px;font-weight:600">⏳ 数据尚未生成 · 由 GitHub Actions 自动刷新</div>
-      <div style="font-size:10px;color:#78350f;margin-bottom:8px">每30分钟自动更新（交易时段），或点击下方按钮立即触发刷新（约1分钟后生效）</div>
-      <button onclick="triggerHotRefresh()" id="xqTriggerBtn"
-        style="background:#f97316;color:#fff;border:none;border-radius:5px;padding:4px 12px;
-               cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">⚡ 立即触发刷新</button>
-    </div>
-  </div>
+  <!-- Row 4: X关注意见领袖 + 雪球热股榜 -->
+  <div class="g2 mb16">
 
-  <!-- Row 5: 权重股舆情分析 -->
-  <div class="card mb16" style="border-top:3px solid #7c3aed">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:13px;font-weight:800;color:#374151">🗣️ 权重股舆情分析</span>
-        <span style="font-size:10px;background:#f3e8ff;color:#7c3aed;border:1px solid #ddd6fe;
-                     padding:1px 7px;border-radius:10px;font-weight:600">Top5持仓 · 各50条讨论</span>
-        <span id="sentTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
+    <!-- X关注意见领袖 -->
+    <div class="card" style="border-top:3px solid #1d9bf0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:13px;font-weight:800;color:#374151">🐦 X关注意见领袖</span>
+          <span style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
+                       padding:1px 7px;border-radius:10px;font-weight:600">52人关注</span>
+          <span id="kolTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
+        </div>
+        <button onclick="fetchKolSummary(true)" id="kolBtn"
+          style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
+                 padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
       </div>
-      <button onclick="fetchXqSentiment(true)" id="sentBtn"
-        style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
-               padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
-    </div>
-    <!-- 5列网格，每格一只权重股 -->
-    <div id="sentGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
-      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">
-        点击「↻」分析 Top5 权重股舆情（各取最新 50 条讨论）
+      <div id="kolGrid" style="display:flex;flex-direction:column;gap:7px">
+        <div style="color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">
+          点击「↻」加载X关注意见领袖观点
+        </div>
       </div>
     </div>
-    <!-- 数据尚未生成时的引导提示 -->
-    <div id="sentGuide" style="display:none;margin-top:10px;padding:10px 12px;
-         background:#f5f3ff;border-radius:8px;border:1px solid #ddd6fe">
-      <div style="font-size:11px;color:#5b21b6;margin-bottom:5px;font-weight:600">
-        ⏳ 数据尚未生成 · 由 GitHub Actions 自动刷新</div>
-      <div style="font-size:10px;color:#4c1d95;margin-bottom:8px">
-        每30分钟自动更新（交易时段），或点击下方按钮立即触发刷新（约1分钟后生效）：</div>
-      <button onclick="triggerSentimentRefresh()" id="sentTriggerBtn"
-        style="background:#7c3aed;color:#fff;border:none;border-radius:5px;padding:4px 12px;
-               cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">⚡ 立即触发刷新</button>
+
+    <!-- 雪球热股榜 -->
+    <div class="card" style="border-top:3px solid #f97316">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:13px;font-weight:800;color:#374151">🔥 雪球热股榜</span>
+          <span style="font-size:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;
+                       padding:1px 7px;border-radius:10px;font-weight:600">近1小时 Top20</span>
+          <span id="xqHotTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
+        </div>
+        <button onclick="fetchXqHot()" id="xqHotBtn"
+          style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
+                 padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+      </div>
+      <div id="xqHotGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
+        <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">
+          点击「↻」加载雪球热股榜
+        </div>
+      </div>
+      <div id="xqHotGuide" style="display:none;margin-top:10px;padding:10px 12px;background:#fff7ed;border-radius:8px;border:1px solid #fed7aa">
+        <div style="font-size:11px;color:#92400e;margin-bottom:6px;font-weight:600">⏳ 数据尚未生成 · 由 GitHub Actions 自动刷新</div>
+        <div style="font-size:10px;color:#78350f;margin-bottom:8px">每30分钟自动更新（交易时段），或点击下方按钮立即触发刷新（约1分钟后生效）</div>
+        <button onclick="triggerHotRefresh()" id="xqTriggerBtn"
+          style="background:#f97316;color:#fff;border:none;border-radius:5px;padding:4px 12px;
+                 cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">⚡ 立即触发刷新</button>
+      </div>
     </div>
+
   </div>
 
   <!-- Sector cards (rendered by JS) -->
@@ -4753,7 +4745,7 @@ function _tabRefresh(idx){
   if(_TAB_TS[idx] && now-_TAB_TS[idx]<_TAB_THROTTLE) return; // 节流
   _TAB_TS[idx]=now;
   // 按标签页类型调用对应的动态数据刷新函数
-  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); fetchXqHot(); fetchXqSentiment(); } // finally 内会链式调用 fetchIndexPrices
+  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); fetchXqHot(); fetchKolSummary(); } // finally 内会链式调用 fetchIndexPrices
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tStage') fetchStageData();
   else if(tab==='tAM')    refreshMacro();
@@ -6323,9 +6315,7 @@ function fetchMarketTurnover() { fetchMarketStats(); }
 var _mktAutoRetried = false;
 var _mfAutoRetried  = false;
 
-// ── 权重股舆情分析 ─────────────────────────────────────────────
-
-let _sentimentCache = null; // { ts:epoch, analyses:{xqCode:{summary,total}} }
+// ── 工具函数 ───────────────────────────────────────────────────────
 
 // 根据 portfolio sk 对象拼接雪球 symbol（如 SH600519 / HK00700）
 function _xqSym(sk) {
@@ -6336,16 +6326,6 @@ function _xqSym(sk) {
 // HTML 特殊字符转义
 function _escH(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// 从 PORT 中获取权重 Top5 股票
-function _getSentimentTop5() {
-  if (!PORT || !PORT.sectors) return [];
-  return PORT.sectors
-    .flatMap(sec => sec.stocks)
-    .filter(sk => (sk.w || 0) > 0)
-    .sort((a, b) => (b.w || 0) - (a.w || 0))
-    .slice(0, 5);
 }
 
 // 触发 GitHub Actions workflow_dispatch（手动刷新数据）
@@ -6361,110 +6341,86 @@ async function _triggerGhAction() {
     },
     body: JSON.stringify({ ref: 'main', inputs: { reason: 'Dashboard manual refresh' } }),
   });
-  // 204 = success, no body; anything else = error
   if (!r.ok && r.status !== 204) {
     const txt = await r.text().catch(() => '');
     throw new Error(`GitHub API ${r.status}: ${txt.slice(0, 120)}`);
   }
 }
 
-// 渲染 5 格情感看板
-function _renderSentimentGrid(top5, analyses) {
-  const grid  = document.getElementById('sentGrid');
-  const tsEl  = document.getElementById('sentTs');
-  const guide = document.getElementById('sentGuide');
+// ── X 关注意见领袖 ────────────────────────────────────────────────
+
+let _kolCache = null; // { ts:epoch, data }
+
+const _KOL_CAT_COLORS = {
+  'AI技术研究':   '#7c3aed',
+  'AI应用与动态': '#0369a1',
+  '投资策略':     '#059669',
+  '宏观与市场':   '#dc2626',
+  '科技行业':     '#0891b2',
+};
+
+function _renderKolGrid(data) {
+  const grid = document.getElementById('kolGrid');
+  const tsEl = document.getElementById('kolTs');
   if (!grid) return;
-  if (guide) guide.style.display = 'none';
-  if (!top5.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px">投资组合为空，暂无数据</div>';
+  if (tsEl && data.last_updated) tsEl.textContent = data.last_updated + ' 更新';
+
+  const cats = data.categories || [];
+  if (!cats.length) {
+    grid.innerHTML = '<div style="color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">暂无分类数据</div>';
     return;
   }
-  grid.innerHTML = top5.map(sk => {
-    const code = _xqSym(sk);
-    const a    = analyses[code] || { summary:'', total:0, missing:true };
-    // 三种状态：①未生成 ②有讨论但 AI 过滤后无相关内容 ③有观点摘要
-    const noRelevant = !a.missing && a.total > 0 && !a.summary;
-    let bodyH;
-    if (a.missing) {
-      bodyH = '<div style="color:#94a3b8;font-size:10px;line-height:1.6">等待 GitHub Actions 生成数据</div>';
-    } else if (noRelevant) {
-      bodyH = '<div style="color:#94a3b8;font-size:10px;line-height:1.5;padding:2px 0">近期未找到与该股直接相关的讨论内容</div>';
-    } else {
-      bodyH = `<div style="font-size:10px;color:#1e293b;line-height:1.7;word-break:break-all">${_escH(a.summary)}</div>`;
-    }
-    // 底部来源标注
-    const srcLabel = a.total > 0
-      ? `Yahoo Finance · 最新 ${a.total} 条讨论`
-      : (a.missing ? '等待首次运行' : '暂无讨论');
-    return `<div style="border-radius:8px;border:1px solid #e5e7eb;padding:9px 8px 6px;background:#fafafa;
-                  min-width:0;display:flex;flex-direction:column">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
-    <span style="font-size:12px;font-weight:700;color:#1e293b;overflow:hidden;
-                 text-overflow:ellipsis;white-space:nowrap;max-width:65%">${_escH(sk.name)}</span>
-    ${sk.w!=null?`<span style="font-size:9px;background:#f3e8ff;color:#7c3aed;border-radius:10px;
-        padding:1px 5px;flex-shrink:0;font-weight:700">${Number(sk.w).toFixed(1)}%</span>`:''}
+
+  grid.innerHTML = cats.map(cat => {
+    const color  = cat.color || _KOL_CAT_COLORS[cat.name] || '#374151';
+    const accts  = cat.accounts || [];
+    const badges = accts.map(a =>
+      `<a href="https://x.com/${a.handle}" target="_blank" rel="noopener"
+          style="font-size:9px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;
+                 padding:1px 5px;border-radius:5px;text-decoration:none;white-space:nowrap;
+                 display:inline-block;line-height:1.4">@${_escH(a.handle)}</a>`
+    ).join('');
+
+    const hasSum = cat.summary && cat.summary.trim();
+    const bodyH  = hasSum
+      ? `<div style="font-size:10.5px;color:#1e293b;line-height:1.65;margin-top:5px">${_escH(cat.summary)}</div>`
+      : `<div style="font-size:10px;color:#94a3b8;line-height:1.5;margin-top:4px;font-style:italic">等待 GitHub Actions 抓取近期推文后生成摘要</div>`;
+
+    const cntTag = cat.tweet_count
+      ? `<span style="font-size:9px;color:#6b7280"> · ${cat.tweet_count}条推文</span>` : '';
+
+    return `<div style="background:#fafbfc;border-radius:8px;padding:8px 10px;border:1px solid #e5e7eb">
+  <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">
+    <span style="font-size:11px;font-weight:800;color:${color}">${_escH(cat.name)}</span>
+    <span style="font-size:9.5px;color:#9ca3af;font-weight:500">${accts.length}人</span>${cntTag}
   </div>
-  <div style="font-size:9px;color:#94a3b8;margin-bottom:7px">${_escH(code)}</div>
-  <div style="flex:1;margin-bottom:5px">
-    ${bodyH}
-  </div>
-  <div style="font-size:9px;color:#cbd5e1;text-align:right;margin-top:5px;border-top:1px solid #f1f5f9;padding-top:4px">
-    ${_escH(srcLabel)}</div>
+  <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:3px">${badges}</div>
+  ${bodyH}
 </div>`;
   }).join('');
-  const now = new Date();
-  const hm  = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  if (tsEl) tsEl.textContent = hm + ' 更新';
 }
 
-// 主刷新函数：从 GitHub Pages 同源 data/xq_sentiment.json 加载
-async function fetchXqSentiment(force) {
+async function fetchKolSummary(force) {
   force = (force === true);
-  // 30 分钟缓存，非强制时直接渲染
-  if (!force && _sentimentCache && Date.now() - _sentimentCache.ts < 30*60*1000) {
-    _renderSentimentGrid(_getSentimentTop5(), _sentimentCache.analyses);
-    return;
+  if (!force && _kolCache && Date.now() - _kolCache.ts < 30*60*1000) {
+    _renderKolGrid(_kolCache.data); return;
   }
-  const btn   = document.getElementById('sentBtn');
-  const grid  = document.getElementById('sentGrid');
-  const guide = document.getElementById('sentGuide');
+  const btn  = document.getElementById('kolBtn');
+  const grid = document.getElementById('kolGrid');
   if (btn)  { btn.disabled = true; btn.textContent = '…'; }
-  if (guide) guide.style.display = 'none';
-  if (grid)  grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px">加载中…</div>';
-
+  if (grid) grid.innerHTML = '<div style="color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">加载中…</div>';
   try {
-    const r = await fetch('data/xq_sentiment.json?_=' + Date.now(), { cache: 'no-store' });
+    const r = await fetch('data/twitter_kol_summary.json?_=' + Date.now(), { cache: 'no-store' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
-    if (!data.stocks || !data.stocks.length) throw new Error('empty');
-    const analyses = {};
-    data.stocks.forEach(item => { analyses[item.code] = item; });
-    _sentimentCache = { ts: Date.now(), analyses };
-    _renderSentimentGrid(_getSentimentTop5(), analyses);
-    const tsEl = document.getElementById('sentTs');
-    if (tsEl && data.ts) tsEl.textContent = data.ts + ' 更新';
-    console.log('[Sentiment] 同源 JSON 加载成功');
+    _kolCache = { ts: Date.now(), data };
+    _renderKolGrid(data);
+    console.log('[KOL] 加载成功，has_tweets:', data.has_tweets);
   } catch(e) {
-    console.warn('[Sentiment] 加载失败:', e.message);
-    if (grid)  grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px">暂无数据，可点击「⚡ 立即触发刷新」生成</div>';
-    if (guide) guide.style.display = 'block';
+    console.warn('[KOL] 加载失败:', e.message);
+    if (grid) grid.innerHTML = '<div style="color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">数据加载失败，点击↻重试</div>';
   }
   if (btn) { btn.disabled = false; btn.textContent = '↻'; }
-}
-
-// 触发 GitHub Actions 刷新舆情数据（↻ 引导区 button）
-async function triggerSentimentRefresh() {
-  const btn = document.getElementById('sentTriggerBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ 触发中…'; }
-  try {
-    await _triggerGhAction();
-    if (btn) { btn.textContent = '✅ 已触发！约1分钟后刷新页面'; btn.disabled = false; }
-    // 70 秒后自动重新拉取
-    setTimeout(() => fetchXqSentiment(true), 70000);
-  } catch(e) {
-    console.warn('[TriggerAction] 舆情触发失败:', e.message);
-    if (btn) { btn.textContent = '❌ 触发失败（检查 token）'; btn.disabled = false; }
-  }
 }
 
 // ── 雪球热股榜 ────────────────────────────────────────────────
@@ -7049,7 +7005,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   fetchMainFlow();      // 初始化时立即拉取主力净流入榜
   fetchMarketBreadth(); // 市场涨跌统计（主要用腾讯 API，极少命中东方财富限流）
   fetchXqHot();       // 雪球热股榜（近1小时 Top20）
-  fetchXqSentiment(); // 权重股舆情：从 data/xq_sentiment.json 加载
+  fetchKolSummary();  // X关注意见领袖：从 data/twitter_kol_summary.json 加载
   // 30s 后检查是否成功，若仍是占位文字则自动重试一次
   setTimeout(()=>{
     const mfEl = document.getElementById('mfList');
