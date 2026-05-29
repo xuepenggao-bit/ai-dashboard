@@ -4847,7 +4847,15 @@ async function fetchDailyCharts(){
     if(kc) kc.textContent='近'+d.labels.length+'交易日 · '+d.labels[0]+'起';
     if(kf&&d.latestDate)      kf.textContent='数据截至'+d.latestDate;
     console.log('[Daily] 融资融券 OK | 字段:'+d.usedField+' 最新:'+d.latestDate,d.latestVal+'亿');
-  }catch(e){ console.warn('[Daily] 融资融券余额失败:',e.message); }
+  }catch(e){
+    console.warn('[Daily] 融资融券余额失败:',e.message);
+    // 取不到实时数据：清空图表与 KPI，明确标注"无法取得"，不再用旧静态数据冒充最新
+    if(CH.margin){ CH.margin.data.labels=[]; CH.margin.data.datasets[0].data=[]; CH.margin.update('none'); }
+    const kv=document.getElementById('marginKpiVal');    if(kv) kv.textContent='—';
+    const kd=document.getElementById('marginKpiDate');   if(kd) kd.textContent='无法取得';
+    const kc=document.getElementById('marginKpiCnt');    if(kc) kc.textContent='实时数据源暂不可用';
+    const kf=document.getElementById('marginKpiFooter'); if(kf) kf.textContent='⚠️ 东方财富数据接口已升级，融资融券实时数据暂无法取得';
+  }
 
   // ── 2. 北向资金已移除（沪深港通自 2024-08 起官方停止披露日度北向净流入）──
 
@@ -4905,12 +4913,14 @@ async function fetchDailyCharts(){
       CH.updown.update('none');
       if(!udLoaded){
         const foot=document.getElementById('cUpDownFooter');
-        if(foot) foot.textContent=`来源: 东方财富实时 · 今日 ${lbl} ↑${f104} ↓${f105}`;
+        if(foot) foot.textContent=`东方财富实时 · 仅今日 ${lbl}（↑${f104} ↓${f105}）· 历史趋势数据源暂不可用`;
       }
       console.log('[Daily] 涨跌家数 RT OK:',lbl,'↑'+f104,'↓'+f105);
     } else if(!udLoaded){
+      // 历史与实时均取不到 → 清空图表，明确标注无法取得
+      if(CH.updown){ CH.updown.data.labels=[]; CH.updown.data.datasets[0].data=[]; CH.updown.data.datasets[1].data=[]; CH.updown.update('none'); }
       const foot=document.getElementById('cUpDownFooter');
-      if(foot) foot.textContent='涨跌家数：非交易时段暂无数据';
+      if(foot) foot.textContent='⚠️ 涨跌家数暂无法取得（历史与实时数据源均不可用）';
     }
   }catch(e){ console.warn('[Daily] 涨跌家数失败:',e.message); }
 
@@ -4943,15 +4953,21 @@ async function fetchDailyCharts(){
       if(footer) footer.textContent=`来源: 东方财富 · 近${labels.length}交易日(${labels[0]}至${latestDate}) · 成交集中度越高代表龙头效应越强`;
       console.log('[Daily] 成交集中度 OK | 字段:'+concField+' 最新:'+latestDate);
     } else {
-      // 接口无此字段 → 保留历史估算数据，明确标注
-      console.log('[Daily] 成交集中度：DataCenter无对应字段，保留历史估算数据');
+      // 东财无此字段 → 无公开实时数据源，显示"无法取得"，不再用估算静态数据冒充
+      console.log('[Daily] 成交集中度：无对应数据源，显示无法取得');
+      if(CH.conc){ CH.conc.data.labels=[]; CH.conc.data.datasets[0].data=[]; CH.conc.update('none'); }
+      const badge=document.getElementById('concBadge');
+      if(badge){ badge.textContent='无数据'; badge.style.background='#f1f5f9'; badge.style.color='#94a3b8'; }
       const footer=document.getElementById('concFooter');
-      if(footer) footer.textContent='来源: 历史估算数据（2026-03至2026-05）· 东方财富无直接集中度字段 · 趋势参考';
+      if(footer) footer.textContent='⚠️ 无公开的实时成交集中度数据源，数据暂无法取得';
     }
   }catch(e){
     console.warn('[Daily] 成交集中度失败:',e.message);
+    if(CH.conc){ CH.conc.data.labels=[]; CH.conc.data.datasets[0].data=[]; CH.conc.update('none'); }
+    const badge=document.getElementById('concBadge');
+    if(badge){ badge.textContent='无数据'; badge.style.background='#f1f5f9'; badge.style.color='#94a3b8'; }
     const footer=document.getElementById('concFooter');
-    if(footer) footer.textContent='来源: 历史估算数据 · 数据获取失败 · 趋势参考';
+    if(footer) footer.textContent='⚠️ 成交集中度数据暂无法取得';
   }
 }
 const MACRO_CFGS={
