@@ -96,7 +96,10 @@ def build_cat_map(following):
     for acc in following.get('accounts', []):
         if not acc.get('enabled', True):
             continue
-        meta = get_meta_cat(acc['handle'], acc.get('topic', ''))
+        # 优先用清单里已分好的 cat 字段；缺失或非法则回退按 topic 模糊归类
+        meta = acc.get('cat')
+        if meta not in cats:
+            meta = get_meta_cat(acc['handle'], acc.get('topic', ''))
         if meta in cats:
             cats[meta].append(acc)
     return cats
