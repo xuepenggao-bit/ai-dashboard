@@ -1038,8 +1038,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span style="font-size:13px;font-weight:800;color:#374151">🐦 X关注意见领袖</span>
-        <span style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
-                     padding:1px 7px;border-radius:10px;font-weight:600">52人关注</span>
+        <span id="kolCount" style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
+                     padding:1px 7px;border-radius:10px;font-weight:600">82人关注</span>
         <span id="kolTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
       </div>
       <button onclick="triggerKolRefresh()" id="kolBtn" title="触发后台抓取最新推文并归纳（约1-2分钟）"
@@ -6471,6 +6471,8 @@ function _renderKolGrid(data) {
   const tsEl = document.getElementById('kolTs');
   if (!grid) return;
   if (tsEl && data.last_updated) tsEl.textContent = data.last_updated + ' 更新';
+  const cntEl = document.getElementById('kolCount');
+  if (cntEl && data.total_accounts) cntEl.textContent = data.total_accounts + '人关注';
 
   const cats = data.categories || [];
   if (!cats.length) {
