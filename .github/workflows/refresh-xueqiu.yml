@@ -1,4 +1,4 @@
-name: Refresh Xueqiu Data
+name: name: Refresh Portfolio Data 
 
 on:
   schedule:
@@ -29,6 +29,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
+        run: pip install requests duckduckgo_search
         run: pip install requests
 
       - name: Run refresh script
