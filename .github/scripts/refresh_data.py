@@ -302,31 +302,58 @@ def _cn_announcements(symbol):
     return []
 
 
+def _ddg_cn_news(name, industry='', n=10):
+    """DuckDuckGo 中文搜索个股最新新闻/讨论（A股舆情主力，GitHub Actions 可用，
+    替代对A股几乎无料的 Yahoo 英文）。返回 [{description, text}]。"""
+    try:
+        from duckduckgo_search import DDGS
+    except ImportError:
+        print('  [DDG] duckduckgo_search 未安装'); return []
+    posts = []
+    q = f'{name} 股票 最新 业绩 公告 机构 评论 {industry}'.strip()
+    try:
+        with DDGS() as ddgs:
+            for r in ddgs.text(q, region='cn-zh', max_results=n):
+                title = (r.get('title') or '').strip()
+                body  = (r.get('body')  or '').strip()
+                if title:
+                    posts.append({'description': (title + '。' + body)[:300], 'text': title})
+        print(f'  [{name}] DDG中文新闻 {len(posts)} 条')
+    except Exception as e:
+        print(f'  [{name}] DDG搜索失败: {e}')
+    return posts
+
 def fetch_stock_posts(symbol, name='', industry=''):
-    """雪球讨论 → 东方财富公告 → Yahoo Finance 新闻（三级降级）。
-    港股用同名 A 股抓雪球讨论（A 股讨论更活跃）。"""
-    # 港股 → 同名 A 股 symbol（用于雪球讨论抓取）
+    """雪球讨论 → DDG中文新闻 → 东方财富公告 → Yahoo Finance（四级降级）。
+    港股用同名 A 股抓雪球；雪球在数据中心IP被反爬时，DDG中文新闻为A股舆情主力。"""
+    # 港股 → 同名 A 股 symbol
     xq_sym = symbol
     if symbol.startswith('HK') and name:
         a = _hk_to_ashare(name)
         if a:
-            print(f'  [{symbol}] 港股→同名A股 {a} 抓雪球讨论')
+            print(f'  [{symbol}] 港股→同名A股 {a} 抓数据')
             xq_sym = a
 
-    # 1. 雪球个股讨论
+    # 1. 雪球个股讨论（本地/常规IP可用；GitHub Actions 数据中心IP常被Bot检测拦截）
     posts = _xueqiu_posts(xq_sym, pages=2)
     if posts:
         print(f'  [{symbol}] 雪球获取成功 {len(posts)} 条（symbol={xq_sym}）')
         return posts
 
-    # 2. 公告（东方财富/巨潮）：中文标题，关键词分析友好
-    print(f'  [{symbol}] 雪球无数据，切换公告接口…')
+    # 2. DuckDuckGo 中文新闻（A股舆情主力，Actions 可用，内容相关且丰富）
+    print(f'  [{symbol}] 雪球无数据，切换 DDG 中文新闻…')
+    posts = _ddg_cn_news(name, industry)
+    if posts:
+        return posts
+
+    # 3. 公告（东方财富/巨潮）
+    print(f'  [{symbol}] DDG无数据，切换公告接口…')
     posts = _cn_announcements(symbol)
     if posts:
         return posts
 
-    # 3. Yahoo Finance：股票代码 + 行业英文关键词双查询，合并去重
-    print(f'  [{symbol}] 公告接口失败，切换 Yahoo Finance…')
+    # 4. Yahoo Finance（A股几乎无料，最后兜底）
+    print(f'  [{symbol}] 公告失败，切换 Yahoo Finance…')
     posts = _yahoo_news_posts(symbol, name=name, industry=industry)
     if posts:
         return posts

@@ -1080,22 +1080,22 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 6: 权重股雪球舆情 -->
+  <!-- Row 6: 权重股舆情 -->
   <div class="card mb16" style="border-top:3px solid #1d9bf0">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:13px;font-weight:800;color:#374151">💬 权重股雪球舆情</span>
+        <span style="font-size:13px;font-weight:800;color:#374151">💬 权重股舆情</span>
         <span style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
-                     padding:1px 7px;border-radius:10px;font-weight:600">Top5持仓 · 雪球讨论AI归纳</span>
+                     padding:1px 7px;border-radius:10px;font-weight:600">Top5持仓 · 多源资讯AI归纳</span>
         <span id="sentTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
       </div>
-      <button onclick="triggerSentimentRefresh()" id="sentBtn" title="触发后台抓取雪球最新讨论并AI归纳（约1-2分钟）"
+      <button onclick="triggerSentimentRefresh()" id="sentBtn" title="触发后台抓取最新资讯并AI归纳（约1-2分钟）"
         style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
                padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
     </div>
     <div id="sentGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px">
       <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">
-        点击「↻」抓取 Top5 权重股雪球讨论
+        点击「↻」抓取 Top5 权重股最新资讯舆情
       </div>
     </div>
   </div>
@@ -6716,7 +6716,7 @@ function triggerHotViaWorkflow(){
   });
 }
 
-// ── 权重股雪球舆情 ────────────────────────────────────────────────
+// ── 权重股舆情 ────────────────────────────────────────────────
 function _escSent(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function _renderSentGrid(data){
@@ -6733,7 +6733,7 @@ function _renderSentGrid(data){
     const sum = s.summary && s.summary.trim();
     const body = sum
       ? `<p style="margin:0;font-size:11px;color:#334155;line-height:1.7">${_escSent(s.summary)}</p>`
-      : `<p style="margin:0;font-size:10.5px;color:#94a3b8;font-style:italic">${s.total>0?'已取'+s.total+'条讨论，待AI归纳':'暂未取到讨论'}</p>`;
+      : `<p style="margin:0;font-size:10.5px;color:#94a3b8;font-style:italic">${s.total>0?'已取'+s.total+'条资讯，待AI归纳':'暂未取到资讯'}</p>`;
     return `<div style="background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #eef0f4;
                  border-left:3px solid #1d9bf0;box-shadow:0 1px 4px rgba(0,0,0,.04)">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
@@ -6741,7 +6741,7 @@ function _renderSentGrid(data){
     <span style="font-size:9px;color:#64748b">${_escSent(s.code)} · ${Number(s.w).toFixed(1)}%</span>
   </div>
   ${body}
-  ${s.total>0?`<div style="margin-top:7px;padding-top:5px;border-top:1px solid #f1f5f9;font-size:9px;color:#c8d0dc;text-align:right">雪球 · ${s.total}条讨论</div>`:''}
+  ${s.total>0?`<div style="margin-top:7px;padding-top:5px;border-top:1px solid #f1f5f9;font-size:9px;color:#c8d0dc;text-align:right">${s.total}条资讯</div>`:''}
 </div>`;
   }).join('');
 }
@@ -6758,7 +6758,7 @@ async function fetchXqSentiment(){
   }catch(e){ console.warn('[Sentiment] 加载失败:', e.message); }
 }
 
-// ↻：触发后台抓雪球讨论并AI归纳（refresh-xueqiu.yml 同时刷新热股+舆情）
+// ↻：触发后台抓最新资讯并AI归纳（refresh-xueqiu.yml 同时刷新热股+舆情）
 function triggerSentimentRefresh(){
   _refreshViaWorkflow({
     file:     'refresh-xueqiu.yml',
@@ -7357,7 +7357,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   fetchMarketBreadth(); // 市场涨跌统计（主要用腾讯 API，极少命中东方财富限流）
   fetchXqHot();       // 雪球热股榜（近1小时 Top20）
   fetchKolSummary();  // X关注意见领袖：从 data/twitter_kol_summary.json 加载
-  fetchXqSentiment(); // 权重股雪球舆情：从 data/xq_sentiment.json 加载
+  fetchXqSentiment(); // 权重股舆情：从 data/xq_sentiment.json 加载
   // 30s 后检查是否成功，若仍是占位文字则自动重试一次
   setTimeout(()=>{
     const mfEl = document.getElementById('mfList');
