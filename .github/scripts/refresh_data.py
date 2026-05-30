@@ -323,9 +323,40 @@ def _ddg_cn_news(name, industry='', n=10):
         print(f'  [{name}] DDG搜索失败: {e}')
     return posts
 
+def _em_news(name, n=10):
+    """东方财富个股新闻搜索（中文，个股直接相关，含最新动态/研报/资讯）。
+    GitHub Actions 可达性优于 DDG/雪球，为 A股舆情主力源。返回 [{description, text}]。"""
+    if not name:
+        return []
+    param = json.dumps({
+        'keyword': name,
+        'type': ['cmsArticleWebOld'],
+        'param': {'cmsArticleWebOld': {'searchScope': 'default', 'sort': 'time',
+                                       'pageIndex': 1, 'pageSize': n, 'preTag': '', 'postTag': ''}}
+    }, ensure_ascii=False)
+    url = 'https://search-api-web.eastmoney.com/search/jsonp?cb=cb&param=' + requests.utils.quote(param)
+    try:
+        r = requests.get(url, timeout=15, headers={
+            'User-Agent': UA_BROWSER, 'Referer': 'https://so.eastmoney.com/'})
+        m = re.search(r'cb\((.*)\)', r.text, re.DOTALL)
+        if not m:
+            print(f'  [{name}] 东财新闻：无JSONP'); return []
+        arts = (json.loads(m.group(1)).get('result') or {}).get('cmsArticleWebOld') or []
+        posts = []
+        for a in arts:
+            title   = re.sub(r'<[^>]+>', '', a.get('title', '') or '').strip()
+            content = re.sub(r'<[^>]+>', '', a.get('content', '') or '').strip()
+            if title:
+                posts.append({'description': (title + '。' + content)[:300], 'text': title})
+        print(f'  [{name}] 东财新闻 {len(posts)} 条')
+        return posts
+    except Exception as e:
+        print(f'  [{name}] 东财新闻失败: {e}')
+        return []
+
 def fetch_stock_posts(symbol, name='', industry=''):
-    """雪球讨论 → DDG中文新闻 → 东方财富公告 → Yahoo Finance（四级降级）。
-    港股用同名 A 股抓雪球；雪球在数据中心IP被反爬时，DDG中文新闻为A股舆情主力。"""
+    """雪球讨论 → 东财个股新闻 → DDG中文新闻 → 公告 → Yahoo（五级降级）。
+    港股用同名 A 股抓数据；雪球在数据中心IP被反爬时，东财新闻为A股舆情主力。"""
     # 港股 → 同名 A 股 symbol
     xq_sym = symbol
     if symbol.startswith('HK') and name:
@@ -340,19 +371,25 @@ def fetch_stock_posts(symbol, name='', industry=''):
         print(f'  [{symbol}] 雪球获取成功 {len(posts)} 条（symbol={xq_sym}）')
         return posts
 
-    # 2. DuckDuckGo 中文新闻（A股舆情主力，Actions 可用，内容相关且丰富）
-    print(f'  [{symbol}] 雪球无数据，切换 DDG 中文新闻…')
+    # 2. 东方财富个股新闻（中文，个股相关，Actions 主力源）
+    print(f'  [{symbol}] 雪球无数据，切换东财个股新闻…')
+    posts = _em_news(name)
+    if posts:
+        return posts
+
+    # 3. DuckDuckGo 中文新闻（兜底；Actions 数据中心IP 可能被限）
+    print(f'  [{symbol}] 东财新闻无数据，切换 DDG…')
     posts = _ddg_cn_news(name, industry)
     if posts:
         return posts
 
-    # 3. 公告（东方财富/巨潮）
+    # 4. 公告（东方财富/巨潮）
     print(f'  [{symbol}] DDG无数据，切换公告接口…')
     posts = _cn_announcements(symbol)
     if posts:
         return posts
 
-    # 4. Yahoo Finance（A股几乎无料，最后兜底）
+    # 5. Yahoo Finance（A股几乎无料，最后兜底）
     print(f'  [{symbol}] 公告失败，切换 Yahoo Finance…')
     posts = _yahoo_news_posts(symbol, name=name, industry=industry)
     if posts:
