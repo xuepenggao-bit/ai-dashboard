@@ -1086,7 +1086,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span style="font-size:13px;font-weight:800;color:#374151">💬 权重股舆情</span>
         <span style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
-                     padding:1px 7px;border-radius:10px;font-weight:600">Top5持仓 · 多源资讯AI归纳</span>
+                     padding:1px 7px;border-radius:10px;font-weight:600">Top8持仓 · 东财最新资讯</span>
         <span id="sentTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
       </div>
       <button onclick="triggerSentimentRefresh()" id="sentBtn" title="触发后台抓取最新资讯并AI归纳（约1-2分钟）"
@@ -1095,7 +1095,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
     <div id="sentGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px">
       <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">
-        点击「↻」抓取 Top5 权重股最新资讯舆情
+        点击「↻」抓取 Top8 权重股最新资讯舆情
       </div>
     </div>
   </div>
@@ -6726,7 +6726,7 @@ function _escSent(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&
 function _getTop5Weights(){
   if(typeof PORT==='undefined' || !PORT || !PORT.sectors) return [];
   return PORT.sectors.reduce((a,s)=>a.concat(s.stocks||[]),[])
-    .filter(sk=>(sk.w||0)>0).sort((a,b)=>(b.w||0)-(a.w||0)).slice(0,5);
+    .filter(sk=>(sk.w||0)>0).sort((a,b)=>(b.w||0)-(a.w||0)).slice(0,8);
 }
 function _sentSym(sk){
   if(sk.mkt==='HK') return 'HK'+String(sk.code).padStart(5,'0');
