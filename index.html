@@ -6716,59 +6716,92 @@ function triggerHotViaWorkflow(){
   });
 }
 
-// ── 权重股舆情 ────────────────────────────────────────────────
+// ── 权重股舆情（前端直抓东财个股新闻 JSONP）──────────────────────
+// 后端 GitHub Actions 数据中心IP 被雪球/东财/DDG 全面限流，无法抓中文舆情；
+// 改为前端用 script 标签调东财 search JSONP（用户浏览器IP 可达 + JSONP 绕CORS），
+// 直接展示每只权重股的最新相关新闻标题。港股用其名称同样可搜到（含同名A股）新闻。
 function _escSent(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function _renderSentGrid(data){
-  const grid = document.getElementById('sentGrid');
-  const tsEl = document.getElementById('sentTs');
+// 取仓位 Top5 权重股
+function _getTop5Weights(){
+  if(typeof PORT==='undefined' || !PORT || !PORT.sectors) return [];
+  return PORT.sectors.reduce((a,s)=>a.concat(s.stocks||[]),[])
+    .filter(sk=>(sk.w||0)>0).sort((a,b)=>(b.w||0)-(a.w||0)).slice(0,5);
+}
+function _sentSym(sk){
+  if(sk.mkt==='HK') return 'HK'+String(sk.code).padStart(5,'0');
+  return (sk.mkt||'')+sk.code;
+}
+
+// 东财个股新闻搜索（JSONP/script，绕CORS+绕Actions限流）。返回 [{title,date}]
+function _emNewsJSONP(name, n=6){
+  return new Promise(function(resolve){
+    if(!name){ resolve([]); return; }
+    var cbName='__emn'+Math.random().toString(36).slice(2,9);
+    var sc=document.createElement('script');
+    var done=false;
+    var cleanup=function(){ try{ delete window[cbName]; }catch(e){} if(sc.parentNode) sc.parentNode.removeChild(sc); };
+    var timer=setTimeout(function(){ if(!done){ done=true; cleanup(); resolve([]); } }, 8000);
+    window[cbName]=function(data){
+      if(done) return; done=true; clearTimeout(timer);
+      var arts=(data && data.result && data.result.cmsArticleWebOld) || [];
+      var out=arts.map(function(a){
+        return { title:(a.title||'').replace(/<[^>]+>/g,'').trim(), date:(a.date||'').slice(0,10) };
+      }).filter(function(x){ return x.title; });
+      cleanup(); resolve(out);
+    };
+    sc.onerror=function(){ if(!done){ done=true; clearTimeout(timer); cleanup(); resolve([]); } };
+    var param=JSON.stringify({keyword:name,type:['cmsArticleWebOld'],
+      param:{cmsArticleWebOld:{searchScope:'default',sort:'time',pageIndex:1,pageSize:n,preTag:'',postTag:''}}});
+    sc.src='https://search-api-web.eastmoney.com/search/jsonp?cb='+cbName+'&param='+encodeURIComponent(param);
+    document.head.appendChild(sc);
+  });
+}
+
+function _renderSentNews(items){
+  const grid=document.getElementById('sentGrid');
+  const tsEl=document.getElementById('sentTs');
   if(!grid) return;
-  if(tsEl && data.ts) tsEl.textContent = data.ts + ' 更新';
-  const stocks = data.stocks || [];
-  if(!stocks.length){
-    grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">暂无数据，点↻抓取</div>';
-    return;
-  }
-  grid.innerHTML = stocks.map(s=>{
-    const sum = s.summary && s.summary.trim();
-    const body = sum
-      ? `<p style="margin:0;font-size:11px;color:#334155;line-height:1.7">${_escSent(s.summary)}</p>`
-      : `<p style="margin:0;font-size:10.5px;color:#94a3b8;font-style:italic">${s.total>0?'已取'+s.total+'条资讯，待AI归纳':'暂未取到资讯'}</p>`;
+  if(tsEl){ const t=new Date(); tsEl.textContent=`${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')} 更新`; }
+  if(!items.length){ grid.innerHTML='<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">投资组合为空</div>'; return; }
+  grid.innerHTML=items.map(s=>{
+    const list=(s.news&&s.news.length)
+      ? s.news.slice(0,5).map(n=>`<li style="font-size:10.5px;color:#334155;line-height:1.55;margin-bottom:4px;list-style:none;padding-left:10px;position:relative">
+           <span style="position:absolute;left:0;color:#1d9bf0">·</span>${_escSent(n.title)}
+           ${n.date?`<span style="color:#c8d0dc;font-size:8.5px"> ${_escSent(n.date)}</span>`:''}</li>`).join('')
+      : '<li style="font-size:10px;color:#94a3b8;font-style:italic;list-style:none">暂未取到相关新闻</li>';
     return `<div style="background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #eef0f4;
                  border-left:3px solid #1d9bf0;box-shadow:0 1px 4px rgba(0,0,0,.04)">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
     <span style="font-size:12.5px;font-weight:800;color:#1e293b">${_escSent(s.name)}</span>
     <span style="font-size:9px;color:#64748b">${_escSent(s.code)} · ${Number(s.w).toFixed(1)}%</span>
   </div>
-  ${body}
-  ${s.total>0?`<div style="margin-top:7px;padding-top:5px;border-top:1px solid #f1f5f9;font-size:9px;color:#c8d0dc;text-align:right">${s.total}条资讯</div>`:''}
+  <ul style="margin:0;padding:0">${list}</ul>
+  ${s.news&&s.news.length?`<div style="margin-top:7px;padding-top:5px;border-top:1px solid #f1f5f9;font-size:9px;color:#c8d0dc;text-align:right">东方财富 · 最新${s.news.length}条</div>`:''}
 </div>`;
   }).join('');
 }
 
-let _sentCache = null;
 async function fetchXqSentiment(){
+  const top5=_getTop5Weights();
+  const grid=document.getElementById('sentGrid');
+  if(!top5.length){ if(grid) grid.innerHTML='<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">投资组合为空</div>'; return; }
+  if(grid) grid.innerHTML='<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">加载中…</div>';
   try{
-    const r = await fetch('data/xq_sentiment.json?_='+Date.now(), {cache:'no-store'});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const data = await r.json();
-    _sentCache = data;
-    _renderSentGrid(data);
-    console.log('[Sentiment] 加载成功，', (data.stocks||[]).length, '只');
+    const items=await Promise.all(top5.map(async sk=>{
+      const news=await _emNewsJSONP(sk.name, 6);
+      return { name:sk.name, code:_sentSym(sk), w:sk.w, news:news };
+    }));
+    _renderSentNews(items);
+    console.log('[Sentiment] 前端东财新闻加载完成，', items.length, '只');
   }catch(e){ console.warn('[Sentiment] 加载失败:', e.message); }
 }
 
-// ↻：触发后台抓最新资讯并AI归纳（refresh-xueqiu.yml 同时刷新热股+舆情）
+// ↻：前端直接重抓（用户IP，秒级，无需后台workflow）
 function triggerSentimentRefresh(){
-  _refreshViaWorkflow({
-    file:     'refresh-xueqiu.yml',
-    dataUrl:  'data/xq_sentiment.json',
-    tsField:  'ts',
-    statusEl: document.getElementById('sentTs'),
-    btn:      document.getElementById('sentBtn'),
-    render:   _renderSentGrid,
-    validate: j => j.stocks && j.stocks.length
-  });
+  const btn=document.getElementById('sentBtn');
+  if(btn){ btn.disabled=true; btn.textContent='…'; }
+  fetchXqSentiment().finally(()=>{ if(btn){ btn.disabled=false; btn.textContent='↻'; } });
 }
 
 // ── 主力净流入 TOP 20 ──────────────────────────────────────────
