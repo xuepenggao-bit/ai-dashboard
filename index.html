@@ -5038,18 +5038,41 @@ function preRenderHistory(log){
   if(!log.length){ el.innerHTML='<div style="color:#94a3b8;font-size:12px;padding:14px 0">暂无记录 · 完成首次自检后这里会积累情绪—决策数据库（同步至 GitHub data/preflight_log.json）</div>'; return; }
   const dot={green:'🟢',yellow:'🟡',red:'🔴'};
   const quadName={KL:'守·正常',KH:'幻想预警',EL:'攻·小注',EH:'最危险'};
-  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:540px">'+
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:560px">'+
     '<thead><tr style="border-bottom:2px solid var(--border);color:var(--text2)">'+
     '<th style="text-align:left;padding:8px 12px;font-weight:700">日期</th>'+
     '<th style="text-align:center;padding:8px 12px;font-weight:700">许可</th>'+
     '<th style="text-align:left;padding:8px 12px;font-weight:700">象限</th>'+
-    '<th style="text-align:left;padding:8px 12px;font-weight:700;width:100%">主要警示</th></tr></thead><tbody>'+
+    '<th style="text-align:left;padding:8px 12px;font-weight:700;width:100%">主要警示</th>'+
+    '<th style="text-align:center;padding:8px 12px;font-weight:700">操作</th></tr></thead><tbody>'+
     log.map(r=>'<tr style="border-bottom:1px solid var(--border)">'+
       '<td style="padding:8px 12px;font-weight:700;color:var(--text);white-space:nowrap">'+r.date+'</td>'+
       '<td style="padding:8px 12px;text-align:center;white-space:nowrap">'+(dot[r.light]||'')+'</td>'+
       '<td style="padding:8px 12px;white-space:nowrap;color:var(--text2)">'+(quadName[r.quad]||'—')+'</td>'+
-      '<td style="padding:8px 12px;color:var(--text2)">'+((r.flags&&r.flags.length)?r.flags.join('、'):'无')+'</td></tr>'
+      '<td style="padding:8px 12px;color:var(--text2)">'+((r.flags&&r.flags.length)?r.flags.join('、'):'无')+'</td>'+
+      '<td style="padding:8px 12px;text-align:center;white-space:nowrap"><button onclick="preDeleteRecord(\''+r.date+'\')" title="删除该日记录" style="background:#fee2e2;border:none;color:#dc2626;border-radius:5px;padding:3px 9px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700">✕</button></td></tr>'
     ).join('')+'</tbody></table>';
+}
+
+// 删除某一天的自检记录：从云端读最新全量 → 移除该日期 → 写回云端（与提交同样的云端权威逻辑）
+async function preDeleteRecord(date){
+  if(!confirm('确认删除 '+date+' 的自检记录？此操作会同步到云端。')) return;
+  const tip=document.getElementById('preSaveTip');
+  tip.textContent='🗑 删除中…'; tip.style.color='#94a3b8';
+  let log=await _preGhGet();
+  if(log===null){
+    tip.textContent='⚠ 云端读取失败，未删除（请检查网络后重试）'; tip.style.color='#ef4444';
+    return;
+  }
+  log=log.filter(r=>r.date!==date);
+  const ok=await _preGhPut(log);
+  if(ok){
+    localStorage.setItem(PRE_KEY, JSON.stringify(log));
+    tip.textContent='✓ 已删除 '+date+' 的记录'; tip.style.color='#16a34a';
+  } else {
+    tip.textContent='⚠ 云端写入失败，请检查网络后重试'; tip.style.color='#d97706';
+  }
+  preRenderHistory(log);
 }
 
 // ── REFRESH ──────────────────────────────────────────────────
