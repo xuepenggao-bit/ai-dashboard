@@ -1498,6 +1498,76 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   </div>
 </div>
 </div>
+
+<!-- ════════════════ TAB 历史持仓 ════════════════ -->
+<div class="tab-content" id="tHist">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <div>
+      <div class="stitle">历史持仓 <span class="stag">每日记录 · 业绩归因</span></div>
+      <div style="font-size:12px;color:var(--text2);margin-top:3px">记录每日仓位与涨跌数据，自动同步至云端</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button onclick="addHistRecord()" id="histAddBtn" class="rbtn" style="padding:7px 16px;font-size:12px">
+        <span>＋</span> 记录今日持仓
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 主列表视图 ── -->
+  <div id="histMain">
+    <!-- 统计概览 -->
+    <div class="g4 mb16" id="histStats" style="display:none">
+      <div class="card" style="border-top:3px solid var(--blue)">
+        <div class="klabel" style="color:var(--blue);font-size:12px">📅 已记录天数</div>
+        <div class="kval tb" id="histDays" style="font-size:30px">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid #dc2626">
+        <div class="klabel" style="color:#dc2626;font-size:12px">📈 持仓日均涨跌</div>
+        <div class="kval" id="histAvgPort" style="font-size:30px">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid var(--text2)">
+        <div class="klabel" style="color:var(--text2);font-size:12px">📊 全指日均涨跌</div>
+        <div class="kval tb" id="histAvgCsi" style="font-size:30px">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid var(--purple)">
+        <div class="klabel" style="color:var(--purple);font-size:12px">⚡ 日均超额收益</div>
+        <div class="kval" id="histAvgExc" style="font-size:30px;color:var(--purple)">—</div>
+      </div>
+    </div>
+    <!-- 记录表格 -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">持仓日志</span>
+        <span class="cbadge" id="histCountBadge">0 条记录</span>
+      </div>
+      <div style="overflow-x:auto">
+        <div id="histTable">
+          <div style="color:var(--text2);font-size:13px;text-align:center;padding:28px 0">
+            切换到「投资组合」刷新股价后，点击「记录今日持仓」开始记录
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 二级：单日持仓明细 ── -->
+  <div id="histDetail" style="display:none">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
+      <button onclick="closeHistDetail()"
+        style="background:var(--card2);border:1.5px solid var(--border);color:var(--text);border-radius:8px;
+               padding:7px 16px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:600;
+               display:flex;align-items:center;gap:5px">← 返回日志</button>
+      <div style="font-size:18px;font-weight:800;color:var(--text)" id="histDetailTitle"></div>
+      <span style="font-size:12px;color:var(--text2)" id="histDetailMeta"></span>
+    </div>
+    <div class="card">
+      <div style="overflow-x:auto">
+        <div id="histDetailTable"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 盘前自检 ═══ -->
 <div class="tab-content" id="tPre">
   <div class="stitle" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
