@@ -3409,25 +3409,21 @@ async function portSaveRemote(opts){
   }
 }
 
-/* 只写本地，标记待同步；需用户手动点击"同步到云端"才推送 */
+/* 云端 = 唯一存储：任何改动都自动写回云端 JSON（防抖 600ms 合并高频改动，如逐字输入备注）。
+ * 不再使用 localStorage —— 所有设备/浏览器读写同一份云端数据，跨设备一致。 */
 let _portPushTimer = null;
 function portSave(opts){
   PORT._savedAt = Date.now();
-  try{ localStorage.setItem(PORT_KEY, JSON.stringify(PORT)); }catch(e){}  // 仅离线缓存，非权威
   _portDirty = true;
   _setSyncTs('☁️ 同步中…', '#f59e0b');
-  // 云端 = 唯一权威：任何改动都自动写回云端 JSON（防抖 600ms 合并高频改动，如逐字输入备注）
   clearTimeout(_portPushTimer);
   _portPushTimer = setTimeout(function(){ portSaveRemote(opts||{}); }, 600);
 }
 
-/* 读取本地 localStorage 数据（fallback） */
+/* 首屏兜底：仅用默认模板渲染框架；真实数据（含历史）一律从云端读取，不使用本地缓存 */
 function portLoad(){
   if(PORT) return;
-  try{
-    const s = localStorage.getItem(PORT_KEY);
-    PORT = s ? JSON.parse(s) : JSON.parse(JSON.stringify(BASE.portfolio));
-  }catch(e){ PORT = JSON.parse(JSON.stringify(BASE.portfolio)); }
+  PORT = JSON.parse(JSON.stringify(BASE.portfolio));
 }
 
 /**
@@ -3453,35 +3449,40 @@ async function portInit(){
   try{ fetchPortPrices(); }catch(e){ console.warn('[portInit fetchPortPrices]', e); }
   _setSyncTs('☁️ 校验云端数据中…', '#f59e0b');
 
-  // ② 后台拉 GitHub 远端数据（云端 = 唯一权威数据源，带 8s AbortController 超时）
+  // ② 读取云端数据 —— 优先 GitHub Pages 同源 raw（走 CDN，稳定、无需 token、不受 API 速率限制，
+  //    这是跨设备/换浏览器能稳定显示历史的关键）；同源失败再回退 api.github.com
   let remoteData = null;
-  let remoteOk   = false;  // true = GitHub 可达（无论文件是否存在）
+  let remoteOk   = false;  // true = 云端可达（无论文件是否存在）
+  // ②-a 同源 Pages raw
   try{
-    const ghHeaders = {
-      'Authorization': `token ${PORT_GH_TOKEN}`,
-      'Accept': 'application/vnd.github.v3+json'
-    };
     const ctrl = new AbortController();
     const tid  = setTimeout(()=>ctrl.abort(), 8000);
     try{
-      const metaResp = await fetch(
-        `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}?_=${Date.now()}`,
-        {headers: ghHeaders, cache:'no-store', signal: ctrl.signal}
-      );
-      if(metaResp.ok){
-        remoteOk = true;
-        const metaJson = await metaResp.json();
-        _portSha = metaJson.sha;   // 记录 SHA，供后续 PUT 复用
-        // GitHub API 返回 base64 编码内容（含换行符），用 TextDecoder 正确还原 UTF-8
-        const b64   = metaJson.content.replace(/\n/g,'');
-        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-        remoteData  = JSON.parse(new TextDecoder('utf-8').decode(bytes));
-      } else if(metaResp.status === 404){
-        remoteOk = true; // GitHub 可达，文件不存在（首次使用）
-      }
+      const resp = await fetch(`${PORT_GH_FILE}?_=${Date.now()}`, {cache:'no-store', signal: ctrl.signal});
+      if(resp.ok){ remoteOk = true; remoteData = await resp.json(); }
+      else if(resp.status === 404){ remoteOk = true; }
     }finally{ clearTimeout(tid); }
-  }catch(e){
-    console.warn('portLoadRemote:', e.name === 'AbortError' ? '超时(8s)，离线显示本地缓存' : e);
+  }catch(e){ console.warn('portLoadRemote(pages):', e.name==='AbortError'?'同源超时':e); }
+  // ②-b 同源拿不到 → 回退 api.github.com（顺便记录 SHA 供写入复用）
+  if(!remoteData){
+    try{
+      const ghHeaders = {'Authorization': `token ${PORT_GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json'};
+      const ctrl = new AbortController();
+      const tid  = setTimeout(()=>ctrl.abort(), 8000);
+      try{
+        const metaResp = await fetch(
+          `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}?_=${Date.now()}`,
+          {headers: ghHeaders, cache:'no-store', signal: ctrl.signal}
+        );
+        if(metaResp.ok){
+          remoteOk = true;
+          const metaJson = await metaResp.json();
+          _portSha = metaJson.sha;
+          const bytes = Uint8Array.from(atob(metaJson.content.replace(/\n/g,'')), c => c.charCodeAt(0));
+          remoteData  = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+        } else if(metaResp.status === 404){ remoteOk = true; }
+      }finally{ clearTimeout(tid); }
+    }catch(e){ console.warn('portLoadRemote(api):', e.name==='AbortError'?'API超时':e); }
   }
 
   const ts = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
@@ -3490,7 +3491,6 @@ async function portInit(){
   //    彻底杜绝某台设备的本地缓存把云端历史覆盖/清空的问题）
   if(remoteData && _weightCount(remoteData) >= 0){
     PORT = remoteData;
-    try{ localStorage.setItem(PORT_KEY, JSON.stringify(PORT)); }catch(e){}  // 仅离线缓存
     _setSyncTs('☁️ 已从云端加载 ' + ts, '#10b981');
     renderPortfolio();
     updateRiskDashboard();
@@ -3503,24 +3503,19 @@ async function portInit(){
   } else if(remoteOk){
     // 云端可达但文件不存在（首次使用）→ 把当前数据作为初始版本上传云端
     PORT._savedAt = Date.now();
-    try{ localStorage.setItem(PORT_KEY, JSON.stringify(PORT)); }catch(e){}
     _setSyncTs('☁️ 云端无数据，正在上传初始备份…', '#f59e0b');
     portSaveRemote();
   } else {
-    // 云端不可达（离线/超时）→ 保留本地降级显示，但绝不推送（防止脏数据覆盖云端权威）
-    _setSyncTs('⚠️ 云端暂时无法访问，离线显示本地缓存（改动暂不同步）', '#f59e0b');
+    // 云端不可达（离线/超时）→ 用默认模板显示框架，绝不推送（防止覆盖云端权威）
+    _setSyncTs('⚠️ 云端暂时无法访问，请检查网络后刷新（历史数据需联网读取）', '#ef4444');
   }
 }
 
-/* 手动强制将当前数据推送到云端（用于应急修复） */
+/* 手动强制将当前内存数据推送到云端（用于应急修复） */
 async function portForcePush(){
-  // 从 localStorage 重新读取最新数据，避免使用内存中的旧快照（多标签场景）
-  try{ const s = localStorage.getItem(PORT_KEY); if(s) PORT = JSON.parse(s); }catch(e){}
   if(!PORT){ portLoad(); }
   if(!PORT){ alert('没有数据可同步'); return; }
-  // 用户主动同步 → 强制刷新时间戳，确保此版本在任何冲突解决中优先
   PORT._savedAt = Date.now();
-  localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
   _setSyncTs('☁️ 强制同步中…', '#f59e0b');
   await portSaveRemote();
 }
@@ -4953,26 +4948,42 @@ function preJudge(){
     flags.map(f=>`<span class="pflag">${f}</span>`).join('')):'';
 }
 
-// 盘前自检：用 GitHub Contents API 持久化到 data/preflight_log.json（跨设备同步）
-// 同时保留 localStorage 作为本地缓存/离线备份
+// 盘前自检：完全云端存储 data/preflight_log.json —— 读用同源 Pages raw，写用 api.github.com PUT。
+// 不使用 localStorage，所有设备/浏览器读写同一份云端数据。
 const PRE_FILE='data/preflight_log.json';
 const PRE_REPO='xuepenggao-bit/ai-dashboard';
 let _preSha=null; // 当前文件的 SHA，PUT 时需要
 
-async function _preGhGet(){
+// 读取盘前自检历史。
+// 默认优先 GitHub Pages 同源 raw（CDN，稳定、无需 token、不受 API 速率限制，跨设备可靠）。
+// useApi=true 时强制走 api.github.com（实时、并返回 SHA，供写入前取合并基准用）。
+async function _preGhGet(useApi){
+  if(!useApi){
+    try{
+      const r=await fetch(`${PRE_FILE}?_=${Date.now()}`, {cache:'no-store'});
+      if(r.ok) return await r.json();
+      if(r.status===404) return [];
+    }catch(e){}   // 同源失败 → 落到 api 兜底
+  }
   try{
     const r=await fetch(`https://api.github.com/repos/${PRE_REPO}/contents/${PRE_FILE}?_=${Date.now()}`,
-      {headers:{'Authorization':`token ${PORT_GH_TOKEN}`,'Accept':'application/vnd.github+json'}});
-    if(r.status===404) return [];
+      {headers:{'Authorization':`token ${PORT_GH_TOKEN}`,'Accept':'application/vnd.github+json'}, cache:'no-store'});
+    if(r.status===404){ _preSha=null; return []; }
     if(!r.ok) return null;
     const j=await r.json();
     _preSha=j.sha;
-    const txt=atob(j.content.replace(/\n/g,''));
-    return JSON.parse(decodeURIComponent(escape(txt)));
+    return JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));
   }catch(e){ return null; }
 }
 
 async function _preGhPut(log){
+  // 写前自取最新 SHA（api.github.com 实时），杜绝并发导致的 SHA 失效冲突
+  try{
+    const m=await fetch(`https://api.github.com/repos/${PRE_REPO}/contents/${PRE_FILE}?_=${Date.now()}`,
+      {headers:{'Authorization':`token ${PORT_GH_TOKEN}`,'Accept':'application/vnd.github+json'}, cache:'no-store'});
+    if(m.ok){ const mj=await m.json(); _preSha=mj.sha; }
+    else if(m.status===404){ _preSha=null; }
+  }catch(_){}
   const content=btoa(unescape(encodeURIComponent(JSON.stringify(log,null,2))));
   const body={message:`chore: preflight log ${new Date().toISOString().slice(0,10)}`,
                content, branch:'main'};
@@ -4982,7 +4993,7 @@ async function _preGhPut(log){
       {method:'PUT', headers:{'Authorization':`token ${PORT_GH_TOKEN}`,
        'Accept':'application/vnd.github+json','Content-Type':'application/json'},
        body:JSON.stringify(body)});
-    if(!r.ok) return false;
+    if(!r.ok){ _preSha=null; return false; }
     const j=await r.json();
     _preSha=j.content.sha;
     return true;
@@ -4998,14 +5009,12 @@ async function preLoad(){
   const tip=document.getElementById('preSaveTip');
   tip.textContent='⏳ 同步中…'; tip.style.color='#94a3b8';
 
-  // 优先从 GitHub 拉取最新数据；失败则回退 localStorage
+  // 从云端读取（同源 Pages raw 优先，稳定跨设备）；失败则提示联网，不使用本地缓存
   let log=await _preGhGet();
   if(log===null){
-    log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
-    tip.textContent='⚠ 远端同步失败，已载入本地缓存'; tip.style.color='#d97706';
+    log=[];
+    tip.textContent='⚠ 云端读取失败，请检查网络后刷新'; tip.style.color='#ef4444';
   } else {
-    // 同步到 localStorage 作为离线备份
-    localStorage.setItem(PRE_KEY, JSON.stringify(log));
     tip.textContent='';
   }
   const rec=log.find(r=>r.date===today);
@@ -5030,22 +5039,20 @@ async function preSubmit(){
   const rec={date:today, ts:new Date().toLocaleString('zh-CN',{hour12:false}),
              ans:Object.assign({},_PRE), light:_preCur.light, quad:_preCur.quad, flags:_preCur.flags};
 
-  // 关键：合并基准必须取自云端最新全量历史（_preGhGet 同时刷新 SHA），
-  // 绝不能用 localStorage——否则新设备/清缓存的浏览器提交后会把云端历史全部冲掉只剩当天 1 条。
-  let log=await _preGhGet();
+  // 关键：合并基准取自云端最新全量历史（强制走 api 实时读取，准确且刷新 SHA），
+  // 绝不能用 localStorage——否则新设备/换浏览器提交后会把云端历史全部冲掉只剩当天 1 条。
+  let log=await _preGhGet(true);
   if(log===null){
-    // 仅当云端不可达时才用本地兜底（离线降级，至少不丢当前这条）
-    log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
+    tip.textContent='⚠ 云端读取失败，未保存（请检查网络后重试）'; tip.style.color='#ef4444';
+    return;   // 读不到云端全量就不写，避免覆盖云端历史
   }
   log=log.filter(r=>r.date!==today); log.unshift(rec); log=log.slice(0,365);
 
   const ok=await _preGhPut(log);
   if(ok){
-    localStorage.setItem(PRE_KEY, JSON.stringify(log));   // 同步成功后才刷新本地缓存
     tip.textContent='✓ 已同步至云端（'+rec.ts+'）'; tip.style.color='#16a34a';
   } else {
-    localStorage.setItem(PRE_KEY, JSON.stringify(log));   // 失败也暂存本地，待下次重试
-    tip.textContent='⚠ 云端写入失败，已暂存本地（'+rec.ts+'）'; tip.style.color='#d97706';
+    tip.textContent='⚠ 云端写入失败，请检查网络后重试'; tip.style.color='#ef4444';
   }
   preRenderHistory(log);
 }
@@ -5061,7 +5068,7 @@ function preReset(){
 }
 
 function preRenderHistory(log){
-  if(!log) log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
+  if(!log) log=[];
   const el=document.getElementById('preHist');
   if(!log.length){ el.innerHTML='<div style="color:#94a3b8;font-size:12px;padding:14px 0">暂无记录 · 完成首次自检后这里会积累情绪—决策数据库（同步至 GitHub data/preflight_log.json）</div>'; return; }
   const dot={green:'🟢',yellow:'🟡',red:'🔴'};
