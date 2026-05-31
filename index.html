@@ -3291,6 +3291,7 @@ let PORT = null;
 let _PORT_PRICES = {};
 let _portSort = {col:'w', dir:1};
 let _portDirty = false;   // 有本地修改未同步到云端时为 true
+let _portSha   = null;    // portfolio.json 当前 SHA，供 PUT 复用（云端唯一权威）
 
 function togglePortSort(col){
   // 首次点击某列：降序（dir=1，即 b-a，由高到低）
@@ -3353,8 +3354,10 @@ function _mergeHistory(targetObj, sourceArr){
   targetObj.history.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
 }
 
-/* 将组合数据写回 GitHub（后台静默执行） */
-async function portSaveRemote(){
+/* 将组合数据写回 GitHub（云端唯一权威；写前先拉云端最新，把云端独有历史并入当前数据，
+ * 杜绝跨设备并发时把别的设备刚写的历史覆盖掉）*/
+async function portSaveRemote(opts){
+  opts = opts || {};
   try{
     _setSyncTs('☁️ 同步中…', '#f59e0b');
     const headers = {
@@ -3362,11 +3365,21 @@ async function portSaveRemote(){
       'Accept': 'application/vnd.github.v3+json',
       'Content-Type': 'application/json'
     };
-    // 获取当前 SHA（文件不存在时忽略）
-    let sha = null;
+    // 写前拉云端最新：① 取最新 SHA ② 把云端独有的历史记录并入当前 PORT（防并发丢历史）
+    let sha = _portSha;
     try{
-      const meta = await fetch(`https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`, {headers});
-      if(meta.ok){ const j = await meta.json(); sha = j.sha; }
+      const meta = await fetch(`https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}?_=${Date.now()}`,
+        {headers, cache:'no-store'});
+      if(meta.ok){
+        const j = await meta.json();
+        sha = j.sha;
+        try{
+          const bytes  = Uint8Array.from(atob(j.content.replace(/\n/g,'')), c=>c.charCodeAt(0));
+          const remote = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+          // 默认并入云端独有历史（防并发丢失）；删除操作传 overwriteHistory 跳过，以本地为准
+          if(remote && Array.isArray(remote.history) && !opts.overwriteHistory) _mergeHistory(PORT, remote.history);
+        }catch(_){}
+      } else if(meta.status === 404){ sha = null; }
     }catch(_){}
     // 写入
     const body = {
@@ -3378,11 +3391,15 @@ async function portSaveRemote(){
       method:'PUT', headers, body: JSON.stringify(body)
     });
     if(res.ok){
+      const j2 = await res.json().catch(()=>null);
+      if(j2 && j2.content && j2.content.sha) _portSha = j2.content.sha;  // 更新 SHA 供下次复用
       _portDirty = false;
       const savedTs = PORT._savedAt ? new Date(PORT._savedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
-      _setSyncTs('☁️ 已同步 · 数据时间 '+savedTs, '#10b981');
-      console.log('[portSync] 成功写入 GitHub，_savedAt=', PORT._savedAt);
+      _setSyncTs('☁️ 已同步至云端 · '+savedTs, '#10b981');
+      // 推送成功后用合并结果重渲染历史表（可能并入了其他设备的记录）
+      if(typeof renderHistTable==='function') renderHistTable();
     } else {
+      _portSha = null;  // SHA 失效（409/422 冲突）→ 清掉，下次重新 GET 重试
       const err = await res.json().catch(()=>({}));
       throw new Error(err.message || res.status);
     }
@@ -3393,11 +3410,15 @@ async function portSaveRemote(){
 }
 
 /* 只写本地，标记待同步；需用户手动点击"同步到云端"才推送 */
-function portSave(){
-  PORT._savedAt = Date.now();   // 写入修改时间戳，供冲突解决使用
-  localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
+let _portPushTimer = null;
+function portSave(opts){
+  PORT._savedAt = Date.now();
+  try{ localStorage.setItem(PORT_KEY, JSON.stringify(PORT)); }catch(e){}  // 仅离线缓存，非权威
   _portDirty = true;
-  _setSyncTs('📝 有改动未同步，点击"同步到云端"', '#f59e0b');
+  _setSyncTs('☁️ 同步中…', '#f59e0b');
+  // 云端 = 唯一权威：任何改动都自动写回云端 JSON（防抖 600ms 合并高频改动，如逐字输入备注）
+  clearTimeout(_portPushTimer);
+  _portPushTimer = setTimeout(function(){ portSaveRemote(opts||{}); }, 600);
 }
 
 /* 读取本地 localStorage 数据（fallback） */
@@ -3432,14 +3453,7 @@ async function portInit(){
   try{ fetchPortPrices(); }catch(e){ console.warn('[portInit fetchPortPrices]', e); }
   _setSyncTs('☁️ 校验云端数据中…', '#f59e0b');
 
-  // ② 读本地快照（用于后续冲突判断基准）
-  let localData = null;
-  try{
-    const s = localStorage.getItem(PORT_KEY);
-    if(s) localData = JSON.parse(s);
-  }catch(e){}
-
-  // ③ 后台拉 GitHub 远端数据（带 8s AbortController 超时）
+  // ② 后台拉 GitHub 远端数据（云端 = 唯一权威数据源，带 8s AbortController 超时）
   let remoteData = null;
   let remoteOk   = false;  // true = GitHub 可达（无论文件是否存在）
   try{
@@ -3451,12 +3465,13 @@ async function portInit(){
     const tid  = setTimeout(()=>ctrl.abort(), 8000);
     try{
       const metaResp = await fetch(
-        `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,
+        `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}?_=${Date.now()}`,
         {headers: ghHeaders, cache:'no-store', signal: ctrl.signal}
       );
       if(metaResp.ok){
         remoteOk = true;
         const metaJson = await metaResp.json();
+        _portSha = metaJson.sha;   // 记录 SHA，供后续 PUT 复用
         // GitHub API 返回 base64 编码内容（含换行符），用 TextDecoder 正确还原 UTF-8
         const b64   = metaJson.content.replace(/\n/g,'');
         const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
@@ -3466,66 +3481,34 @@ async function portInit(){
       }
     }finally{ clearTimeout(tid); }
   }catch(e){
-    console.warn('portLoadRemote:', e.name === 'AbortError' ? '超时(8s)，使用本地缓存' : e);
+    console.warn('portLoadRemote:', e.name === 'AbortError' ? '超时(8s)，离线显示本地缓存' : e);
   }
 
-  // ④ GitHub 完成后重新读本地（防竞争：用户可能在等待期间编辑了行业等字段）
-  //    重新读取后 lt 使用最新时间戳，避免误判"远端获胜"覆盖用户最新改动
-  try{
-    const s2 = localStorage.getItem(PORT_KEY);
-    if(s2) localData = JSON.parse(s2);
-  }catch(e){}
-
-  // ⑤ 择优：时间戳优先（谁更新谁赢），无时间戳时退回仓位数量比较
-  const lw = _weightCount(localData);
-  const rw = _weightCount(remoteData);
-  const lt = localData?._savedAt || 0;   // 本地修改时间戳（ms，已含用户最新改动）
-  const rt = remoteData?._savedAt || 0;  // 远端修改时间戳（ms）
   const ts = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
 
-  // 远端胜出条件：有数据 AND (远端更新 OR 同时间戳且数量≥本地)
-  const remoteWins = remoteData && rw >= 0 && (rt > lt || (rt === lt && rw >= lw));
-
-  if(remoteWins){
-    // 远端更新或相等 → 使用远端，同步本地缓存，重新渲染
+  // ③ 云端唯一权威：远端有数据则无条件采用（不再用本地时间戳择优，
+  //    彻底杜绝某台设备的本地缓存把云端历史覆盖/清空的问题）
+  if(remoteData && _weightCount(remoteData) >= 0){
     PORT = remoteData;
-    // 把本地独有的历史记录（如刚补录但未推送的当天数据）并入，避免远端覆盖丢失
-    _mergeHistory(PORT, localData && localData.history);
-    localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
+    try{ localStorage.setItem(PORT_KEY, JSON.stringify(PORT)); }catch(e){}  // 仅离线缓存
     _setSyncTs('☁️ 已从云端加载 ' + ts, '#10b981');
     renderPortfolio();
     updateRiskDashboard();
     if(typeof renderHistTable==='function') renderHistTable();
-    // 仅在远端带来新/减持仓标的时重新拉取股价；代码集相同则已有价格继续有效，避免双重刷新
-    const _remoteCodes = new Set((remoteData.sectors||[]).flatMap(s=>s.stocks.map(sk=>sk.code)));
+    // 仅在远端带来新/减持仓标的时重新拉取股价，避免双重刷新
+    const _remoteCodes = new Set((PORT.sectors||[]).flatMap(s=>s.stocks.map(sk=>sk.code)));
     const _rosterChanged = _remoteCodes.size !== _initCodes.size ||
                            [..._remoteCodes].some(c=>!_initCodes.has(c));
     if(_rosterChanged) fetchPortPrices();
-  } else if(localData && lw >= 0){
-    // 本地更新（或远端不可用）→ 使用本地；先将远端已有的新字段（如 industry）合并进来，
-    // 防止旧缓存覆盖其他浏览器同步好的行业标签等数据
-    if(remoteData) _mergeRemoteFields(localData, remoteData);
-    PORT = localData;
-    if(!PORT._savedAt) PORT._savedAt = Date.now();
-    localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
-    if(remoteOk){
-      // GitHub 可达但本地更新 → 推送合并后的本地数据到云端
-      _setSyncTs(remoteData
-        ? '☁️ 本地数据更新，正在同步至云端…'
-        : '☁️ 云端无数据，正在上传本地备份', '#f59e0b');
-      portSaveRemote();
-    } else {
-      // GitHub 不可达（超时/离线）→ 不推送，只提示
-      _setSyncTs('☁️ 云端暂时无法访问，已使用本地缓存', '#f59e0b');
-    }
-    // 本地数据可能因用户在 GitHub fetch 期间编辑而变化，重新渲染以确保 UI 最新
-    // 股价无需重新拉取（第一阶段已拉取且持仓未变），fetchIndexPrices 由 fetchPortPrices.finally 统一调用
-    renderPortfolio();
-    updateRiskDashboard();
-    if(typeof renderHistTable==='function') renderHistTable();
+  } else if(remoteOk){
+    // 云端可达但文件不存在（首次使用）→ 把当前数据作为初始版本上传云端
+    PORT._savedAt = Date.now();
+    try{ localStorage.setItem(PORT_KEY, JSON.stringify(PORT)); }catch(e){}
+    _setSyncTs('☁️ 云端无数据，正在上传初始备份…', '#f59e0b');
+    portSaveRemote();
   } else {
-    // 本地和远端均无有效数据，已在①用默认数据渲染，无需处理
-    _setSyncTs('📂 使用默认数据', '#94a3b8');
+    // 云端不可达（离线/超时）→ 保留本地降级显示，但绝不推送（防止脏数据覆盖云端权威）
+    _setSyncTs('⚠️ 云端暂时无法访问，离线显示本地缓存（改动暂不同步）', '#f59e0b');
   }
 }
 
@@ -5047,20 +5030,22 @@ async function preSubmit(){
   const rec={date:today, ts:new Date().toLocaleString('zh-CN',{hour12:false}),
              ans:Object.assign({},_PRE), light:_preCur.light, quad:_preCur.quad, flags:_preCur.flags};
 
-  // 读最新 SHA（若已缓存则跳过），合并记录，写回
-  if(!_preSha){
-    const fresh=await _preGhGet();
-    if(fresh) { /* SHA 已更新 */ }
+  // 关键：合并基准必须取自云端最新全量历史（_preGhGet 同时刷新 SHA），
+  // 绝不能用 localStorage——否则新设备/清缓存的浏览器提交后会把云端历史全部冲掉只剩当天 1 条。
+  let log=await _preGhGet();
+  if(log===null){
+    // 仅当云端不可达时才用本地兜底（离线降级，至少不丢当前这条）
+    log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
   }
-  let log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
   log=log.filter(r=>r.date!==today); log.unshift(rec); log=log.slice(0,365);
-  localStorage.setItem(PRE_KEY, JSON.stringify(log)); // 立即写本地
 
   const ok=await _preGhPut(log);
   if(ok){
-    tip.textContent='✓ 已同步至 GitHub（'+rec.ts+'）'; tip.style.color='#16a34a';
+    localStorage.setItem(PRE_KEY, JSON.stringify(log));   // 同步成功后才刷新本地缓存
+    tip.textContent='✓ 已同步至云端（'+rec.ts+'）'; tip.style.color='#16a34a';
   } else {
-    tip.textContent='⚠ GitHub 写入失败，已保存至本地（'+rec.ts+'）'; tip.style.color='#d97706';
+    localStorage.setItem(PRE_KEY, JSON.stringify(log));   // 失败也暂存本地，待下次重试
+    tip.textContent='⚠ 云端写入失败，已暂存本地（'+rec.ts+'）'; tip.style.color='#d97706';
   }
   preRenderHistory(log);
 }
@@ -6462,22 +6447,17 @@ function addHistRecord(){
     stocks:  _snapStocks
   };
   PORT.history.unshift(rec);
-  portSave();
-  portSaveRemote();
+  portSave();              // 内部 debounce 自动写回云端 JSON
   renderHistTable();
 
-  // ���换到历史持��标签页
+  // 切换到历史持仓标签页
   switchTab(5);
 }
 
-var _noteRemoteTimer = null;
 function updateHistNote(idx,val){
   if(!PORT||!PORT.history||PORT.history[idx]==null) return;
   PORT.history[idx].note = val.trim();
-  portSave();                          // 立即写本地 localStorage
-  // 防抖：停止输入 800ms 后才推送远端，避免每次击键都触发 GitHub API
-  clearTimeout(_noteRemoteTimer);
-  _noteRemoteTimer = setTimeout(function(){ portSaveRemote(); }, 800);
+  portSave();              // 内部 debounce 自动写回云端，无需单独推送
 }
 
 function deleteHistRecord(idx){
@@ -6485,8 +6465,7 @@ function deleteHistRecord(idx){
   const r=PORT.history[idx];
   if(!confirm(`确认删除 ${r.date} 的记录？`)) return;
   PORT.history.splice(idx,1);
-  portSave();
-  portSaveRemote();
+  portSave({overwriteHistory:true});   // 删除以本地为准，避免并集合并把已删记录复活
   renderHistTable();
 }
 
@@ -6503,8 +6482,7 @@ function recomputeHistReturns(){
     const np=_computePortPct(cur.stocks, (prev&&prev.stocks&&prev.stocks.length)?prev.stocks:null);
     if(np!=null && np!==cur.portPct){ cur.portPct=np; changed++; }   // 直接改引用，即 PORT.history 内对象
   }
-  portSave();
-  portSaveRemote();
+  portSave();              // 内部 debounce 自动写回云端（同日记录保留本地重算值）
   renderHistTable();
   alert(`已按「昨日收盘仓位 × 当日涨跌」重算持仓涨跌幅\n更新 ${changed} 条`
     + (skipped?`，${skipped} 条因缺持仓明细跳过`:'')
