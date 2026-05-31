@@ -323,22 +323,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
              padding:3px 11px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700">↻ 刷新数据</button>
   </div>
 
-  <!-- Stage Flow -->
-  <div class="card mb16">
-    <div class="ch"><span class="ct">Bernstein 风格投资生命周期 · 当前定位</span>
-      <span class="cbadge pulse" id="stageBadge">● 阶段 4 → 5</span></div>
-    <div class="stagebar">
-      <div class="sbox past">阶段1<div class="sboxsub">萌芽期</div></div>
-      <div class="sbox past">阶段2<div class="sboxsub">早期成长</div></div>
-      <div class="sbox past">阶段3<div class="sboxsub">加速扩张</div></div>
-      <div class="sbox curr" id="s4box">阶段4 ▲<div class="sboxsub">成熟/峰值</div></div>
-      <div class="sbox next">阶段5 ⚠<div class="sboxsub">过热/减仓</div></div>
-      <div class="sbox">阶段6<div class="sboxsub">风格轮动</div></div>
-    </div>
-    <div class="tx3 mt8">AI基础设施处于阶段4后期，Hyperscaler capex持续高增；AI应用/SaaS部分标的已触发阶段5估值信号，需分类处理</div>
-  </div>
-
-  <!-- 第二行：X关注意见领袖 -->
+  <!-- 第一行：X关注意见领袖 -->
   <div class="card mb16" style="border-top:3px solid #1d9bf0">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -640,26 +625,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
       <div style="height:210px"><canvas id="cElectronicProfit"></canvas></div>
       <div class="tx3 mt4" id="electronicProfitFooter">规模以上计算机、通信和其他电子设备制造业营业利润累计同比 · 来源: 国家统计局 · 注: 2024年上半年及2026年初受低基数效应影响增速偏高</div>
-    </div>
-  </div>
-
-  <!-- 季度/月度：新增A股投资者 + 主要指数PE走势 -->
-  <div class="g2 mb16">
-    <div class="card">
-      <div class="ch">
-        <span class="ct">新增A股投资者人数 (万人·季度)</span>
-        <span class="cbadge" style="background:#fef9c3;color:#92400e">历史数据 · 2023Q1-2024Q4</span>
-      </div>
-      <div style="height:210px"><canvas id="cNewInv"></canvas></div>
-      <div class="tx3 mt4">2023Q1—2024Q4 · 来源: 中国证监会投资者季度报告（无公开实时API，不自动刷新）· 2024Q4受924行情驱动大幅增加</div>
-    </div>
-    <div class="card">
-      <div class="ch">
-        <span class="ct">A股主要指数PE(TTM)走势 (月末)</span>
-        <span id="mktPeBadge" class="cbadge" style="background:#fef9c3;color:#92400e">历史估算数据</span>
-      </div>
-      <div style="height:210px"><canvas id="cMktPe"></canvas></div>
-      <div class="tx3 mt4" id="mktPeFooter">蓝=上证综指 · 绿=深证成指 · 历史确认数据至2025-03 · 点击"刷新宏观数据"获取最新数据</div>
     </div>
   </div>
 
