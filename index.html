@@ -81,8 +81,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .tabs-inner .tab:nth-child(1) {--tab-top:#dbeafe;--tab-bot:#bfdbfe;--tab-bdr:#93c5fd}  /* 蓝  投资组合 */
 .tabs-inner .tab:nth-child(2) {--tab-top:#fef9c3;--tab-bot:#fde68a;--tab-bdr:#fbbf24}  /* 黄  估值分析 */
 .tabs-inner .tab:nth-child(3) {--tab-top:#dcfce7;--tab-bot:#bbf7d0;--tab-bdr:#86efac}  /* 绿  A股宏观 */
-.tabs-inner .tab:nth-child(4) {--tab-top:#fee2e2;--tab-bot:#fecaca;--tab-bdr:#fca5a5}  /* 红  总体风险 */
-.tabs-inner .tab:nth-child(5) {--tab-top:#ede9fe;--tab-bot:#ddd6fe;--tab-bdr:#c4b5fd}  /* 紫  AI趋势 */
+.tabs-inner .tab:nth-child(4) {--tab-top:#ede9fe;--tab-bot:#ddd6fe;--tab-bdr:#c4b5fd}  /* 紫  AI趋势 */
+.tabs-inner .tab:nth-child(5) {--tab-top:#fee2e2;--tab-bot:#fecaca;--tab-bdr:#fca5a5}  /* 红  总体风险 */
 .tabs-inner .tab:nth-child(6) {--tab-top:#cffafe;--tab-bot:#a5f3fc;--tab-bdr:#67e8f9}  /* 青  光模块&PCB */
 .tabs-inner .tab:nth-child(7) {--tab-top:#ffedd5;--tab-bot:#fed7aa;--tab-bdr:#fdba74}  /* 橙  存储监控 */
 .tabs-inner .tab:nth-child(8) {--tab-top:#ccfbf1;--tab-bot:#99f6e4;--tab-bdr:#5eead4}  /* 青绿 产业链监控 */
@@ -300,8 +300,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <button class="tab active" onclick="switchTab(0)">💼 投资组合</button>
     <button class="tab" onclick="switchTab(1)">📊 估值分析</button>
     <button class="tab" onclick="switchTab(2)">🏦 A股宏观</button>
-    <button class="tab" onclick="switchTab(3)">⚡ 总体风险</button>
-    <button class="tab" onclick="switchTab(4)">🤖 AI 趋势</button>
+    <button class="tab" onclick="switchTab(3)">🤖 AI 趋势</button>
+    <button class="tab" onclick="switchTab(4)">⚡ 总体风险</button>
     <button class="tab" onclick="switchTab(5)">🔌 光模块&amp;PCB</button>
     <button class="tab" onclick="switchTab(6)">🗄️ 存储监控</button>
     <button class="tab" onclick="switchTab(7)">🔴 产业链监控</button>
@@ -336,6 +336,26 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="sbox">阶段6<div class="sboxsub">风格轮动</div></div>
     </div>
     <div class="tx3 mt8">AI基础设施处于阶段4后期，Hyperscaler capex持续高增；AI应用/SaaS部分标的已触发阶段5估值信号，需分类处理</div>
+  </div>
+
+  <!-- 第二行：X关注意见领袖 -->
+  <div class="card mb16" style="border-top:3px solid #1d9bf0">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:800;color:#374151">🐦 X关注意见领袖</span>
+        <span id="kolCount" style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
+                     padding:1px 7px;border-radius:10px;font-weight:600">82人关注</span>
+        <span id="kolTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
+      </div>
+      <button onclick="triggerKolRefresh()" id="kolBtn" title="触发后台抓取最新推文并归纳（约1-2分钟）"
+        style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
+               padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+    </div>
+    <div id="kolGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">
+      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">
+        点击「↻」加载X关注意见领袖观点
+      </div>
+    </div>
   </div>
 
   <!-- KPI Row -->
@@ -1029,26 +1049,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
       <div id="mktTurnoverBody">
         <div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">点击↻加载</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Row 4: X关注意见领袖 -->
-  <div class="card mb16" style="border-top:3px solid #1d9bf0">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:13px;font-weight:800;color:#374151">🐦 X关注意见领袖</span>
-        <span id="kolCount" style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
-                     padding:1px 7px;border-radius:10px;font-weight:600">82人关注</span>
-        <span id="kolTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
-      </div>
-      <button onclick="triggerKolRefresh()" id="kolBtn" title="触发后台抓取最新推文并归纳（约1-2分钟）"
-        style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
-               padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
-    </div>
-    <div id="kolGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">
-      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">
-        点击「↻」加载X关注意见领袖观点
       </div>
     </div>
   </div>
@@ -4733,7 +4733,7 @@ function renderValTable(){
 }
 
 // ── TAB ──────────────────────────────────────────────────────
-const TAB_ORDER=['tPort','tVal','tAM','t2','t0','t4','t5','tStage','tHist'];
+const TAB_ORDER=['tPort','tVal','tAM','t0','t2','t4','t5','tStage','tHist'];
 let _macroAutoFetched=false;
 const _TAB_TS={};  // 各标签页最近一次动态刷新的时间戳（用于节流）
 const _TAB_THROTTLE=30000; // 30秒内不重复刷新
@@ -4744,7 +4744,7 @@ function _tabRefresh(idx){
   if(_TAB_TS[idx] && now-_TAB_TS[idx]<_TAB_THROTTLE) return; // 节流
   _TAB_TS[idx]=now;
   // 按标签页类型调用对应的动态数据刷新函数
-  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); fetchXqHot(); fetchKolSummary(); fetchXqSentiment(); } // finally 内会链式调用 fetchIndexPrices
+  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); fetchXqHot(); fetchXqSentiment(); } // finally 内会链式调用 fetchIndexPrices
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tStage') fetchStageData();
   else if(tab==='tAM')    refreshMacro();
@@ -4752,7 +4752,7 @@ function _tabRefresh(idx){
   else if(tab==='t5')     fetchStoreLive();
   else if(tab==='t2')  { fetchVixChart(); fetchMacroRates(); fetchMonLive(); }
   else if(tab==='tHist') renderHistTable();
-  else if(tab==='t0')  { fetchMonLive(); fetchAiTrend(); }  // AI趋势：实时动量 + Capex/ARR/PE
+  else if(tab==='t0')  { fetchMonLive(); fetchAiTrend(); fetchKolSummary(); }  // AI趋势：实时动量 + Capex/ARR/PE + X意见领袖
 }
 
 function switchTab(idx){
@@ -5956,7 +5956,7 @@ function renderHistTable(){
       <th style="padding:10px 14px;text-align:right;font-weight:700;color:var(--text2);white-space:nowrap">持仓涨跌幅</th>
       <th style="padding:10px 14px;text-align:right;font-weight:700;color:var(--text2);white-space:nowrap">中证全指</th>
       <th style="padding:10px 14px;text-align:right;font-weight:700;color:var(--text2);white-space:nowrap">超额收益</th>
-      <th style="padding:10px 14px;text-align:left;font-weight:700;color:var(--text2);min-width:180px">备注</th>
+      <th style="padding:10px 14px;text-align:left;font-weight:700;color:var(--text2);min-width:180px;width:100%">备注</th>
       <th style="padding:10px 8px;text-align:center;font-weight:700;color:var(--text2)"></th>
     </tr></thead>
     <tbody>${recs.map(r=>{
