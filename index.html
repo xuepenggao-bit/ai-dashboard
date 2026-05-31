@@ -5002,20 +5002,22 @@ async function preSubmit(){
   const rec={date:today, ts:new Date().toLocaleString('zh-CN',{hour12:false}),
              ans:Object.assign({},_PRE), light:_preCur.light, quad:_preCur.quad, flags:_preCur.flags};
 
-  // 读最新 SHA（若已缓存则跳过），合并记录，写回
-  if(!_preSha){
-    const fresh=await _preGhGet();
-    if(fresh) { /* SHA 已更新 */ }
+  // 合并基准取自云端最新全量历史（_preGhGet 同时刷新 _preSha），
+  // 绝不用 localStorage 作基准——否则新设备/清缓存后提交会把云端历史冲掉只剩当天 1 条。
+  let log=await _preGhGet();
+  if(log===null){
+    tip.textContent='⚠ 云端读取失败，未保存（请检查网络后重试）'; tip.style.color='#ef4444';
+    return;   // 读不到云端全量就不写，避免覆盖云端历史
   }
-  let log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
+  // 每天一条：先移除当天旧记录再插入最新 → 当天首次提交=新建，再次提交=刷新
   log=log.filter(r=>r.date!==today); log.unshift(rec); log=log.slice(0,365);
-  localStorage.setItem(PRE_KEY, JSON.stringify(log)); // 立即写本地
 
   const ok=await _preGhPut(log);
   if(ok){
-    tip.textContent='✓ 已同步至 GitHub（'+rec.ts+'）'; tip.style.color='#16a34a';
+    localStorage.setItem(PRE_KEY, JSON.stringify(log));   // 仅成功后更新本地备份
+    tip.textContent='✓ 已同步至云端（'+rec.ts+'）'; tip.style.color='#16a34a';
   } else {
-    tip.textContent='⚠ GitHub 写入失败，已保存至本地（'+rec.ts+'）'; tip.style.color='#d97706';
+    tip.textContent='⚠ 云端写入失败，请检查网络后重试'; tip.style.color='#d97706';
   }
   preRenderHistory(log);
 }
