@@ -87,6 +87,43 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .tabs-inner .tab:nth-child(7) {--tab-top:#ffedd5;--tab-bot:#fed7aa;--tab-bdr:#fdba74}  /* 橙  存储监控 */
 .tabs-inner .tab:nth-child(8) {--tab-top:#ccfbf1;--tab-bot:#99f6e4;--tab-bdr:#5eead4}  /* 青绿 产业链监控 */
 .tabs-inner .tab:nth-child(9) {--tab-top:#e0e7ff;--tab-bot:#c7d2fe;--tab-bdr:#a5b4fc}  /* 靛蓝 历史持仓 */
+.tabs-inner .tab:nth-child(10){--tab-top:#f0e4d6;--tab-bot:#e7d3bd;--tab-bdr:#cbb48f}  /* 赭石 盘前自检 */
+/* 盘前自检问卷 */
+#tPre .pcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:16px}
+#tPre .pcard h3{font-size:14px;font-weight:800;color:var(--text);margin:0 0 4px;display:flex;align-items:center;gap:8px}
+#tPre .pcard .ph{font-size:11.5px;color:var(--text2);margin:0 0 14px}
+#tPre .pgrp{padding:12px 0;border-top:1px dashed var(--border)}
+#tPre .pgrp:first-of-type{border-top:none}
+#tPre .pqt{font-size:13px;font-weight:600;color:var(--text);margin-bottom:9px;line-height:1.55}
+#tPre .pqt .qn{color:#a8854a;font-weight:800;margin-right:6px}
+#tPre .phint{display:block;font-size:11px;color:var(--text2);font-weight:400;margin-top:3px}
+#tPre .popt{display:inline-block;border:1.5px solid var(--border);background:var(--card2);color:var(--text);
+  border-radius:8px;padding:6px 14px;margin:0 8px 6px 0;cursor:pointer;font-size:12.5px;font-weight:600;
+  font-family:inherit;transition:.15s;user-select:none}
+#tPre .popt:hover{border-color:#94a3b8}
+#tPre .popt.on{background:#155e4c;border-color:#155e4c;color:#fff}
+#tPre .popt.warnon{background:#9c3520;border-color:#9c3520;color:#fff}
+#tPre .pnote{width:100%;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:12px;
+  font-family:inherit;background:var(--card2);color:var(--text);margin-top:6px;resize:vertical;min-height:32px;outline:none}
+#tPre .pmat{display:grid;grid-template-columns:88px 1fr 1fr;gap:10px;margin-top:12px}
+#tPre .pmat .mh{font-size:11px;font-weight:700;color:var(--text2);text-align:center;align-self:end;padding-bottom:4px}
+#tPre .pmat .ml{font-size:12px;font-weight:700;color:var(--text2);align-self:center}
+#tPre .pmat .mc{border:1.5px solid var(--border);border-radius:9px;padding:10px 12px;background:var(--card2);transition:.2s}
+#tPre .pmat .mc .t{font-size:12.5px;font-weight:800;display:block;margin-bottom:3px}
+#tPre .pmat .mc .d{font-size:10.5px;color:var(--text2);line-height:1.45}
+#tPre .pmat .mc.hot{box-shadow:0 0 0 2px currentColor inset;transform:translateY(-1px)}
+#tPre .pmat .mc.q1{color:#155e4c}#tPre .pmat .mc.q2,#tPre .pmat .mc.q4{color:#9c3520}#tPre .pmat .mc.q3{color:#a8854a}
+#tPre .plight{border-radius:12px;padding:20px 24px;margin-bottom:16px;border:1.5px solid}
+#tPre .plight .lh{font-size:20px;font-weight:900;margin:0 0 6px}
+#tPre .plight .lx{font-size:12.5px;line-height:1.7;margin:0}
+#tPre .plight.green{background:#ecfdf5;border-color:#6ee7b7;color:#065f46}
+#tPre .plight.yellow{background:#fffbeb;border-color:#fcd34d;color:#92400e}
+#tPre .plight.red{background:#fef2f2;border-color:#fca5a5;color:#991b1b}
+#tPre .pbtn{background:#155e4c;border:none;color:#fff;border-radius:9px;padding:10px 26px;cursor:pointer;
+  font-size:13px;font-weight:800;font-family:inherit}
+#tPre .pbtn:hover{background:#1f6f5c}
+#tPre .pflag{display:inline-block;background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;
+  padding:2px 9px;margin:0 6px 6px 0;font-size:11px;font-weight:600}
 /* 小屏恢复横向滚动 */
 @media(max-width:1023px){
   .tabs-inner{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
@@ -306,6 +343,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <button class="tab" onclick="switchTab(6)">🗄️ 存储监控</button>
     <button class="tab" onclick="switchTab(7)">🔴 产业链监控</button>
     <button class="tab" onclick="switchTab(8)">📋 历史持仓</button>
+    <button class="tab" onclick="switchTab(9)">🧭 盘前自检</button>
   </div>
 </nav>
 
@@ -1549,6 +1587,128 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   <!-- 雷达图网格 2列×5行 -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" id="stageRadarGrid"></div>
+</div>
+
+<!-- ═══ 盘前自检 ═══ -->
+<div class="tab-content" id="tPre">
+  <div class="stitle" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    🧭 盘前自检 <span class="stag">情感金融 × 不知之知</span>
+    <span id="preDate" style="font-size:11px;color:#94a3b8;font-weight:500"></span>
+    <span style="margin-left:auto;font-size:11px;color:#8C806C">先别看行情 · 诚实程度比答案本身更重要</span>
+  </div>
+
+  <!-- 今日交易许可（实时） -->
+  <div id="preLight" class="plight green">
+    <div class="lh" id="preLightH">🟢 待作答</div>
+    <div class="lx" id="preLightX">回答下列四关问题，系统将依「情感金融 → 诊断病理」+「不知之知 → 给出姿态」自动给出今日交易许可。</div>
+  </div>
+  <div id="preFlags" style="margin-bottom:16px"></div>
+
+  <!-- 第一关 -->
+  <div class="pcard">
+    <h3>① 状态定锚 <span style="font-size:11px;color:#8C806C;font-weight:500">情感金融 · §3.1</span></h3>
+    <p class="ph">先别看行情。先给自己的内在状态定一条基准线。</p>
+    <div class="pgrp">
+      <div class="pqt"><span class="qn">Q1</span>此刻身体感受？<span class="phint">两端都是警示：沉重＝焦虑未消；亢奋＝幻想客体激活</span></div>
+      <span class="popt" data-q="q1" data-v="紧张沉重" data-warn="1" onclick="preClick(this)">紧张 / 沉重</span>
+      <span class="popt" data-q="q1" data-v="平稳"     data-warn="0" onclick="preClick(this)">平稳</span>
+      <span class="popt" data-q="q1" data-v="亢奋"     data-warn="1" onclick="preClick(this)">轻盈 / 亢奋</span>
+    </div>
+    <div class="pgrp">
+      <div class="pqt"><span class="qn">Q2</span>情绪稳定性打分（1–5）<span class="phint">低于 3 分 → 今日主动缩小决策规模、推迟非紧急决策</span></div>
+      <span class="popt" data-q="q2" data-v="1" data-warn="1" onclick="preClick(this)">1</span>
+      <span class="popt" data-q="q2" data-v="2" data-warn="1" onclick="preClick(this)">2</span>
+      <span class="popt" data-q="q2" data-v="3" data-warn="0" onclick="preClick(this)">3</span>
+      <span class="popt" data-q="q2" data-v="4" data-warn="0" onclick="preClick(this)">4</span>
+      <span class="popt" data-q="q2" data-v="5" data-warn="0" onclick="preClick(this)">5</span>
+    </div>
+    <div class="pgrp">
+      <div class="pqt"><span class="qn">Q3</span>未完成情绪清单：昨天有没有懊悔 / 愤怒 / 得意的决策，在等今天「报复性」地行动？</div>
+      <span class="popt" data-q="q3" data-v="无" data-warn="0" onclick="preClick(this)">无</span>
+      <span class="popt" data-q="q3" data-v="有" data-warn="1" onclick="preClick(this)">有（标记报复性交易风险）</span>
+    </div>
+  </div>
+
+  <!-- 第二关 -->
+  <div class="pcard">
+    <h3>② 情绪信号扫描 <span style="font-size:11px;color:#8C806C;font-weight:500">情感即信息源 · §2.2</span></h3>
+    <p class="ph">情感不是该压制的噪音，而是该解读的信号。</p>
+    <div class="pgrp">
+      <div class="pqt"><span class="qn">Q4</span>焦虑（领先指标）：有没有「说不清的不安」？先别急着用研究驱散它——它在指向哪个盲点？</div>
+      <span class="popt" data-q="q4" data-v="无" data-warn="0" onclick="preClick(this)">无</span>
+      <span class="popt" data-q="q4" data-v="有" data-warn="0" onclick="preClick(this)">有</span>
+      <textarea class="pnote" data-q="q4note" placeholder="它指向什么盲点？（选填）" oninput="preNote(this)"></textarea>
+    </div>
+    <div class="pgrp">
+      <div class="pqt"><span class="qn">Q5</span>热情（风险指标）：对某标的有没有「使命感、迫不及待」的参与冲动？<span class="phint">有 → 强制冷却 + 情感折扣，情绪越热实际仓位越保守</span></div>
+      <span class="popt" data-q="q5" data-v="无" data-warn="0" onclick="preClick(this)">理智的乐观</span>
+      <span class="popt" data-q="q5" data-v="有" data-warn="1" onclick="preClick(this)">使命感驱动的冲动</span>
+      <textarea class="pnote" data-q="q5note" placeholder="哪只标的？（选填）" oninput="preNote(this)"></textarea>
+    </div>
+    <div class="pgrp">
+      <div class="pqt"><span class="qn">Q6</span>愤怒（退出信号）：有没有对管理层 / 市场 / 唱空者的愤怒？<span class="phint">有 → 幻想客体正崩解，该重估而非加仓</span></div>
+      <span class="popt" data-q="q6" data-v="无" data-warn="0" onclick="preClick(this)">无</span>
+      <span class="popt" data-q="q6" data-v="有" data-warn="1" onclick="preClick(this)">有</span>
+    </div>
+    <div class="pgrp">
+      <div class="pqt"><span class="qn">Q7</span>叙事升级 / 频率异常：是否开始用「时代 / 信仰 / 世界观」描述某持仓？或今天查看某股 ＞平时 3 倍？<span class="phint">叙事海拔越高，真实基本面越触及不到决策层</span></div>
+      <span class="popt" data-q="q7" data-v="无" data-warn="0" onclick="preClick(this)">无</span>
+      <span class="popt" data-q="q7" data-v="有" data-warn="1" onclick="preClick(this)">有</span>
+    </div>
+  </div>
+
+  <!-- 第三关 -->
+  <div class="pcard">
+    <h3>③ 维度审计 <span style="font-size:11px;color:#8C806C;font-weight:500">守 vs 攻 · §3.2 / §2.3</span></h3>
+    <p class="ph">今天的主战场，是能讲清因果的「可知游戏」，还是因果链展不开的「涌现游戏」？</p>
+    <div class="pgrp">
+      <div class="pqt"><span class="qn">Q8</span>今天计划的主要操作属于：</div>
+      <span class="popt" data-q="q8" data-v="可知" data-warn="0" onclick="preClick(this)">可知游戏（讲得清每一步因果）</span>
+      <span class="popt" data-q="q8" data-v="涌现" data-warn="0" onclick="preClick(this)">涌现游戏（因果链根本展不开）</span>
+    </div>
+    <div class="pgrp">
+      <div class="pqt"><span class="qn">Q9</span>我打算采取的姿态：</div>
+      <span class="popt" data-q="q9" data-v="守" data-warn="0" onclick="preClick(this)">守（退回能力圈）</span>
+      <span class="popt" data-q="q9" data-v="攻" data-warn="0" onclick="preClick(this)">攻（承认算不清仍小注下注）</span>
+    </div>
+    <div class="pgrp">
+      <div class="pqt"><span class="qn">Q10</span>诚实一问：我是否正把一个不可知领域，伪装成可算领域来安抚自己？<span class="phint">这是幻想客体的认识论体检</span></div>
+      <span class="popt" data-q="q10" data-v="否" data-warn="0" onclick="preClick(this)">否，我承认它算不清</span>
+      <span class="popt" data-q="q10" data-v="有" data-warn="1" onclick="preClick(this)">有，我在假装算得清</span>
+    </div>
+    <div style="margin-top:6px;font-size:12px;font-weight:700;color:#9C3520">决策象限 · 维度 × 情感（自动定位）</div>
+    <div class="pmat">
+      <div class="mh"></div><div class="mh">低情感投入</div><div class="mh">高情感投入</div>
+      <div class="ml">可知游戏</div>
+      <div class="mc q1" id="mcKL"><span class="t">守 · 正常仓位 ✅</span><span class="d">因果清晰、情绪冷静。按基本面置信度建仓，无需折扣。</span></div>
+      <div class="mc q3" id="mcKH"><span class="t">幻想客体预警 ⚠</span><span class="d">明明能算却情绪过热。施加情感折扣、降仓、强制冷却。</span></div>
+      <div class="ml">涌现游戏</div>
+      <div class="mc q1" id="mcEL"><span class="t">攻 · 小注下注</span><span class="d">承认算不清，靠对人与团队的「识」出手。仓位 ≤「输得起」。</span></div>
+      <div class="mc q4" id="mcEH"><span class="t">最危险象限 🚫</span><span class="d">Groupfeel ＋ 全能感叠加：把不可知当必然。这里不是下注，是退出。</span></div>
+    </div>
+  </div>
+
+  <!-- 第四关 -->
+  <div class="pcard">
+    <h3>④ 确信感双重警报 <span style="font-size:11px;color:#8C806C;font-weight:500">§3.2</span></h3>
+    <div class="pgrp">
+      <div class="pqt"><span class="qn">Q11</span>今天对任何决策有没有「百分百确定 / 全盘正确」的感觉？<span class="phint">在根本不确定性的世界里，百分百确定不存在；有此感觉＝批判功能已被关闭，且幻想客体已全面激活</span></div>
+      <span class="popt" data-q="q11" data-v="无" data-warn="0" onclick="preClick(this)">无</span>
+      <span class="popt" data-q="q11" data-v="有" data-warn="1" onclick="preClick(this)">有（→ 主动去找反方论点）</span>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px">
+    <button class="pbtn" onclick="preSubmit()">完成自检 · 记录今日</button>
+    <span id="preSaveTip" style="font-size:11.5px;color:#16a34a;font-weight:600"></span>
+    <button onclick="preReset()" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--text2);border-radius:7px;padding:7px 14px;cursor:pointer;font-size:11.5px;font-family:inherit">清空重答</button>
+  </div>
+
+  <!-- 历史记录 -->
+  <div class="pcard">
+    <h3>📜 自检历史 <span style="font-size:11px;color:#8C806C;font-weight:500">情绪—决策数据库 · 半年后回看，关联高度可预测</span></h3>
+    <div id="preHist" style="overflow-x:auto"></div>
+  </div>
 </div>
 
 </main>
@@ -4698,7 +4858,7 @@ function renderValTable(){
 }
 
 // ── TAB ──────────────────────────────────────────────────────
-const TAB_ORDER=['tPort','tVal','tAM','t0','t2','t4','t5','tStage','tHist'];
+const TAB_ORDER=['tPort','tVal','tAM','t0','t2','t4','t5','tStage','tHist','tPre'];
 let _macroAutoFetched=false;
 const _TAB_TS={};  // 各标签页最近一次动态刷新的时间戳（用于节流）
 const _TAB_THROTTLE=30000; // 30秒内不重复刷新
@@ -4717,6 +4877,7 @@ function _tabRefresh(idx){
   else if(tab==='t5')     fetchStoreLive();
   else if(tab==='t2')  { fetchVixChart(); fetchMacroRates(); fetchMonLive(); }
   else if(tab==='tHist') renderHistTable();
+  else if(tab==='tPre')  preLoad();
   else if(tab==='t0')  { fetchMonLive(); fetchAiTrend(); fetchKolSummary(); }  // AI趋势：实时动量 + Capex/ARR/PE + X意见领袖
 }
 
@@ -4726,6 +4887,136 @@ function switchTab(idx){
   if(target) target.classList.add('active');
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===idx));
   _tabRefresh(idx); // 切换时刷新该标签页动态数据
+}
+
+// ── 盘前自检（情感金融 × 不知之知） ────────────────────────────
+const PRE_KEY='preflight_log_v1';
+let _PRE={};
+let _preCur={light:'green',flags:[],quad:''};
+
+function preClick(el){
+  _PRE[el.dataset.q]=el.dataset.v;
+  el.parentElement.querySelectorAll('.popt').forEach(b=>b.classList.remove('on','warnon'));
+  el.classList.add(el.dataset.warn==='1'?'warnon':'on');
+  preJudge();
+}
+function preNote(el){ _PRE[el.dataset.q]=el.value; }
+
+function preJudge(){
+  // 情感投入高低：身体亢奋 或 热情冲动
+  const hot=(_PRE.q1==='亢奋')||(_PRE.q5==='有');
+  const game=_PRE.q8; // 可知 / 涌现
+  let quad='';
+  if(game==='可知') quad=hot?'KH':'KL';
+  else if(game==='涌现') quad=hot?'EH':'EL';
+  ['mcKL','mcKH','mcEL','mcEH'].forEach(id=>document.getElementById(id).classList.remove('hot'));
+  if(quad) document.getElementById('mc'+quad).classList.add('hot');
+
+  const flags=[];
+  if(_PRE.q1==='紧张沉重') flags.push('身体沉重 · 焦虑未消');
+  if(_PRE.q1==='亢奋')     flags.push('身体亢奋 · 幻想客体激活');
+  if(_PRE.q2 && +_PRE.q2<3) flags.push('情绪稳定性 < 3');
+  if(_PRE.q3==='有')  flags.push('报复性交易风险');
+  if(_PRE.q5==='有')  flags.push('热情过热 · 需强制冷却');
+  if(_PRE.q6==='有')  flags.push('愤怒 · 幻想客体崩解');
+  if(_PRE.q7==='有')  flags.push('叙事升级 / 频率异常');
+  if(_PRE.q10==='有') flags.push('把不可知伪装成可算');
+  if(_PRE.q11==='有') flags.push('百分百确定 · 批判功能关闭');
+
+  // 红灯：稳定性<3 / 进入最危险象限 / 报复冲动+百分百确定 叠加
+  const red=(+_PRE.q2<3 && _PRE.q2) || quad==='EH' || (_PRE.q3==='有' && _PRE.q11==='有');
+  let light = red ? 'red' : (flags.length>=1 ? 'yellow' : 'green');
+
+  const answered=Object.keys(_PRE).some(k=>['q1','q2','q3','q8'].includes(k));
+  _preCur={light,flags,quad};
+
+  const box=document.getElementById('preLight');
+  const H=document.getElementById('preLightH'), X=document.getElementById('preLightX');
+  box.classList.remove('green','yellow','red');
+  box.classList.add(light);
+  if(!answered){
+    H.textContent='🟢 待作答';
+    X.textContent='回答下列四关问题，系统将依「情感金融 → 诊断病理」+「不知之知 → 给出姿态」自动给出今日交易许可。';
+  }else if(light==='red'){
+    H.textContent='🔴 红灯 · 暂停决策';
+    X.innerHTML='今日只做<b>守</b>：退回能力圈、不开新仓、离开屏幕至少 30 分钟。'+
+      (quad==='EH'?'你已站进最危险象限（涌现 ＋ 高情感）——这里不是下注，是退出。':
+       (+_PRE.q2<3?'情绪稳定性不足，缩小一切决策规模、推迟非紧急决策。':'报复冲动与「百分百确定」叠加，批判功能已关闭。'));
+  }else if(light==='yellow'){
+    H.textContent='🟡 黄灯 · 降规模执行';
+    X.innerHTML='可以操作，但：对高情感标的施加<b>情感折扣</b>、降低仓位、强制冷却；'+
+      (quad==='KH'?'当前为「幻想客体预警」象限，明明能算却情绪过热。':'')+
+      '把警示项逐条对照后再下单。';
+  }else{
+    H.textContent='🟢 绿灯 · 正常执行';
+    X.innerHTML='状态稳、无强警报。'+(quad==='KL'?'守 · 正常仓位：按基本面置信度建仓，无需折扣。':
+      (quad==='EL'?'攻 · 小注：靠对人与团队的「识」出手，仓位以「输得起」为上限。':'按既定纪律执行。'));
+  }
+  const fb=document.getElementById('preFlags');
+  fb.innerHTML=flags.length?('<span style="font-size:11px;color:#8C806C;margin-right:6px">警示：</span>'+
+    flags.map(f=>`<span class="pflag">${f}</span>`).join('')):'';
+}
+
+function preLoad(){
+  const today=new Date().toISOString().slice(0,10);
+  const de=document.getElementById('preDate'); if(de) de.textContent=today;
+  _PRE={};
+  document.querySelectorAll('#tPre .popt').forEach(b=>b.classList.remove('on','warnon'));
+  document.querySelectorAll('#tPre .pnote').forEach(t=>t.value='');
+  document.getElementById('preSaveTip').textContent='';
+  const log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
+  const rec=log.find(r=>r.date===today);
+  if(rec){
+    Object.assign(_PRE, rec.ans||{});
+    document.querySelectorAll('#tPre .popt').forEach(b=>{
+      if(_PRE[b.dataset.q]===b.dataset.v) b.classList.add(b.dataset.warn==='1'?'warnon':'on');
+    });
+    document.querySelectorAll('#tPre .pnote').forEach(t=>{ if(_PRE[t.dataset.q]) t.value=_PRE[t.dataset.q]; });
+    document.getElementById('preSaveTip').textContent='✓ 已载入今日记录（'+(rec.ts||'')+'）';
+  }
+  preJudge();
+  preRenderHistory();
+}
+
+function preSubmit(){
+  preJudge();
+  const today=new Date().toISOString().slice(0,10);
+  const rec={date:today, ts:new Date().toLocaleString('zh-CN',{hour12:false}),
+             ans:Object.assign({},_PRE), light:_preCur.light, quad:_preCur.quad, flags:_preCur.flags};
+  let log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
+  log=log.filter(r=>r.date!==today); log.unshift(rec); log=log.slice(0,180);
+  localStorage.setItem(PRE_KEY, JSON.stringify(log));
+  document.getElementById('preSaveTip').textContent='✓ 已记录今日自检（'+rec.ts+'）';
+  preRenderHistory();
+}
+
+function preReset(){
+  if(!confirm('清空本次作答？（不影响已保存的历史记录）')) return;
+  _PRE={};
+  document.querySelectorAll('#tPre .popt').forEach(b=>b.classList.remove('on','warnon'));
+  document.querySelectorAll('#tPre .pnote').forEach(t=>t.value='');
+  document.getElementById('preSaveTip').textContent='';
+  preJudge();
+}
+
+function preRenderHistory(){
+  const log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
+  const el=document.getElementById('preHist');
+  if(!log.length){ el.innerHTML='<div style="color:#94a3b8;font-size:12px;padding:14px 0">暂无记录 · 完成首次自检后这里会积累情绪—决策数据库</div>'; return; }
+  const dot={green:'🟢',yellow:'🟡',red:'🔴'};
+  const quadName={KL:'守·正常',KH:'幻想预警',EL:'攻·小注',EH:'最危险'};
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:540px">'+
+    '<thead><tr style="border-bottom:2px solid var(--border);color:var(--text2)">'+
+    '<th style="text-align:left;padding:8px 12px;font-weight:700">日期</th>'+
+    '<th style="text-align:center;padding:8px 12px;font-weight:700">许可</th>'+
+    '<th style="text-align:left;padding:8px 12px;font-weight:700">象限</th>'+
+    '<th style="text-align:left;padding:8px 12px;font-weight:700;width:100%">主要警示</th></tr></thead><tbody>'+
+    log.map(r=>'<tr style="border-bottom:1px solid var(--border)">'+
+      '<td style="padding:8px 12px;font-weight:700;color:var(--text);white-space:nowrap">'+r.date+'</td>'+
+      '<td style="padding:8px 12px;text-align:center;white-space:nowrap">'+(dot[r.light]||'')+'</td>'+
+      '<td style="padding:8px 12px;white-space:nowrap;color:var(--text2)">'+(quadName[r.quad]||'—')+'</td>'+
+      '<td style="padding:8px 12px;color:var(--text2)">'+((r.flags&&r.flags.length)?r.flags.join('、'):'无')+'</td></tr>'
+    ).join('')+'</tbody></table>';
 }
 
 // ── REFRESH ──────────────────────────────────────────────────
