@@ -82,12 +82,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .tabs-inner .tab:nth-child(2) {--tab-top:#fef9c3;--tab-bot:#fde68a;--tab-bdr:#fbbf24}  /* 黄  估值分析 */
 .tabs-inner .tab:nth-child(3) {--tab-top:#dcfce7;--tab-bot:#bbf7d0;--tab-bdr:#86efac}  /* 绿  A股宏观 */
 .tabs-inner .tab:nth-child(4) {--tab-top:#ede9fe;--tab-bot:#ddd6fe;--tab-bdr:#c4b5fd}  /* 紫  AI趋势 */
-.tabs-inner .tab:nth-child(5) {--tab-top:#fee2e2;--tab-bot:#fecaca;--tab-bdr:#fca5a5}  /* 红  总体风险 */
-.tabs-inner .tab:nth-child(6) {--tab-top:#cffafe;--tab-bot:#a5f3fc;--tab-bdr:#67e8f9}  /* 青  光模块&PCB */
-.tabs-inner .tab:nth-child(7) {--tab-top:#ffedd5;--tab-bot:#fed7aa;--tab-bdr:#fdba74}  /* 橙  存储监控 */
-.tabs-inner .tab:nth-child(8) {--tab-top:#ccfbf1;--tab-bot:#99f6e4;--tab-bdr:#5eead4}  /* 青绿 产业链监控 */
-.tabs-inner .tab:nth-child(9) {--tab-top:#e0e7ff;--tab-bot:#c7d2fe;--tab-bdr:#a5b4fc}  /* 靛蓝 历史持仓 */
-.tabs-inner .tab:nth-child(10){--tab-top:#f0e4d6;--tab-bot:#e7d3bd;--tab-bdr:#cbb48f}  /* 赭石 盘前自检 */
+.tabs-inner .tab:nth-child(5) {--tab-top:#cffafe;--tab-bot:#a5f3fc;--tab-bdr:#67e8f9}  /* 青  光模块&PCB */
+.tabs-inner .tab:nth-child(6) {--tab-top:#ffedd5;--tab-bot:#fed7aa;--tab-bdr:#fdba74}  /* 橙  存储监控 */
+.tabs-inner .tab:nth-child(7) {--tab-top:#ccfbf1;--tab-bot:#99f6e4;--tab-bdr:#5eead4}  /* 青绿 产业链监控 */
+.tabs-inner .tab:nth-child(8) {--tab-top:#e0e7ff;--tab-bot:#c7d2fe;--tab-bdr:#a5b4fc}  /* 靛蓝 历史持仓 */
+.tabs-inner .tab:nth-child(9) {--tab-top:#f0e4d6;--tab-bot:#e7d3bd;--tab-bdr:#cbb48f}  /* 赭石 盘前自检 */
 /* 盘前自检问卷 */
 #tPre .pcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:16px}
 #tPre .pcard h3{font-size:14px;font-weight:800;color:var(--text);margin:0 0 4px;display:flex;align-items:center;gap:8px}
@@ -338,12 +337,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <button class="tab" onclick="switchTab(1)">📊 估值分析</button>
     <button class="tab" onclick="switchTab(2)">🏦 A股宏观</button>
     <button class="tab" onclick="switchTab(3)">🤖 AI 趋势</button>
-    <button class="tab" onclick="switchTab(4)">⚡ 总体风险</button>
-    <button class="tab" onclick="switchTab(5)">🔌 光模块&amp;PCB</button>
-    <button class="tab" onclick="switchTab(6)">🗄️ 存储监控</button>
-    <button class="tab" onclick="switchTab(7)">🔴 产业链监控</button>
-    <button class="tab" onclick="switchTab(8)">📋 历史持仓</button>
-    <button class="tab" onclick="switchTab(9)">🧭 盘前自检</button>
+    <button class="tab" onclick="switchTab(4)">🔌 光模块&amp;PCB</button>
+    <button class="tab" onclick="switchTab(5)">🗄️ 存储监控</button>
+    <button class="tab" onclick="switchTab(6)">🔴 产业链监控</button>
+    <button class="tab" onclick="switchTab(7)">📋 历史持仓</button>
+    <button class="tab" onclick="switchTab(8)">🧭 盘前自检</button>
   </div>
 </nav>
 
@@ -1220,48 +1218,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 </div>
 
 <!-- ════════════════ TAB 2.4 ════════════════ -->
-<div class="tab-content" id="t2">
-  <div class="stitle">总体风险 <span class="stag">风险监控</span></div>
-
-  <!-- Gauge + Radar -->
-  <div class="g2 mb16">
-    <div class="card">
-      <div class="ch"><span class="ct">综合风险评分</span><span class="cbadge" id="riskBadge" style="background:#e0e7ff;color:#3730a3">加载中…</span></div>
-      <div class="gaugeouter" style="height:180px"><canvas id="cGauge"></canvas></div>
-      <div class="gaugenum">
-        <div class="kval" id="overallRisk" style="color:#94a3b8;font-size:20px">--</div>
-        <div class="tx2">综合风险指数（0=极低 · 100=极高）</div>
-      </div>
-      <div class="divider"></div>
-      <div id="riskAlerts" style="display:flex;flex-direction:column;gap:8px"></div>
-    </div>
-    <div class="card">
-      <div class="ch"><span class="ct">各维度风险雷达</span></div>
-      <div style="height:300px"><canvas id="cRadar"></canvas></div>
-    </div>
-  </div>
-
-  <!-- Risk table -->
-  <div class="card mb16">
-    <div class="ch"><span class="ct">风险分类监控明细</span><span class="cbadge">8个维度</span></div>
-    <div class="overflow">
-      <table class="mtable">
-        <thead><tr>
-          <th>风险类别</th><th>核心指标</th><th>当前值</th><th>警戒线</th><th>风险等级</th><th style="width:140px">风险评分</th><th>状态</th>
-        </tr></thead>
-        <tbody id="riskBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Bubble comparison -->
-  <div class="card">
-    <div class="ch"><span class="ct">历史对比 · 2021科技泡沫 vs 当前AI市场 (PE走势)</span></div>
-    <div style="height:220px"><canvas id="cBubble"></canvas></div>
-    <div class="tx3 mt8">虚线-灰色: 2021年AI/科技泡沫顶部周期 &nbsp;|&nbsp; 蓝色实线: 当前AI市场 PE走势</div>
-  </div>
-</div>
-
 <!-- ════════════════ TAB A股估值 ════════════════ -->
 <div class="tab-content" id="t4">
   <div class="stitle">光模块&amp;PCB监控 <span class="stag">光模块 &amp; PCB · 关键财务指标</span>
@@ -1587,6 +1543,19 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   <!-- 雷达图网格 2列×5行 -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" id="stageRadarGrid"></div>
+
+  <!-- 风险分类监控明细（从总体风险移入） -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">风险分类监控明细</span><span class="cbadge">8个维度</span></div>
+    <div class="overflow">
+      <table class="mtable">
+        <thead><tr>
+          <th>风险类别</th><th>核心指标</th><th>当前值</th><th>警戒线</th><th>风险等级</th><th style="width:140px">风险评分</th><th>状态</th>
+        </tr></thead>
+        <tbody id="riskBody"></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ 盘前自检 ═══ -->
@@ -4858,7 +4827,7 @@ function renderValTable(){
 }
 
 // ── TAB ──────────────────────────────────────────────────────
-const TAB_ORDER=['tPort','tVal','tAM','t0','t2','t4','t5','tStage','tHist','tPre'];
+const TAB_ORDER=['tPort','tVal','tAM','t0','t4','t5','tStage','tHist','tPre'];
 let _macroAutoFetched=false;
 const _TAB_TS={};  // 各标签页最近一次动态刷新的时间戳（用于节流）
 const _TAB_THROTTLE=30000; // 30秒内不重复刷新
@@ -4875,7 +4844,6 @@ function _tabRefresh(idx){
   else if(tab==='tAM')    refreshMacro();
   else if(tab==='t4')     fetchStocksLive();
   else if(tab==='t5')     fetchStoreLive();
-  else if(tab==='t2')  { fetchVixChart(); fetchMacroRates(); fetchMonLive(); }
   else if(tab==='tHist') renderHistTable();
   else if(tab==='tPre')  preLoad();
   else if(tab==='t0')  { fetchMonLive(); fetchAiTrend(); fetchKolSummary(); }  // AI趋势：实时动量 + Capex/ARR/PE + X意见领袖
@@ -4957,14 +4925,61 @@ function preJudge(){
     flags.map(f=>`<span class="pflag">${f}</span>`).join('')):'';
 }
 
-function preLoad(){
+// 盘前自检：用 GitHub Contents API 持久化到 data/preflight_log.json（跨设备同步）
+// 同时保留 localStorage 作为本地缓存/离线备份
+const PRE_FILE='data/preflight_log.json';
+const PRE_REPO='xuepenggao-bit/ai-dashboard';
+let _preSha=null; // 当前文件的 SHA，PUT 时需要
+
+async function _preGhGet(){
+  try{
+    const r=await fetch(`https://api.github.com/repos/${PRE_REPO}/contents/${PRE_FILE}?_=${Date.now()}`,
+      {headers:{'Authorization':`token ${PORT_GH_TOKEN}`,'Accept':'application/vnd.github+json'}});
+    if(r.status===404) return [];
+    if(!r.ok) return null;
+    const j=await r.json();
+    _preSha=j.sha;
+    const txt=atob(j.content.replace(/\n/g,''));
+    return JSON.parse(decodeURIComponent(escape(txt)));
+  }catch(e){ return null; }
+}
+
+async function _preGhPut(log){
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify(log,null,2))));
+  const body={message:`chore: preflight log ${new Date().toISOString().slice(0,10)}`,
+               content, branch:'main'};
+  if(_preSha) body.sha=_preSha;
+  try{
+    const r=await fetch(`https://api.github.com/repos/${PRE_REPO}/contents/${PRE_FILE}`,
+      {method:'PUT', headers:{'Authorization':`token ${PORT_GH_TOKEN}`,
+       'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+       body:JSON.stringify(body)});
+    if(!r.ok) return false;
+    const j=await r.json();
+    _preSha=j.content.sha;
+    return true;
+  }catch(e){ return false; }
+}
+
+async function preLoad(){
   const today=new Date().toISOString().slice(0,10);
   const de=document.getElementById('preDate'); if(de) de.textContent=today;
   _PRE={};
   document.querySelectorAll('#tPre .popt').forEach(b=>b.classList.remove('on','warnon'));
   document.querySelectorAll('#tPre .pnote').forEach(t=>t.value='');
-  document.getElementById('preSaveTip').textContent='';
-  const log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
+  const tip=document.getElementById('preSaveTip');
+  tip.textContent='⏳ 同步中…'; tip.style.color='#94a3b8';
+
+  // 优先从 GitHub 拉取最新数据；失败则回退 localStorage
+  let log=await _preGhGet();
+  if(log===null){
+    log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
+    tip.textContent='⚠ 远端同步失败，已载入本地缓存'; tip.style.color='#d97706';
+  } else {
+    // 同步到 localStorage 作为离线备份
+    localStorage.setItem(PRE_KEY, JSON.stringify(log));
+    tip.textContent='';
+  }
   const rec=log.find(r=>r.date===today);
   if(rec){
     Object.assign(_PRE, rec.ans||{});
@@ -4972,22 +4987,37 @@ function preLoad(){
       if(_PRE[b.dataset.q]===b.dataset.v) b.classList.add(b.dataset.warn==='1'?'warnon':'on');
     });
     document.querySelectorAll('#tPre .pnote').forEach(t=>{ if(_PRE[t.dataset.q]) t.value=_PRE[t.dataset.q]; });
-    document.getElementById('preSaveTip').textContent='✓ 已载入今日记录（'+(rec.ts||'')+'）';
+    tip.textContent='✓ 已载入今日记录（'+(rec.ts||'')+'）'; tip.style.color='#16a34a';
   }
   preJudge();
-  preRenderHistory();
+  preRenderHistory(log);
 }
 
-function preSubmit(){
+async function preSubmit(){
   preJudge();
   const today=new Date().toISOString().slice(0,10);
+  const tip=document.getElementById('preSaveTip');
+  tip.textContent='💾 保存中…'; tip.style.color='#94a3b8';
+
   const rec={date:today, ts:new Date().toLocaleString('zh-CN',{hour12:false}),
              ans:Object.assign({},_PRE), light:_preCur.light, quad:_preCur.quad, flags:_preCur.flags};
+
+  // 读最新 SHA（若已缓存则跳过），合并记录，写回
+  if(!_preSha){
+    const fresh=await _preGhGet();
+    if(fresh) { /* SHA 已更新 */ }
+  }
   let log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
-  log=log.filter(r=>r.date!==today); log.unshift(rec); log=log.slice(0,180);
-  localStorage.setItem(PRE_KEY, JSON.stringify(log));
-  document.getElementById('preSaveTip').textContent='✓ 已记录今日自检（'+rec.ts+'）';
-  preRenderHistory();
+  log=log.filter(r=>r.date!==today); log.unshift(rec); log=log.slice(0,365);
+  localStorage.setItem(PRE_KEY, JSON.stringify(log)); // 立即写本地
+
+  const ok=await _preGhPut(log);
+  if(ok){
+    tip.textContent='✓ 已同步至 GitHub（'+rec.ts+'）'; tip.style.color='#16a34a';
+  } else {
+    tip.textContent='⚠ GitHub 写入失败，已保存至本地（'+rec.ts+'）'; tip.style.color='#d97706';
+  }
+  preRenderHistory(log);
 }
 
 function preReset(){
@@ -4995,14 +5025,15 @@ function preReset(){
   _PRE={};
   document.querySelectorAll('#tPre .popt').forEach(b=>b.classList.remove('on','warnon'));
   document.querySelectorAll('#tPre .pnote').forEach(t=>t.value='');
-  document.getElementById('preSaveTip').textContent='';
+  const tip=document.getElementById('preSaveTip');
+  tip.textContent=''; tip.style.color='';
   preJudge();
 }
 
-function preRenderHistory(){
-  const log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
+function preRenderHistory(log){
+  if(!log) log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
   const el=document.getElementById('preHist');
-  if(!log.length){ el.innerHTML='<div style="color:#94a3b8;font-size:12px;padding:14px 0">暂无记录 · 完成首次自检后这里会积累情绪—决策数据库</div>'; return; }
+  if(!log.length){ el.innerHTML='<div style="color:#94a3b8;font-size:12px;padding:14px 0">暂无记录 · 完成首次自检后这里会积累情绪—决策数据库（同步至 GitHub data/preflight_log.json）</div>'; return; }
   const dot={green:'🟢',yellow:'🟡',red:'🔴'};
   const quadName={KL:'守·正常',KH:'幻想预警',EL:'攻·小注',EH:'最危险'};
   el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:540px">'+
@@ -6391,7 +6422,7 @@ function addHistRecord(){
   renderHistTable();
 
   // 切换到历史持仓标签页
-  switchTab(8);
+  switchTab(7);
 }
 
 var _noteRemoteTimer = null;
