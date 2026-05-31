@@ -579,6 +579,24 @@ def main():
     print(f'   ✅ {len(hot)} 只 → data/xq_hot.json')
 
     # 2. 权重股投资者关系活动记录表（最近一次 → 全文 → GPT摘要）
+    #    热股榜每 15 分钟刷新；公告/记录表一天难得更新一次，故每天只抓一次：
+    #    若已有 ir_records.json 且其日期为今天，则跳过（手动触发可设 FORCE_IR=1 强制刷新）。
+    today    = ts[:10]
+    force_ir = (os.environ.get('FORCE_IR', '').strip() in ('1', 'true', 'yes')
+                or os.environ.get('GITHUB_EVENT_NAME', '') == 'workflow_dispatch')
+    skip_ir  = False
+    if not force_ir and os.path.exists('data/ir_records.json'):
+        try:
+            with open('data/ir_records.json', encoding='utf-8') as f:
+                _old = json.load(f)
+            if _old.get('ts', '')[:10] == today and _old.get('records'):
+                skip_ir = True
+                print(f'\n📋 权重股公告今日已抓取（{_old.get("ts")}），本次跳过，仅刷新热股榜')
+        except Exception:
+            pass
+    if skip_ir:
+        return
+
     print('\n📋 获取 Top8 权重股投资者关系活动记录表…')
     portfolio = load_portfolio()
     ir_results = []
