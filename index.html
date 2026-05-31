@@ -6570,13 +6570,24 @@ function _renderXqHotGrid(data) {
     const name   = (s.name || '').slice(0, 5);
     const code   = (s.symbol || '').replace(/^[A-Z]+/, '');
     const hot    = s.value || 0;
+    // 东方财富个股页链接：SH/SZ/BJ → /sh600519.html，HK → /hk/00700.html
+    const _m = String(s.symbol||'').match(/^([A-Z]+)(\d+)$/);
+    let url = '';
+    if(_m){ const mk=_m[1].toUpperCase(), c=_m[2];
+      url = mk==='HK' ? `https://quote.eastmoney.com/hk/${c}.html`
+          : (mk==='SH'||mk==='SZ'||mk==='BJ') ? `https://quote.eastmoney.com/${mk.toLowerCase()}${c}.html` : ''; }
+    const nameH = url
+      ? `<a href="${url}" target="_blank" rel="noopener" title="${name} 东方财富行情"
+            style="font-size:12px;font-weight:700;color:#1d4ed8;text-decoration:none;display:block;
+                   white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</a>`
+      : `<div style="font-size:12px;font-weight:700;color:#1e293b;
+                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>`;
     return `<div style="display:flex;align-items:center;gap:4px;padding:5px 6px;
                  border-radius:6px;background:${bg};border:1px solid ${border};min-width:0">
       <span style="font-size:10px;color:#9ca3af;width:18px;text-align:right;
                    flex-shrink:0;font-weight:600">${s.rank}</span>
       <div style="flex:1;min-width:0;overflow:hidden">
-        <div style="font-size:12px;font-weight:700;color:#1e293b;
-                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
+        ${nameH}
         <div style="font-size:9px;color:#94a3b8">${code}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
