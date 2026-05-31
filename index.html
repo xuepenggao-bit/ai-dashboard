@@ -4930,6 +4930,8 @@ function preJudge(){
 const PRE_FILE='data/preflight_log.json';
 const PRE_REPO='xuepenggao-bit/ai-dashboard';
 let _preSha=null; // 当前文件的 SHA，PUT 时需要
+// 当天日期（北京时间 YYYY-MM-DD）。必须用东八区，否则 toISOString 的 UTC 会让北京早晨算成前一天
+function _preToday(){ return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Shanghai'}); }
 
 async function _preGhGet(){
   try{
@@ -4962,7 +4964,7 @@ async function _preGhPut(log){
 }
 
 async function preLoad(){
-  const today=new Date().toISOString().slice(0,10);
+  const today=_preToday();
   const de=document.getElementById('preDate'); if(de) de.textContent=today;
   _PRE={};
   document.querySelectorAll('#tPre .popt').forEach(b=>b.classList.remove('on','warnon'));
@@ -4995,7 +4997,7 @@ async function preLoad(){
 
 async function preSubmit(){
   preJudge();
-  const today=new Date().toISOString().slice(0,10);
+  const today=_preToday();
   const tip=document.getElementById('preSaveTip');
   tip.textContent='💾 保存中…'; tip.style.color='#94a3b8';
 
