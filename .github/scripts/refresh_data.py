@@ -490,6 +490,78 @@ def get_top5(portfolio):
               for sk in sec.get('stocks',[]) if (sk.get('w') or 0)>0]
     return sorted(stocks, key=lambda x:-(x.get('w') or 0))[:5]
 
+def get_top_weights(portfolio, n=8):
+    stocks = [sk for sec in portfolio.get('sectors',[])
+              for sk in sec.get('stocks',[]) if (sk.get('w') or 0)>0]
+    return sorted(stocks, key=lambda x:-(x.get('w') or 0))[:n]
+
+# ── 投资者关系活动记录表（东财公告） ──────────────────────────────
+
+def _em_suggest_code(name):
+    """股票名 → A股代码（东财 suggest）；用于港股映射到同名A股。"""
+    if not name:
+        return ''
+    try:
+        url = ('https://searchapi.eastmoney.com/api/suggest/get?input=' + requests.utils.quote(name)
+               + '&type=14&token=D43BF722C8E33BDC906FB84D85E326E8&count=8')
+        r = requests.get(url, timeout=10, headers={'User-Agent': UA_BROWSER, 'Referer': 'https://www.eastmoney.com/'})
+        txt = r.text
+        m = re.search(r'\((\{.*\})\)\s*;?\s*$', txt, re.DOTALL)   # 剥可能的 JSONP
+        data = json.loads(m.group(1) if m else txt)
+        arr = (data.get('QuotationCodeTable') or {}).get('Data') or []
+        for x in arr:
+            if x.get('Classify') == 'AStock':
+                return x.get('Code', '')
+    except Exception as e:
+        print(f'  [suggest] {name}: {e}')
+    return ''
+
+def _em_ir_record(code):
+    """个股最近一次「投资者关系活动记录表」（标题+日期+全文）。无则 None。"""
+    if not code:
+        return None
+    try:
+        url = (f'https://np-anotice-stock.eastmoney.com/api/security/ann?sr=-1&page_size=30'
+               f'&page_index=1&ann_type=A&client_source=web&stock_list={code}&f_node=0&s_node=0')
+        r = requests.get(url, timeout=15, headers={'User-Agent': UA_BROWSER, 'Referer': 'https://data.eastmoney.com/'})
+        lst = (r.json().get('data') or {}).get('list') or []
+    except Exception as e:
+        print(f'  [IR] {code} 公告列表失败: {e}')
+        return None
+    ir = next((a for a in lst if '投资者关系活动记录' in (a.get('title') or '')), None)
+    if not ir:
+        return None
+    art   = ir.get('art_code', '')
+    title = ir.get('title', '')
+    date  = (ir.get('notice_date') or '')[:10]
+    content = ''
+    try:
+        url2 = f'https://np-cnotice-stock.eastmoney.com/api/content/ann?art_code={art}&client_source=web&page_index=1'
+        r2 = requests.get(url2, timeout=15, headers={'User-Agent': UA_BROWSER, 'Referer': 'https://data.eastmoney.com/'})
+        content = ((r2.json().get('data') or {}).get('notice_content') or '').strip()
+    except Exception as e:
+        print(f'  [IR] {art} 全文失败: {e}')
+    return {'art_code': art, 'title': title, 'date': date, 'fulltext': content}
+
+def _ir_summarize(name, fulltext):
+    """GPT-4o-mini 摘要投资者关系活动记录表核心内容。"""
+    if not GITHUB_TOKEN or not fulltext:
+        return ''
+    prompt = (f'以下是{name}最近一次投资者关系活动记录表全文：\n\n{fulltext[:3500]}\n\n'
+              '请用3-5句中文摘要本次调研核心：机构关注的问题，以及公司就经营/业务/产能/'
+              '订单/技术/展望等给出的关键回应与数据。客观简洁，不超过180字，只返回摘要文本。')
+    try:
+        r = requests.post(
+            'https://models.inference.ai.azure.com/chat/completions',
+            headers={'Authorization': f'Bearer {GITHUB_TOKEN}', 'Content-Type': 'application/json'},
+            json={'model': 'gpt-4o-mini', 'messages': [{'role': 'user', 'content': prompt}],
+                  'max_tokens': 400, 'temperature': 0.3}, timeout=40)
+        r.raise_for_status()
+        return r.json()['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        print(f'  [IR] {name} 摘要失败: {e}')
+        return ''
+
 # ── 主程序 ─────────────────────────────────────────────────────
 
 def main():
@@ -506,45 +578,38 @@ def main():
         json.dump({'ts':ts,'list':hot}, f, ensure_ascii=False, indent=2)
     print(f'   ✅ {len(hot)} 只 → data/xq_hot.json')
 
-    # 2. 权重股舆情（Yahoo Finance 新闻 → GPT 归纳中文观点）
-    print('\n🔍 获取 Top5 权重股舆情…')
+    # 2. 权重股投资者关系活动记录表（最近一次 → 全文 → GPT摘要）
+    print('\n📋 获取 Top8 权重股投资者关系活动记录表…')
     portfolio = load_portfolio()
-    if not portfolio:
-        with open('data/xq_sentiment.json','w',encoding='utf-8') as f:
-            json.dump({'ts':ts,'stocks':[]}, f, ensure_ascii=False)
-        return
+    ir_results = []
+    if portfolio:
+        for sk in get_top_weights(portfolio, 8):
+            sym  = xq_symbol(sk)
+            name = sk.get('name', sym)
+            w    = sk.get('w', 0)
+            # A股直接用代码；港股映射到同名A股代码
+            if sk.get('mkt') == 'HK':
+                acode = _em_suggest_code(name) or str(sk.get('code', ''))
+            else:
+                acode = str(sk.get('code', ''))
+            print(f'\n   [{sym}] {name} ({w}%)  A股code={acode} …')
+            rec = _em_ir_record(acode)
+            if rec and rec.get('fulltext'):
+                summ = _ir_summarize(name, rec['fulltext'])
+                print(f'   [{sym}] {rec["date"]} {rec["title"][:28]} | 全文{len(rec["fulltext"])}字 摘要{len(summ)}字')
+                ir_results.append({'code': sym, 'name': name, 'w': w, 'a_code': acode,
+                                   'date': rec['date'], 'title': rec['title'], 'art_code': rec['art_code'],
+                                   'summary': summ, 'fulltext': rec['fulltext']})
+            else:
+                print(f'   [{sym}] 无投资者关系活动记录表')
+                ir_results.append({'code': sym, 'name': name, 'w': w, 'a_code': acode,
+                                   'date': '', 'title': '', 'art_code': '',
+                                   'summary': '暂无投资者关系活动记录', 'fulltext': ''})
+            time.sleep(0.6)
 
-    top5 = get_top5(portfolio)
-    if not top5:
-        print('   ⚠️  portfolio 中无权重股')
-        with open('data/xq_sentiment.json','w',encoding='utf-8') as f:
-            json.dump({'ts':ts,'stocks':[]}, f, ensure_ascii=False)
-        return
-
-    use_ai = bool(GITHUB_TOKEN)
-    print(f'   分析方式: {"GitHub Models / gpt-4o-mini 归纳总结" if use_ai else "关键词拼接"}')
-
-    results = []
-    for sk in top5:
-        sym      = xq_symbol(sk)
-        name     = sk.get('name', sym)
-        w        = sk.get('w', 0)
-        industry = sk.get('industry', '')
-        ind_en   = INDUSTRY_EN.get(industry, '')
-        print(f'\n   [{sym}] {name} ({w}%)  行业={industry}({ind_en}) …')
-        posts = fetch_stock_posts(sym, name=name, industry=industry)
-        print(f'   [{sym}] 共 {len(posts)} 条')
-        if use_ai:
-            summary, total = ai_analyze(name, sym, posts, industry=industry)
-        else:
-            summary, total = keyword_analyze(posts)
-        print(f'   [{sym}] 摘要({len(summary)}字): {summary[:60]}…' if summary else f'   [{sym}] 摘要: 暂无')
-        results.append({'code': sym, 'name': name, 'w': w, 'summary': summary, 'total': total})
-        time.sleep(0.8)
-
-    with open('data/xq_sentiment.json','w',encoding='utf-8') as f:
-        json.dump({'ts':ts,'stocks':results}, f, ensure_ascii=False, indent=2)
-    print(f'\n✅ 完成 → data/xq_sentiment.json  ({len(results)} 只  {ts})\n')
+    with open('data/ir_records.json', 'w', encoding='utf-8') as f:
+        json.dump({'ts': ts, 'records': ir_results}, f, ensure_ascii=False, indent=2)
+    print(f'\n✅ 完成 → data/ir_records.json  ({len(ir_results)} 只  {ts})\n')
 
 if __name__ == '__main__':
     main()

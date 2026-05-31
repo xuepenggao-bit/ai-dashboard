@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>投资者关系活动记录表</title>
+<style>
+  body{font-family:"宋体","Microsoft YaHei",serif;max-width:880px;margin:0 auto;padding:24px 18px;
+       color:#1e293b;background:#f1f5f9;line-height:1.6}
+  .back{display:inline-block;margin-bottom:14px;color:#1d4ed8;text-decoration:none;font-size:13px;
+        font-family:"Microsoft YaHei"}
+  .back:hover{text-decoration:underline}
+  .card{background:#fff;border-radius:14px;padding:30px 34px;box-shadow:0 2px 14px rgba(0,0,0,.07)}
+  h1{font-size:19px;margin:0 0 6px;font-family:"Microsoft YaHei";font-weight:800;color:#0f172a}
+  .meta{color:#64748b;font-size:13px;margin-bottom:20px;font-family:"Microsoft YaHei"}
+  .summary{background:#eff6ff;border-left:4px solid #1d4ed8;padding:14px 18px;border-radius:8px;
+           margin-bottom:24px;font-size:13.5px;line-height:1.85;color:#1e40af;font-family:"Microsoft YaHei"}
+  .summary b{color:#1e3a8a}
+  .ft-title{font-size:13px;font-weight:700;color:#475569;margin-bottom:8px;font-family:"Microsoft YaHei";
+            padding-bottom:6px;border-bottom:1px solid #e2e8f0}
+  pre{white-space:pre-wrap;word-break:break-word;font-family:"宋体",serif;font-size:13.5px;
+      line-height:1.95;color:#334155;margin:0}
+  .empty{text-align:center;color:#94a3b8;padding:48px 0;font-family:"Microsoft YaHei"}
+</style>
+</head>
+<body>
+  <a class="back" href="javascript:history.back()">← 返回仪表板</a>
+  <div class="card" id="box"><div class="empty">加载中…</div></div>
+<script>
+  var code = new URLSearchParams(location.search).get('code') || '';
+  var esc = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  fetch('data/ir_records.json?_=' + Date.now(), { cache:'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var rec = (d.records || []).find(function(x){ return x.code === code; });
+      var box = document.getElementById('box');
+      if(!rec || !rec.fulltext){
+        box.innerHTML = '<div class="empty">未找到该股的投资者关系活动记录表</div>';
+        return;
+      }
+      document.title = rec.name + ' 投资者关系活动记录表';
+      box.innerHTML =
+        '<h1>' + esc(rec.name) + ' · 投资者关系活动记录表</h1>'
+        + '<div class="meta">' + esc(rec.code) + ' &nbsp;·&nbsp; ' + esc(rec.date)
+        + ' &nbsp;·&nbsp; 仓位 ' + Number(rec.w).toFixed(1) + '%'
+        + (d.ts ? ' &nbsp;·&nbsp; 数据更新 ' + esc(d.ts) : '') + '</div>'
+        + (rec.summary ? '<div class="summary"><b>AI 摘要：</b>' + esc(rec.summary) + '</div>' : '')
+        + '<div class="ft-title">完整记录表原文</div>'
+        + '<pre>' + esc(rec.fulltext) + '</pre>';
+    })
+    .catch(function(e){
+      document.getElementById('box').innerHTML = '<div class="empty">加载失败：' + esc(e.message) + '</div>';
+    });
+</script>
+</body>
+</html>
