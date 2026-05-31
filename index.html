@@ -3336,6 +3336,21 @@ function _mergeRemoteFields(local, remote){
       }
     });
   });
+  // history：把远端独有的历史记录（按日期）并入本地，避免旧缓存丢失历史持仓数据
+  _mergeHistory(local, remote.history);
+}
+
+/* 历史持仓记录按 date 并集合并：把 sourceArr 中 targetObj 缺失的日期补入 targetObj.history
+ * 同一日期保留 target 已有记录（可能含用户最新编辑的备注/补录明细）
+ */
+function _mergeHistory(targetObj, sourceArr){
+  if(!targetObj || !Array.isArray(sourceArr) || !sourceArr.length) return;
+  if(!Array.isArray(targetObj.history)) targetObj.history = [];
+  const have = new Set(targetObj.history.map(r=>r && r.date));
+  sourceArr.forEach(r=>{
+    if(r && r.date && !have.has(r.date)){ targetObj.history.push(r); have.add(r.date); }
+  });
+  targetObj.history.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
 }
 
 /* 将组合数据写回 GitHub（后台静默执行） */
@@ -3474,10 +3489,13 @@ async function portInit(){
   if(remoteWins){
     // 远端更新或相等 → 使用远端，同步本地缓存，重新渲染
     PORT = remoteData;
-    localStorage.setItem(PORT_KEY, JSON.stringify(remoteData));
+    // 把本地独有的历史记录（如刚补录但未推送的当天数据）并入，避免远端覆盖丢失
+    _mergeHistory(PORT, localData && localData.history);
+    localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
     _setSyncTs('☁️ 已从云端加载 ' + ts, '#10b981');
     renderPortfolio();
     updateRiskDashboard();
+    if(typeof renderHistTable==='function') renderHistTable();
     // 仅在远端带来新/减持仓标的时重新拉取股价；代码集相同则已有价格继续有效，避免双重刷新
     const _remoteCodes = new Set((remoteData.sectors||[]).flatMap(s=>s.stocks.map(sk=>sk.code)));
     const _rosterChanged = _remoteCodes.size !== _initCodes.size ||
@@ -3504,6 +3522,7 @@ async function portInit(){
     // 股价无需重新拉取（第一阶段已拉取且持仓未变），fetchIndexPrices 由 fetchPortPrices.finally 统一调用
     renderPortfolio();
     updateRiskDashboard();
+    if(typeof renderHistTable==='function') renderHistTable();
   } else {
     // 本地和远端均无有效数据，已在①用默认数据渲染，无需处理
     _setSyncTs('📂 使用默认数据', '#94a3b8');
