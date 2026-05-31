@@ -1507,6 +1507,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div style="font-size:12px;color:var(--text2);margin-top:3px">记录每日仓位与涨跌数据，自动同步至云端</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button onclick="loadHistFromCloud()" id="histReloadBtn" class="rbtn" style="padding:7px 16px;font-size:12px;background:var(--card2)">
+        <span>⟳</span> 从云端刷新
+      </button>
       <button onclick="addHistRecord()" id="histAddBtn" class="rbtn" style="padding:7px 16px;font-size:12px">
         <span>＋</span> 记录今日持仓
       </button>
@@ -3453,22 +3456,23 @@ async function portInit(){
   //    这是跨设备/换浏览器能稳定显示历史的关键）；同源失败再回退 api.github.com
   let remoteData = null;
   let remoteOk   = false;  // true = 云端可达（无论文件是否存在）
-  // ②-a 同源 Pages raw
+  // ②-a 同源 Pages raw（走 CDN）。用「分钟级」缓存键而非每次随机：同一分钟内命中 CDN/浏览器缓存
+  //     （快、不超时），新鲜度≤1分钟；避免随机参数强制回源 GitHub 导致的慢/超时。超时放宽到 20s。
   try{
     const ctrl = new AbortController();
-    const tid  = setTimeout(()=>ctrl.abort(), 8000);
+    const tid  = setTimeout(()=>ctrl.abort(), 20000);
     try{
-      const resp = await fetch(`${PORT_GH_FILE}?_=${Date.now()}`, {cache:'no-store', signal: ctrl.signal});
+      const resp = await fetch(`${PORT_GH_FILE}?v=${Math.floor(Date.now()/60000)}`, {signal: ctrl.signal});
       if(resp.ok){ remoteOk = true; remoteData = await resp.json(); }
       else if(resp.status === 404){ remoteOk = true; }
     }finally{ clearTimeout(tid); }
-  }catch(e){ console.warn('portLoadRemote(pages):', e.name==='AbortError'?'同源超时':e); }
+  }catch(e){ console.warn('portLoadRemote(pages):', e.name==='AbortError'?'同源超时(20s)':e); }
   // ②-b 同源拿不到 → 回退 api.github.com（顺便记录 SHA 供写入复用）
   if(!remoteData){
     try{
       const ghHeaders = {'Authorization': `token ${PORT_GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json'};
       const ctrl = new AbortController();
-      const tid  = setTimeout(()=>ctrl.abort(), 8000);
+      const tid  = setTimeout(()=>ctrl.abort(), 20000);
       try{
         const metaResp = await fetch(
           `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}?_=${Date.now()}`,
@@ -3506,10 +3510,17 @@ async function portInit(){
     _setSyncTs('☁️ 云端无数据，正在上传初始备份…', '#f59e0b');
     portSaveRemote();
   } else {
-    // 云端不可达（离线/超时）→ 用默认模板显示框架，绝不推送（防止覆盖云端权威）
-    _setSyncTs('⚠️ 云端暂时无法访问，请检查网络后刷新（历史数据需联网读取）', '#ef4444');
+    // 云端不可达（离线/超时）→ 自动重试一次（间隔 4s）；仍失败才提示，避免历史数据空白
+    if(!_portInitRetried){
+      _portInitRetried = true;
+      _setSyncTs('☁️ 云端读取较慢，4 秒后自动重试…', '#f59e0b');
+      setTimeout(function(){ portInit(); }, 4000);
+    } else {
+      _setSyncTs('⚠️ 云端暂时无法访问，请检查网络后刷新（历史数据需联网读取）', '#ef4444');
+    }
   }
 }
+let _portInitRetried = false;
 
 /* 手动强制将当前内存数据推送到云端（用于应急修复） */
 async function portForcePush(){
@@ -4849,7 +4860,7 @@ function _tabRefresh(idx){
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tAM')    refreshMacro();
   else if(tab==='tChain') chainRefresh();
-  else if(tab==='tHist') renderHistTable();
+  else if(tab==='tHist') loadHistFromCloud();
   else if(tab==='tPre')  preLoad();
   else if(tab==='t0')  { fetchMonLive(); fetchAiTrend(); fetchKolSummary(); }  // AI趋势：实时动量 + Capex/ARR/PE + X意见领袖
 }
@@ -6239,6 +6250,37 @@ function _computePortPct(curStocks, prevStocks){
     if(w > 0 && curPct[b.code] != null){ wp += w * curPct[b.code]; tw += w; }
   });
   return tw > 0 ? parseFloat((wp / tw).toFixed(3)) : null;
+}
+
+// 历史持仓：独立从云端读取 portfolio.json 并渲染，不依赖 portInit 的时序/成败。
+// 切到「历史持仓」tab 或点「⟳ 刷新」时调用，确保任何设备/浏览器都能可靠显示历史。
+async function loadHistFromCloud(){
+  const el = document.getElementById('histTable');
+  if(el && (!PORT || !PORT.history || !PORT.history.length)){
+    el.innerHTML = '<div style="color:var(--text2);font-size:13px;text-align:center;padding:28px 0">⏳ 正在从云端加载历史记录…</div>';
+  }
+  let data = null;
+  // 同源 Pages raw 优先（分钟级缓存键，命中 CDN，快）
+  try{
+    const r = await fetch(`${PORT_GH_FILE}?v=${Math.floor(Date.now()/60000)}`);
+    if(r.ok) data = await r.json();
+  }catch(e){ console.warn('loadHistFromCloud(pages):', e); }
+  // 回退 api.github.com
+  if(!data){
+    try{
+      const r = await fetch(`https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}?_=${Date.now()}`,
+        {headers:{'Authorization':`token ${PORT_GH_TOKEN}`,'Accept':'application/vnd.github.v3+json'}, cache:'no-store'});
+      if(r.ok){ const j=await r.json(); _portSha=j.sha;
+        data = JSON.parse(new TextDecoder('utf-8').decode(Uint8Array.from(atob(j.content.replace(/\n/g,'')), c=>c.charCodeAt(0)))); }
+    }catch(e){ console.warn('loadHistFromCloud(api):', e); }
+  }
+  if(data){
+    if(!PORT) PORT = data;
+    else PORT.history = Array.isArray(data.history) ? data.history : (PORT.history||[]);
+    renderHistTable();
+  } else if(el && (!PORT || !PORT.history || !PORT.history.length)){
+    el.innerHTML = '<div style="color:#ef4444;font-size:13px;text-align:center;padding:28px 0">⚠️ 云端历史读取失败，请检查网络后点上方「⟳ 刷新」重试</div>';
+  }
 }
 
 function renderHistTable(){
