@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <!-- X关注账号列表 Google Sheet ID: 17JrhIvIneHSI5P4SAf4jIB8xg_GIXAWjm2xAOQR8jV8
      直接打开: https://docs.google.com/spreadsheets/d/17JrhIvIneHSI5P4SAf4jIB8xg_GIXAWjm2xAOQR8jV8
      在此表格中维护X关注账号，列：账号(Handle)/显示名/关注主题/备注/是否启用/添加时间 -->
@@ -82,18 +82,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .tabs-inner .tab:nth-child(2) {--tab-top:#fef9c3;--tab-bot:#fde68a;--tab-bdr:#fbbf24}  /* 黄  估值分析 */
 .tabs-inner .tab:nth-child(3) {--tab-top:#dcfce7;--tab-bot:#bbf7d0;--tab-bdr:#86efac}  /* 绿  A股宏观 */
 .tabs-inner .tab:nth-child(4) {--tab-top:#ede9fe;--tab-bot:#ddd6fe;--tab-bdr:#c4b5fd}  /* 紫  AI趋势 */
-.tabs-inner .tab:nth-child(5) {--tab-top:#ccfbf1;--tab-bot:#99f6e4;--tab-bdr:#2dd4bf}  /* 青绿 AI产业链 */
-.tabs-inner .tab:nth-child(6) {--tab-top:#e0e7ff;--tab-bot:#c7d2fe;--tab-bdr:#a5b4fc}  /* 靛蓝 历史持仓 */
-.tabs-inner .tab:nth-child(7) {--tab-top:#f0e4d6;--tab-bot:#e7d3bd;--tab-bdr:#cbb48f}  /* 赭石 盘前自检 */
-/* AI产业链子标签 */
-.chain-subnav{display:flex;gap:6px;margin-bottom:18px;border-bottom:2px solid var(--border);padding-bottom:0}
-.chain-subtab{background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;
-  padding:8px 18px;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;font-family:inherit;
-  border-radius:6px 6px 0 0;transition:.15s;white-space:nowrap}
-.chain-subtab:hover{color:var(--text);background:var(--card2)}
-.chain-subtab.active{color:#0f766e;border-bottom-color:#0f766e;background:var(--card)}
-.chain-panel{display:none}
-.chain-panel.active{display:block}
+.tabs-inner .tab:nth-child(5) {--tab-top:#cffafe;--tab-bot:#a5f3fc;--tab-bdr:#67e8f9}  /* 青  光模块&PCB */
+.tabs-inner .tab:nth-child(6) {--tab-top:#ffedd5;--tab-bot:#fed7aa;--tab-bdr:#fdba74}  /* 橙  存储监控 */
+.tabs-inner .tab:nth-child(7) {--tab-top:#ccfbf1;--tab-bot:#99f6e4;--tab-bdr:#5eead4}  /* 青绿 产业链监控 */
+.tabs-inner .tab:nth-child(8) {--tab-top:#e0e7ff;--tab-bot:#c7d2fe;--tab-bdr:#a5b4fc}  /* 靛蓝 历史持仓 */
+.tabs-inner .tab:nth-child(9) {--tab-top:#f0e4d6;--tab-bot:#e7d3bd;--tab-bdr:#cbb48f}  /* 赭石 盘前自检 */
 /* 盘前自检问卷 */
 #tPre .pcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:16px}
 #tPre .pcard h3{font-size:14px;font-weight:800;color:var(--text);margin:0 0 4px;display:flex;align-items:center;gap:8px}
@@ -344,9 +337,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <button class="tab" onclick="switchTab(1)">📊 估值分析</button>
     <button class="tab" onclick="switchTab(2)">🏦 A股宏观</button>
     <button class="tab" onclick="switchTab(3)">🤖 AI 趋势</button>
-    <button class="tab" onclick="switchTab(4)">🔗 AI产业链</button>
-    <button class="tab" onclick="switchTab(5)">📋 历史持仓</button>
-    <button class="tab" onclick="switchTab(6)">🧭 盘前自检</button>
+    <button class="tab" onclick="switchTab(4)">🔌 光模块&amp;PCB</button>
+    <button class="tab" onclick="switchTab(5)">🗄️ 存储监控</button>
+    <button class="tab" onclick="switchTab(6)">🔴 产业链监控</button>
+    <button class="tab" onclick="switchTab(7)">📋 历史持仓</button>
+    <button class="tab" onclick="switchTab(8)">🧭 盘前自检</button>
   </div>
 </nav>
 
@@ -1222,15 +1217,246 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   </div>
 </div>
 
-<!-- ═══ AI产业链（整合三个子标签） ═══ -->
-<div class="tab-content" id="tChain">
-  <div class="chain-subnav">
-    <button class="chain-subtab active" onclick="switchChain(0)">📊 产业链分析</button>
-    <button class="chain-subtab"        onclick="switchChain(1)">🔌 光模块&amp;PCB</button>
-    <button class="chain-subtab"        onclick="switchChain(2)">🗄️ 存储</button>
+<!-- ════════════════ TAB 2.4 ════════════════ -->
+<!-- ════════════════ TAB A股估值 ════════════════ -->
+<div class="tab-content" id="t4">
+  <div class="stitle">光模块&amp;PCB监控 <span class="stag">光模块 &amp; PCB · 关键财务指标</span>
+    <span id="stockApiTs" style="font-size:10px;color:#94a3b8;margin-left:auto;white-space:nowrap"></span>
+    <button id="stockRefBtn" onclick="fetchStocksLive()" class="rbtn" style="padding:6px 14px;font-size:12px">
+      <span class="ricon">↻</span> 刷新行情
+    </button>
   </div>
 
-<div class="chain-panel active" id="cpStage">
+  <div class="alert a-info mb16">
+    <span>✅</span>
+    <div><strong>实时行情：东方财富</strong> &nbsp;·&nbsp; PE(动态)/现价/涨跌幅 随盘实时更新 &nbsp;·&nbsp; 净利润增速为 <strong>2026年一季报</strong> 归母净利润同比（静态历史值）&nbsp;·&nbsp; PEG = PE ÷ 增速 &nbsp;·&nbsp; 最后刷新：<span id="stockTs">—</span></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">光模块 · PE(动态) 对比</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">东方财富实时</span>
+      </div>
+      <div style="height:230px"><canvas id="cOptGrowth"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">PCB · PE(动态) 对比</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">东方财富实时</span>
+      </div>
+      <div style="height:230px"><canvas id="cPcbGrowth"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Optical module table -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">📡 光模块公司估值监控</span><span class="cbadge">5家主要标的</span></div>
+    <div class="overflow">
+      <table class="mtable">
+        <thead><tr>
+          <th>公司名称</th>
+          <th>股票代码</th>
+          <th>行业地位</th>
+          <th>现价 / 涨跌</th>
+          <th>PE(动态)</th>
+          <th>2026Q1 归母净利润增速</th>
+          <th>PEG</th>
+          <th>信号</th>
+        </tr></thead>
+        <tbody id="optBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PCB table -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">🔧 PCB公司估值监控</span><span class="cbadge">6家主要标的</span></div>
+    <div class="overflow">
+      <table class="mtable">
+        <thead><tr>
+          <th>公司名称</th>
+          <th>股票代码</th>
+          <th>行业地位</th>
+          <th>现价 / 涨跌</th>
+          <th>PE(动态)</th>
+          <th>2026Q1 归母净利润增速</th>
+          <th>PEG</th>
+          <th>信号</th>
+        </tr></thead>
+        <tbody id="pcbBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- How to update note -->
+  <div class="alert a-info">
+    <span>📋</span>
+    <div>
+      <strong>如何更新数据：</strong>
+      PE / PEG 字段在 BASE.stocks 中预留（pe/peg 字段），接入实时行情后将动态值写入即可显示。净利润增速在每次季报/年报披露后手动更新 growth 字段。
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 存储监控 ════════════════ -->
+<div class="tab-content" id="t5">
+  <div class="stitle">存储监控仪表板 <span class="stag">全球存储链 · PE / 增速 / PEG</span>
+    <span id="storApiTs" style="font-size:10px;color:#94a3b8;margin-left:auto;white-space:nowrap"></span>
+    <button id="storRefBtn" onclick="fetchStoreLive()" class="rbtn" style="padding:6px 14px;font-size:12px">
+      <span class="ricon">↻</span> 刷新行情
+    </button>
+  </div>
+
+  <!-- Data source notice -->
+  <div class="alert a-info mb16">
+    <span>📡</span>
+    <div>
+      <strong>实时数据：</strong>
+      A股 — 东方财富（PE/价格/涨跌） &nbsp;·&nbsp;
+      美股 — 东方财富实时行情；韩/日股 — Yahoo Finance实时行情；台股 — 参考价格 &nbsp;·&nbsp;
+      增速为历史季报数据（静态） &nbsp;·&nbsp;
+      最后刷新：<span id="storageTs">—</span>
+    </div>
+  </div>
+
+  <!-- Storage cycle context -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">存储行业周期定位 (2022-2026)</span><span class="cbadge pulse">上行周期</span></div>
+    <div class="stagebar">
+      <div class="sbox past">2022下 <div class="sboxsub">去库存</div></div>
+      <div class="sbox past">2023下 <div class="sboxsub">价格触底</div></div>
+      <div class="sbox curr">2024上 ▲<div class="sboxsub">涨价/复苏</div></div>
+      <div class="sbox curr">2025上 ▲<div class="sboxsub">HBM爆发</div></div>
+      <div class="sbox next">2026-27 ⚠<div class="sboxsub">高位/分化</div></div>
+    </div>
+    <div class="tx3 mt8">A股存储公司Q1 2026增速极高（如德明利+4943%、江波龙+2644%）系2023年低基数效应；国际龙头韩国海力士/三星增速转负反映本轮价格已高位波动。HBM、LPDDR5等AI算力存储仍是主线。</div>
+  </div>
+
+  <!-- Charts -->
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">国际存储龙头 · PE(TTM) 对比</span>
+        <span class="cbadge" style="background:#dbeafe;color:#1e40af">实时行情</span>
+      </div>
+      <div style="height:230px"><canvas id="cIntlPe"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">A股存储链 · PE(动态) & 2026Q1增速</span>
+        <span class="cbadge" style="background:#dcfce7;color:#166534">东方财富</span>
+      </div>
+      <div style="height:230px"><canvas id="cDomStorePe"></canvas></div>
+    </div>
+  </div>
+
+  <!-- International table -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">🌏 国际存储龙头估值监控</span><span class="cbadge">6家标的</span></div>
+    <div class="overflow">
+      <table class="mtable">
+        <thead><tr>
+          <th>公司</th><th>代码</th><th>交易所</th><th>地区</th><th>现价 / 涨跌</th>
+          <th>PE(TTM)</th><th>远期PE</th><th>近期增速</th><th>PEG</th><th>信号</th>
+        </tr></thead>
+        <tbody id="intlStoreBody"></tbody>
+      </table>
+    </div>
+    <div class="tx3 mt8">● 现价/PE/远期PE 实时来自 Yahoo Finance；若数据缺失显示 N/A。增速为历史季报静态数据，不随刷新变化。</div>
+  </div>
+
+  <!-- Domestic A-share table -->
+  <div class="card mb16">
+    <div class="ch"><span class="ct">🇨🇳 A股存储链估值监控</span><span class="cbadge">6家标的</span></div>
+    <div class="overflow">
+      <table class="mtable">
+        <thead><tr>
+          <th>公司名称</th><th>代码</th><th>产业地位</th><th>现价 / 涨跌</th>
+          <th>PE(动态)</th><th>2026Q1归母净利润增速</th><th>PEG</th><th>信号</th>
+        </tr></thead>
+        <tbody id="domStoreBody"></tbody>
+      </table>
+    </div>
+    <div class="alert a-warn mt12">
+      <span>⚠</span>
+      <div>A股存储公司Q1 2026增速受2023年行业低谷低基数影响极度失真（最高+4943%），<strong>PEG值不具备正常参考意义</strong>，请以当前绝对PE水平及2026-2027年盈利预期为主要估值参考依据。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 历史持仓 ════════════════ -->
+<div class="tab-content" id="tHist">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <div>
+      <div class="stitle">历史持仓 <span class="stag">每日记录 · 业绩归因</span></div>
+      <div style="font-size:12px;color:var(--text2);margin-top:3px">记录每日仓位与涨跌数据，自动同步至云端</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button onclick="addHistRecord()" id="histAddBtn" class="rbtn" style="padding:7px 16px;font-size:12px">
+        <span>＋</span> 记录今日持仓
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 主列表视图 ── -->
+  <div id="histMain">
+    <!-- 统计概览 -->
+    <div class="g4 mb16" id="histStats" style="display:none">
+      <div class="card" style="border-top:3px solid var(--blue)">
+        <div class="klabel" style="color:var(--blue);font-size:12px">📅 已记录天数</div>
+        <div class="kval tb" id="histDays" style="font-size:30px">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid #dc2626">
+        <div class="klabel" style="color:#dc2626;font-size:12px">📈 持仓日均涨跌</div>
+        <div class="kval" id="histAvgPort" style="font-size:30px">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid var(--text2)">
+        <div class="klabel" style="color:var(--text2);font-size:12px">📊 全指日均涨跌</div>
+        <div class="kval tb" id="histAvgCsi" style="font-size:30px">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid var(--purple)">
+        <div class="klabel" style="color:var(--purple);font-size:12px">⚡ 日均超额收益</div>
+        <div class="kval" id="histAvgExc" style="font-size:30px;color:var(--purple)">—</div>
+      </div>
+    </div>
+    <!-- 记录表格 -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">持仓日志</span>
+        <span class="cbadge" id="histCountBadge">0 条记录</span>
+      </div>
+      <div style="overflow-x:auto">
+        <div id="histTable">
+          <div style="color:var(--text2);font-size:13px;text-align:center;padding:28px 0">
+            切换到「投资组合」刷新股价后，点击「记录今日持仓」开始记录
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 二级：单日持仓明细 ── -->
+  <div id="histDetail" style="display:none">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
+      <button onclick="closeHistDetail()"
+        style="background:var(--card2);border:1.5px solid var(--border);color:var(--text);border-radius:8px;
+               padding:7px 16px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:600;
+               display:flex;align-items:center;gap:5px">← 返回日志</button>
+      <div style="font-size:18px;font-weight:800;color:var(--text)" id="histDetailTitle"></div>
+      <span style="font-size:12px;color:var(--text2)" id="histDetailMeta"></span>
+    </div>
+    <div class="card">
+      <div style="overflow-x:auto">
+        <div id="histDetailTable"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── tStage: A股AI产业链所处阶段 ─────────────────────────── -->
+<div class="tab-content" id="tStage">
   <div class="stitle">A股AI产业链所处阶段
     <span class="stag" style="background:rgba(124,58,237,.08);color:var(--purple)">Bernstein Style Framework</span>
     <span id="stageApiTs" style="font-size:10px;color:#94a3b8;margin-left:auto;white-space:nowrap"></span>
@@ -1328,245 +1554,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         </tr></thead>
         <tbody id="riskBody"></tbody>
       </table>
-    </div>
-  </div>
-</div>
-
-<div class="chain-panel" id="cpOpt">
-  <div class="stitle">光模块&amp;PCB监控 <span class="stag">光模块 &amp; PCB · 关键财务指标</span>
-    <span id="stockApiTs" style="font-size:10px;color:#94a3b8;margin-left:auto;white-space:nowrap"></span>
-    <button id="stockRefBtn" onclick="fetchStocksLive()" class="rbtn" style="padding:6px 14px;font-size:12px">
-      <span class="ricon">↻</span> 刷新行情
-    </button>
-  </div>
-
-  <div class="alert a-info mb16">
-    <span>✅</span>
-    <div><strong>实时行情：东方财富</strong> &nbsp;·&nbsp; PE(动态)/现价/涨跌幅 随盘实时更新 &nbsp;·&nbsp; 净利润增速为 <strong>2026年一季报</strong> 归母净利润同比（静态历史值）&nbsp;·&nbsp; PEG = PE ÷ 增速 &nbsp;·&nbsp; 最后刷新：<span id="stockTs">—</span></div>
-  </div>
-
-  <!-- Charts -->
-  <div class="g2 mb16">
-    <div class="card">
-      <div class="ch">
-        <span class="ct">光模块 · PE(动态) 对比</span>
-        <span class="cbadge" style="background:#dbeafe;color:#1e40af">东方财富实时</span>
-      </div>
-      <div style="height:230px"><canvas id="cOptGrowth"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="ch">
-        <span class="ct">PCB · PE(动态) 对比</span>
-        <span class="cbadge" style="background:#dbeafe;color:#1e40af">东方财富实时</span>
-      </div>
-      <div style="height:230px"><canvas id="cPcbGrowth"></canvas></div>
-    </div>
-  </div>
-
-  <!-- Optical module table -->
-  <div class="card mb16">
-    <div class="ch"><span class="ct">📡 光模块公司估值监控</span><span class="cbadge">5家主要标的</span></div>
-    <div class="overflow">
-      <table class="mtable">
-        <thead><tr>
-          <th>公司名称</th>
-          <th>股票代码</th>
-          <th>行业地位</th>
-          <th>现价 / 涨跌</th>
-          <th>PE(动态)</th>
-          <th>2026Q1 归母净利润增速</th>
-          <th>PEG</th>
-          <th>信号</th>
-        </tr></thead>
-        <tbody id="optBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- PCB table -->
-  <div class="card mb16">
-    <div class="ch"><span class="ct">🔧 PCB公司估值监控</span><span class="cbadge">6家主要标的</span></div>
-    <div class="overflow">
-      <table class="mtable">
-        <thead><tr>
-          <th>公司名称</th>
-          <th>股票代码</th>
-          <th>行业地位</th>
-          <th>现价 / 涨跌</th>
-          <th>PE(动态)</th>
-          <th>2026Q1 归母净利润增速</th>
-          <th>PEG</th>
-          <th>信号</th>
-        </tr></thead>
-        <tbody id="pcbBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- How to update note -->
-  <div class="alert a-info">
-    <span>📋</span>
-    <div>
-      <strong>如何更新数据：</strong>
-      PE / PEG 字段在 BASE.stocks 中预留（pe/peg 字段），接入实时行情后将动态值写入即可显示。净利润增速在每次季报/年报披露后手动更新 growth 字段。
-    </div>
-  </div>
-</div>
-
-<div class="chain-panel" id="cpStore">
-  <div class="stitle">存储监控仪表板 <span class="stag">全球存储链 · PE / 增速 / PEG</span>
-    <span id="storApiTs" style="font-size:10px;color:#94a3b8;margin-left:auto;white-space:nowrap"></span>
-    <button id="storRefBtn" onclick="fetchStoreLive()" class="rbtn" style="padding:6px 14px;font-size:12px">
-      <span class="ricon">↻</span> 刷新行情
-    </button>
-  </div>
-
-  <!-- Data source notice -->
-  <div class="alert a-info mb16">
-    <span>📡</span>
-    <div>
-      <strong>实时数据：</strong>
-      A股 — 东方财富（PE/价格/涨跌） &nbsp;·&nbsp;
-      美股 — 东方财富实时行情；韩/日股 — Yahoo Finance实时行情；台股 — 参考价格 &nbsp;·&nbsp;
-      增速为历史季报数据（静态） &nbsp;·&nbsp;
-      最后刷新：<span id="storageTs">—</span>
-    </div>
-  </div>
-
-  <!-- Storage cycle context -->
-  <div class="card mb16">
-    <div class="ch"><span class="ct">存储行业周期定位 (2022-2026)</span><span class="cbadge pulse">上行周期</span></div>
-    <div class="stagebar">
-      <div class="sbox past">2022下 <div class="sboxsub">去库存</div></div>
-      <div class="sbox past">2023下 <div class="sboxsub">价格触底</div></div>
-      <div class="sbox curr">2024上 ▲<div class="sboxsub">涨价/复苏</div></div>
-      <div class="sbox curr">2025上 ▲<div class="sboxsub">HBM爆发</div></div>
-      <div class="sbox next">2026-27 ⚠<div class="sboxsub">高位/分化</div></div>
-    </div>
-    <div class="tx3 mt8">A股存储公司Q1 2026增速极高（如德明利+4943%、江波龙+2644%）系2023年低基数效应；国际龙头韩国海力士/三星增速转负反映本轮价格已高位波动。HBM、LPDDR5等AI算力存储仍是主线。</div>
-  </div>
-
-  <!-- Charts -->
-  <div class="g2 mb16">
-    <div class="card">
-      <div class="ch">
-        <span class="ct">国际存储龙头 · PE(TTM) 对比</span>
-        <span class="cbadge" style="background:#dbeafe;color:#1e40af">实时行情</span>
-      </div>
-      <div style="height:230px"><canvas id="cIntlPe"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="ch">
-        <span class="ct">A股存储链 · PE(动态) & 2026Q1增速</span>
-        <span class="cbadge" style="background:#dcfce7;color:#166534">东方财富</span>
-      </div>
-      <div style="height:230px"><canvas id="cDomStorePe"></canvas></div>
-    </div>
-  </div>
-
-  <!-- International table -->
-  <div class="card mb16">
-    <div class="ch"><span class="ct">🌏 国际存储龙头估值监控</span><span class="cbadge">6家标的</span></div>
-    <div class="overflow">
-      <table class="mtable">
-        <thead><tr>
-          <th>公司</th><th>代码</th><th>交易所</th><th>地区</th><th>现价 / 涨跌</th>
-          <th>PE(TTM)</th><th>远期PE</th><th>近期增速</th><th>PEG</th><th>信号</th>
-        </tr></thead>
-        <tbody id="intlStoreBody"></tbody>
-      </table>
-    </div>
-    <div class="tx3 mt8">● 现价/PE/远期PE 实时来自 Yahoo Finance；若数据缺失显示 N/A。增速为历史季报静态数据，不随刷新变化。</div>
-  </div>
-
-  <!-- Domestic A-share table -->
-  <div class="card mb16">
-    <div class="ch"><span class="ct">🇨🇳 A股存储链估值监控</span><span class="cbadge">6家标的</span></div>
-    <div class="overflow">
-      <table class="mtable">
-        <thead><tr>
-          <th>公司名称</th><th>代码</th><th>产业地位</th><th>现价 / 涨跌</th>
-          <th>PE(动态)</th><th>2026Q1归母净利润增速</th><th>PEG</th><th>信号</th>
-        </tr></thead>
-        <tbody id="domStoreBody"></tbody>
-      </table>
-    </div>
-    <div class="alert a-warn mt12">
-      <span>⚠</span>
-      <div>A股存储公司Q1 2026增速受2023年行业低谷低基数影响极度失真（最高+4943%），<strong>PEG值不具备正常参考意义</strong>，请以当前绝对PE水平及2026-2027年盈利预期为主要估值参考依据。</div>
-    </div>
-  </div>
-</div>
-</div>
-
-<!-- ════════════════ TAB 历史持仓 ════════════════ -->
-<div class="tab-content" id="tHist">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-    <div>
-      <div class="stitle">历史持仓 <span class="stag">每日记录 · 业绩归因</span></div>
-      <div style="font-size:12px;color:var(--text2);margin-top:3px">记录每日仓位与涨跌数据，自动同步至云端</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <button onclick="loadHistFromCloud()" id="histReloadBtn" class="rbtn" style="padding:7px 16px;font-size:12px;background:var(--card2)">
-        <span>⟳</span> 从云端刷新
-      </button>
-      <button onclick="addHistRecord()" id="histAddBtn" class="rbtn" style="padding:7px 16px;font-size:12px">
-        <span>＋</span> 记录今日持仓
-      </button>
-    </div>
-  </div>
-
-  <!-- ── 主列表视图 ── -->
-  <div id="histMain">
-    <!-- 统计概览 -->
-    <div class="g4 mb16" id="histStats" style="display:none">
-      <div class="card" style="border-top:3px solid var(--blue)">
-        <div class="klabel" style="color:var(--blue);font-size:12px">📅 已记录天数</div>
-        <div class="kval tb" id="histDays" style="font-size:30px">—</div>
-      </div>
-      <div class="card" style="border-top:3px solid #dc2626">
-        <div class="klabel" style="color:#dc2626;font-size:12px">📈 持仓日均涨跌</div>
-        <div class="kval" id="histAvgPort" style="font-size:30px">—</div>
-      </div>
-      <div class="card" style="border-top:3px solid var(--text2)">
-        <div class="klabel" style="color:var(--text2);font-size:12px">📊 全指日均涨跌</div>
-        <div class="kval tb" id="histAvgCsi" style="font-size:30px">—</div>
-      </div>
-      <div class="card" style="border-top:3px solid var(--purple)">
-        <div class="klabel" style="color:var(--purple);font-size:12px">⚡ 日均超额收益</div>
-        <div class="kval" id="histAvgExc" style="font-size:30px;color:var(--purple)">—</div>
-      </div>
-    </div>
-    <!-- 记录表格 -->
-    <div class="card">
-      <div class="ch">
-        <span class="ct">持仓日志</span>
-        <span class="cbadge" id="histCountBadge">0 条记录</span>
-      </div>
-      <div style="overflow-x:auto">
-        <div id="histTable">
-          <div style="color:var(--text2);font-size:13px;text-align:center;padding:28px 0">
-            切换到「投资组合」刷新股价后，点击「记录今日持仓」开始记录
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── 二级：单日持仓明细 ── -->
-  <div id="histDetail" style="display:none">
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
-      <button onclick="closeHistDetail()"
-        style="background:var(--card2);border:1.5px solid var(--border);color:var(--text);border-radius:8px;
-               padding:7px 16px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:600;
-               display:flex;align-items:center;gap:5px">← 返回日志</button>
-      <div style="font-size:18px;font-weight:800;color:var(--text)" id="histDetailTitle"></div>
-      <span style="font-size:12px;color:var(--text2)" id="histDetailMeta"></span>
-    </div>
-    <div class="card">
-      <div style="overflow-x:auto">
-        <div id="histDetailTable"></div>
-      </div>
     </div>
   </div>
 </div>
@@ -3294,7 +3281,6 @@ let PORT = null;
 let _PORT_PRICES = {};
 let _portSort = {col:'w', dir:1};
 let _portDirty = false;   // 有本地修改未同步到云端时为 true
-let _portSha   = null;    // portfolio.json 当前 SHA，供 PUT 复用（云端唯一权威）
 
 function togglePortSort(col){
   // 首次点击某列：降序（dir=1，即 b-a，由高到低）
@@ -3340,27 +3326,10 @@ function _mergeRemoteFields(local, remote){
       }
     });
   });
-  // history：把远端独有的历史记录（按日期）并入本地，避免旧缓存丢失历史持仓数据
-  _mergeHistory(local, remote.history);
 }
 
-/* 历史持仓记录按 date 并集合并：把 sourceArr 中 targetObj 缺失的日期补入 targetObj.history
- * 同一日期保留 target 已有记录（可能含用户最新编辑的备注/补录明细）
- */
-function _mergeHistory(targetObj, sourceArr){
-  if(!targetObj || !Array.isArray(sourceArr) || !sourceArr.length) return;
-  if(!Array.isArray(targetObj.history)) targetObj.history = [];
-  const have = new Set(targetObj.history.map(r=>r && r.date));
-  sourceArr.forEach(r=>{
-    if(r && r.date && !have.has(r.date)){ targetObj.history.push(r); have.add(r.date); }
-  });
-  targetObj.history.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-}
-
-/* 将组合数据写回 GitHub（云端唯一权威；写前先拉云端最新，把云端独有历史并入当前数据，
- * 杜绝跨设备并发时把别的设备刚写的历史覆盖掉）*/
-async function portSaveRemote(opts){
-  opts = opts || {};
+/* 将组合数据写回 GitHub（后台静默执行） */
+async function portSaveRemote(){
   try{
     _setSyncTs('☁️ 同步中…', '#f59e0b');
     const headers = {
@@ -3368,21 +3337,11 @@ async function portSaveRemote(opts){
       'Accept': 'application/vnd.github.v3+json',
       'Content-Type': 'application/json'
     };
-    // 写前拉云端最新：① 取最新 SHA ② 把云端独有的历史记录并入当前 PORT（防并发丢历史）
-    let sha = _portSha;
+    // 获取当前 SHA（文件不存在时忽略）
+    let sha = null;
     try{
-      const meta = await fetch(`https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}?_=${Date.now()}`,
-        {headers, cache:'no-store'});
-      if(meta.ok){
-        const j = await meta.json();
-        sha = j.sha;
-        try{
-          const bytes  = Uint8Array.from(atob(j.content.replace(/\n/g,'')), c=>c.charCodeAt(0));
-          const remote = JSON.parse(new TextDecoder('utf-8').decode(bytes));
-          // 默认并入云端独有历史（防并发丢失）；删除操作传 overwriteHistory 跳过，以本地为准
-          if(remote && Array.isArray(remote.history) && !opts.overwriteHistory) _mergeHistory(PORT, remote.history);
-        }catch(_){}
-      } else if(meta.status === 404){ sha = null; }
+      const meta = await fetch(`https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`, {headers});
+      if(meta.ok){ const j = await meta.json(); sha = j.sha; }
     }catch(_){}
     // 写入
     const body = {
@@ -3394,15 +3353,11 @@ async function portSaveRemote(opts){
       method:'PUT', headers, body: JSON.stringify(body)
     });
     if(res.ok){
-      const j2 = await res.json().catch(()=>null);
-      if(j2 && j2.content && j2.content.sha) _portSha = j2.content.sha;  // 更新 SHA 供下次复用
       _portDirty = false;
       const savedTs = PORT._savedAt ? new Date(PORT._savedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
-      _setSyncTs('☁️ 已同步至云端 · '+savedTs, '#10b981');
-      // 推送成功后用合并结果重渲染历史表（可能并入了其他设备的记录）
-      if(typeof renderHistTable==='function') renderHistTable();
+      _setSyncTs('☁️ 已同步 · 数据时间 '+savedTs, '#10b981');
+      console.log('[portSync] 成功写入 GitHub，_savedAt=', PORT._savedAt);
     } else {
-      _portSha = null;  // SHA 失效（409/422 冲突）→ 清掉，下次重新 GET 重试
       const err = await res.json().catch(()=>({}));
       throw new Error(err.message || res.status);
     }
@@ -3412,21 +3367,21 @@ async function portSaveRemote(opts){
   }
 }
 
-/* 云端 = 唯一存储：任何改动都自动写回云端 JSON（防抖 600ms 合并高频改动，如逐字输入备注）。
- * 不再使用 localStorage —— 所有设备/浏览器读写同一份云端数据，跨设备一致。 */
-let _portPushTimer = null;
-function portSave(opts){
-  PORT._savedAt = Date.now();
+/* 只写本地，标记待同步；需用户手动点击"同步到云端"才推送 */
+function portSave(){
+  PORT._savedAt = Date.now();   // 写入修改时间戳，供冲突解决使用
+  localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
   _portDirty = true;
-  _setSyncTs('☁️ 同步中…', '#f59e0b');
-  clearTimeout(_portPushTimer);
-  _portPushTimer = setTimeout(function(){ portSaveRemote(opts||{}); }, 600);
+  _setSyncTs('📝 有改动未同步，点击"同步到云端"', '#f59e0b');
 }
 
-/* 首屏兜底：仅用默认模板渲染框架；真实数据（含历史）一律从云端读取，不使用本地缓存 */
+/* 读取本地 localStorage 数据（fallback） */
 function portLoad(){
   if(PORT) return;
-  PORT = JSON.parse(JSON.stringify(BASE.portfolio));
+  try{
+    const s = localStorage.getItem(PORT_KEY);
+    PORT = s ? JSON.parse(s) : JSON.parse(JSON.stringify(BASE.portfolio));
+  }catch(e){ PORT = JSON.parse(JSON.stringify(BASE.portfolio)); }
 }
 
 /**
@@ -3452,81 +3407,108 @@ async function portInit(){
   try{ fetchPortPrices(); }catch(e){ console.warn('[portInit fetchPortPrices]', e); }
   _setSyncTs('☁️ 校验云端数据中…', '#f59e0b');
 
-  // ② 读取云端数据 —— 优先 GitHub Pages 同源 raw（走 CDN，稳定、无需 token、不受 API 速率限制，
-  //    这是跨设备/换浏览器能稳定显示历史的关键）；同源失败再回退 api.github.com
-  let remoteData = null;
-  let remoteOk   = false;  // true = 云端可达（无论文件是否存在）
-  // ②-a 同源 Pages raw（走 CDN）。用「分钟级」缓存键而非每次随机：同一分钟内命中 CDN/浏览器缓存
-  //     （快、不超时），新鲜度≤1分钟；避免随机参数强制回源 GitHub 导致的慢/超时。超时放宽到 20s。
+  // ② 读本地快照（用于后续冲突判断基准）
+  let localData = null;
   try{
+    const s = localStorage.getItem(PORT_KEY);
+    if(s) localData = JSON.parse(s);
+  }catch(e){}
+
+  // ③ 后台拉 GitHub 远端数据（带 8s AbortController 超时）
+  let remoteData = null;
+  let remoteOk   = false;  // true = GitHub 可达（无论文件是否存在）
+  try{
+    const ghHeaders = {
+      'Authorization': `token ${PORT_GH_TOKEN}`,
+      'Accept': 'application/vnd.github.v3+json'
+    };
     const ctrl = new AbortController();
-    const tid  = setTimeout(()=>ctrl.abort(), 20000);
+    const tid  = setTimeout(()=>ctrl.abort(), 8000);
     try{
-      const resp = await fetch(`${PORT_GH_FILE}?v=${Math.floor(Date.now()/60000)}`, {signal: ctrl.signal});
-      if(resp.ok){ remoteOk = true; remoteData = await resp.json(); }
-      else if(resp.status === 404){ remoteOk = true; }
+      const metaResp = await fetch(
+        `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,
+        {headers: ghHeaders, cache:'no-store', signal: ctrl.signal}
+      );
+      if(metaResp.ok){
+        remoteOk = true;
+        const metaJson = await metaResp.json();
+        // GitHub API 返回 base64 编码内容（含换行符），用 TextDecoder 正确还原 UTF-8
+        const b64   = metaJson.content.replace(/\n/g,'');
+        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+        remoteData  = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+      } else if(metaResp.status === 404){
+        remoteOk = true; // GitHub 可达，文件不存在（首次使用）
+      }
     }finally{ clearTimeout(tid); }
-  }catch(e){ console.warn('portLoadRemote(pages):', e.name==='AbortError'?'同源超时(20s)':e); }
-  // ②-b 同源拿不到 → 回退 api.github.com（顺便记录 SHA 供写入复用）
-  if(!remoteData){
-    try{
-      const ghHeaders = {'Authorization': `token ${PORT_GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json'};
-      const ctrl = new AbortController();
-      const tid  = setTimeout(()=>ctrl.abort(), 20000);
-      try{
-        const metaResp = await fetch(
-          `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}?_=${Date.now()}`,
-          {headers: ghHeaders, cache:'no-store', signal: ctrl.signal}
-        );
-        if(metaResp.ok){
-          remoteOk = true;
-          const metaJson = await metaResp.json();
-          _portSha = metaJson.sha;
-          const bytes = Uint8Array.from(atob(metaJson.content.replace(/\n/g,'')), c => c.charCodeAt(0));
-          remoteData  = JSON.parse(new TextDecoder('utf-8').decode(bytes));
-        } else if(metaResp.status === 404){ remoteOk = true; }
-      }finally{ clearTimeout(tid); }
-    }catch(e){ console.warn('portLoadRemote(api):', e.name==='AbortError'?'API超时':e); }
+  }catch(e){
+    console.warn('portLoadRemote:', e.name === 'AbortError' ? '超时(8s)，使用本地缓存' : e);
   }
 
+  // ④ GitHub 完成后重新读本地（防竞争：用户可能在等待期间编辑了行业等字段）
+  //    重新读取后 lt 使用最新时间戳，避免误判"远端获胜"覆盖用户最新改动
+  try{
+    const s2 = localStorage.getItem(PORT_KEY);
+    if(s2) localData = JSON.parse(s2);
+  }catch(e){}
+
+  // ⑤ 择优：时间戳优先（谁更新谁赢），无时间戳时退回仓位数量比较
+  const lw = _weightCount(localData);
+  const rw = _weightCount(remoteData);
+  const lt = localData?._savedAt || 0;   // 本地修改时间戳（ms，已含用户最新改动）
+  const rt = remoteData?._savedAt || 0;  // 远端修改时间戳（ms）
   const ts = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
 
-  // ③ 云端唯一权威：远端有数据则无条件采用（不再用本地时间戳择优，
-  //    彻底杜绝某台设备的本地缓存把云端历史覆盖/清空的问题）
-  if(remoteData && _weightCount(remoteData) >= 0){
+  // 远端胜出条件：有数据 AND (远端更新 OR 同时间戳且数量≥本地)
+  const remoteWins = remoteData && rw >= 0 && (rt > lt || (rt === lt && rw >= lw));
+
+  if(remoteWins){
+    // 远端更新或相等 → 使用远端，同步本地缓存，重新渲染
     PORT = remoteData;
+    localStorage.setItem(PORT_KEY, JSON.stringify(remoteData));
     _setSyncTs('☁️ 已从云端加载 ' + ts, '#10b981');
     renderPortfolio();
     updateRiskDashboard();
-    if(typeof renderHistTable==='function') renderHistTable();
-    // 仅在远端带来新/减持仓标的时重新拉取股价，避免双重刷新
-    const _remoteCodes = new Set((PORT.sectors||[]).flatMap(s=>s.stocks.map(sk=>sk.code)));
+    // 仅在远端带来新/减持仓标的时重新拉取股价；代码集相同则已有价格继续有效，避免双重刷新
+    const _remoteCodes = new Set((remoteData.sectors||[]).flatMap(s=>s.stocks.map(sk=>sk.code)));
     const _rosterChanged = _remoteCodes.size !== _initCodes.size ||
                            [..._remoteCodes].some(c=>!_initCodes.has(c));
     if(_rosterChanged) fetchPortPrices();
-  } else if(remoteOk){
-    // 云端可达但文件不存在（首次使用）→ 把当前数据作为初始版本上传云端
-    PORT._savedAt = Date.now();
-    _setSyncTs('☁️ 云端无数据，正在上传初始备份…', '#f59e0b');
-    portSaveRemote();
-  } else {
-    // 云端不可达（离线/超时）→ 自动重试一次（间隔 4s）；仍失败才提示，避免历史数据空白
-    if(!_portInitRetried){
-      _portInitRetried = true;
-      _setSyncTs('☁️ 云端读取较慢，4 秒后自动重试…', '#f59e0b');
-      setTimeout(function(){ portInit(); }, 4000);
+  } else if(localData && lw >= 0){
+    // 本地更新（或远端不可用）→ 使用本地；先将远端已有的新字段（如 industry）合并进来，
+    // 防止旧缓存覆盖其他浏览器同步好的行业标签等数据
+    if(remoteData) _mergeRemoteFields(localData, remoteData);
+    PORT = localData;
+    if(!PORT._savedAt) PORT._savedAt = Date.now();
+    localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
+    if(remoteOk){
+      // GitHub 可达但本地更新 → 推送合并后的本地数据到云端
+      _setSyncTs(remoteData
+        ? '☁️ 本地数据更新，正在同步至云端…'
+        : '☁️ 云端无数据，正在上传本地备份', '#f59e0b');
+      portSaveRemote();
     } else {
-      _setSyncTs('⚠️ 云端暂时无法访问，请检查网络后刷新（历史数据需联网读取）', '#ef4444');
+      // GitHub 不可达（超时/离线）→ 不推送，只提示
+      _setSyncTs('☁️ 云端暂时无法访问，已使用本地缓存', '#f59e0b');
     }
+    // 本地数据可能因用户在 GitHub fetch 期间编辑而变化，重新渲染以确保 UI 最新
+    // 股价无需重新拉取（第一阶段已拉取且持仓未变），fetchIndexPrices 由 fetchPortPrices.finally 统一调用
+    renderPortfolio();
+    updateRiskDashboard();
+  } else {
+    // 本地和远端均无有效数据，已在①用默认数据渲染，无需处理
+    _setSyncTs('📂 使用默认数据', '#94a3b8');
   }
 }
-let _portInitRetried = false;
 
-/* 手动强制将当前内存数据推送到云端（用于应急修复） */
+/* 手动强制将当前数据推送到云端（用于应急修复） */
 async function portForcePush(){
+  // 从 localStorage 重新读取最新数据，避免使用内存中的旧快照（多标签场景）
+  try{ const s = localStorage.getItem(PORT_KEY); if(s) PORT = JSON.parse(s); }catch(e){}
   if(!PORT){ portLoad(); }
   if(!PORT){ alert('没有数据可同步'); return; }
+  // 用户主动同步 → 强制刷新时间戳，确保此版本在任何冲突解决中优先
   PORT._savedAt = Date.now();
+  localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
   _setSyncTs('☁️ 强制同步中…', '#f59e0b');
   await portSaveRemote();
 }
@@ -4845,7 +4827,7 @@ function renderValTable(){
 }
 
 // ── TAB ──────────────────────────────────────────────────────
-const TAB_ORDER=['tPort','tVal','tAM','t0','tChain','tHist','tPre'];
+const TAB_ORDER=['tPort','tVal','tAM','t0','t4','t5','tStage','tHist','tPre'];
 let _macroAutoFetched=false;
 const _TAB_TS={};  // 各标签页最近一次动态刷新的时间戳（用于节流）
 const _TAB_THROTTLE=30000; // 30秒内不重复刷新
@@ -4858,9 +4840,11 @@ function _tabRefresh(idx){
   // 按标签页类型调用对应的动态数据刷新函数
   if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); fetchXqHot(); fetchXqSentiment(); } // finally 内会链式调用 fetchIndexPrices
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
+  else if(tab==='tStage') fetchStageData();
   else if(tab==='tAM')    refreshMacro();
-  else if(tab==='tChain') chainRefresh();
-  else if(tab==='tHist') loadHistFromCloud();
+  else if(tab==='t4')     fetchStocksLive();
+  else if(tab==='t5')     fetchStoreLive();
+  else if(tab==='tHist') renderHistTable();
   else if(tab==='tPre')  preLoad();
   else if(tab==='t0')  { fetchMonLive(); fetchAiTrend(); fetchKolSummary(); }  // AI趋势：实时动量 + Capex/ARR/PE + X意见领袖
 }
@@ -4871,24 +4855,6 @@ function switchTab(idx){
   if(target) target.classList.add('active');
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===idx));
   _tabRefresh(idx); // 切换时刷新该标签页动态数据
-}
-
-// ── AI产业链子标签 ────────────────────────────────────────────
-let _chainIdx=0;  // 当前激活的子面板 0=产业链分析 1=光模块PCB 2=存储
-
-function switchChain(idx){
-  _chainIdx=idx;
-  document.querySelectorAll('.chain-subtab').forEach((b,i)=>b.classList.toggle('active',i===idx));
-  document.querySelectorAll('.chain-panel').forEach((p,i)=>p.classList.toggle('active',i===idx));
-  // 按子面板刷新对应数据
-  if(idx===0){ fetchStageData(); }
-  else if(idx===1){ fetchStocksLive(); }
-  else if(idx===2){ fetchStoreLive(); }
-}
-
-function chainRefresh(){
-  // tChain 整体切入时刷新当前激活子面板
-  switchChain(_chainIdx);
 }
 
 // ── 盘前自检（情感金融 × 不知之知） ────────────────────────────
@@ -4959,42 +4925,26 @@ function preJudge(){
     flags.map(f=>`<span class="pflag">${f}</span>`).join('')):'';
 }
 
-// 盘前自检：完全云端存储 data/preflight_log.json —— 读用同源 Pages raw，写用 api.github.com PUT。
-// 不使用 localStorage，所有设备/浏览器读写同一份云端数据。
+// 盘前自检：用 GitHub Contents API 持久化到 data/preflight_log.json（跨设备同步）
+// 同时保留 localStorage 作为本地缓存/离线备份
 const PRE_FILE='data/preflight_log.json';
 const PRE_REPO='xuepenggao-bit/ai-dashboard';
 let _preSha=null; // 当前文件的 SHA，PUT 时需要
 
-// 读取盘前自检历史。
-// 默认优先 GitHub Pages 同源 raw（CDN，稳定、无需 token、不受 API 速率限制，跨设备可靠）。
-// useApi=true 时强制走 api.github.com（实时、并返回 SHA，供写入前取合并基准用）。
-async function _preGhGet(useApi){
-  if(!useApi){
-    try{
-      const r=await fetch(`${PRE_FILE}?_=${Date.now()}`, {cache:'no-store'});
-      if(r.ok) return await r.json();
-      if(r.status===404) return [];
-    }catch(e){}   // 同源失败 → 落到 api 兜底
-  }
+async function _preGhGet(){
   try{
     const r=await fetch(`https://api.github.com/repos/${PRE_REPO}/contents/${PRE_FILE}?_=${Date.now()}`,
-      {headers:{'Authorization':`token ${PORT_GH_TOKEN}`,'Accept':'application/vnd.github+json'}, cache:'no-store'});
-    if(r.status===404){ _preSha=null; return []; }
+      {headers:{'Authorization':`token ${PORT_GH_TOKEN}`,'Accept':'application/vnd.github+json'}});
+    if(r.status===404) return [];
     if(!r.ok) return null;
     const j=await r.json();
     _preSha=j.sha;
-    return JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));
+    const txt=atob(j.content.replace(/\n/g,''));
+    return JSON.parse(decodeURIComponent(escape(txt)));
   }catch(e){ return null; }
 }
 
 async function _preGhPut(log){
-  // 写前自取最新 SHA（api.github.com 实时），杜绝并发导致的 SHA 失效冲突
-  try{
-    const m=await fetch(`https://api.github.com/repos/${PRE_REPO}/contents/${PRE_FILE}?_=${Date.now()}`,
-      {headers:{'Authorization':`token ${PORT_GH_TOKEN}`,'Accept':'application/vnd.github+json'}, cache:'no-store'});
-    if(m.ok){ const mj=await m.json(); _preSha=mj.sha; }
-    else if(m.status===404){ _preSha=null; }
-  }catch(_){}
   const content=btoa(unescape(encodeURIComponent(JSON.stringify(log,null,2))));
   const body={message:`chore: preflight log ${new Date().toISOString().slice(0,10)}`,
                content, branch:'main'};
@@ -5004,7 +4954,7 @@ async function _preGhPut(log){
       {method:'PUT', headers:{'Authorization':`token ${PORT_GH_TOKEN}`,
        'Accept':'application/vnd.github+json','Content-Type':'application/json'},
        body:JSON.stringify(body)});
-    if(!r.ok){ _preSha=null; return false; }
+    if(!r.ok) return false;
     const j=await r.json();
     _preSha=j.content.sha;
     return true;
@@ -5020,12 +4970,14 @@ async function preLoad(){
   const tip=document.getElementById('preSaveTip');
   tip.textContent='⏳ 同步中…'; tip.style.color='#94a3b8';
 
-  // 从云端读取（同源 Pages raw 优先，稳定跨设备）；失败则提示联网，不使用本地缓存
+  // 优先从 GitHub 拉取最新数据；失败则回退 localStorage
   let log=await _preGhGet();
   if(log===null){
-    log=[];
-    tip.textContent='⚠ 云端读取失败，请检查网络后刷新'; tip.style.color='#ef4444';
+    log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
+    tip.textContent='⚠ 远端同步失败，已载入本地缓存'; tip.style.color='#d97706';
   } else {
+    // 同步到 localStorage 作为离线备份
+    localStorage.setItem(PRE_KEY, JSON.stringify(log));
     tip.textContent='';
   }
   const rec=log.find(r=>r.date===today);
@@ -5050,20 +5002,20 @@ async function preSubmit(){
   const rec={date:today, ts:new Date().toLocaleString('zh-CN',{hour12:false}),
              ans:Object.assign({},_PRE), light:_preCur.light, quad:_preCur.quad, flags:_preCur.flags};
 
-  // 关键：合并基准取自云端最新全量历史（强制走 api 实时读取，准确且刷新 SHA），
-  // 绝不能用 localStorage——否则新设备/换浏览器提交后会把云端历史全部冲掉只剩当天 1 条。
-  let log=await _preGhGet(true);
-  if(log===null){
-    tip.textContent='⚠ 云端读取失败，未保存（请检查网络后重试）'; tip.style.color='#ef4444';
-    return;   // 读不到云端全量就不写，避免覆盖云端历史
+  // 读最新 SHA（若已缓存则跳过），合并记录，写回
+  if(!_preSha){
+    const fresh=await _preGhGet();
+    if(fresh) { /* SHA 已更新 */ }
   }
+  let log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
   log=log.filter(r=>r.date!==today); log.unshift(rec); log=log.slice(0,365);
+  localStorage.setItem(PRE_KEY, JSON.stringify(log)); // 立即写本地
 
   const ok=await _preGhPut(log);
   if(ok){
-    tip.textContent='✓ 已同步至云端（'+rec.ts+'）'; tip.style.color='#16a34a';
+    tip.textContent='✓ 已同步至 GitHub（'+rec.ts+'）'; tip.style.color='#16a34a';
   } else {
-    tip.textContent='⚠ 云端写入失败，请检查网络后重试'; tip.style.color='#ef4444';
+    tip.textContent='⚠ GitHub 写入失败，已保存至本地（'+rec.ts+'）'; tip.style.color='#d97706';
   }
   preRenderHistory(log);
 }
@@ -5079,7 +5031,7 @@ function preReset(){
 }
 
 function preRenderHistory(log){
-  if(!log) log=[];
+  if(!log) log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
   const el=document.getElementById('preHist');
   if(!log.length){ el.innerHTML='<div style="color:#94a3b8;font-size:12px;padding:14px 0">暂无记录 · 完成首次自检后这里会积累情绪—决策数据库（同步至 GitHub data/preflight_log.json）</div>'; return; }
   const dot={green:'🟢',yellow:'🟡',red:'🔴'};
@@ -6252,37 +6204,6 @@ function _computePortPct(curStocks, prevStocks){
   return tw > 0 ? parseFloat((wp / tw).toFixed(3)) : null;
 }
 
-// 历史持仓：独立从云端读取 portfolio.json 并渲染，不依赖 portInit 的时序/成败。
-// 切到「历史持仓」tab 或点「⟳ 刷新」时调用，确保任何设备/浏览器都能可靠显示历史。
-async function loadHistFromCloud(){
-  const el = document.getElementById('histTable');
-  if(el && (!PORT || !PORT.history || !PORT.history.length)){
-    el.innerHTML = '<div style="color:var(--text2);font-size:13px;text-align:center;padding:28px 0">⏳ 正在从云端加载历史记录…</div>';
-  }
-  let data = null;
-  // 同源 Pages raw 优先（分钟级缓存键，命中 CDN，快）
-  try{
-    const r = await fetch(`${PORT_GH_FILE}?v=${Math.floor(Date.now()/60000)}`);
-    if(r.ok) data = await r.json();
-  }catch(e){ console.warn('loadHistFromCloud(pages):', e); }
-  // 回退 api.github.com
-  if(!data){
-    try{
-      const r = await fetch(`https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}?_=${Date.now()}`,
-        {headers:{'Authorization':`token ${PORT_GH_TOKEN}`,'Accept':'application/vnd.github.v3+json'}, cache:'no-store'});
-      if(r.ok){ const j=await r.json(); _portSha=j.sha;
-        data = JSON.parse(new TextDecoder('utf-8').decode(Uint8Array.from(atob(j.content.replace(/\n/g,'')), c=>c.charCodeAt(0)))); }
-    }catch(e){ console.warn('loadHistFromCloud(api):', e); }
-  }
-  if(data){
-    if(!PORT) PORT = data;
-    else PORT.history = Array.isArray(data.history) ? data.history : (PORT.history||[]);
-    renderHistTable();
-  } else if(el && (!PORT || !PORT.history || !PORT.history.length)){
-    el.innerHTML = '<div style="color:#ef4444;font-size:13px;text-align:center;padding:28px 0">⚠️ 云端历史读取失败，请检查网络后点上方「⟳ 刷新」重试</div>';
-  }
-}
-
 function renderHistTable(){
   const el = document.getElementById('histTable');
   if(!el) return;
@@ -6496,17 +6417,22 @@ function addHistRecord(){
     stocks:  _snapStocks
   };
   PORT.history.unshift(rec);
-  portSave();              // 内部 debounce 自动写回云端 JSON
+  portSave();
+  portSaveRemote();
   renderHistTable();
 
   // 切换到历史持仓标签页
-  switchTab(5);
+  switchTab(7);
 }
 
+var _noteRemoteTimer = null;
 function updateHistNote(idx,val){
   if(!PORT||!PORT.history||PORT.history[idx]==null) return;
   PORT.history[idx].note = val.trim();
-  portSave();              // 内部 debounce 自动写回云端，无需单独推送
+  portSave();                          // 立即写本地 localStorage
+  // 防抖：停止输入 800ms 后才推送远端，避免每次击键都触发 GitHub API
+  clearTimeout(_noteRemoteTimer);
+  _noteRemoteTimer = setTimeout(function(){ portSaveRemote(); }, 800);
 }
 
 function deleteHistRecord(idx){
@@ -6514,7 +6440,8 @@ function deleteHistRecord(idx){
   const r=PORT.history[idx];
   if(!confirm(`确认删除 ${r.date} 的记录？`)) return;
   PORT.history.splice(idx,1);
-  portSave({overwriteHistory:true});   // 删除以本地为准，避免并集合并把已删记录复活
+  portSave();
+  portSaveRemote();
   renderHistTable();
 }
 
@@ -6531,7 +6458,8 @@ function recomputeHistReturns(){
     const np=_computePortPct(cur.stocks, (prev&&prev.stocks&&prev.stocks.length)?prev.stocks:null);
     if(np!=null && np!==cur.portPct){ cur.portPct=np; changed++; }   // 直接改引用，即 PORT.history 内对象
   }
-  portSave();              // 内部 debounce 自动写回云端（同日记录保留本地重算值）
+  portSave();
+  portSaveRemote();
   renderHistTable();
   alert(`已按「昨日收盘仓位 × 当日涨跌」重算持仓涨跌幅\n更新 ${changed} 条`
     + (skipped?`，${skipped} 条因缺持仓明细跳过`:'')
