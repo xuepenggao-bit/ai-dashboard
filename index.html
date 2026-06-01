@@ -4656,11 +4656,10 @@ function _tabRefresh(idx){
   // 按标签页类型调用对应的动态数据刷新函数
   if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); fetchXqHot(); } // finally 内会链式调用 fetchIndexPrices
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
-  else if(tab==='tStage') fetchStageData();
-  else if(tab==='tAM')    refreshMacro();
   else if(tab==='tHist') renderHistTable();
   else if(tab==='tPre')  preLoad();
-  else if(tab==='t0')  { fetchMonLive(); fetchAiTrend(); fetchKolSummary(); }  // AI趋势：实时动量 + Capex/ARR/PE + X意见领袖
+  // A股宏观(tAM)、AI趋势(t0)、产业链监控(tStage)：切换标签不自动刷新数据，
+  // 由各标签右上角按钮手动刷新（refreshMacro / triggerAiTrendRefresh / mkStageMatrix）
 }
 
 function switchTab(idx){
