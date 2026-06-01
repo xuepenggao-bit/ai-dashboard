@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <!-- X关注账号列表 Google Sheet ID: 17JrhIvIneHSI5P4SAf4jIB8xg_GIXAWjm2xAOQR8jV8
      直接打开: https://docs.google.com/spreadsheets/d/17JrhIvIneHSI5P4SAf4jIB8xg_GIXAWjm2xAOQR8jV8
      在此表格中维护X关注账号，列：账号(Handle)/显示名/关注主题/备注/是否启用/添加时间 -->
@@ -82,11 +82,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .tabs-inner .tab:nth-child(2) {--tab-top:#fef9c3;--tab-bot:#fde68a;--tab-bdr:#fbbf24}  /* 黄  估值分析 */
 .tabs-inner .tab:nth-child(3) {--tab-top:#dcfce7;--tab-bot:#bbf7d0;--tab-bdr:#86efac}  /* 绿  A股宏观 */
 .tabs-inner .tab:nth-child(4) {--tab-top:#ede9fe;--tab-bot:#ddd6fe;--tab-bdr:#c4b5fd}  /* 紫  AI趋势 */
-.tabs-inner .tab:nth-child(5) {--tab-top:#cffafe;--tab-bot:#a5f3fc;--tab-bdr:#67e8f9}  /* 青  光模块&PCB */
-.tabs-inner .tab:nth-child(6) {--tab-top:#ffedd5;--tab-bot:#fed7aa;--tab-bdr:#fdba74}  /* 橙  存储监控 */
-.tabs-inner .tab:nth-child(7) {--tab-top:#ccfbf1;--tab-bot:#99f6e4;--tab-bdr:#5eead4}  /* 青绿 产业链监控 */
-.tabs-inner .tab:nth-child(8) {--tab-top:#e0e7ff;--tab-bot:#c7d2fe;--tab-bdr:#a5b4fc}  /* 靛蓝 历史持仓 */
-.tabs-inner .tab:nth-child(9) {--tab-top:#f0e4d6;--tab-bot:#e7d3bd;--tab-bdr:#cbb48f}  /* 赭石 盘前自检 */
+.tabs-inner .tab:nth-child(5) {--tab-top:#ccfbf1;--tab-bot:#99f6e4;--tab-bdr:#5eead4}  /* 青绿 产业链监控 */
+.tabs-inner .tab:nth-child(6) {--tab-top:#e0e7ff;--tab-bot:#c7d2fe;--tab-bdr:#a5b4fc}  /* 靛蓝 历史持仓 */
+.tabs-inner .tab:nth-child(7) {--tab-top:#f0e4d6;--tab-bot:#e7d3bd;--tab-bdr:#cbb48f}  /* 赭石 盘前自检 */
 /* 盘前自检问卷 */
 #tPre .pcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:16px}
 #tPre .pcard h3{font-size:14px;font-weight:800;color:var(--text);margin:0 0 4px;display:flex;align-items:center;gap:8px}
@@ -337,11 +335,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <button class="tab" onclick="switchTab(1)">📊 估值分析</button>
     <button class="tab" onclick="switchTab(2)">🏦 A股宏观</button>
     <button class="tab" onclick="switchTab(3)">🤖 AI 趋势</button>
-    <button class="tab" onclick="switchTab(4)">🔌 光模块&amp;PCB</button>
-    <button class="tab" onclick="switchTab(5)">🗄️ 存储监控</button>
-    <button class="tab" onclick="switchTab(6)">🔴 产业链监控</button>
-    <button class="tab" onclick="switchTab(7)">📋 历史持仓</button>
-    <button class="tab" onclick="switchTab(8)">🧭 盘前自检</button>
+    <button class="tab" onclick="switchTab(4)">🔴 产业链监控</button>
+    <button class="tab" onclick="switchTab(5)">📋 历史持仓</button>
+    <button class="tab" onclick="switchTab(6)">🧭 盘前自检</button>
   </div>
 </nav>
 
@@ -1081,26 +1077,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 6: 权重股公告 -->
-  <div class="card mb16" style="border-top:3px solid #1d9bf0">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:13px;font-weight:800;color:#374151">📋 权重股公告</span>
-        <span style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
-                     padding:1px 7px;border-radius:10px;font-weight:600">Top8持仓 · 最新公司公告</span>
-        <span id="sentTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
-      </div>
-      <button onclick="triggerSentimentRefresh()" id="sentBtn" title="触发后台抓取最新资讯并AI归纳（约1-2分钟）"
-        style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
-               padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
-    </div>
-    <div id="sentGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px">
-      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">
-        点击「↻」抓取 Top8 权重股最新公告
-      </div>
-    </div>
-  </div>
-
   <!-- Sector cards (rendered by JS) -->
   <div id="portSectors"></div>
 
@@ -1218,174 +1194,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 </div>
 
 <!-- ════════════════ TAB 2.4 ════════════════ -->
-<!-- ════════════════ TAB A股估值 ════════════════ -->
-<div class="tab-content" id="t4">
-  <div class="stitle">光模块&amp;PCB监控 <span class="stag">光模块 &amp; PCB · 关键财务指标</span>
-    <span id="stockApiTs" style="font-size:10px;color:#94a3b8;margin-left:auto;white-space:nowrap"></span>
-    <button id="stockRefBtn" onclick="fetchStocksLive()" class="rbtn" style="padding:6px 14px;font-size:12px">
-      <span class="ricon">↻</span> 刷新行情
-    </button>
-  </div>
-
-  <div class="alert a-info mb16">
-    <span>✅</span>
-    <div><strong>实时行情：东方财富</strong> &nbsp;·&nbsp; PE(动态)/现价/涨跌幅 随盘实时更新 &nbsp;·&nbsp; 净利润增速为 <strong>2026年一季报</strong> 归母净利润同比（静态历史值）&nbsp;·&nbsp; PEG = PE ÷ 增速 &nbsp;·&nbsp; 最后刷新：<span id="stockTs">—</span></div>
-  </div>
-
-  <!-- Charts -->
-  <div class="g2 mb16">
-    <div class="card">
-      <div class="ch">
-        <span class="ct">光模块 · PE(动态) 对比</span>
-        <span class="cbadge" style="background:#dbeafe;color:#1e40af">东方财富实时</span>
-      </div>
-      <div style="height:230px"><canvas id="cOptGrowth"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="ch">
-        <span class="ct">PCB · PE(动态) 对比</span>
-        <span class="cbadge" style="background:#dbeafe;color:#1e40af">东方财富实时</span>
-      </div>
-      <div style="height:230px"><canvas id="cPcbGrowth"></canvas></div>
-    </div>
-  </div>
-
-  <!-- Optical module table -->
-  <div class="card mb16">
-    <div class="ch"><span class="ct">📡 光模块公司估值监控</span><span class="cbadge">5家主要标的</span></div>
-    <div class="overflow">
-      <table class="mtable">
-        <thead><tr>
-          <th>公司名称</th>
-          <th>股票代码</th>
-          <th>行业地位</th>
-          <th>现价 / 涨跌</th>
-          <th>PE(动态)</th>
-          <th>2026Q1 归母净利润增速</th>
-          <th>PEG</th>
-          <th>信号</th>
-        </tr></thead>
-        <tbody id="optBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- PCB table -->
-  <div class="card mb16">
-    <div class="ch"><span class="ct">🔧 PCB公司估值监控</span><span class="cbadge">6家主要标的</span></div>
-    <div class="overflow">
-      <table class="mtable">
-        <thead><tr>
-          <th>公司名称</th>
-          <th>股票代码</th>
-          <th>行业地位</th>
-          <th>现价 / 涨跌</th>
-          <th>PE(动态)</th>
-          <th>2026Q1 归母净利润增速</th>
-          <th>PEG</th>
-          <th>信号</th>
-        </tr></thead>
-        <tbody id="pcbBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- How to update note -->
-  <div class="alert a-info">
-    <span>📋</span>
-    <div>
-      <strong>如何更新数据：</strong>
-      PE / PEG 字段在 BASE.stocks 中预留（pe/peg 字段），接入实时行情后将动态值写入即可显示。净利润增速在每次季报/年报披露后手动更新 growth 字段。
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════ TAB 存储监控 ════════════════ -->
-<div class="tab-content" id="t5">
-  <div class="stitle">存储监控仪表板 <span class="stag">全球存储链 · PE / 增速 / PEG</span>
-    <span id="storApiTs" style="font-size:10px;color:#94a3b8;margin-left:auto;white-space:nowrap"></span>
-    <button id="storRefBtn" onclick="fetchStoreLive()" class="rbtn" style="padding:6px 14px;font-size:12px">
-      <span class="ricon">↻</span> 刷新行情
-    </button>
-  </div>
-
-  <!-- Data source notice -->
-  <div class="alert a-info mb16">
-    <span>📡</span>
-    <div>
-      <strong>实时数据：</strong>
-      A股 — 东方财富（PE/价格/涨跌） &nbsp;·&nbsp;
-      美股 — 东方财富实时行情；韩/日股 — Yahoo Finance实时行情；台股 — 参考价格 &nbsp;·&nbsp;
-      增速为历史季报数据（静态） &nbsp;·&nbsp;
-      最后刷新：<span id="storageTs">—</span>
-    </div>
-  </div>
-
-  <!-- Storage cycle context -->
-  <div class="card mb16">
-    <div class="ch"><span class="ct">存储行业周期定位 (2022-2026)</span><span class="cbadge pulse">上行周期</span></div>
-    <div class="stagebar">
-      <div class="sbox past">2022下 <div class="sboxsub">去库存</div></div>
-      <div class="sbox past">2023下 <div class="sboxsub">价格触底</div></div>
-      <div class="sbox curr">2024上 ▲<div class="sboxsub">涨价/复苏</div></div>
-      <div class="sbox curr">2025上 ▲<div class="sboxsub">HBM爆发</div></div>
-      <div class="sbox next">2026-27 ⚠<div class="sboxsub">高位/分化</div></div>
-    </div>
-    <div class="tx3 mt8">A股存储公司Q1 2026增速极高（如德明利+4943%、江波龙+2644%）系2023年低基数效应；国际龙头韩国海力士/三星增速转负反映本轮价格已高位波动。HBM、LPDDR5等AI算力存储仍是主线。</div>
-  </div>
-
-  <!-- Charts -->
-  <div class="g2 mb16">
-    <div class="card">
-      <div class="ch">
-        <span class="ct">国际存储龙头 · PE(TTM) 对比</span>
-        <span class="cbadge" style="background:#dbeafe;color:#1e40af">实时行情</span>
-      </div>
-      <div style="height:230px"><canvas id="cIntlPe"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="ch">
-        <span class="ct">A股存储链 · PE(动态) & 2026Q1增速</span>
-        <span class="cbadge" style="background:#dcfce7;color:#166534">东方财富</span>
-      </div>
-      <div style="height:230px"><canvas id="cDomStorePe"></canvas></div>
-    </div>
-  </div>
-
-  <!-- International table -->
-  <div class="card mb16">
-    <div class="ch"><span class="ct">🌏 国际存储龙头估值监控</span><span class="cbadge">6家标的</span></div>
-    <div class="overflow">
-      <table class="mtable">
-        <thead><tr>
-          <th>公司</th><th>代码</th><th>交易所</th><th>地区</th><th>现价 / 涨跌</th>
-          <th>PE(TTM)</th><th>远期PE</th><th>近期增速</th><th>PEG</th><th>信号</th>
-        </tr></thead>
-        <tbody id="intlStoreBody"></tbody>
-      </table>
-    </div>
-    <div class="tx3 mt8">● 现价/PE/远期PE 实时来自 Yahoo Finance；若数据缺失显示 N/A。增速为历史季报静态数据，不随刷新变化。</div>
-  </div>
-
-  <!-- Domestic A-share table -->
-  <div class="card mb16">
-    <div class="ch"><span class="ct">🇨🇳 A股存储链估值监控</span><span class="cbadge">6家标的</span></div>
-    <div class="overflow">
-      <table class="mtable">
-        <thead><tr>
-          <th>公司名称</th><th>代码</th><th>产业地位</th><th>现价 / 涨跌</th>
-          <th>PE(动态)</th><th>2026Q1归母净利润增速</th><th>PEG</th><th>信号</th>
-        </tr></thead>
-        <tbody id="domStoreBody"></tbody>
-      </table>
-    </div>
-    <div class="alert a-warn mt12">
-      <span>⚠</span>
-      <div>A股存储公司Q1 2026增速受2023年行业低谷低基数影响极度失真（最高+4943%），<strong>PEG值不具备正常参考意义</strong>，请以当前绝对PE水平及2026-2027年盈利预期为主要估值参考依据。</div>
-    </div>
-  </div>
-</div>
-
 <!-- ════════════════ TAB 历史持仓 ════════════════ -->
 <div class="tab-content" id="tHist">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
@@ -4827,7 +4635,7 @@ function renderValTable(){
 }
 
 // ── TAB ──────────────────────────────────────────────────────
-const TAB_ORDER=['tPort','tVal','tAM','t0','t4','t5','tStage','tHist','tPre'];
+const TAB_ORDER=['tPort','tVal','tAM','t0','tStage','tHist','tPre'];
 let _macroAutoFetched=false;
 const _TAB_TS={};  // 各标签页最近一次动态刷新的时间戳（用于节流）
 const _TAB_THROTTLE=30000; // 30秒内不重复刷新
@@ -4838,12 +4646,10 @@ function _tabRefresh(idx){
   if(_TAB_TS[idx] && now-_TAB_TS[idx]<_TAB_THROTTLE) return; // 节流
   _TAB_TS[idx]=now;
   // 按标签页类型调用对应的动态数据刷新函数
-  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); fetchXqHot(); fetchXqSentiment(); } // finally 内会链式调用 fetchIndexPrices
+  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); fetchXqHot(); } // finally 内会链式调用 fetchIndexPrices
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tStage') fetchStageData();
   else if(tab==='tAM')    refreshMacro();
-  else if(tab==='t4')     fetchStocksLive();
-  else if(tab==='t5')     fetchStoreLive();
   else if(tab==='tHist') renderHistTable();
   else if(tab==='tPre')  preLoad();
   else if(tab==='t0')  { fetchMonLive(); fetchAiTrend(); fetchKolSummary(); }  // AI趋势：实时动量 + Capex/ARR/PE + X意见领袖
@@ -6449,7 +6255,7 @@ function addHistRecord(){
   renderHistTable();
 
   // 切换到历史持仓标签页
-  switchTab(7);
+  switchTab(5);
 }
 
 var _noteRemoteTimer = null;
@@ -7667,8 +7473,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 图表初始化——各自隔离，任意一个崩溃不拖垮其他（历史上 cSig 等 canvas 曾导致全局中断）
   _safe(mkCapex);_safe(mkTrend);_safe(mkSig);_safe(mkStageC);
   _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);_safe(mkPort);
-  _safe(mkNeoCapex);_safe(mkOptGrowth);_safe(mkPcbGrowth);
-  _safe(mkIntlPe);_safe(mkDomStorePe);_safe(mkArr);
+  _safe(mkNeoCapex);_safe(mkArr);
   fetchAiTrend();   // 从 data/ai_trend.json 加载最新 Capex/ARR/PE 并更新 ARR 图表
 
   // 实时时钟（精确到秒），仅在投资组合 tab 顶部显示
@@ -7691,7 +7496,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   fetchMarketBreadth(); // 市场涨跌统计（主要用腾讯 API，极少命中东方财富限流）
   fetchXqHot();       // 雪球热股榜（近1小时 Top20）
   fetchKolSummary();  // X关注意见领袖：从 data/twitter_kol_summary.json 加载
-  fetchXqSentiment(); // 权重股公告：前端直抓东财公告(用户IP+JSONP)
   // 30s 后检查是否成功，若仍是占位文字则自动重试一次
   setTimeout(()=>{
     const mfEl = document.getElementById('mfList');
@@ -7708,11 +7512,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   _safe(mkNewInv);_safe(mkMktPe);_safe(mkMargin);
   _safe(mkCpi);_safe(mkTsf);_safe(mkFai);_safe(mkRetail);_safe(mkIndustrial);_safe(mkProfitAccum);_safe(mkElectronicProfit);
   _safe(mkStageMatrix);
-  _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();renderStocks();renderNeo();renderIntlStore();renderDomStore();});
+  _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();renderNeo();});
 
   fetchVixChart();        // 异步拉取 iVIX 历史数据
-  fetchStoreLive();       // 异步拉取存储监控实时行情
-  fetchStocksLive();      // 异步拉取光模块&PCB实时行情
   fetchMonLive();         // 异步拉取产业链监控20日动量
   fetchMacroRates();      // 异步拉取中美10年国债收益率（风险仪表板宏观指标）
   // 北向资金使用静态日频数据（BASE.ashare.north），无需远程拉取
