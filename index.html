@@ -6000,6 +6000,21 @@ async function fetchIndexPrices(){
   if(btn) btn.disabled = false;
 }
 
+// 从「主要指数」DOM 兜底读取中证全指涨跌幅（当 _csiPct 仍为空时使用，确保与用户看到的值一致）
+function _readCsiFromDOM(){
+  const el=document.getElementById('portIndexList');
+  if(!el) return null;
+  const rows=el.querySelectorAll('div');
+  for(let i=0;i<rows.length;i++){
+    const t=rows[i].textContent||'';
+    if(t.indexOf('中证全指')>-1){
+      const m=t.match(/([+-]?\d+(?:\.\d+)?)\s*%/);
+      if(m) return parseFloat(m[1]);
+    }
+  }
+  return null;
+}
+
 // ── 国债收益率（实时：中国10年/美国10年）────────────────────────
 async function fetchMacroRates(){
   try{
@@ -6194,7 +6209,7 @@ function renderHistDetail(date){
   </table>`;
 }
 
-function addHistRecord(){
+async function addHistRecord(){
   if(!PORT) portLoad();
   if(!PORT.history) PORT.history=[];
 
@@ -6203,6 +6218,13 @@ function addHistRecord(){
     alert('请先切换到「投资组合」点击「刷新股价」，再回来记录');
     return;
   }
+
+  // 确保中证全指已加载（_csiPct 由 fetchIndexPrices 异步写入；缺失则先同步拉取一次再记录）
+  if(_csiPct==null || !isFinite(_csiPct)){
+    try{ await fetchIndexPrices(); }catch(e){ console.warn('addHistRecord 取中证全指失败:', e); }
+  }
+  // 仍缺失则从「主要指数」DOM 兜底读取（与用户看到的中证全指一致）
+  let _csiVal = (_csiPct!=null && isFinite(_csiPct)) ? _csiPct : _readCsiFromDOM();
 
   const _now=new Date();
   const _pad=n=>String(n).padStart(2,'0');
@@ -6248,7 +6270,7 @@ function addHistRecord(){
     date:    dateStr,
     weight:  parseFloat(dispW.toFixed(2)),
     portPct: portPct,
-    csiPct:  _csiPct!=null?parseFloat(_csiPct.toFixed(3)):null,
+    csiPct:  (_csiVal!=null&&isFinite(_csiVal))?parseFloat(Number(_csiVal).toFixed(3)):null,
     note:    '',
     stocks:  _snapStocks
   };
@@ -6262,13 +6284,17 @@ function addHistRecord(){
 }
 
 // 用投资组合「主要指数」里的中证全指涨跌幅（_csiPct），补正历史记录中缺失的 csiPct，并同步云端
-function fixHistCsi(){
+async function fixHistCsi(){
   if(_csiPct==null||!isFinite(_csiPct)){
-    alert('中证全指当前值还没加载好。\n请先切到「投资组合」标签，等"主要指数"里出现中证全指后，再回来点本按钮。');
+    try{ await fetchIndexPrices(); }catch(e){}   // 缺失则先拉一次中证全指
+  }
+  let csi = (_csiPct!=null&&isFinite(_csiPct)) ? _csiPct : _readCsiFromDOM();  // 仍缺失则读DOM
+  if(csi==null||!isFinite(csi)){
+    alert('中证全指当前仍取不到。\n请切到「投资组合」标签，确认"主要指数"里中证全指已显示后再试。');
     return;
   }
   if(!PORT||!PORT.history||!PORT.history.length){ alert('暂无历史记录'); return; }
-  const v=parseFloat(_csiPct.toFixed(3));
+  const v=parseFloat(Number(csi).toFixed(3));
   const miss=PORT.history.filter(r=>r.csiPct==null||!isFinite(r.csiPct));
   if(!miss.length){ alert('没有缺失中证全指的记录，无需补正。'); return; }
   if(!confirm('将用主要指数「中证全指」'+v.toFixed(2)+'% 补正以下 '+miss.length+' 天的缺失值：\n'+miss.map(r=>r.date).join('、')+'\n\n确认补正并同步到云端？')) return;
