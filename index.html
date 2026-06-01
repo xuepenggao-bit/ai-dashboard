@@ -6131,7 +6131,7 @@ function renderHistTable(){
           <input type="text" value="${nv}" placeholder="添加备注…"
             oninput="updateHistNote(${idx},this.value)"
             onchange="updateHistNote(${idx},this.value)"
-            onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"
+            onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)';saveHistNoteNow(${idx},this.value)"
             style="width:100%;border:1px solid var(--border);border-radius:5px;padding:5px 8px;
                    font-size:12px;font-family:inherit;background:var(--card2);color:var(--text);outline:none;transition:border-color .15s">
         </td>
@@ -6325,6 +6325,15 @@ function updateHistNote(idx,val){
   // 防抖：停止输入 800ms 后才推送远端，避免每次击键都触发 GitHub API
   clearTimeout(_noteRemoteTimer);
   _noteRemoteTimer = setTimeout(function(){ portSaveRemote(); }, 800);
+}
+
+// 备注框失焦（鼠标离开）：取消待执行的防抖，立即把备注持久化到云端
+function saveHistNoteNow(idx,val){
+  if(!PORT||!PORT.history||PORT.history[idx]==null) return;
+  PORT.history[idx].note = (val||'').trim();
+  clearTimeout(_noteRemoteTimer);
+  portSave();
+  portSaveRemote();
 }
 
 function deleteHistRecord(idx){
