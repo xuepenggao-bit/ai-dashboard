@@ -1202,6 +1202,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div style="font-size:12px;color:var(--text2);margin-top:3px">记录每日仓位与涨跌数据，自动同步至云端</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button onclick="fixHistCsi()" id="histCsiBtn" class="rbtn" style="padding:7px 16px;font-size:12px;background:var(--card2)" title="用投资组合「主要指数」里的中证全指，补正历史记录中缺失的中证全指值">
+        <span>↺</span> 补中证全指
+      </button>
       <button onclick="addHistRecord()" id="histAddBtn" class="rbtn" style="padding:7px 16px;font-size:12px">
         <span>＋</span> 记录今日持仓
       </button>
@@ -6256,6 +6259,24 @@ function addHistRecord(){
 
   // 切换到历史持仓标签页
   switchTab(5);
+}
+
+// 用投资组合「主要指数」里的中证全指涨跌幅（_csiPct），补正历史记录中缺失的 csiPct，并同步云端
+function fixHistCsi(){
+  if(_csiPct==null||!isFinite(_csiPct)){
+    alert('中证全指当前值还没加载好。\n请先切到「投资组合」标签，等"主要指数"里出现中证全指后，再回来点本按钮。');
+    return;
+  }
+  if(!PORT||!PORT.history||!PORT.history.length){ alert('暂无历史记录'); return; }
+  const v=parseFloat(_csiPct.toFixed(3));
+  const miss=PORT.history.filter(r=>r.csiPct==null||!isFinite(r.csiPct));
+  if(!miss.length){ alert('没有缺失中证全指的记录，无需补正。'); return; }
+  if(!confirm('将用主要指数「中证全指」'+v.toFixed(2)+'% 补正以下 '+miss.length+' 天的缺失值：\n'+miss.map(r=>r.date).join('、')+'\n\n确认补正并同步到云端？')) return;
+  miss.forEach(r=>{ r.csiPct=v; });
+  portSave();
+  portSaveRemote();
+  renderHistTable();
+  alert('已用中证全指 '+v.toFixed(2)+'% 补正 '+miss.length+' 条记录并同步云端。');
 }
 
 var _noteRemoteTimer = null;
