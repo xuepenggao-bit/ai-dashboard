@@ -3225,34 +3225,37 @@ async function portInit(){
     if(s) localData = JSON.parse(s);
   }catch(e){}
 
-  // ③ 后台拉 GitHub 远端数据（带 8s AbortController 超时）
+  // ③ 读取云端数据：优先 GitHub Pages 同源 raw（走 CDN，300ms~1s，快且稳；分钟级缓存键命中缓存、
+  //    新鲜度≤1分钟）。同源拿不到再回退 api.github.com。这是历史持仓载入提速的关键。
   let remoteData = null;
-  let remoteOk   = false;  // true = GitHub 可达（无论文件是否存在）
+  let remoteOk   = false;  // true = 云端可达（无论文件是否存在）
   try{
-    const ghHeaders = {
-      'Authorization': `token ${PORT_GH_TOKEN}`,
-      'Accept': 'application/vnd.github.v3+json'
-    };
     const ctrl = new AbortController();
     const tid  = setTimeout(()=>ctrl.abort(), 8000);
     try{
-      const metaResp = await fetch(
-        `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,
-        {headers: ghHeaders, cache:'no-store', signal: ctrl.signal}
-      );
-      if(metaResp.ok){
-        remoteOk = true;
-        const metaJson = await metaResp.json();
-        // GitHub API 返回 base64 编码内容（含换行符），用 TextDecoder 正确还原 UTF-8
-        const b64   = metaJson.content.replace(/\n/g,'');
-        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-        remoteData  = JSON.parse(new TextDecoder('utf-8').decode(bytes));
-      } else if(metaResp.status === 404){
-        remoteOk = true; // GitHub 可达，文件不存在（首次使用）
-      }
+      const r = await fetch(`${PORT_GH_FILE}?v=${Math.floor(Date.now()/60000)}`, {signal: ctrl.signal});
+      if(r.ok){ remoteOk = true; remoteData = await r.json(); }
+      else if(r.status === 404){ remoteOk = true; }
     }finally{ clearTimeout(tid); }
-  }catch(e){
-    console.warn('portLoadRemote:', e.name === 'AbortError' ? '超时(8s)，使用本地缓存' : e);
+  }catch(e){ console.warn('portLoadRemote(pages):', e.name==='AbortError'?'同源超时':e); }
+  if(!remoteData){
+    try{
+      const ghHeaders = {'Authorization': `token ${PORT_GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json'};
+      const ctrl = new AbortController();
+      const tid  = setTimeout(()=>ctrl.abort(), 8000);
+      try{
+        const metaResp = await fetch(
+          `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,
+          {headers: ghHeaders, cache:'no-store', signal: ctrl.signal}
+        );
+        if(metaResp.ok){
+          remoteOk = true;
+          const metaJson = await metaResp.json();
+          const bytes = Uint8Array.from(atob(metaJson.content.replace(/\n/g,'')), c => c.charCodeAt(0));
+          remoteData  = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+        } else if(metaResp.status === 404){ remoteOk = true; }
+      }finally{ clearTimeout(tid); }
+    }catch(e){ console.warn('portLoadRemote(api):', e.name==='AbortError'?'API超时':e); }
   }
 
   // ④ GitHub 完成后重新读本地（防竞争：用户可能在等待期间编辑了行业等字段）
@@ -3279,6 +3282,7 @@ async function portInit(){
     _setSyncTs('☁️ 已从云端加载 ' + ts, '#10b981');
     renderPortfolio();
     updateRiskDashboard();
+    if(typeof renderHistTable==='function') renderHistTable();   // 立即刷新历史持仓表
     // 仅在远端带来新/减持仓标的时重新拉取股价；代码集相同则已有价格继续有效，避免双重刷新
     const _remoteCodes = new Set((remoteData.sectors||[]).flatMap(s=>s.stocks.map(sk=>sk.code)));
     const _rosterChanged = _remoteCodes.size !== _initCodes.size ||
@@ -3305,6 +3309,7 @@ async function portInit(){
     // 股价无需重新拉取（第一阶段已拉取且持仓未变），fetchIndexPrices 由 fetchPortPrices.finally 统一调用
     renderPortfolio();
     updateRiskDashboard();
+    if(typeof renderHistTable==='function') renderHistTable();   // 立即刷新历史持仓表
   } else {
     // 本地和远端均无有效数据，已在①用默认数据渲染，无需处理
     _setSyncTs('📂 使用默认数据', '#94a3b8');
@@ -4742,16 +4747,24 @@ let _preSha=null; // 当前文件的 SHA，PUT 时需要
 // 当天日期（北京时间 YYYY-MM-DD）。必须用东八区，否则 toISOString 的 UTC 会让北京早晨算成前一天
 function _preToday(){ return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Shanghai'}); }
 
-async function _preGhGet(){
+// 读盘前自检历史。默认走 GitHub Pages 同源 raw（CDN，快、稳，用于 preLoad）；
+// useApi=true 时走 api.github.com（实时并返回 SHA，用于写入前取合并基准）。
+async function _preGhGet(useApi){
+  if(!useApi){
+    try{
+      const r=await fetch(`${PRE_FILE}?v=${Math.floor(Date.now()/60000)}`);
+      if(r.ok) return await r.json();
+      if(r.status===404) return [];
+    }catch(e){}   // 同源失败 → 落到 api
+  }
   try{
     const r=await fetch(`https://api.github.com/repos/${PRE_REPO}/contents/${PRE_FILE}?_=${Date.now()}`,
-      {headers:{'Authorization':`token ${PORT_GH_TOKEN}`,'Accept':'application/vnd.github+json'}});
-    if(r.status===404) return [];
+      {headers:{'Authorization':`token ${PORT_GH_TOKEN}`,'Accept':'application/vnd.github+json'}, cache:'no-store'});
+    if(r.status===404){ _preSha=null; return []; }
     if(!r.ok) return null;
     const j=await r.json();
     _preSha=j.sha;
-    const txt=atob(j.content.replace(/\n/g,''));
-    return JSON.parse(decodeURIComponent(escape(txt)));
+    return JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));
   }catch(e){ return null; }
 }
 
@@ -4813,9 +4826,8 @@ async function preSubmit(){
   const rec={date:today, ts:new Date().toLocaleString('zh-CN',{hour12:false}),
              ans:Object.assign({},_PRE), light:_preCur.light, quad:_preCur.quad, flags:_preCur.flags};
 
-  // 合并基准取自云端最新全量历史（_preGhGet 同时刷新 _preSha），
-  // 绝不用 localStorage 作基准——否则新设备/清缓存后提交会把云端历史冲掉只剩当天 1 条。
-  let log=await _preGhGet();
+  // 写操作：合并基准走 api 实时读取（true），拿到最新全量历史 + SHA，避免 CDN 延迟或覆盖云端
+  let log=await _preGhGet(true);
   if(log===null){
     tip.textContent='⚠ 云端读取失败，未保存（请检查网络后重试）'; tip.style.color='#ef4444';
     return;   // 读不到云端全量就不写，避免覆盖云端历史
@@ -4870,7 +4882,7 @@ async function preDeleteRecord(date){
   if(!confirm('确认删除 '+date+' 的自检记录？此操作会同步到云端。')) return;
   const tip=document.getElementById('preSaveTip');
   tip.textContent='🗑 删除中…'; tip.style.color='#94a3b8';
-  let log=await _preGhGet();
+  let log=await _preGhGet(true);   // 写操作：api 实时读取拿最新全量 + SHA
   if(log===null){
     tip.textContent='⚠ 云端读取失败，未删除（请检查网络后重试）'; tip.style.color='#ef4444';
     return;
