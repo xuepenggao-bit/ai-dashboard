@@ -7112,14 +7112,21 @@ async function fetchPortPrices(){
     var hkSids= hkStocks.length ? hkStocks.map(function(s){ return '116.'+s.code; }).join(',') : null;
     var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields=f12,f14,f2,f3,f20,f50,f11&_='+ts0 : null;
 
+    // 带超时的 fetch：6 秒未返回即放弃该路（abort），避免东财偶发限流/502/TCP挂起拖住整页
+    var _PF_TIMEOUT = 6000;
+    var _pfFetch = function(url){
+      var ctrl = new AbortController();
+      var tid  = setTimeout(function(){ ctrl.abort(); }, _PF_TIMEOUT);
+      return fetch(url, {signal: ctrl.signal}).finally(function(){ clearTimeout(tid); });
+    };
     var results = await Promise.all([
-      qUrl  ? fetch(qUrl).then(function(r){ return r.arrayBuffer(); }).then(function(b){ return new TextDecoder('gbk').decode(b); })
+      qUrl  ? _pfFetch(qUrl).then(function(r){ return r.arrayBuffer(); }).then(function(b){ return new TextDecoder('gbk').decode(b); })
                          .catch(function(e){ console.warn('[A股价格]',e.message); return ''; })
             : Promise.resolve(''),
-      mcUrl ? fetch(mcUrl).then(function(r){ return r.json(); })
+      mcUrl ? _pfFetch(mcUrl).then(function(r){ return r.json(); })
                           .catch(function(e){ console.warn('[A股市值]',e.message); return null; })
             : Promise.resolve(null),
-      emUrl ? fetch(emUrl).then(function(r){ return r.json(); })
+      emUrl ? _pfFetch(emUrl).then(function(r){ return r.json(); })
                           .catch(function(e){ console.warn('[HK东方财富]',e.message); return null; })
             : Promise.resolve(null)
     ]);
