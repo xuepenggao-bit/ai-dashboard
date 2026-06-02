@@ -902,49 +902,49 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         <!-- 热力点阵：每只股票一个圆角方块，按涨跌幅排序，深浅代表幅度，大小代表仓位 -->
         <div id="portBreadthDots" style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:9px;min-height:10px"></div>
         <!-- 涨跌比例条 -->
-        <div style="height:7px;border-radius:4px;overflow:hidden;background:#fecaca;margin-bottom:11px">
-          <div id="pBreadthBar" style="height:100%;background:linear-gradient(90deg,#10b981,#4ade80);border-radius:4px;transition:width .7s ease;width:0%"></div>
+        <div style="height:7px;border-radius:4px;overflow:hidden;background:#bbf7d0;margin-bottom:11px">
+          <div id="pBreadthBar" style="height:100%;background:linear-gradient(90deg,#f87171,#fca5a5);border-radius:4px;transition:width .7s ease;width:0%"></div>
         </div>
-        <!-- 上涨 / 下跌 两栏卡片 -->
+        <!-- 上涨 / 下跌 两栏卡片（红涨绿跌） -->
         <div style="display:flex;gap:8px">
-          <div style="flex:1;background:linear-gradient(150deg,#f0fdf4 0%,#dcfce7 100%);border:1.5px solid #86efac;border-radius:10px;padding:9px 11px">
-            <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:900;color:#16a34a;line-height:1">▲</span>
-              <span id="pUpCount" style="font-size:28px;font-weight:900;color:#14532d;line-height:1;letter-spacing:-.03em">—</span>
-              <span style="font-size:11px;color:#16a34a;font-weight:700">只</span>
-            </div>
-            <div id="pUpAvg" style="font-size:14px;font-weight:800;color:#15803d;letter-spacing:-.01em">—</div>
-            <div style="font-size:10px;color:#86efac;font-weight:600;margin-top:2px;letter-spacing:.02em">加权平均涨幅</div>
-          </div>
           <div style="flex:1;background:linear-gradient(150deg,#fff1f2 0%,#ffe4e6 100%);border:1.5px solid #fda4af;border-radius:10px;padding:9px 11px">
             <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:900;color:#dc2626;line-height:1">▼</span>
-              <span id="pDownCount" style="font-size:28px;font-weight:900;color:#7f1d1d;line-height:1;letter-spacing:-.03em">—</span>
+              <span style="font-size:12px;font-weight:900;color:#dc2626;line-height:1">▲</span>
+              <span id="pUpCount" style="font-size:28px;font-weight:900;color:#7f1d1d;line-height:1;letter-spacing:-.03em">—</span>
               <span style="font-size:11px;color:#dc2626;font-weight:700">只</span>
             </div>
-            <div id="pDownAvg" style="font-size:14px;font-weight:800;color:#b91c1c;letter-spacing:-.01em">—</div>
-            <div style="font-size:10px;color:#fda4af;font-weight:600;margin-top:2px;letter-spacing:.02em">加权平均跌幅</div>
+            <div id="pUpAvg" style="font-size:14px;font-weight:800;color:#b91c1c;letter-spacing:-.01em">—</div>
+            <div style="font-size:10px;color:#fda4af;font-weight:600;margin-top:2px;letter-spacing:.02em">加权平均涨幅</div>
+          </div>
+          <div style="flex:1;background:linear-gradient(150deg,#f0fdf4 0%,#dcfce7 100%);border:1.5px solid #86efac;border-radius:10px;padding:9px 11px">
+            <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:900;color:#16a34a;line-height:1">▼</span>
+              <span id="pDownCount" style="font-size:28px;font-weight:900;color:#14532d;line-height:1;letter-spacing:-.03em">—</span>
+              <span style="font-size:11px;color:#16a34a;font-weight:700">只</span>
+            </div>
+            <div id="pDownAvg" style="font-size:14px;font-weight:800;color:#15803d;letter-spacing:-.01em">—</div>
+            <div style="font-size:10px;color:#86efac;font-weight:600;margin-top:2px;letter-spacing:.02em">加权平均跌幅</div>
           </div>
         </div>
         <div id="pFlatInfo" style="display:none;font-size:10px;color:#94a3b8;text-align:center;margin-top:7px;font-weight:500"></div>
-        <!-- 领涨/领跌行业 -->
+        <!-- 领涨/领跌行业（红涨绿跌） -->
         <div id="portIndLeader" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #bfdbfe">
           <div style="font-size:10px;color:#3b82f6;font-weight:700;letter-spacing:.04em;margin-bottom:6px">行业表现</div>
           <div style="display:flex;gap:7px">
-            <div style="flex:1;background:linear-gradient(150deg,#f0fdf4 0%,#dcfce7 100%);border:1.5px solid #86efac;border-radius:10px;padding:8px 10px;min-width:0">
-              <div style="font-size:10px;color:#16a34a;font-weight:700;letter-spacing:.03em;margin-bottom:3px">▲ 领涨行业</div>
-              <div id="pTopIndName" style="font-size:12px;font-weight:900;color:#14532d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">—</div>
+            <div style="flex:1;background:linear-gradient(150deg,#fff1f2 0%,#ffe4e6 100%);border:1.5px solid #fda4af;border-radius:10px;padding:8px 10px;min-width:0">
+              <div style="font-size:10px;color:#dc2626;font-weight:700;letter-spacing:.03em;margin-bottom:3px">▲ 领涨行业</div>
+              <div id="pTopIndName" style="font-size:12px;font-weight:900;color:#7f1d1d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">—</div>
               <div style="display:flex;align-items:baseline;gap:3px">
-                <span id="pTopIndAvg" style="font-size:15px;font-weight:900;color:#15803d;letter-spacing:-.02em">—</span>
-                <span id="pTopIndCnt" style="font-size:10px;color:#4ade80;font-weight:600"></span>
+                <span id="pTopIndAvg" style="font-size:15px;font-weight:900;color:#b91c1c;letter-spacing:-.02em">—</span>
+                <span id="pTopIndCnt" style="font-size:10px;color:#fda4af;font-weight:600"></span>
               </div>
             </div>
-            <div style="flex:1;background:linear-gradient(150deg,#fff1f2 0%,#ffe4e6 100%);border:1.5px solid #fda4af;border-radius:10px;padding:8px 10px;min-width:0">
-              <div style="font-size:10px;color:#dc2626;font-weight:700;letter-spacing:.03em;margin-bottom:3px">▼ 领跌行业</div>
-              <div id="pBotIndName" style="font-size:12px;font-weight:900;color:#7f1d1d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">—</div>
+            <div style="flex:1;background:linear-gradient(150deg,#f0fdf4 0%,#dcfce7 100%);border:1.5px solid #86efac;border-radius:10px;padding:8px 10px;min-width:0">
+              <div style="font-size:10px;color:#16a34a;font-weight:700;letter-spacing:.03em;margin-bottom:3px">▼ 领跌行业</div>
+              <div id="pBotIndName" style="font-size:12px;font-weight:900;color:#14532d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">—</div>
               <div style="display:flex;align-items:baseline;gap:3px">
-                <span id="pBotIndAvg" style="font-size:15px;font-weight:900;color:#b91c1c;letter-spacing:-.02em">—</span>
-                <span id="pBotIndCnt" style="font-size:10px;color:#fda4af;font-weight:600"></span>
+                <span id="pBotIndAvg" style="font-size:15px;font-weight:900;color:#15803d;letter-spacing:-.02em">—</span>
+                <span id="pBotIndCnt" style="font-size:10px;color:#86efac;font-weight:600"></span>
               </div>
             </div>
           </div>
@@ -2638,7 +2638,7 @@ function renderIntlStore(){
     // 现价 + 涨跌幅
     let priceCell = naApi;
     if(live && r.price){
-      const pctColor = (r._pct||0)>=0 ? 'var(--green)' : 'var(--red)';
+      const pctColor = (r._pct||0)>=0 ? 'var(--red)' : 'var(--green)';
       const pctSign  = (r._pct||0)>=0 ? '+' : '';
       const pctStr   = r._pct!=null ? `<br><span style="font-size:10px;color:${pctColor}">${pctSign}${r._pct.toFixed(2)}%</span>` : '';
       priceCell = `<span style="font-weight:700;font-size:13px">${r.price}</span>${pctStr}`;
@@ -2677,7 +2677,7 @@ function renderDomStore(){
     // 现价 + 涨跌幅
     let priceCell = '<span style="color:#94a3b8;font-size:11px">—</span>';
     if(live && r._price){
-      const pctColor = (r._pct||0)>=0 ? 'var(--green)' : 'var(--red)';
+      const pctColor = (r._pct||0)>=0 ? 'var(--red)' : 'var(--green)';
       const pctSign  = (r._pct||0)>=0 ? '+' : '';
       priceCell = `<span style="font-weight:600;font-size:13px">¥${r._price}</span>`
                 + `<br><span style="font-size:10px;color:${pctColor}">${pctSign}${(r._pct||0).toFixed(2)}%</span>`;
@@ -3062,7 +3062,7 @@ function renderStocks(){
     // 现价 + 涨跌幅
     let priceCell='<span style="color:#94a3b8;font-size:11px">—</span>';
     if(live && r._price){
-      const pctColor=(r._pct||0)>=0?'var(--green)':'var(--red)';
+      const pctColor=(r._pct||0)>=0?'var(--red)':'var(--green)';
       const pctSign =(r._pct||0)>=0?'+':'';
       priceCell=`<span style="font-weight:600;font-size:13px">¥${r._price}</span>`
                +`<br><span style="font-size:10px;color:${pctColor}">${pctSign}${(r._pct||0).toFixed(2)}%</span>`;
@@ -3379,11 +3379,11 @@ function renderPortfolio(){
       const _pctBadge = pct => {
         if(pct==null) return `<span style="font-size:11px;color:#94a3b8">—</span>`;
         const t = (pct>0?'+':'')+pct.toFixed(2)+'%';
-        if(pct >= 2)  return `<span style="font-size:11px;font-weight:800;color:#15803d;background:#dcfce7;border-radius:4px;padding:1px 6px">${t}</span>`;
-        if(pct > 0)   return `<span style="font-size:11px;font-weight:700;color:#16a34a">${t}</span>`;
+        if(pct >= 2)  return `<span style="font-size:11px;font-weight:800;color:#b91c1c;background:#fee2e2;border-radius:4px;padding:1px 6px">${t}</span>`;
+        if(pct > 0)   return `<span style="font-size:11px;font-weight:700;color:#dc2626">${t}</span>`;
         if(pct === 0) return `<span style="font-size:11px;font-weight:600;color:#94a3b8">0.00%</span>`;
-        if(pct > -2)  return `<span style="font-size:11px;font-weight:700;color:#dc2626">${t}</span>`;
-        return `<span style="font-size:11px;font-weight:800;color:#b91c1c;background:#fee2e2;border-radius:4px;padding:1px 6px">${t}</span>`;
+        if(pct > -2)  return `<span style="font-size:11px;font-weight:700;color:#16a34a">${t}</span>`;
+        return `<span style="font-size:11px;font-weight:800;color:#15803d;background:#dcfce7;border-radius:4px;padding:1px 6px">${t}</span>`;
       };
       const COL = '10px 1fr 68px 46px';
       const HDR = `<div style="display:grid;grid-template-columns:${COL};gap:0 6px;
@@ -3452,11 +3452,11 @@ function renderPortfolio(){
       const _pB = pct => {
         if(pct==null) return `<span style="font-size:11px;color:#94a3b8">—</span>`;
         const t = (pct>0?'+':'')+pct.toFixed(2)+'%';
-        if(pct >= 2)  return `<span style="font-size:11px;font-weight:800;color:#15803d;background:#dcfce7;border-radius:4px;padding:1px 6px">${t}</span>`;
-        if(pct > 0)   return `<span style="font-size:11px;font-weight:700;color:#16a34a">${t}</span>`;
+        if(pct >= 2)  return `<span style="font-size:11px;font-weight:800;color:#b91c1c;background:#fee2e2;border-radius:4px;padding:1px 6px">${t}</span>`;
+        if(pct > 0)   return `<span style="font-size:11px;font-weight:700;color:#dc2626">${t}</span>`;
         if(pct === 0) return `<span style="font-size:11px;font-weight:600;color:#94a3b8">0.00%</span>`;
-        if(pct > -2)  return `<span style="font-size:11px;font-weight:700;color:#dc2626">${t}</span>`;
-        return `<span style="font-size:11px;font-weight:800;color:#b91c1c;background:#fee2e2;border-radius:4px;padding:1px 6px">${t}</span>`;
+        if(pct > -2)  return `<span style="font-size:11px;font-weight:700;color:#16a34a">${t}</span>`;
+        return `<span style="font-size:11px;font-weight:800;color:#15803d;background:#dcfce7;border-radius:4px;padding:1px 6px">${t}</span>`;
       };
       const ICOL = '10px 1fr 68px 46px';
       const IHDR = `<div style="display:grid;grid-template-columns:${ICOL};gap:0 6px;
@@ -3509,8 +3509,8 @@ function renderPortfolio(){
       const priceCell = pi
         ? `<span style="font-weight:700;font-size:15px;color:var(--text)">${sk.mkt==='HK'?Number(pi.price).toFixed(3):Number(pi.price).toFixed(2)}</span>`
         : `<span style="color:var(--text2);font-size:13px">—</span>`;
-      const pctBg  = pi ? (pi.pct>0?'#d1fae5':pi.pct<0?'#fee2e2':'#f1f5f9') : '';
-      const pctCol = pi ? (pi.pct>0?'#065f46':pi.pct<0?'#991b1b':'#475569') : '';
+      const pctBg  = pi ? (pi.pct>0?'#fee2e2':pi.pct<0?'#d1fae5':'#f1f5f9') : '';
+      const pctCol = pi ? (pi.pct>0?'#991b1b':pi.pct<0?'#065f46':'#475569') : '';
       const pctCell = pi
         ? `<span style="display:inline-block;background:${pctBg};color:${pctCol};font-weight:800;font-size:15px;padding:4px 10px;border-radius:7px;letter-spacing:-.01em">${pi.pct>0?'+':''}${Number(pi.pct).toFixed(2)}%</span>`
         : `<span style="color:var(--text2);font-size:13px">—</span>`;
@@ -3521,7 +3521,7 @@ function renderPortfolio(){
         ? `<span style="${vrAnim}font-size:14px;color:${vrCol}">${Number(vr).toFixed(2)}</span>`
         : `<span style="color:var(--text2);font-size:13px">—</span>`;
       const sp = pi?.speedPct;
-      const spCol = sp==null ? 'var(--text2)' : sp>0 ? '#065f46' : sp<0 ? '#991b1b' : '#475569';
+      const spCol = sp==null ? 'var(--text2)' : sp>0 ? '#991b1b' : sp<0 ? '#065f46' : '#475569';
       const spCell = sp!=null
         ? `<span style="font-weight:700;font-size:14px;color:${spCol}">${sp>0?'+':''}${Number(sp).toFixed(2)}%</span>`
         : `<span style="color:var(--text2);font-size:13px">—</span>`;
@@ -4448,7 +4448,7 @@ function _valFmt(v, decimals=2){
 }
 function _valPct(v){
   if(v===null||v===undefined||isNaN(v)) return '<span style="color:#94a3b8">—</span>';
-  const c=v>0?'#059669':v<0?'#dc2626':'#64748b';
+  const c=v>0?'#dc2626':v<0?'#059669':'#64748b';
   const sign=v>0?'+':'';
   return `<span style="color:${c};font-weight:600">${sign}${Math.round(Number(v))}%</span>`;
 }
@@ -5974,10 +5974,10 @@ async function fetchIndexPrices(){
     listEl.innerHTML = rows.map(r=>{
       const up    = r.pct > 0;
       const dn    = r.pct < 0;
-      const color = up ? '#16a34a' : dn ? '#dc2626' : 'var(--text2)';
+      const color = up ? '#dc2626' : dn ? '#16a34a' : 'var(--text2)';
       const arrow = up ? '▲' : dn ? '▼' : '─';
       const sign  = up ? '+' : '';
-      let accent = color, bg = up ? '#f0fdf4' : dn ? '#fff5f5' : '#f8fafc', badge = '';
+      let accent = color, bg = up ? '#fff5f5' : dn ? '#f0fdf4' : '#f8fafc', badge = '';
       if(r.region === 'hk'){
         accent = '#e11d48'; bg = '#fff5f7';
         badge = ' <span style="font-size:9px;background:#fee2e2;color:#9f1239;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">港</span>';
@@ -6185,8 +6185,8 @@ function renderHistDetail(date){
 
   const rows=stocks.map(s=>{
     const isHK=s.mkt==='HK';
-    const pctBg =s.pct!=null?(s.pct>0?'#d1fae5':s.pct<0?'#fee2e2':'#f1f5f9'):'';
-    const pctCol=s.pct!=null?(s.pct>0?'#065f46':s.pct<0?'#991b1b':'#475569'):'';
+    const pctBg =s.pct!=null?(s.pct>0?'#fee2e2':s.pct<0?'#d1fae5':'#f1f5f9'):'';
+    const pctCol=s.pct!=null?(s.pct>0?'#991b1b':s.pct<0?'#065f46':'#475569'):'';
     const priceCell=s.price!=null
       ?`<span style="font-weight:700;font-size:15px;color:var(--text)">${Number(s.price).toFixed(isHK?3:2)}</span>`
       :`<span style="color:var(--text2);font-size:13px">—</span>`;
@@ -7513,8 +7513,8 @@ function _renderPortTopW(){
 
   wEl.innerHTML = topW.map(function(item, i){
     var rank     = i + 1;
-    var pctColor = item.pct > 0 ? 'var(--green)' : item.pct < 0 ? 'var(--red)' : 'var(--text2)';
-    var bgRow    = item.pct > 0 ? (rank===1?'#f0fdf4':'#fff') : item.pct < 0 ? (rank===1?'#fff5f5':'#fff') : '#fff';
+    var pctColor = item.pct > 0 ? 'var(--red)' : item.pct < 0 ? 'var(--green)' : 'var(--text2)';
+    var bgRow    = item.pct > 0 ? (rank===1?'#fff5f5':'#fff') : item.pct < 0 ? (rank===1?'#f0fdf4':'#fff') : '#fff';
     var sign     = item.pct >= 0 ? '+' : '';
     var priceStr = item.mkt==='HK' ? Number(item.price).toFixed(3) : Number(item.price).toFixed(2);
     var wLine    = item.w != null
