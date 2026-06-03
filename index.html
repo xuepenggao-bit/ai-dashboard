@@ -6687,7 +6687,9 @@ function _renderKolGrid(data) {
             style="display:block;text-decoration:none;cursor:pointer">
            <p style="margin:0;font-size:11.5px;color:#334155;line-height:1.8">${_escH(cat.summary)}<span style="color:${color};font-weight:700;white-space:nowrap"> 查看流水 ›</span></p>
          </a>`
-      : `<p style="margin:0;font-size:11px;color:#94a3b8;font-style:italic">等待下次刷新生成摘要…</p>`;
+      : (cat.tweet_count
+          ? `<a href="${detailUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;cursor:pointer"><p style="margin:0;font-size:11px;color:#94a3b8">本次摘要未生成，<span style="color:${color};font-weight:700;white-space:nowrap">点击查看 ${cat.tweet_count} 条流水 ›</span></p></a>`
+          : `<p style="margin:0;font-size:11px;color:#94a3b8;font-style:italic">等待下次刷新生成摘要…</p>`);
 
     // 数据来源注脚
     const src = cat.tweet_count
