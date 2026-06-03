@@ -2,7 +2,7 @@ name: Refresh KOL Tweet Summaries
 
 on:
   schedule:
-    - cron: '0 1 * * *'   # 每天 09:00 CST (01:00 UTC)
+    - cron: '30 0 * * *'   # 每天北京时间 08:30
   workflow_dispatch:
     inputs:
       reason:
