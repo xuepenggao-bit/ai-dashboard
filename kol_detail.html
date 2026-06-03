@@ -78,6 +78,7 @@
         '<div class="head" style="--c:'+color+'">'
         + '<h1>🐦 '+esc(c.name)+' · 帖子流水</h1>'
         + '<div class="meta">本次抓取：'+esc(d.last_updated||'')+' &nbsp;·&nbsp; 过去24小时 '+posts.length+' 条 &nbsp;·&nbsp; 来源：'+esc(d.data_source||'News RSS')+'</div>'
+        + '<div style="font-size:11.5px;color:#94a3b8;margin-top:7px;line-height:1.65">💡 下方标题与摘要已译为中文；点标题进入的是<b>英文原文网页</b>，在 Edge / Chrome 中右键选「翻译成中文」即可让整页显示中文。</div>'
         + (c.summary ? '<div class="summary" style="--c:'+color+'"><b>AI 摘要：</b>'+esc(c.summary)+'</div>' : '')
         + '</div>';
 
