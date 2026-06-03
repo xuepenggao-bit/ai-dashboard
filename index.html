@@ -6679,17 +6679,21 @@ function _renderKolGrid(data) {
                  padding:1px 6px;border-radius:4px;text-decoration:none;white-space:nowrap">@${_escH(a.handle)}</a>`
     ).join('');
 
-    // 摘要正文
+    // 摘要正文（做成超链接，点击打开二级页面：本次抓取的帖子流水）
     const hasSum = cat.summary && cat.summary.trim();
+    const detailUrl = `kol_detail.html?cat=${encodeURIComponent(cat.name)}`;
     const bodyH  = hasSum
-      ? `<p style="margin:0;font-size:11.5px;color:#334155;line-height:1.8">${_escH(cat.summary)}</p>`
+      ? `<a href="${detailUrl}" target="_blank" rel="noopener" title="点击查看本次抓取的帖子流水"
+            style="display:block;text-decoration:none;cursor:pointer">
+           <p style="margin:0;font-size:11.5px;color:#334155;line-height:1.8">${_escH(cat.summary)}<span style="color:${color};font-weight:700;white-space:nowrap"> 查看流水 ›</span></p>
+         </a>`
       : `<p style="margin:0;font-size:11px;color:#94a3b8;font-style:italic">等待下次刷新生成摘要…</p>`;
 
     // 数据来源注脚
     const src = cat.tweet_count
       ? `<div style="margin-top:8px;padding-top:6px;border-top:1px solid #f1f5f9;
                      font-size:9px;color:#c8d0dc;text-align:right">
-           Google News &nbsp;·&nbsp; ${cat.tweet_count} 条近期报道</div>` : '';
+           过去24小时 ${cat.tweet_count} 条 &nbsp;·&nbsp; 点击摘要看流水</div>` : '';
 
     return `<div style="background:#fff;border-radius:10px;padding:14px 16px;
                  border:1px solid #eef0f4;border-left:3px solid ${color};

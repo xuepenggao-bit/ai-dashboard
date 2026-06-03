@@ -18,6 +18,7 @@ Env vars:
 """
 import os, json, re, datetime, time, urllib.parse, requests
 import xml.etree.ElementTree as ET
+from email.utils import parsedate_to_datetime
 
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '').strip()
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
@@ -102,93 +103,113 @@ def build_cat_map(following):
 
 # ── News RSS fetch ───────────────────────────────────────────────────
 
+MAX_AGE_H = 24   # 只保留过去 24 小时内发布的条目
+
 def _parse_rss_items(xml_text, count):
-    """Parse RSS XML and return list of 'title — desc' strings."""
-    snippets = []
+    """解析 RSS，返回 [{title,desc,link,source,pubDate,pub_iso}]，并过滤为过去 24 小时内。"""
+    posts = []
+    now = datetime.datetime.now(datetime.timezone.utc)
     try:
         root = ET.fromstring(xml_text)
-        for item in root.findall('.//item')[:count]:
+        for item in root.findall('.//item'):
             title = (item.findtext('title') or '').strip()
-            desc  = (item.findtext('description') or '').strip()
-            desc  = re.sub(r'<[^>]+>', ' ', desc)
-            desc  = re.sub(r'\s+', ' ', desc).strip()[:200]
-            if title:
-                snippets.append(f'{title} — {desc}' if desc else title)
-    except Exception as e:
+            if not title:
+                continue
+            link = (item.findtext('link') or '').strip()
+            desc = (item.findtext('description') or '').strip()
+            desc = re.sub(r'<[^>]+>', ' ', desc)
+            desc = re.sub(r'\s+', ' ', desc).strip()[:300]
+            pub  = (item.findtext('pubDate') or '').strip()
+            # source 子标签（Google News 提供媒体来源）
+            source = ''
+            for se in item.iter():
+                if se.tag.endswith('source') and (se.text or '').strip():
+                    source = se.text.strip(); break
+            # 解析时间并做 24 小时过滤
+            pub_dt = None
+            if pub:
+                try:
+                    pub_dt = parsedate_to_datetime(pub)
+                    if pub_dt.tzinfo is None:
+                        pub_dt = pub_dt.replace(tzinfo=datetime.timezone.utc)
+                except Exception:
+                    pub_dt = None
+            if pub_dt is not None and (now - pub_dt).total_seconds() > MAX_AGE_H * 3600:
+                continue
+            posts.append({
+                'title': title, 'desc': desc, 'link': link, 'source': source,
+                'pubDate': pub,
+                'pub_iso': pub_dt.astimezone(datetime.timezone.utc).isoformat() if pub_dt else '',
+            })
+            if len(posts) >= count:
+                break
+    except Exception:
         pass
-    return snippets
+    return posts
 
-def _fetch_google_news(display_name, handle, count=4):
-    """Google News RSS — public feed, no API key, accessible from cloud IPs."""
-    q   = urllib.parse.quote(f'"{display_name}"')
+def _fetch_google_news(display_name, handle, count=6):
+    """Google News RSS（when:1d 限定过去 24 小时）。"""
+    q   = urllib.parse.quote(f'"{display_name}" when:1d')
     url = f'https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en'
     try:
         r = requests.get(url, headers={'User-Agent': UA,
                                        'Accept': 'application/rss+xml, text/xml, */*'},
                          timeout=15)
-        print(f'    [GNews] HTTP {r.status_code} ct={r.headers.get("Content-Type","?")[:30]}')
+        print(f'    [GNews] HTTP {r.status_code}')
         if r.status_code == 200:
-            items = _parse_rss_items(r.text, count)
-            return items
+            return _parse_rss_items(r.text, count)
     except Exception as e:
         print(f'    [GNews] {display_name}: {e}')
     return []
 
-def _fetch_bing_news(display_name, handle, count=4):
-    """Bing News RSS — fallback."""
+def _fetch_bing_news(display_name, handle, count=6):
+    """Bing News RSS — 备用（_parse_rss_items 内已按 pubDate 做 24h 过滤）。"""
     q   = urllib.parse.quote(f'"{display_name}"')
-    url = f'https://www.bing.com/news/search?q={q}&format=rss&count={count}'
+    url = f'https://www.bing.com/news/search?q={q}&format=rss&count={count*3}'
     try:
         r = requests.get(url, headers={'User-Agent': UA}, timeout=12)
-        print(f'    [Bing]  HTTP {r.status_code} ct={r.headers.get("Content-Type","?")[:30]}')
+        print(f'    [Bing]  HTTP {r.status_code}')
         if r.status_code == 200:
             return _parse_rss_items(r.text, count)
     except Exception as e:
         print(f'    [Bing]  {display_name}: {e}')
     return []
 
-def _news_snippets(display_name, handle, count=4):
-    """Try Google News first, then Bing."""
+def _news_posts(display_name, handle, count=6):
+    """Google News 优先，空则 Bing。返回 post dict 列表（过去 24h）。"""
     items = _fetch_google_news(display_name, handle, count)
     if not items:
         items = _fetch_bing_news(display_name, handle, count)
     return items
 
 def fetch_news_for_category(cat_name, accounts):
-    """
-    Fetch news snippets for up to 6 prominent accounts in a category.
-    Returns {handle: [snippet, ...]}
-    """
-    results = {}
-    for acc in accounts[:6]:
+    """抓取该分类下所有账号过去 24h 的新闻，汇总为按时间倒序的流水列表。"""
+    posts = []
+    for acc in accounts:
         handle       = acc['handle']
         display_name = acc.get('display_name', handle)
-        snippets     = _news_snippets(display_name, handle, count=4)
-        if snippets:
-            results[handle] = snippets
-            print(f'  ✓ @{handle}: {len(snippets)} snippets')
-        else:
-            print(f'  ✗ @{handle}: no results')
-        time.sleep(0.5)
-    return results
+        items        = _news_posts(display_name, handle, count=6)
+        for it in items:
+            it['handle']       = handle
+            it['display_name'] = display_name
+        posts.extend(items)
+        print(f'  {"✓" if items else "·"} @{handle}: {len(items)} 条（24h）')
+        time.sleep(0.4)
+    posts.sort(key=lambda p: p.get('pub_iso', ''), reverse=True)   # 新→旧
+    return posts
 
 # ── AI summarisation ─────────────────────────────────────────────────
 
-def ai_summarise_category(cat_name, news_by_handle):
-    """Use GPT-4o-mini to summarise news snippets for a category."""
-    if not GITHUB_TOKEN:
+def ai_summarise_category(cat_name, posts):
+    """Use GPT-4o-mini to summarise the past-24h posts for a category."""
+    if not GITHUB_TOKEN or not posts:
         return ''
-    lines = []
-    for handle, snippets in news_by_handle.items():
-        for s in snippets:
-            lines.append(f'[@{handle}] {s[:250]}')
-    if not lines:
-        return ''
+    lines = [f"[@{p['handle']}] {p['title']} — {p['desc'][:150]}" for p in posts[:50]]
 
-    sample = '\n'.join(lines[:60])
+    sample = '\n'.join(lines)
     prompt = (
-        f'以下是"{cat_name}"分类下多位意见领袖的最新新闻报道或引用摘要'
-        f'（共{len(lines)}条，来源：Bing新闻）：\n\n'
+        f'以下是"{cat_name}"分类下多位意见领袖过去24小时的相关新闻报道'
+        f'（共{len(posts)}条，来源：Google/Bing新闻）：\n\n'
         f'{sample}\n\n'
         f'请用3-5句中文总结这批意见领袖近期关注的核心主题与主要观点，要求：\n'
         f'① 聚焦共同关注点，如有具体观点可点名说明\n'
@@ -236,14 +257,14 @@ def main():
             continue
 
         print(f'\n--- {cat_name} ({len(accs)} accounts) ---')
-        news     = fetch_news_for_category(cat_name, accs)
-        n_snip   = sum(len(v) for v in news.values())
+        posts    = fetch_news_for_category(cat_name, accs)
+        n_snip   = len(posts)
         total_snippets += n_snip
 
         summary = ''
-        if news:
-            print(f'  Summarising {cat_name} ({n_snip} snippets)…')
-            summary = ai_summarise_category(cat_name, news)
+        if posts:
+            print(f'  Summarising {cat_name} ({n_snip} posts)…')
+            summary = ai_summarise_category(cat_name, posts)
             if summary:
                 print(f'  Summary: {summary[:80]}…')
 
@@ -255,12 +276,13 @@ def main():
             'accounts':    [{'handle': a['handle'],
                              'display_name': a.get('display_name', a['handle'])}
                             for a in accs],
+            'posts':       posts,   # 过去 24 小时的新闻流水（供二级页面展示）
         })
 
     output = {
         'last_updated':   now_ts(),
         'has_tweets':     total_snippets > 0,
-        'data_source':    'Bing News RSS',
+        'data_source':    'Google/Bing News RSS (24h)',
         'total_accounts': all_count,
         'categories':     output_cats,
     }

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>X关注意见领袖 · 帖子流水</title>
+<style>
+  body{font-family:"Microsoft YaHei","宋体",sans-serif;max-width:880px;margin:0 auto;padding:22px 18px;
+       color:#1e293b;background:#f1f5f9;line-height:1.6}
+  .back{display:inline-block;margin-bottom:14px;color:#1d4ed8;text-decoration:none;font-size:13px}
+  .back:hover{text-decoration:underline}
+  .head{background:#fff;border-radius:14px;padding:22px 26px;box-shadow:0 2px 14px rgba(0,0,0,.06);
+        border-left:5px solid var(--c,#7c3aed);margin-bottom:18px}
+  .head h1{font-size:19px;margin:0 0 6px;font-weight:800;color:#0f172a}
+  .head .meta{color:#64748b;font-size:12px}
+  .summary{margin-top:14px;background:#f8fafc;border-radius:8px;padding:12px 15px;font-size:13px;
+           line-height:1.85;color:#334155}
+  .summary b{color:var(--c,#7c3aed)}
+  .countbar{font-size:12px;color:#64748b;margin:0 2px 12px;font-weight:600}
+  /* 帖子流水卡片，卡片之间用间隔 + 左侧时间轴竖线区分 */
+  .feed{position:relative}
+  .post{background:#fff;border-radius:12px;padding:15px 18px 15px 20px;margin-bottom:14px;
+        box-shadow:0 1px 5px rgba(0,0,0,.05);border-left:3px solid var(--c,#7c3aed);
+        position:relative;transition:box-shadow .15s}
+  .post:hover{box-shadow:0 3px 14px rgba(0,0,0,.10)}
+  .post .top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:7px}
+  .post .who{font-weight:800;font-size:13px;color:#0f172a}
+  .post .handle{font-size:11.5px;color:#1d9bf0;text-decoration:none}
+  .post .handle:hover{text-decoration:underline}
+  .post .time{margin-left:auto;font-size:11px;color:#94a3b8;white-space:nowrap}
+  .post .title{font-size:14.5px;font-weight:700;line-height:1.5;margin:2px 0 6px}
+  .post .title a{color:#1e293b;text-decoration:none}
+  .post .title a:hover{color:#1d4ed8;text-decoration:underline}
+  .post .desc{font-size:12.5px;color:#475569;line-height:1.7}
+  .post .src{display:inline-block;margin-top:8px;font-size:10.5px;color:#94a3b8;
+             background:#f1f5f9;border-radius:5px;padding:1px 8px}
+  .empty{text-align:center;color:#94a3b8;padding:48px 0;background:#fff;border-radius:12px}
+  /* 不同账号之间的日期/分组小标题 */
+  .daysep{font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:.04em;margin:18px 2px 10px;
+          padding-bottom:4px;border-bottom:1px dashed #cbd5e1}
+</style>
+</head>
+<body>
+  <a class="back" href="javascript:history.back()">← 返回仪表板</a>
+  <div id="box"><div class="empty">加载中…</div></div>
+<script>
+  var cat = new URLSearchParams(location.search).get('cat') || '';
+  var esc = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+  // 北京时间格式化
+  function bjTime(iso){
+    if(!iso) return '';
+    try{
+      var d=new Date(iso);
+      if(isNaN(d)) return '';
+      var s=d.toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+      return s;
+    }catch(e){ return ''; }
+  }
+  function dayLabel(iso){
+    if(!iso) return '时间未知';
+    try{
+      return new Date(iso).toLocaleDateString('zh-CN',{timeZone:'Asia/Shanghai',month:'long',day:'numeric'});
+    }catch(e){ return '时间未知'; }
+  }
+
+  fetch('data/twitter_kol_summary.json?_=' + Date.now(), { cache:'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var box = document.getElementById('box');
+      var c = (d.categories || []).find(function(x){ return x.name === cat; });
+      if(!c){ box.innerHTML = '<div class="empty">未找到该分类的数据</div>'; return; }
+      document.title = c.name + ' · 帖子流水';
+      var color = c.color || '#7c3aed';
+      document.documentElement.style.setProperty('--c', color);
+
+      var posts = c.posts || [];
+      var head =
+        '<div class="head" style="--c:'+color+'">'
+        + '<h1>🐦 '+esc(c.name)+' · 帖子流水</h1>'
+        + '<div class="meta">本次抓取：'+esc(d.last_updated||'')+' &nbsp;·&nbsp; 过去24小时 '+posts.length+' 条 &nbsp;·&nbsp; 来源：'+esc(d.data_source||'News RSS')+'</div>'
+        + (c.summary ? '<div class="summary" style="--c:'+color+'"><b>AI 摘要：</b>'+esc(c.summary)+'</div>' : '')
+        + '</div>';
+
+      if(!posts.length){
+        box.innerHTML = head + '<div class="empty">过去24小时暂无抓取到该分类的帖子<br><span style="font-size:12px">（下次定时抓取后会更新）</span></div>';
+        return;
+      }
+
+      // 按天分组渲染流水，组内每帖一卡片、卡片间留间隔
+      var html = head + '<div class="feed">';
+      var lastDay = '';
+      posts.forEach(function(p){
+        var dl = dayLabel(p.pub_iso);
+        if(dl !== lastDay){ html += '<div class="daysep">'+esc(dl)+'</div>'; lastDay = dl; }
+        var titleH = p.link
+          ? '<a href="'+esc(p.link)+'" target="_blank" rel="noopener">'+esc(p.title)+'</a>'
+          : esc(p.title);
+        html +=
+          '<div class="post" style="--c:'+color+'">'
+          + '<div class="top">'
+          +   '<span class="who">'+esc(p.display_name||p.handle)+'</span>'
+          +   '<a class="handle" href="https://x.com/'+esc(p.handle)+'" target="_blank" rel="noopener">@'+esc(p.handle)+'</a>'
+          +   (p.pub_iso ? '<span class="time">'+esc(bjTime(p.pub_iso))+'</span>' : '')
+          + '</div>'
+          + '<div class="title">'+titleH+'</div>'
+          + (p.desc ? '<div class="desc">'+esc(p.desc)+'</div>' : '')
+          + (p.source ? '<span class="src">'+esc(p.source)+'</span>' : '')
+          + '</div>';
+      });
+      html += '</div>';
+      box.innerHTML = html;
+    })
+    .catch(function(e){
+      document.getElementById('box').innerHTML = '<div class="empty">加载失败：'+esc(e.message)+'</div>';
+    });
+</script>
+</body>
+</html>
