@@ -92,9 +92,11 @@
       posts.forEach(function(p){
         var dl = dayLabel(p.pub_iso);
         if(dl !== lastDay){ html += '<div class="daysep">'+esc(dl)+'</div>'; lastDay = dl; }
+        var ttl = p.title_zh || p.title || '';
+        var dsc = p.desc_zh  || p.desc  || '';
         var titleH = p.link
-          ? '<a href="'+esc(p.link)+'" target="_blank" rel="noopener">'+esc(p.title)+'</a>'
-          : esc(p.title);
+          ? '<a href="'+esc(p.link)+'" target="_blank" rel="noopener">'+esc(ttl)+'</a>'
+          : esc(ttl);
         html +=
           '<div class="post" style="--c:'+color+'">'
           + '<div class="top">'
@@ -103,7 +105,7 @@
           +   (p.pub_iso ? '<span class="time">'+esc(bjTime(p.pub_iso))+'</span>' : '')
           + '</div>'
           + '<div class="title">'+titleH+'</div>'
-          + (p.desc ? '<div class="desc">'+esc(p.desc)+'</div>' : '')
+          + (dsc ? '<div class="desc">'+esc(dsc)+'</div>' : '')
           + (p.source ? '<span class="src">'+esc(p.source)+'</span>' : '')
           + '</div>';
       });

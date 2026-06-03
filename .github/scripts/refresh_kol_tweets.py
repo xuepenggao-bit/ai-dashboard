@@ -237,6 +237,45 @@ def ai_summarise_category(cat_name, posts):
         print(f'  [AI] {cat_name}: {e}')
     return ''
 
+# ── 帖子流水翻译（英文 → 简体中文）────────────────────────────────────
+
+def translate_posts(posts, batch=15):
+    """批量把每条 post 的 title/desc 翻译成中文，写入 title_zh / desc_zh。
+    失败的批次保留英文原文（前端会回退显示原文）。"""
+    if not GITHUB_TOKEN or not posts:
+        return
+    done = 0
+    for i in range(0, len(posts), batch):
+        chunk = posts[i:i+batch]
+        items = [{'t': p.get('title', ''), 'd': p.get('desc', '')} for p in chunk]
+        prompt = (
+            '把下列新闻条目的标题 t 和摘要 d 翻译成简体中文，公司名/人名/产品名等专有名词'
+            '按习惯翻译或保留英文，不要增删信息、不要解释。\n'
+            '仅返回 JSON 数组，每项 {"t":"中文标题","d":"中文摘要"}，数量与顺序必须与输入完全一致：\n\n'
+            + json.dumps(items, ensure_ascii=False)
+        )
+        try:
+            r = requests.post(
+                'https://models.inference.ai.azure.com/chat/completions',
+                headers={'Authorization': f'Bearer {GITHUB_TOKEN}', 'Content-Type': 'application/json'},
+                json={'model': 'gpt-4o-mini',
+                      'messages': [{'role': 'user', 'content': prompt}],
+                      'max_tokens': 2200, 'temperature': 0.2},
+                timeout=45)
+            r.raise_for_status()
+            raw = r.json()['choices'][0]['message']['content'].strip()
+            m   = re.search(r'\[.*\]', raw, re.DOTALL)
+            arr = json.loads(m.group()) if m else []
+            for p, tr in zip(chunk, arr):
+                if isinstance(tr, dict):
+                    if tr.get('t'): p['title_zh'] = str(tr['t']).strip()
+                    if tr.get('d'): p['desc_zh']  = str(tr['d']).strip()
+            done += len(chunk)
+            print(f'    译 {done}/{len(posts)}')
+        except Exception as e:
+            print(f'    翻译批次 {i} 失败（保留英文）: {e}')
+        time.sleep(3)   # 控制速率，避免 GitHub Models 限流
+
 # ── main ─────────────────────────────────────────────────────────────
 
 def main():
@@ -263,6 +302,8 @@ def main():
 
         summary = ''
         if posts:
+            print(f'  翻译 {cat_name} 流水（{n_snip} 条）…')
+            translate_posts(posts)
             print(f'  Summarising {cat_name} ({n_snip} posts)…')
             summary = ai_summarise_category(cat_name, posts)
             if summary:
