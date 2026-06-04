@@ -343,6 +343,454 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <!-- ═══ MAIN ═══ -->
 <main class="main">
 
+<!-- ════════════════ TAB 投资组合 ════════════════ -->
+<div class="tab-content active" id="tPort">
+  <!-- ══ 投资组合页眉（浅色） ══ -->
+  <div style="display:flex;align-items:center;justify-content:space-between;
+              padding:16px 24px 14px;margin-bottom:20px;
+              background:linear-gradient(135deg,#f0f4ff 0%,#fafbff 55%,#eff6ff 100%);
+              border:1px solid #e0e7ff;border-radius:16px;
+              position:relative;overflow:hidden;
+              box-shadow:0 2px 18px rgba(99,102,241,.08)">
+    <!-- 装饰光晕（柔和浅色） -->
+    <div style="position:absolute;top:-40px;left:130px;width:200px;height:200px;
+                background:rgba(139,92,246,.07);border-radius:50%;filter:blur(50px);pointer-events:none"></div>
+    <div style="position:absolute;bottom:-30px;right:190px;width:160px;height:160px;
+                background:rgba(59,130,246,.06);border-radius:50%;filter:blur(40px);pointer-events:none"></div>
+
+    <!-- 左：标题 -->
+    <div style="flex-shrink:0;z-index:1">
+      <div style="font-size:9.5px;font-weight:500;color:#94a3b8;
+                  letter-spacing:.16em;text-transform:uppercase;margin-bottom:5px">Portfolio</div>
+      <div style="font-size:19px;color:#1e293b;letter-spacing:.02em;line-height:1;
+                  font-family:'PingFang SC','Microsoft YaHei',sans-serif">
+        <span style="font-weight:300">投资</span><span style="font-weight:700">组合</span><span style="font-weight:300">管理</span>
+      </div>
+    </div>
+
+    <!-- 中：时钟（绝对居中） -->
+    <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;z-index:1;pointer-events:none">
+      <div id="portClock"
+        style="font-size:36px;font-weight:200;color:#1e293b;letter-spacing:.1em;
+               font-variant-numeric:tabular-nums;
+               font-family:'SF Mono','Consolas','Courier New',monospace;
+               text-shadow:0 2px 14px rgba(99,102,241,.22)">--:--:--</div>
+      <div style="font-size:9px;color:#94a3b8;letter-spacing:.1em;margin-top:3px">实时时钟</div>
+    </div>
+
+    <!-- 右：操作区（统一外壳，三格等宽） -->
+    <div style="display:flex;align-items:stretch;flex-shrink:0;z-index:1;
+                background:#f5f7ff;border:1.5px solid #dde3f5;border-radius:14px;
+                overflow:hidden;box-shadow:0 1px 10px rgba(99,102,241,.07)">
+
+      <!-- ① 同步 -->
+      <button onclick="portForcePush()" title="将当前浏览器的仓位数据推送到云端"
+        style="flex:1;min-width:90px;display:flex;flex-direction:column;align-items:center;
+               justify-content:center;gap:4px;padding:10px 18px;background:transparent;
+               border:none;cursor:pointer;font-family:inherit;transition:background .15s"
+        onmouseover="this.style.background='rgba(109,40,217,.07)'"
+        onmouseout="this.style.background='transparent'"
+        onmousedown="this.style.opacity='.75'" onmouseup="this.style.opacity='1'">
+        <span style="font-size:13px;font-weight:700;color:#6d28d9;letter-spacing:.03em;white-space:nowrap">☁ 同步</span>
+        <span id="portSyncTs" style="font-size:9px;color:#94a3b8;white-space:nowrap;
+               max-width:100px;overflow:hidden;text-overflow:ellipsis">☁️ 加载中…</span>
+      </button>
+
+      <!-- 分割线 -->
+      <div style="width:1px;background:#dde3f5;flex-shrink:0"></div>
+
+      <!-- ② 刷新股价 -->
+      <button id="portPriceBtn" onclick="fetchPortPrices()"
+        style="flex:1;min-width:96px;display:flex;flex-direction:column;align-items:center;
+               justify-content:center;gap:4px;padding:10px 18px;background:transparent;
+               border:none;cursor:pointer;font-family:inherit;transition:background .15s"
+        onmouseover="this.style.background='rgba(37,99,235,.07)'"
+        onmouseout="this.style.background='transparent'"
+        onmousedown="this.style.opacity='.75'" onmouseup="this.style.opacity='1'">
+        <span style="font-size:13px;font-weight:700;color:#2563eb;letter-spacing:.03em;white-space:nowrap">
+          <span class="ricon" style="display:inline-block">↻</span> 刷新股价</span>
+        <span id="portPriceTs" style="font-size:9px;color:#94a3b8;white-space:nowrap;
+               max-width:100px;overflow:hidden;text-overflow:ellipsis">股价未加载</span>
+      </button>
+
+      <!-- 分割线 -->
+      <div style="width:1px;background:#dde3f5;flex-shrink:0"></div>
+
+      <!-- ③ 自动刷新 -->
+      <div id="autoRefreshBox"
+        style="flex:1;min-width:90px;display:flex;flex-direction:column;align-items:center;
+               justify-content:center;gap:4px;padding:10px 18px;transition:background .15s">
+        <div id="autoRefreshInner" style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:12px;color:#0284c7;flex-shrink:0">⏱</span>
+          <select id="autoRefreshSel" onchange="setAutoRefresh(this.value)"
+            style="font-size:13px;font-weight:700;color:#0369a1;font-family:inherit;
+                   border:none;background:transparent;cursor:pointer;outline:none;
+                   padding:0;letter-spacing:.02em">
+            <option value="0">手动</option>
+            <option value="10">10秒</option>
+            <option value="30">30秒</option>
+            <option value="60">1分钟</option>
+            <option value="120">2分钟</option>
+            <option value="180">3分钟</option>
+            <option value="300">5分钟</option>
+            <option value="600">10分钟</option>
+            <option value="900">15分钟</option>
+            <option value="1800">30分钟</option>
+          </select>
+        </div>
+        <span id="autoRefreshCd"
+          style="font-size:9px;color:#2563eb;font-weight:700;min-height:13px;
+                 letter-spacing:.02em"></span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Row 1: 主要指数 + TOP5涨跌 + 重仓TOP5 -->
+  <div class="g4 mb16">
+    <!-- 主要指数 -->
+    <div class="card" style="min-width:0;border-top:3px solid #f59e0b;background:linear-gradient(135deg,#fffbeb 0%,#fff 60%)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:14px;font-weight:800;color:#92400e;letter-spacing:.02em">📊 主要指数</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:10px;color:#a16207" id="idxTs"></span>
+          <button onclick="fetchIndexPrices()" id="idxRefBtn"
+            style="background:#fef3c7;border:1px solid #fde68a;color:#b45309;border-radius:6px;
+                   padding:3px 10px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700">↻ 刷新</button>
+        </div>
+      </div>
+      <div id="portIndexList">
+        <div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0">加载中…</div>
+      </div>
+    </div>
+
+    <!-- 今日涨幅 TOP 8 -->
+    <div class="card" style="min-width:0;border-top:3px solid var(--red)">
+      <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--red)">
+        📈 今日涨幅 TOP 5
+      </div>
+      <div id="portTop3Up" style="margin-top:8px">
+        <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
+          点击「刷新股价」加载
+        </div>
+      </div>
+    </div>
+
+    <!-- 今日跌幅 TOP 8 -->
+    <div class="card" style="min-width:0;border-top:3px solid var(--green)">
+      <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--green)">
+        📉 今日跌幅 TOP 5
+      </div>
+      <div id="portTop3Down" style="margin-top:8px">
+        <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
+          点击「刷新股价」加载
+        </div>
+      </div>
+    </div>
+
+    <!-- 重仓 TOP 8（按仓位高低） -->
+    <div class="card" style="min-width:0;border-top:3px solid var(--blue)">
+      <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--blue)">
+        🏋️ 重仓 TOP 5
+      </div>
+      <div id="portTop5W" style="margin-top:8px">
+        <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
+          点击「刷新股价」加载
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Row 2: 持仓概览 + 仓位分配（按分类）+ 仓位分配（按行业）+ 主力净流入TOP20 -->
+  <div class="g4 mb16">
+    <!-- 持仓概览 -->
+    <div class="card" style="border-top:3px solid var(--blue);background:linear-gradient(135deg,#eff6ff 0%,#fff 60%)">
+      <div class="klabel" style="font-size:14px;font-weight:800;color:var(--blue);letter-spacing:.02em">📂 持仓概览</div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin:8px 0 10px">
+        <span class="kval tb" id="pKpiWeight" style="font-size:42px;letter-spacing:-.03em;color:#1d4ed8">—</span>
+        <span style="font-size:15px;color:#3b82f6;font-weight:700">总仓位</span>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <div style="background:#dbeafe;border-radius:8px;padding:6px 12px;text-align:center">
+          <div style="font-size:20px;font-weight:900;color:#1d4ed8;line-height:1.1" id="pKpiStocks">—</div>
+          <div style="font-size:11px;color:#3b82f6;font-weight:600;margin-top:2px">持仓只数</div>
+        </div>
+        <div style="background:#e0f2fe;border-radius:8px;padding:6px 12px;text-align:center">
+          <div style="font-size:20px;font-weight:900;color:#0369a1;line-height:1.1" id="pKpiSectors">—</div>
+          <div style="font-size:11px;color:#0284c7;font-weight:600;margin-top:2px">分类数</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#64748b;margin-top:10px;font-weight:500" id="pKpiHk">—</div>
+
+      <!-- 涨跌分布 —— 由 _renderPortBreadth() 填充 -->
+      <div id="portBreadth" style="display:none;margin-top:13px;padding-top:12px;border-top:1px solid #bfdbfe">
+        <!-- 小标题 + 计数 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+          <span style="font-size:11px;color:#3b82f6;font-weight:700;letter-spacing:.04em">今日涨跌分布</span>
+          <span id="pBreadthLabel" style="font-size:11px;color:var(--text2);font-weight:600"></span>
+        </div>
+        <!-- 热力点阵：每只股票一个圆角方块，按涨跌幅排序，深浅代表幅度，大小代表仓位 -->
+        <div id="portBreadthDots" style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:9px;min-height:10px"></div>
+        <!-- 涨跌比例条 -->
+        <div style="height:7px;border-radius:4px;overflow:hidden;background:#bbf7d0;margin-bottom:11px">
+          <div id="pBreadthBar" style="height:100%;background:linear-gradient(90deg,#f87171,#fca5a5);border-radius:4px;transition:width .7s ease;width:0%"></div>
+        </div>
+        <!-- 上涨 / 下跌 两栏卡片（红涨绿跌） -->
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;background:linear-gradient(150deg,#fff1f2 0%,#ffe4e6 100%);border:1.5px solid #fda4af;border-radius:10px;padding:9px 11px">
+            <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:900;color:#dc2626;line-height:1">▲</span>
+              <span id="pUpCount" style="font-size:28px;font-weight:900;color:#7f1d1d;line-height:1;letter-spacing:-.03em">—</span>
+              <span style="font-size:11px;color:#dc2626;font-weight:700">只</span>
+            </div>
+            <div id="pUpAvg" style="font-size:14px;font-weight:800;color:#b91c1c;letter-spacing:-.01em">—</div>
+            <div style="font-size:10px;color:#fda4af;font-weight:600;margin-top:2px;letter-spacing:.02em">加权平均涨幅</div>
+          </div>
+          <div style="flex:1;background:linear-gradient(150deg,#f0fdf4 0%,#dcfce7 100%);border:1.5px solid #86efac;border-radius:10px;padding:9px 11px">
+            <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:900;color:#16a34a;line-height:1">▼</span>
+              <span id="pDownCount" style="font-size:28px;font-weight:900;color:#14532d;line-height:1;letter-spacing:-.03em">—</span>
+              <span style="font-size:11px;color:#16a34a;font-weight:700">只</span>
+            </div>
+            <div id="pDownAvg" style="font-size:14px;font-weight:800;color:#15803d;letter-spacing:-.01em">—</div>
+            <div style="font-size:10px;color:#86efac;font-weight:600;margin-top:2px;letter-spacing:.02em">加权平均跌幅</div>
+          </div>
+        </div>
+        <div id="pFlatInfo" style="display:none;font-size:10px;color:#94a3b8;text-align:center;margin-top:7px;font-weight:500"></div>
+        <!-- 领涨/领跌行业（红涨绿跌） -->
+        <div id="portIndLeader" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #bfdbfe">
+          <div style="font-size:10px;color:#3b82f6;font-weight:700;letter-spacing:.04em;margin-bottom:6px">行业表现</div>
+          <div style="display:flex;gap:7px">
+            <div style="flex:1;background:linear-gradient(150deg,#fff1f2 0%,#ffe4e6 100%);border:1.5px solid #fda4af;border-radius:10px;padding:8px 10px;min-width:0">
+              <div style="font-size:10px;color:#dc2626;font-weight:700;letter-spacing:.03em;margin-bottom:3px">▲ 领涨行业</div>
+              <div id="pTopIndName" style="font-size:12px;font-weight:900;color:#7f1d1d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">—</div>
+              <div style="display:flex;align-items:baseline;gap:3px">
+                <span id="pTopIndAvg" style="font-size:15px;font-weight:900;color:#b91c1c;letter-spacing:-.02em">—</span>
+                <span id="pTopIndCnt" style="font-size:10px;color:#fda4af;font-weight:600"></span>
+              </div>
+            </div>
+            <div style="flex:1;background:linear-gradient(150deg,#f0fdf4 0%,#dcfce7 100%);border:1.5px solid #86efac;border-radius:10px;padding:8px 10px;min-width:0">
+              <div style="font-size:10px;color:#16a34a;font-weight:700;letter-spacing:.03em;margin-bottom:3px">▼ 领跌行业</div>
+              <div id="pBotIndName" style="font-size:12px;font-weight:900;color:#14532d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">—</div>
+              <div style="display:flex;align-items:baseline;gap:3px">
+                <span id="pBotIndAvg" style="font-size:15px;font-weight:900;color:#15803d;letter-spacing:-.02em">—</span>
+                <span id="pBotIndCnt" style="font-size:10px;color:#86efac;font-weight:600"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 仓位分配图表（按分类） -->
+    <div class="card">
+      <div class="ch"><span class="ct">仓位分配（按分类）</span><span class="cbadge" id="pTotalBadge">合计 —%</span></div>
+      <div style="height:200px"><canvas id="cPortAlloc"></canvas></div>
+      <div id="portAllocLegend" style="margin-top:10px"></div>
+    </div>
+
+    <!-- 仓位分配图表（按行业） -->
+    <div class="card">
+      <div class="ch"><span class="ct">仓位分配（按行业）</span><span class="cbadge" id="pIndustryBadge">—</span></div>
+      <div style="height:200px"><canvas id="cPortIndustry"></canvas></div>
+      <div id="portIndustryLegend" style="margin-top:10px"></div>
+    </div>
+
+    <!-- 主力净流入 TOP 10 -->
+    <div class="card" style="min-width:0;border-top:3px solid #7c3aed;background:linear-gradient(135deg,#faf5ff 0%,#fff 60%)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px;font-weight:800;color:#6d28d9;letter-spacing:.02em">💹 主力净流入 TOP 20</span>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:10px;color:#7c3aed;font-weight:600" id="mfTs"></span>
+          <button onclick="fetchMainFlow()" id="mfRefBtn"
+            style="background:#ede9fe;border:1px solid #ddd6fe;color:#6d28d9;border-radius:6px;
+                   padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:18px 1fr 44px 50px;gap:0 4px;font-size:9.5px;font-weight:700;color:#9ca3af;padding:0 0 4px;border-bottom:1px solid #ede9fe;margin-bottom:3px">
+        <span></span><span>名称</span><span style="text-align:right">涨跌</span><span style="text-align:right">净流入</span>
+      </div>
+      <div id="mfList">
+        <div style="color:var(--text2);font-size:11px;text-align:center;padding:10px 0">点击「↻」加载</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: 市场涨跌统计 + 三市成交分析 -->
+  <div class="g2 mb16">
+    <!-- 涨跌统计（仿东方财富牛熊风向标格式） -->
+    <div class="card" style="border-top:3px solid #dc2626;background:#fff">
+      <!-- 标题行 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:800;color:#374151;letter-spacing:.01em">📊 涨跌统计</span>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span id="mktBreadthTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
+          <button onclick="fetchMarketStats()" id="mktBreadthBtn"
+            style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
+                   padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+        </div>
+      </div>
+      <!-- 家数统计：左列上涨/下跌，右列涨停/跌停 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:10px;height:10px;border-radius:2px;background:#ef4444;display:inline-block;flex-shrink:0"></span>
+          <span style="font-size:13px;color:#374151;font-weight:500">上涨</span>
+          <span id="mktUp" style="font-size:16px;font-weight:900;color:#dc2626;margin-left:2px">—</span>
+          <span style="font-size:12px;color:#6b7280;font-weight:500">家</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:13px;color:#374151;font-weight:500">涨停</span>
+          <span id="mktLimitUp" style="font-size:16px;font-weight:900;color:#dc2626">—</span>
+          <span style="font-size:12px;color:#6b7280;font-weight:500">家</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:10px;height:10px;border-radius:2px;background:#22c55e;display:inline-block;flex-shrink:0"></span>
+          <span style="font-size:13px;color:#374151;font-weight:500">下跌</span>
+          <span id="mktDown" style="font-size:16px;font-weight:900;color:#16a34a;margin-left:2px">—</span>
+          <span style="font-size:12px;color:#6b7280;font-weight:500">家</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:13px;color:#374151;font-weight:500">跌停</span>
+          <span id="mktLimitDown" style="font-size:16px;font-weight:900;color:#16a34a">—</span>
+          <span style="font-size:12px;color:#6b7280;font-weight:500">家</span>
+        </div>
+      </div>
+      <!-- 分布直方图（JS 填充） -->
+      <div id="mktBreadthChart">
+        <div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">点击↻加载</div>
+      </div>
+      <!-- 平盘提示（JS 填充） -->
+      <div id="mktFlatRow" style="display:none;font-size:10px;color:#94a3b8;text-align:center;margin-top:6px"></div>
+    </div>
+
+    <!-- 三市成交分析（仿东方财富格式） -->
+    <div class="card" style="border-top:3px solid #2563eb;background:#fff">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:13px;font-weight:800;color:#374151">💰 成交分析</span>
+          <span id="mktTurnTs" style="font-size:11px;color:#94a3b8;font-weight:500"></span>
+        </div>
+        <button onclick="fetchMarketStats()" id="mktTurnBtn"
+          style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
+                 padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+      </div>
+      <div id="mktTurnoverBody">
+        <div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">点击↻加载</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 5: 雪球热股榜 -->
+  <div class="card mb16" style="border-top:3px solid #f97316">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:800;color:#374151">🔥 雪球热股榜</span>
+        <span style="font-size:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;
+                     padding:1px 7px;border-radius:10px;font-weight:600">近1小时 Top20</span>
+        <span id="xqHotTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
+      </div>
+      <button onclick="triggerHotViaWorkflow()" id="xqHotBtn" title="触发后台刷新雪球热股榜（约1-2分钟）"
+        style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
+               padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+    </div>
+    <div id="xqHotGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
+      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">
+        点击「↻」加载雪球热股榜
+      </div>
+    </div>
+    <div id="xqHotGuide" style="display:none;margin-top:10px;padding:10px 12px;background:#fff7ed;border-radius:8px;border:1px solid #fed7aa">
+      <div style="font-size:11px;color:#92400e;margin-bottom:6px;font-weight:600">⏳ 数据尚未生成 · 由 GitHub Actions 自动刷新</div>
+      <div style="font-size:10px;color:#78350f;margin-bottom:8px">每30分钟自动更新（交易时段），或点击下方按钮立即触发刷新（约1分钟后生效）</div>
+      <button onclick="triggerHotRefresh()" id="xqTriggerBtn"
+        style="background:#f97316;color:#fff;border:none;border-radius:5px;padding:4px 12px;
+               cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">⚡ 立即触发刷新</button>
+    </div>
+  </div>
+
+  <!-- Sector cards (rendered by JS) -->
+  <div id="portSectors"></div>
+
+  <!-- 新增分类（置于页面底部） -->
+  <div class="card mt16">
+    <div class="ch"><span class="ct">新增分类</span></div>
+    <div class="form-row">
+      <label class="form-label">分类名称</label>
+      <input id="newSecName" class="form-input" placeholder="例如：消费、医疗…" type="text" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">标签颜色</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="color-swatch sel" onclick="selColor(this,'#22c55e')" style="background:#22c55e"></button>
+        <button type="button" class="color-swatch" onclick="selColor(this,'#3b82f6')" style="background:#3b82f6"></button>
+        <button type="button" class="color-swatch" onclick="selColor(this,'#f97316')" style="background:#f97316"></button>
+        <button type="button" class="color-swatch" onclick="selColor(this,'#8b5cf6')" style="background:#8b5cf6"></button>
+        <button type="button" class="color-swatch" onclick="selColor(this,'#ec4899')" style="background:#ec4899"></button>
+        <button type="button" class="color-swatch" onclick="selColor(this,'#06b6d4')" style="background:#06b6d4"></button>
+        <button type="button" class="color-swatch" onclick="selColor(this,'#dc2626')" style="background:#dc2626"></button>
+      </div>
+      <input id="newSecColor" type="hidden" value="#22c55e" />
+    </div>
+    <div class="form-row2c">
+      <div>
+        <label class="form-label">分类仓位 (%)</label>
+        <input id="newSecWeight" class="form-input" placeholder="0.0" type="number" min="0" max="100" step="0.5" />
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <button type="button" onclick="addPortSector()" class="btn-primary" style="width:100%;padding:9px 0">+ 创建分类</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add/Edit Stock Modal ── -->
+<div id="portModal" class="modal-overlay" onclick="if(event.target===this)closePortModal()">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span id="portModalTitle">添加股票</span>
+      <button type="button" onclick="closePortModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);line-height:1">×</button>
+    </div>
+    <form id="portForm" onsubmit="event.preventDefault();submitPortModal()">
+      <div class="form-row">
+        <label class="form-label">所属分类</label>
+        <select id="pSecSel" class="form-input"></select>
+      </div>
+      <div class="form-row2c">
+        <div>
+          <label class="form-label">股票名称 *</label>
+          <input id="pStkName" class="form-input" placeholder="例如: 比亚迪" type="text" required />
+        </div>
+        <div>
+          <label class="form-label">股票代码 *</label>
+          <input id="pStkCode" class="form-input" placeholder="例如: 002594" type="text" required oninput="autoDetectMkt(this.value)" />
+        </div>
+      </div>
+      <div class="form-row2c">
+        <div>
+          <label class="form-label">交易市场</label>
+          <select id="pStkMkt" class="form-input">
+            <option value="SH">沪市 A股 (SH)</option>
+            <option value="SZ">深市 A股 (SZ)</option>
+            <option value="HK">港股 (HK)</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">个股仓位 (%) 可选</label>
+          <input id="pStkWeight" class="form-input" placeholder="留空则不记录" type="number" min="0" max="100" step="0.1" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">行业（可选）</label>
+        <input id="pStkIndustry" class="form-input" placeholder="例如: 半导体 · 光模块 · 算力" type="text" />
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-ghost" onclick="closePortModal()">取消</button>
+        <button type="submit" class="btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ════════════════ TAB 2.1 ════════════════ -->
 <div class="tab-content" id="t0">
   <div class="stitle" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
