@@ -355,6 +355,58 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
              padding:3px 11px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700">↻ 刷新数据</button>
   </div>
 
+  <!-- KPI Row -->
+  <div class="g5 mb16">
+    <div class="card">
+      <div class="klabel">沪深A股总市值 <span id="kTmcDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
+      <div class="kval tb" id="kTmc" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kchange neu" id="kTmcChange">--</div>
+      <div class="tx3 mt4">沪市+深市，含科创/创业板 · 日频估算</div>
+    </div>
+    <div class="card">
+      <div class="klabel">上证综指 PE(TTM) <span id="kSsePeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
+      <div class="kval" id="kSsePe" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kchange neu" id="kSsePeHint">历史均值 ~12x</div>
+      <div class="tx3 mt4">来源: 东方财富 · 实时</div>
+    </div>
+    <div class="card">
+      <div class="klabel">深证成指 PE(TTM) <span id="kSzePeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
+      <div class="kval ty" id="kSzePe" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kchange neu" id="kSzePeHint">历史均值 ~25x</div>
+      <div class="tx3 mt4">来源: 东方财富 · 实时</div>
+    </div>
+    <div class="card">
+      <div class="klabel">创业板指 PE(TTM) <span id="kGemPeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
+      <div class="kval tp" id="kGemPe" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kchange neu" id="kGemPeHint">历史均值 ~35x</div>
+      <div class="tx3 mt4">来源: 东方财富 · 实时</div>
+    </div>
+    <div class="card">
+      <div class="klabel">科创50 PE(TTM) <span id="kStarPeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
+      <div class="kval tp" id="kStarPe" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kchange neu" id="kStarPeHint">历史均值 ~45x</div>
+      <div class="tx3 mt4">来源: 东方财富 · 实时</div>
+    </div>
+  </div>
+
+  <!-- 日频：融资融券余额趋势（全宽）-->
+  <div class="card mb16">
+    <div class="ch">
+      <span class="ct">融资融券余额趋势 (日频·¥亿)</span>
+      <span class="cbadge" style="background:#d1fae5;color:#065f46">沪深交易所 · 日频</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;padding:8px 12px;background:#fffbeb;border-radius:8px;border:1px solid #fde68a">
+      <div>
+        <span class="tx3">最新余额&nbsp;</span>
+        <span id="marginKpiVal" style="font-size:18px;font-weight:800;color:#d97706">—</span>
+      </div>
+      <span id="marginKpiDate" class="tx3" style="color:#94a3b8">加载中…</span>
+      <span id="marginKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
+    </div>
+    <div style="height:200px"><canvas id="cMargin"></canvas></div>
+    <div class="tx3 mt4">来源: 东方财富 · 日频两融余额（沪深合计）· <span id="marginKpiFooter">加载中…</span></div>
+  </div>
+
   <!-- 第一行：X关注意见领袖 -->
   <div class="card mb16" style="border-top:3px solid #1d9bf0">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -578,58 +630,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   </div>
 
   <!-- ── 上部分：A股市场监控 ── -->
-
-  <!-- KPI Row -->
-  <div class="g5 mb16">
-    <div class="card">
-      <div class="klabel">沪深A股总市值 <span id="kTmcDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
-      <div class="kval tb" id="kTmc" style="color:#94a3b8;font-size:18px">--</div>
-      <div class="kchange neu" id="kTmcChange">--</div>
-      <div class="tx3 mt4">沪市+深市，含科创/创业板 · 日频估算</div>
-    </div>
-    <div class="card">
-      <div class="klabel">上证综指 PE(TTM) <span id="kSsePeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
-      <div class="kval" id="kSsePe" style="color:#94a3b8;font-size:18px">--</div>
-      <div class="kchange neu" id="kSsePeHint">历史均值 ~12x</div>
-      <div class="tx3 mt4">来源: 东方财富 · 实时</div>
-    </div>
-    <div class="card">
-      <div class="klabel">深证成指 PE(TTM) <span id="kSzePeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
-      <div class="kval ty" id="kSzePe" style="color:#94a3b8;font-size:18px">--</div>
-      <div class="kchange neu" id="kSzePeHint">历史均值 ~25x</div>
-      <div class="tx3 mt4">来源: 东方财富 · 实时</div>
-    </div>
-    <div class="card">
-      <div class="klabel">创业板指 PE(TTM) <span id="kGemPeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
-      <div class="kval tp" id="kGemPe" style="color:#94a3b8;font-size:18px">--</div>
-      <div class="kchange neu" id="kGemPeHint">历史均值 ~35x</div>
-      <div class="tx3 mt4">来源: 东方财富 · 实时</div>
-    </div>
-    <div class="card">
-      <div class="klabel">科创50 PE(TTM) <span id="kStarPeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
-      <div class="kval tp" id="kStarPe" style="color:#94a3b8;font-size:18px">--</div>
-      <div class="kchange neu" id="kStarPeHint">历史均值 ~45x</div>
-      <div class="tx3 mt4">来源: 东方财富 · 实时</div>
-    </div>
-  </div>
-
-  <!-- 日频：融资融券余额趋势（全宽）-->
-  <div class="card mb16">
-    <div class="ch">
-      <span class="ct">融资融券余额趋势 (日频·¥亿)</span>
-      <span class="cbadge" style="background:#d1fae5;color:#065f46">沪深交易所 · 日频</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;padding:8px 12px;background:#fffbeb;border-radius:8px;border:1px solid #fde68a">
-      <div>
-        <span class="tx3">最新余额&nbsp;</span>
-        <span id="marginKpiVal" style="font-size:18px;font-weight:800;color:#d97706">—</span>
-      </div>
-      <span id="marginKpiDate" class="tx3" style="color:#94a3b8">加载中…</span>
-      <span id="marginKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
-    </div>
-    <div style="height:200px"><canvas id="cMargin"></canvas></div>
-    <div class="tx3 mt4">来源: 东方财富 · 日频两融余额（沪深合计）· <span id="marginKpiFooter">加载中…</span></div>
-  </div>
 
   <!-- 前10成交占比指标已移除：无公开的日频前10成交占比历史趋势数据源 -->
   <!-- 北向资金指标已移除：沪深港通自 2024-08 起官方停止披露日度北向资金净流入，数据源已不存在 -->
