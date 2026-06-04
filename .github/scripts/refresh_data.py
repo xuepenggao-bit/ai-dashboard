@@ -564,6 +564,61 @@ def _ir_summarize(name, fulltext):
 
 # ── 主程序 ─────────────────────────────────────────────────────
 
+def fetch_macro_profit():
+    """工业企业营业利润累计同比(东财) + 计算机通信电子营业利润累计同比(国家统计局)。"""
+    UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+          '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36')
+    out = {'industrial': [], 'electronic': []}
+    # ① 东财：规模以上工业企业营业利润累计同比
+    try:
+        u = ('https://datacenter-web.eastmoney.com/api/data/v1/get?source=WEB&client=WEB'
+             '&pageSize=30&sortColumns=REPORT_DATE&sortTypes=-1'
+             '&reportName=RPT_ECONOMY_PROFITGROW&columns=REPORT_DATE,ACCUMULATE_GROW,YEAR_RATIO,VALUE')
+        r = requests.get(u, headers={'User-Agent': UA, 'Referer': 'https://data.eastmoney.com/'}, timeout=15)
+        j = r.json()
+        rows = (j.get('result') or {}).get('data') or []
+        print(f'[macro] 东财工业利润 success={j.get("success")} count={len(rows)}')
+        for d in reversed(rows):
+            v = d.get('ACCUMULATE_GROW')
+            if v is None or v == '':
+                v = d.get('YEAR_RATIO')
+            out['industrial'].append({'date': str(d.get('REPORT_DATE', ''))[:7], 'val': v})
+    except Exception as e:
+        print(f'[macro] 东财工业利润 FAIL: {e}')
+    # ② 国家统计局：计算机/通信/电子设备制造业(C39) 营业利润累计增速(A0E0G)
+    try:
+        s = requests.Session()
+        s.headers.update({'User-Agent': UA,
+                          'Referer': 'https://data.stats.gov.cn/easyquery.htm?cn=A01',
+                          'Accept': 'application/json, text/javascript, */*'})
+        s.get('https://data.stats.gov.cn/easyquery.htm?cn=A01', timeout=15)  # 取 cookie
+        nbs = ('https://data.stats.gov.cn/easyquery.htm?m=QueryData&dbcode=hgyd&rowcode=zb&colcode=sj'
+               '&wds=[{"wdcode":"hy","valuecode":"C39"}]'
+               '&dfwds=[{"wdcode":"zb","valuecode":"A0E0G"}]&k1=' + str(int(time.time() * 1000)))
+        r = s.get(nbs, timeout=15)
+        print(f'[macro] 统计局电子利润 HTTP {r.status_code}')
+        j = r.json()
+        nodes = (j.get('returndata') or {}).get('datanodes') or []
+        print(f'[macro] 统计局 datanodes={len(nodes)}')
+        for n in nodes:
+            sd = (n.get('data') or {}).get('strdata', '')
+            if not sd:
+                continue
+            sj = next((w['valuecode'] for w in n.get('wds', []) if w.get('wdcode') == 'sj'), '')
+            m = re.match(r'(\d{4})(\d{2})', sj)
+            lbl = f'{m.group(1)}-{m.group(2)}' if m else sj
+            try:
+                out['electronic'].append({'date': lbl, 'val': float(sd)})
+            except ValueError:
+                pass
+        out['electronic'].sort(key=lambda x: x['date'])
+        if out['electronic']:
+            print(f'[macro] 统计局电子利润最新: {out["electronic"][-1]}')
+    except Exception as e:
+        print(f'[macro] 统计局电子利润 FAIL: {e}')
+    return out
+
+
 def main():
     os.makedirs('data', exist_ok=True)
     ts = now_ts()
@@ -577,6 +632,13 @@ def main():
     with open('data/xq_hot.json','w',encoding='utf-8') as f:
         json.dump({'ts':ts,'list':hot}, f, ensure_ascii=False, indent=2)
     print(f'   ✅ {len(hot)} 只 → data/xq_hot.json')
+
+    # 1.5 宏观利润（工业 + 计算机通信电子）— 验证 Actions 服务器端能否抓到国家统计局
+    print('\n📈 获取宏观营业利润累计同比…')
+    mp = fetch_macro_profit()
+    with open('data/macro_profit.json','w',encoding='utf-8') as f:
+        json.dump({'ts':ts, **mp}, f, ensure_ascii=False, indent=2)
+    print(f"   工业{len(mp['industrial'])}期 / 电子{len(mp['electronic'])}期 → data/macro_profit.json")
 
     # 2. 权重股投资者关系活动记录表（最近一次 → 全文 → GPT摘要）
     #    热股榜每 15 分钟刷新；公告/记录表一天难得更新一次，故每天只抓一次：
