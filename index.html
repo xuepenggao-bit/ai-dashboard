@@ -1143,6 +1143,14 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         </div>
       </div>
     </div>
+
+    <!-- TOP3 行业仓位变化 -->
+    <div class="card mt16">
+      <div class="ch"><span class="ct">TOP3 行业仓位变化</span><span class="cbadge">近5天 · 按行业加总</span></div>
+      <div id="histTopInd" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:4px">
+        <div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">记录持仓后显示行业仓位 TOP3 及其近 5 天变化</div>
+      </div>
+    </div>
   </div>
 
   <!-- ── 二级：单日持仓明细 ── -->
@@ -6052,6 +6060,70 @@ function renderHistTable(){
       </tr>`;
     }).join('')}</tbody>
   </table>`;
+  renderTopIndustries();
+}
+
+// 迷你折线 SVG（行业仓位近5天趋势）
+function _hsSpark(vals, color, w, h){
+  w=w||128; h=h||40;
+  const valid=vals.filter(v=>v!=null&&isFinite(v));
+  if(valid.length<2) return '<div style="height:'+h+'px"></div>';
+  const min=Math.min(...vals), max=Math.max(...vals), range=(max-min)||1, n=vals.length;
+  const pts=vals.map((v,i)=>{
+    const x=(n===1?0:(i/(n-1))*(w-6))+3;
+    const y=h-3-((v-min)/range)*(h-8);
+    return [x,y];
+  });
+  const line=pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const area='3,'+(h-3)+' '+line+' '+pts[pts.length-1][0].toFixed(1)+','+(h-3);
+  const last=pts[pts.length-1];
+  return '<svg width="100%" height="'+h+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" style="display:block">'
+    +'<polygon points="'+area+'" fill="'+color+'14"/>'
+    +'<polyline points="'+line+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="2.6" fill="'+color+'"/></svg>';
+}
+
+// 历史持仓底部：TOP3 行业仓位变化（最近一天按行业加总取 top3，展示近5天趋势与变化）
+function renderTopIndustries(){
+  const el=document.getElementById('histTopInd');
+  if(!el) return;
+  const hist=(PORT&&Array.isArray(PORT.history))?PORT.history.slice():[];
+  if(!hist.length){ el.innerHTML='<div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">记录持仓后显示行业仓位 TOP3 及其近 5 天变化</div>'; return; }
+  hist.sort((a,b)=>a.date.localeCompare(b.date));
+  const last5=hist.slice(-5);
+  // 每天按行业(industry优先，空则用分类sector)加总仓位
+  const dayInd=last5.map(rec=>{
+    const m={};
+    (rec.stocks||[]).forEach(s=>{
+      const k=(s.industry&&s.industry.trim())?s.industry.trim():(s.sector||'其他');
+      m[k]=(m[k]||0)+(+s.w||0);
+    });
+    return m;
+  });
+  const lastM=dayInd[dayInd.length-1];
+  const top3=Object.keys(lastM).map(k=>[k,lastM[k]]).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  if(!top3.length){ el.innerHTML='<div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">暂无行业仓位数据</div>'; return; }
+  const colors=['#dc2626','#d97706','#7c3aed'];
+  el.innerHTML=top3.map(function(pair,i){
+    const ind=pair[0], curW=pair[1], color=colors[i]||'#64748b';
+    const series=dayInd.map(m=>+((m[ind]||0)).toFixed(2));
+    const first=series[0], last=series[series.length-1];
+    const chg=+(last-first).toFixed(1);
+    const chgCol=chg>0?'#dc2626':chg<0?'#16a34a':'#94a3b8';
+    const arrow=chg>0?'▲':chg<0?'▼':'─';
+    return '<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid '+color+';border-radius:10px;padding:12px 14px;min-width:0">'
+      +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:9px">'
+        +'<span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:'+color+'1a;color:'+color+';font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center">'+(i+1)+'</span>'
+        +'<span style="font-size:13px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+ind+'">'+ind+'</span>'
+      +'</div>'
+      +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">'
+        +'<span style="font-size:23px;font-weight:900;color:'+color+';letter-spacing:-.02em;line-height:1">'+curW.toFixed(1)+'%</span>'
+        +'<span style="font-size:12px;font-weight:800;color:'+chgCol+';white-space:nowrap">'+arrow+' '+Math.abs(chg).toFixed(1)+'%</span>'
+      +'</div>'
+      +_hsSpark(series,color)
+      +'<div style="font-size:10px;color:var(--text2);margin-top:5px">近'+series.length+'天 '+first.toFixed(1)+'% → '+last.toFixed(1)+'%</div>'
+    +'</div>';
+  }).join('');
 }
 
 function showHistDetail(date){
