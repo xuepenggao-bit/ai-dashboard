@@ -564,10 +564,61 @@ def _ir_summarize(name, fulltext):
 
 # ── 主程序 ─────────────────────────────────────────────────────
 
+def verify_actions_ip():
+    """全面验证 GitHub Actions 出口 IP 对国家统计局/东财的抓取能力。"""
+    UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+          '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36')
+    print('\n===== Actions IP 抓取能力验证 =====')
+    # 0) 出口 IP
+    try:
+        ip = requests.get('https://api.ipify.org?format=json', timeout=10).json()
+        print(f'[verify] Actions 出口IP = {ip}')
+    except Exception as e:
+        print(f'[verify] 出口IP查询失败: {e}')
+    # 1) 国家统计局站点可达性
+    for url, name in [('https://data.stats.gov.cn/', '统计局data首页'),
+                      ('https://www.stats.gov.cn/', '统计局主站')]:
+        try:
+            r = requests.get(url, headers={'User-Agent': UA}, timeout=15)
+            print(f'[verify] {name}: HTTP {r.status_code}  len={len(r.content)}')
+        except Exception as e:
+            print(f'[verify] {name}: FAIL {e}')
+    # 2) easyquery 完整浏览器头 + cookie
+    hdrs = {'User-Agent': UA, 'Referer': 'https://data.stats.gov.cn/easyquery.htm?cn=A01',
+            'Accept': '*/*', 'Accept-Language': 'zh-CN,zh;q=0.9',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Sec-Fetch-Site': 'same-origin', 'Sec-Fetch-Mode': 'cors'}
+    try:
+        s = requests.Session(); s.headers.update(hdrs)
+        h = s.get('https://data.stats.gov.cn/easyquery.htm?cn=A01', timeout=15)
+        print(f'[verify] easyquery主页: HTTP {h.status_code}  cookies={list(s.cookies.keys())}')
+        q = ('https://data.stats.gov.cn/easyquery.htm?m=QueryData&dbcode=hgyd&rowcode=zb&colcode=sj'
+             '&wds=[{"wdcode":"hy","valuecode":"C39"}]'
+             '&dfwds=[{"wdcode":"zb","valuecode":"A0E0G"}]&k1=' + str(int(time.time() * 1000)))
+        r = s.get(q, timeout=15)
+        print(f'[verify] easyquery查询: HTTP {r.status_code}  len={len(r.content)}  ct={r.headers.get("Content-Type")}')
+        print(f'[verify] 响应前160字: {r.text[:160]!r}')
+    except Exception as e:
+        print(f'[verify] easyquery: FAIL {e}')
+    # 3) 东财对照（确认东财对 Actions IP 是否整体受限）
+    for rn in ['RPT_ECONOMY_CPI', 'RPT_ECONOMY_PROFITGROW', 'RPT_ECONOMY_RETAILS']:
+        try:
+            u = (f'https://datacenter-web.eastmoney.com/api/data/v1/get?source=WEB&client=WEB'
+                 f'&pageSize=3&reportName={rn}&columns=ALL')
+            r = requests.get(u, headers={'User-Agent': UA}, timeout=12)
+            j = r.json()
+            cnt = len((j.get('result') or {}).get('data') or [])
+            print(f'[verify] 东财 {rn}: HTTP {r.status_code} success={j.get("success")} count={cnt}')
+        except Exception as e:
+            print(f'[verify] 东财 {rn}: FAIL {e}')
+    print('===== 验证结束 =====\n')
+
+
 def main():
     os.makedirs('data', exist_ok=True)
     ts = now_ts()
     print(f'\n=== 数据刷新  {ts} ===\n')
+    verify_actions_ip()   # 临时：验证 Actions IP 抓取能力（看完日志后移除）
 
     xq_session()  # 预热一次
 
