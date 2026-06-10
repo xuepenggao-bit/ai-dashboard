@@ -7,7 +7,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>投资组合 · AI产业监控仪表板</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- 性能：行情/数据域名预连接（DNS+TLS 提前握手） -->
+<link rel="preconnect" href="https://qt.gtimg.cn">
+<link rel="preconnect" href="https://push2.eastmoney.com">
+<link rel="preconnect" href="https://datacenter-web.eastmoney.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<!-- defer：不阻塞 HTML 解析与首屏渲染；所有图表都在 DOMContentLoaded 后创建,defer 安全 -->
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -5323,160 +5329,10 @@ async function refreshMacro(){
   // 日频图表（融资融券余额 / 北向资金 / 涨跌家数当日）
   fetchDailyCharts();
 
-  const chartKeys=[
-    {key:'cpi',         chRef:()=>CH.cpi,             dsIdx:0},
-    {key:'tsf',         chRef:()=>CH.tsf,             dsIdx:0},
-    {key:'fai',         chRef:()=>CH.fai,             dsIdx:0},
-    {key:'retail',      chRef:()=>CH.retail,          dsIdx:0},
-    {key:'industrial',  chRef:()=>CH.industrial,      dsIdx:0},
-    {key:'profitAccum', chRef:()=>CH.profitAccum,     dsIdx:0},
-  ];
-  const ok=[], fail=[];
-  for(const {key,chRef,dsIdx} of chartKeys){
-    try{
-      const d=await fetchMacroApi(key);
-      const ch=chRef();
-      if(ch){
-        ch.data.labels=d.labels;
-        ch.data.datasets[dsIdx].data=d.vals;
-        if(d.dsLabel) ch.data.datasets[dsIdx].label=d.dsLabel;
-        if(key==='industrial'){
-          ch.data.datasets[0].backgroundColor=d.vals.map(v=>(v||0)>=0?'rgba(5,150,105,.65)':'rgba(220,38,38,.55)');
-          if(ch.data.datasets[1]){ch.data.datasets[1].data=d.vals;}
-        }
-        // 同步更新零轴数据点数量（fai、profitAccum、electronicProfit 都有 dataset[1] 零轴）
-        if(['fai','profitAccum','electronicProfit'].includes(key)){
-          if(ch.data.datasets[1]){ch.data.datasets[1].data=d.labels.map(()=>0);}
-        }
-        ch.update('none');
-      }
-      const latest=d.labels[d.labels.length-1]||'';
-      ok.push({key, latest, name:d.name, field:d.usedField});
-    }catch(e){
-      console.warn('[Macro]',key,'失败:',e.message);
-      fail.push({key, err:e.message, name:(MACRO_CFGS[key]||{}).name||key});
-    }
-  }
-
-  // ── 计算机通信电子行业营业利润累计同比 — 尝试国家统计局 easyquery API ────
-  await (async()=>{
-    const nbsUrl='https://data.stats.gov.cn/easyquery.htm?m=QueryData&dbcode=hgyd'
-      +'&rowcode=zb&colcode=sj&wds=[{"wdcode":"hy","valuecode":"C39"}]'
-      +'&dfwds=[{"wdcode":"zb","valuecode":"A0E0G"}]&k1='+Date.now();
-    try{
-      const resp=await fetch(nbsUrl,{cache:'no-store'});
-      if(!resp.ok) throw new Error('HTTP '+resp.status);
-      const json=await resp.json();
-      // NBS easyquery 返回格式解析
-      const nodes=json?.returndata?.datanodes;
-      if(!nodes?.length) throw new Error('NBS: no datanodes');
-      const pairs=nodes
-        .filter(n=>n?.data?.strdata!=null&&n.data.strdata!=='')
-        .map(n=>{
-          const sjCode=n.wds?.find(w=>w.wdcode==='sj')?.valuecode||'';
-          const m=sjCode.match(/(\d{4})(\d{2})/);
-          const lbl=m?m[1].slice(2)+'-'+m[2]:sjCode;
-          return{lbl, val:parseFloat(n.data.strdata)};
-        })
-        .filter(p=>isFinite(p.val))
-        .sort((a,b)=>a.lbl>b.lbl?1:-1);
-      if(pairs.length<6) throw new Error('NBS: too few points ('+pairs.length+')');
-      const ch=CH.electronicProfit;
-      if(ch){
-        ch.data.labels=pairs.map(p=>p.lbl);
-        ch.data.datasets[0].data=pairs.map(p=>p.val);
-        if(ch.data.datasets[1]) ch.data.datasets[1].data=pairs.map(()=>0);
-        ch.update('none');
-      }
-      const lbl=pairs[pairs.length-1].lbl;
-      ok.push({key:'electronicProfit',latest:lbl,name:'计算机电子营业利润累计同比',field:'NBS A0E0G'});
-      // 更新badge和footer
-      const epBadge=document.getElementById('electronicProfitBadge');
-      if(epBadge){ epBadge.textContent='国家统计局·最新'+lbl; epBadge.style.background='#ede9fe'; epBadge.style.color='#5b21b6'; }
-      const epFooter=document.getElementById('electronicProfitFooter');
-      if(epFooter) epFooter.textContent=`规模以上计算机、通信和其他电子设备制造业营业利润累计同比 · ${pairs[0].lbl}至${lbl} · 来源: 国家统计局`;
-    }catch(e){
-      console.warn('[Macro] NBS电子行业利润:',e.message);
-      // NBS接口失败，更新badge明确提示为历史静态数据
-      const epBadge=document.getElementById('electronicProfitBadge');
-      if(epBadge){ epBadge.textContent='历史估算数据·获取失败'; epBadge.style.background='#fee2e2'; epBadge.style.color='#991b1b'; }
-      fail.push({key:'electronicProfit', err:e.message, name:'计算机电子营业利润累计同比'});
-    }
-  })();
-
-  // ── 主要指数PE走势图历史数据刷新 — EM DataCenter ──────────────────
-  await (async()=>{
-    // 用 RPT_INDEX_ESTIMATE 或备选接口拉取上证+深证历史月末PE（近30条）
-    const PE_HIST_CANDS = [
-      {report:'RPT_INDEX_ESTIMATE',    peCol:'PE_TTM'},
-      {report:'RPT_INDEX_ESTIMATE',    peCol:'PE1'   },
-      {report:'RPT_IDXS_VALUATION',    peCol:'PE_TTM'},
-      {report:'RPT_INDEX_VALUATION',   peCol:'PE_TTM'},
-    ];
-    const HIST_CODES=['000001.SH','399001.SZ'];
-    const histFilter=`(SECUCODE IN ("${HIST_CODES.join('","')}"))`;
-    for(const c of PE_HIST_CANDS){
-      try{
-        const url=`https://datacenter-web.eastmoney.com/api/data/v1/get?source=WEB&client=WEB`
-          +`&pageSize=40&sortTypes=-1&sortColumns=TRADE_DATE`
-          +`&reportName=${c.report}&columns=TRADE_DATE,SECUCODE,${c.peCol}`
-          +`&filter=${encodeURIComponent(histFilter)}&_=${Date.now()}`;
-        const res=await fetch(url,{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
-        const data=res?.result?.data;
-        if(!data?.length||data[0][c.peCol]==null) continue;
-        // 按日期排序，对每个月只取最后一条（月末）
-        const sorted=[...data].sort((a,b)=>String(a.TRADE_DATE)<String(b.TRADE_DATE)?-1:1);
-        const sseByMon={}, szeByMon={};
-        sorted.forEach(row=>{
-          const dt=String(row.TRADE_DATE).slice(0,10);
-          const mon=dt.slice(2,4)+'-'+dt.slice(5,7); // YY-MM
-          const pe=parseFloat(row[c.peCol]);
-          if(!isFinite(pe)||pe<=0) return;
-          if(row.SECUCODE==='000001.SH') sseByMon[mon]=pe;
-          else if(row.SECUCODE==='399001.SZ') szeByMon[mon]=pe;
-        });
-        const allMons=[...new Set([...Object.keys(sseByMon),...Object.keys(szeByMon)])].sort();
-        if(allMons.length<3) continue;
-        const sseVals=allMons.map(m=>sseByMon[m]||null);
-        const szeVals=allMons.map(m=>szeByMon[m]||null);
-        const ch=CH.mktPe;
-        if(ch){
-          ch.data.labels=allMons;
-          ch.data.datasets[0].data=sseVals;
-          ch.data.datasets[1].data=szeVals;
-          ch.update('none');
-        }
-        const latest=allMons[allMons.length-1];
-        const badge=document.getElementById('mktPeBadge');
-        if(badge){ badge.textContent='东方财富·历史月末'; badge.style.background='#dbeafe'; badge.style.color='#1e40af'; }
-        const footer=document.getElementById('mktPeFooter');
-        if(footer) footer.textContent=`蓝=上证综指 · 绿=深证成指 · ${allMons[0]}至${latest} · 来源: 东方财富 DataCenter`;
-        ok.push({key:'mktPe', latest, name:'主要指数PE走势', field:c.peCol});
-        console.log('[Macro] 主要指数PE走势 OK report:',c.report,'col:',c.peCol,'点数:',allMons.length);
-        break;
-      }catch(e2){ console.warn('[Macro] PE走势 cand失败:',e2.message); }
-    }
-    // 全部失败时保留静态数据+标注
-    if(!ok.find(r=>r.key==='mktPe')){
-      console.log('[Macro] 主要指数PE走势：所有接口失败，保留历史静态数据');
-    }
-  })();
-
+  // 月度宏观图表(CPI/社融/固投/社零/工业利润/电子利润/PE走势)已随"A股宏观"页删除，
+  // 对应的 8+ 个东财/统计局请求一并移除（性能优化：refreshMacro 现仅刷新 KPI+两融+iVIX）。
   const timeStr=new Date().toLocaleString('zh-CN');
-  if(ts) ts.textContent=`已更新 ${ok.length}/${chartKeys.length} 项 · ${timeStr}`;
-  if(alertEl){
-    if(ok.length>0){
-      alertEl.className='alert a-info mb8';
-      alertEl.style.display='block';
-      const okStr=ok.map(r=>r.name+(r.latest?'(至'+r.latest+')'+(r.field?'['+r.field+']':''):'')).join('、');
-      const failStr=fail.length?'　⚠ 失败：'+fail.map(r=>r.name+'('+r.err+')').join('、'):'';
-      alertEl.textContent='✓ 已更新：'+okStr+failStr;
-    }else{
-      alertEl.className='alert a-warn mb8';
-      alertEl.style.display='block';
-      alertEl.textContent='⚠ 所有指标获取失败，显示历史静态数据。详情见控制台(F12)。失败：'+fail.map(r=>r.name+'→'+r.err).join('；');
-    }
-  }
+  if(ts) ts.textContent=`已刷新 市值/PE/两融 · ${timeStr}`;
   if(btn){ btn.classList.remove('loading'); btn.disabled=false; }
 
   // 同步刷新 iVIX
@@ -5766,9 +5622,10 @@ const _IDX_EM = [
   {secids:['47.800005','90.800005','1.800005','100.800005'], code:'800005', altCodes:[], label:'A股平均股价', region:'a'},
   {secids:['100.HSAHP'], code:'HSAHP', altCodes:['HSCAHPI'], label:'A/H溢价', region:'ah'},
   {secids:['104.CN00Y'], code:'CN00Y', altCodes:['CN00'],    label:'A50期指', region:'fut'},  // SGX A50期指当月连续
+  {secids:['103.NQ00Y'], code:'NQ00Y', altCodes:['NQ00'],    label:'纳指期指', region:'fut'},  // CME 小型纳指当月连续
 ];
 // 渲染顺序固定（A股平均股价紧随中证全指；港股在 A/H溢价前，期指置底）
-const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股平均股价','恒生指数','恒生科技','A/H溢价','A50期指'];
+const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股平均股价','恒生指数','恒生科技','A/H溢价','A50期指','纳指期指'];
 
 // 粘性缓存：每个指数上次成功获取的值。某数据源偶发失败时回填，保证不闪现消失
 let _IDX_CACHE = {};   // label → {label, price, pct, region, ts}
@@ -7531,11 +7388,8 @@ function _renderPortTopW(){
 function _safe(fn){ try{ fn(); }catch(e){ console.warn('[init]', fn.name, e.message); } }
 
 document.addEventListener('DOMContentLoaded',()=>{
-  // 图表初始化——各自隔离，任意一个崩溃不拖垮其他（历史上 cSig 等 canvas 曾导致全局中断）
-  _safe(mkCapex);_safe(mkTrend);_safe(mkSig);_safe(mkStageC);
-  _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);_safe(mkPort);
-  _safe(mkNeoCapex);_safe(mkArr);
-  fetchAiTrend();   // 从 data/ai_trend.json 加载最新 Capex/ARR/PE 并更新 ARR 图表
+  // ── 首屏关键路径：只做投资组合页必需的初始化（性能优化：其余推迟到空闲） ──
+  _safe(mkPort);   // 投资组合仓位图（本页唯一 Chart）
 
   // 实时时钟（精确到秒），仅在投资组合 tab 顶部显示
   (function _startClock(){
@@ -7570,19 +7424,24 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(ts && ts.textContent==='股价未加载'){ portLoad(); fetchPortPrices(); }
   }, 1000);
 
-  _safe(mkNewInv);_safe(mkMktPe);_safe(mkMargin);
-  _safe(mkCpi);_safe(mkTsf);_safe(mkFai);_safe(mkRetail);_safe(mkIndustrial);_safe(mkProfitAccum);_safe(mkElectronicProfit);
-  _safe(mkStageMatrix);
-  _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();renderNeo();});
-
-  fetchVixChart();        // 异步拉取 iVIX 历史数据
-  fetchMonLive();         // 异步拉取产业链监控20日动量
-  fetchMacroRates();      // 异步拉取中美10年国债收益率（风险仪表板宏观指标）
-  // 北向资金使用静态日频数据（BASE.ashare.north），无需远程拉取
+  // ── 非首屏内容：图表与抓取推迟到浏览器空闲（投资组合先渲染先交互，数据照常全部加载） ──
+  const _deferInit = window.requestIdleCallback ? (fn)=>requestIdleCallback(fn,{timeout:1500}) : (fn)=>setTimeout(fn,300);
+  _deferInit(()=>{
+    // 其他标签页图表（宏观趋势/产业链监控等）
+    _safe(mkCapex);_safe(mkTrend);_safe(mkSig);_safe(mkStageC);
+    _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);
+    _safe(mkNeoCapex);_safe(mkArr);_safe(mkMargin);
+    _safe(mkStageMatrix);
+    _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();renderNeo();});
+    // 非首屏数据抓取（错开首屏行情请求，避免抢东财/腾讯连接）
+    fetchAiTrend();         // data/ai_trend.json → Capex/ARR/PE
+    fetchVixChart();        // iVIX 历史数据
+    fetchMonLive();         // 产业链监控20日动量
+    fetchMacroRates();      // 中美10年国债收益率
+    _macroAutoFetched = true;
+    setTimeout(refreshMacro, 600);  // 宏观KPI/两融（等首屏行情请求基本完成后再拉）
+  });
   const _tsEl=document.getElementById('tsEl'); if(_tsEl) _tsEl.textContent='最后更新: '+new Date().toLocaleString('zh-CN');
-  // 页面加载时自动拉取A股宏观最新数据（无需等待切换到宏观标签页）
-  _macroAutoFetched = true;   // 防止切换到宏观标签页时重复拉取
-  setTimeout(refreshMacro, 800);  // 延迟800ms，等各图表初始化完成后再拉取
   // 页面加载时已主动拉取所有动态数据，为各标签页初始化节流时间戳，
   // 避免30秒内切换标签时立即重复请求（t0/t3为静态，不需要节流记录）
   const _initTs=Date.now();
