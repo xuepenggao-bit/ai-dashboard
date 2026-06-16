@@ -7289,16 +7289,24 @@ function _renderPortBreadth(){
   if(flat.length){ flatEl.textContent='平盘 '+flat.length+' 只'; flatEl.style.display='block'; }
   else { flatEl.style.display='none'; }
 
-  // ── 领涨/领跌行业 ──────────────────────────────────────────────
+  // ── 领涨/领跌行业（按"涨跌幅 × 仓位"加权平均）──────────────────────
+  //    行业涨跌幅 = Σ(成员股涨跌幅 × 仓位) / Σ仓位；若该行业成员仓位全为 0/未设置，则回退为简单算术均值
   var _indMap = {};
   withPrice.forEach(function(sk){
     var ind = (sk.industry && sk.industry.trim()) ? sk.industry.trim() : '未分类';
-    if(!_indMap[ind]) _indMap[ind] = [];
-    _indMap[ind].push(_PORT_PRICES[sk.code].pct);
+    var pi  = _PORT_PRICES[sk.code];
+    var w   = (pi && pi.w != null) ? pi.w : (sk.w != null ? sk.w : 0);
+    if(!_indMap[ind]) _indMap[ind] = { sumWP:0, sumW:0, sumP:0, cnt:0 };
+    var m = _indMap[ind];
+    m.sumWP += pi.pct * w;   // 仓位加权的涨跌幅之和
+    m.sumW  += w;            // 仓位之和
+    m.sumP  += pi.pct;       // 简单和（仓位全为 0 时回退用）
+    m.cnt   += 1;
   });
   var _indList = Object.keys(_indMap).map(function(ind){
-    var pcts = _indMap[ind];
-    return { name: ind, cnt: pcts.length, avg: pcts.reduce(function(s,v){return s+v;},0)/pcts.length };
+    var m = _indMap[ind];
+    var avg = (m.sumW > 0) ? (m.sumWP / m.sumW) : (m.sumP / m.cnt);
+    return { name: ind, cnt: m.cnt, avg: avg };
   });
   var liEl = document.getElementById('portIndLeader');
   if(_indList.length >= 2 && liEl){
@@ -7308,10 +7316,10 @@ function _renderPortBreadth(){
     var _fmt = function(v){ return (v >= 0 ? '+' : '') + v.toFixed(2) + '%'; };
     document.getElementById('pTopIndName').textContent = _topI.name;
     document.getElementById('pTopIndAvg').textContent  = _fmt(_topI.avg);
-    document.getElementById('pTopIndCnt').textContent  = _topI.cnt + '只均值';
+    document.getElementById('pTopIndCnt').textContent  = _topI.cnt + '只·加权';
     document.getElementById('pBotIndName').textContent = _botI.name;
     document.getElementById('pBotIndAvg').textContent  = _fmt(_botI.avg);
-    document.getElementById('pBotIndCnt').textContent  = _botI.cnt + '只均值';
+    document.getElementById('pBotIndCnt').textContent  = _botI.cnt + '只·加权';
     liEl.style.display = 'block';
   } else if(liEl){
     liEl.style.display = 'none';
