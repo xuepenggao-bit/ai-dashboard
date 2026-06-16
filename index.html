@@ -414,7 +414,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div style="width:1px;background:#dde3f5;flex-shrink:0"></div>
 
       <!-- ② 刷新股价 -->
-      <button id="portPriceBtn" onclick="fetchPortPrices()"
+      <button id="portPriceBtn" onclick="refreshPortAll()"
         style="flex:1;min-width:96px;display:flex;flex-direction:column;align-items:center;
                justify-content:center;gap:4px;padding:10px 18px;background:transparent;
                border:none;cursor:pointer;font-family:inherit;transition:background .15s"
@@ -4574,13 +4574,24 @@ let _macroAutoFetched=false;
 const _TAB_TS={};  // 各标签页最近一次动态刷新的时间戳（用于节流）
 const _TAB_THROTTLE=30000; // 30秒内不重复刷新
 
+// ── 投资组合页“并行刷新”：股价/指数/主力/大盘/热股 同时发起，互不阻塞 ──
+//    A档优化：原先指数(fetchIndexPrices)与大盘(market stats)串在 fetchPortPrices 的 finally 之后，
+//    必须等持仓股价(含港股回退链)全部跑完才开始；改为各路并行，总时长 = 最长的一条，不再累加。
+function refreshPortAll(){
+  try{ fetchPortPrices();   }catch(e){ console.warn('[refreshPortAll] portPrices', e); }
+  try{ fetchIndexPrices();  }catch(e){ console.warn('[refreshPortAll] indexPrices', e); }
+  try{ fetchMainFlow();     }catch(e){ console.warn('[refreshPortAll] mainFlow', e); }
+  try{ fetchMarketStats();  }catch(e){ console.warn('[refreshPortAll] marketStats', e); }  // 自带 _mktStatsFetching 去重
+  try{ fetchXqHot();        }catch(e){ console.warn('[refreshPortAll] xqHot', e); }
+}
+
 function _tabRefresh(idx){
   const tab=TAB_ORDER[idx];
   const now=Date.now();
   if(_TAB_TS[idx] && now-_TAB_TS[idx]<_TAB_THROTTLE) return; // 节流
   _TAB_TS[idx]=now;
   // 按标签页类型调用对应的动态数据刷新函数
-  if(tab==='tPort'){ fetchPortPrices(); fetchMainFlow(); fetchMarketBreadth(); fetchMarketTurnover(); fetchXqHot(); } // finally 内会链式调用 fetchIndexPrices
+  if(tab==='tPort'){ refreshPortAll(); }  // 并行刷新全部（A档优化：不再依赖 fetchPortPrices 的 finally 串行链）
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tHist') renderHistTable();
   else if(tab==='tPre')  preLoad();
@@ -5646,7 +5657,7 @@ let _IDX_CACHE = {};   // label → {label, price, pct, region, ts}
 // 带超时 + 重试的 fetch（gbk=true 时按 GBK 解码返回文本，否则返回 JSON）
 async function _idxFetch(url, opt){
   opt = opt || {};
-  const timeout = opt.timeout || 6000, retries = (opt.retries==null?1:opt.retries), gbk = !!opt.gbk;
+  const timeout = opt.timeout || 3000, retries = (opt.retries==null?1:opt.retries), gbk = !!opt.gbk;
   for(let attempt=0; attempt<=retries; attempt++){
     try{
       const ctrl = new AbortController();
@@ -5675,7 +5686,7 @@ async function fetchIndexPrices(){
   // ── ① 腾讯 GBK API（A股 + 港股，重试2次）──────────────────
   try{
     const tUrl = 'https://qt.gtimg.cn/q=' + _IDX_TENCENT.map(i=>i.tc).join(',') + '&_=' + Date.now();
-    const txt  = await _idxFetch(tUrl, {timeout:6000, retries:2, gbk:true});
+    const txt  = await _idxFetch(tUrl, {timeout:3000, retries:1, gbk:true});
     _IDX_TENCENT.forEach(idx=>{
       const m = txt.match(new RegExp('v_' + idx.tc + '="([^"]+)"'));
       if(!m) return;
@@ -5710,7 +5721,7 @@ async function fetchIndexPrices(){
         try{
           const url = host + '/api/qt/ulist.np/get?secids=' + secid
                     + '&fltt=2&invt=2&fields=f12,f14,f2,f3&_=' + Date.now();
-          const j = await _idxFetch(url, {timeout:6000, retries:1});
+          const j = await _idxFetch(url, {timeout:3000, retries:1});
           const diff = (j && j.data && j.data.diff) || [];
           const hit = diff.find(d=>{
             const c = String(d.f12).toUpperCase();
@@ -5732,7 +5743,7 @@ async function fetchIndexPrices(){
   if(_hkMiss.length){
     try{
       const tUrl = 'https://qt.gtimg.cn/q=' + _hkMiss.map(x=>x[1]).join(',') + '&_=' + Date.now();
-      const txt  = await _idxFetch(tUrl, {timeout:6000, retries:1, gbk:true});
+      const txt  = await _idxFetch(tUrl, {timeout:3000, retries:1, gbk:true});
       _hkMiss.forEach(pair=>{
         const m = txt.match(new RegExp('v_' + pair[1] + '="([^"]+)"'));
         if(!m) return;
@@ -6249,7 +6260,7 @@ async function _emClistGet(qs){
   const hosts = ['https://push2.eastmoney.com','https://push2delay.eastmoney.com'];
   for(const h of hosts){
     try{
-      const d = await _idxFetch(h + '/api/qt/clist/get?' + qs + '&_=' + Date.now(), {timeout:7000, retries:1});
+      const d = await _idxFetch(h + '/api/qt/clist/get?' + qs + '&_=' + Date.now(), {timeout:3000, retries:1});
       if(d && d.data) return d;
     }catch(e){ /* 试下一个域名 */ }
   }
@@ -6856,7 +6867,7 @@ async function fetchMainFlow(){
     let list = null;
     for(const host of hosts){
       try{
-        const data = await _idxFetch(host + path + '&_=' + Date.now(), {timeout:7000, retries:1});
+        const data = await _idxFetch(host + path + '&_=' + Date.now(), {timeout:3000, retries:1});
         if(data && (data.rc === 0 || data.rc == null)){
           const d = data.data && data.data.diff;
           if(d && d.length){ list = d; break; }   // 命中即停
@@ -6929,7 +6940,7 @@ function _fetchSinaRT(codes){
       });
       cleanup(); resolve(out);
     };
-    var timer = setTimeout(finish, 5000);   // 5 秒超时（被 Referer 拒则空回退）
+    var timer = setTimeout(finish, 3000);   // 3 秒超时（被 Referer 拒则空回退）
     sc.onload  = finish;
     sc.onerror = function(){ if(!done){ done = true; clearTimeout(timer); cleanup(); resolve({}); } };
     sc.src = 'https://hq.sinajs.cn/list=' + codes.join(',') + '&_=' + Date.now();
@@ -6970,7 +6981,7 @@ async function fetchPortPrices(){
     var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields=f12,f14,f2,f3,f20,f50,f11&_='+ts0 : null;
 
     // 带超时的 fetch：6 秒未返回即放弃该路（abort），避免东财偶发限流/502/TCP挂起拖住整页
-    var _PF_TIMEOUT = 6000;
+    var _PF_TIMEOUT = 3000;
     var _pfFetch = function(url){
       var ctrl = new AbortController();
       var tid  = setTimeout(function(){ ctrl.abort(); }, _PF_TIMEOUT);
@@ -7123,9 +7134,8 @@ async function fetchPortPrices(){
     renderPortfolio();
     renderPortTop3();
     _renderPortTopW();
-    fetchIndexPrices();
-    try{ fetchMarketBreadth(); }catch(e){}
-    try{ fetchMarketTurnover(); }catch(e){}
+    // 指数 / 主力 / 大盘统计 已由 refreshPortAll() 与本函数并行触发，此处不再串行调用（避免等股价+港股回退跑完才开始）。
+    // 注：定时自动刷新、保存持仓等仅调 fetchPortPrices 的入口，本就只需刷股价，无需连带重活。
     // 如果估值分析标签页是活动状态，同步刷新估值表格（更新股价+市值列）
     var valEl = document.getElementById('tVal');
     if(valEl && valEl.classList.contains('active')) renderValTable();
