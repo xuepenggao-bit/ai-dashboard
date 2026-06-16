@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A股交易系统 · 高胜率 · 交易主导</title>
+<style>
+:root{
+  --ink:#15202b; --ink2:#33424f; --muted:#6b7785; --line:#e2e6ea;
+  --navy:#1d3a5f; --navy-soft:#eef3f9;
+  --amber:#b5751a; --amber-soft:#fbf3e4;
+  --red:#a8322d; --red-soft:#fbeceb;
+  --green:#2f6b46; --green-soft:#eaf3ed;
+  --teal:#1f6f78; --teal-soft:#e9f3f4;
+  --purple:#5b3a7e; --purple-soft:#f1ecf7;
+}
+*{box-sizing:border-box;} html{scroll-behavior:smooth;}
+body{font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif; color:var(--ink); background:#f4f6f8; margin:0; font-size:15px; line-height:1.72;}
+.wrap{max-width:1000px; margin:0 auto; background:#fff; box-shadow:0 0 40px rgba(21,32,43,.08);}
+.serif{font-family:"Noto Serif SC","Songti SC",serif;}
+.cover{padding:64px 64px 44px; border-top:10px solid var(--navy);}
+.kick{font-size:12px; letter-spacing:6px; color:var(--teal); font-weight:700;}
+.cover h1{font-size:36px; line-height:1.25; margin:14px 0 8px; font-weight:900;}
+.cover .sub{font-size:17.5px; color:var(--ink2);}
+.rule{width:64px; height:4px; background:var(--teal); margin:24px 0;}
+.cover .desc{font-size:15px; color:var(--muted); max-width:790px; line-height:1.85;}
+.meta{display:flex; gap:32px; margin-top:30px; padding-top:16px; border-top:1px solid var(--line); font-size:12.5px; color:var(--muted); flex-wrap:wrap;}
+.meta b{color:var(--ink2);}
+section{padding:36px 64px 8px;}
+h2{font-size:23px; font-weight:900; color:var(--navy); margin:6px 0 6px; padding-bottom:10px; border-bottom:2px solid var(--navy);}
+h2 .num{color:var(--teal); margin-right:12px;}
+h3{font-size:16.5px; font-weight:800; color:var(--ink); margin:20px 0 6px;}
+p{margin:9px 0; color:var(--ink2);}
+strong{color:var(--ink);}
+em{font-style:normal; background:linear-gradient(transparent 62%, #ffe9b8 62%); padding:0 1px; font-weight:700; color:var(--ink);}
+.callout{border-left:4px solid var(--teal); background:var(--teal-soft); padding:13px 19px; margin:15px 0; border-radius:0 6px 6px 0;}
+.callout .ct{font-weight:900; color:var(--teal); display:block; margin-bottom:3px; font-size:13.5px; letter-spacing:.5px;}
+.callout.red{border-color:var(--red); background:var(--red-soft);} .callout.red .ct{color:var(--red);}
+.callout.amber{border-color:var(--amber); background:var(--amber-soft);} .callout.amber .ct{color:var(--amber);}
+.callout.purple{border-color:var(--purple); background:var(--purple-soft);} .callout.purple .ct{color:var(--purple);}
+.callout p{margin:4px 0;}
+.pill{display:inline-block; font-size:11.5px; font-weight:700; padding:2px 10px; border-radius:12px; margin-right:6px; vertical-align:middle;}
+.pl-t{background:var(--teal-soft); color:var(--teal);} .pl-n{background:var(--navy-soft); color:var(--navy);}
+.pl-r{background:var(--red-soft); color:var(--red);} .pl-g{background:var(--green-soft); color:var(--green);}
+.pl-a{background:var(--amber-soft); color:var(--amber);} .pl-p{background:var(--purple-soft); color:var(--purple);}
+table{width:100%; border-collapse:collapse; margin:13px 0; font-size:13.5px;}
+th{background:var(--navy); color:#fff; text-align:left; padding:8px 12px; font-weight:700;}
+td{padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--ink2);}
+tbody tr:nth-child(even){background:#f7f9fb;}
+.mono{font-weight:800; color:var(--ink); white-space:nowrap;}
+ul{padding-left:22px; margin:8px 0;} li{margin:5px 0; color:var(--ink2);}
+.arch{margin:16px 0; border:1px solid var(--line); border-radius:10px; padding:10px 14px 4px; background:#fcfdfe;}
+.arch svg{width:100%; height:auto; display:block;}
+.gatecards{display:flex; gap:13px; margin:14px 0;}
+.gc{flex:1; border-radius:9px; padding:12px 15px; border:1.5px solid;}
+.gc h4{margin:0 0 3px; font-size:14.5px; font-weight:900;}
+.gc p{font-size:12.8px; margin:4px 0; line-height:1.55;}
+.gc.g{border-color:var(--green); background:#f5faf6;} .gc.g h4{color:var(--green);}
+.gc.a{border-color:var(--amber); background:#fdfaf3;} .gc.a h4{color:var(--amber);}
+.gc.r{border-color:var(--red); background:#fdf6f5;} .gc.r h4{color:var(--red);}
+.flowline{display:flex; align-items:center; gap:8px; margin:10px 0; flex-wrap:wrap;}
+.fstep{background:var(--navy-soft); color:var(--navy); font-weight:800; font-size:13px; border-radius:7px; padding:6px 13px;}
+.farr{color:var(--muted); font-weight:900;}
+.closer{background:var(--ink); color:#fff; padding:24px 30px; border-radius:10px; margin:24px 0 10px;}
+.closer .ct{color:#7fd0d8; font-weight:900; letter-spacing:2px; font-size:13px; display:block; margin-bottom:8px;}
+.closer p{color:#e8edf2; font-size:15px; margin:6px 0; line-height:1.8;}
+.closer em{background:none; color:#ffcf7a;}
+.footer{padding:20px 64px 44px; font-size:11.5px; color:var(--muted); line-height:1.7; border-top:1px solid var(--line); margin-top:28px;}
+@media (max-width:760px){ .gatecards{flex-direction:column;} section,.cover,.footer{padding-left:24px;padding-right:24px;} .cover h1{font-size:27px;} }
+@media print{ body{background:#fff;} .wrap{box-shadow:none; max-width:100%;} }
+
+/* ===== top bar + tabs ===== */
+.topbar{position:sticky;top:0;z-index:60;background:linear-gradient(180deg,#ffffff 0%,#eef2f6 100%);border-bottom:1px solid #d9e0e7;box-shadow:0 6px 18px rgba(21,32,43,.06);}
+.brand{display:flex;align-items:baseline;gap:14px;padding:14px 30px 2px;flex-wrap:wrap;}
+.brand .bt{font-family:"Noto Serif SC","Songti SC",serif;font-weight:900;font-size:19px;color:var(--navy);letter-spacing:.5px;}
+.brand .bk{font-size:11px;letter-spacing:3px;color:var(--teal);font-weight:700;}
+.brand .hint{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600;align-self:center;animation:hintpulse 2.4s ease-in-out infinite;}
+@keyframes hintpulse{0%,100%{opacity:.45;}50%{opacity:1;}}
+.tabnav{display:flex;gap:9px;padding:12px 30px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.tabnav::-webkit-scrollbar{height:6px;}
+.tabnav::-webkit-scrollbar-thumb{background:#cfd8e0;border-radius:3px;}
+.tabnav .tab{flex:0 0 auto;border:1.5px solid #dce3ea;background:#fff;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--ink2);padding:9px 17px 9px 11px;border-radius:999px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;transition:transform .16s,box-shadow .16s,border-color .16s,background .16s,color .16s;box-shadow:0 1px 2px rgba(21,32,43,.05);}
+.tabnav button .ti{font-size:11px;font-weight:800;color:var(--navy);background:var(--navy-soft);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;transition:all .16s;}
+.tabnav .tab:hover{border-color:var(--teal);color:var(--navy);transform:translateY(-2px);box-shadow:0 6px 14px rgba(31,111,120,.16);}
+.tabnav .tab:hover .ti{background:var(--teal-soft);color:var(--teal);}
+.tabnav .tab.__active{background:linear-gradient(135deg,#1d3a5f 0%,#1f6f78 100%);border-color:transparent;color:#fff;transform:translateY(-2px);box-shadow:0 8px 20px rgba(29,58,95,.32);}
+.tabnav .tab.__active .ti{background:rgba(255,255,255,.22);color:#fff;}
+.tabpanel{display:none;animation:fadein .25s ease;}
+.tabpanel.active{display:block;}
+@keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.tabpanel>section:first-child{padding-top:30px;}
+@media (max-width:760px){
+  .brand{padding:12px 16px 2px;} .brand .bt{font-size:16px;} .brand .hint{display:none;}
+  .tabnav{padding:10px 12px 14px;gap:7px;} .tabnav .tab{font-size:12.5px;padding:8px 13px 8px 9px;}
+  .tabnav button .ti{width:18px;height:18px;font-size:10px;}
+}
+@media print{ .topbar{display:none;} .tabpanel{display:block !important;} }
+
+/* CSS-only tab switching (no JS required) */
+.tabrb{position:absolute;width:0;height:0;opacity:0;pointer-events:none;}
+.tab{user-select:none;}
+#rb1:checked ~ .tabbody > #tp1,
+#rb2:checked ~ .tabbody > #tp2,
+#rb3:checked ~ .tabbody > #tp3,
+#rb4:checked ~ .tabbody > #tp4,
+#rb5:checked ~ .tabbody > #tp5,
+#rb6:checked ~ .tabbody > #tp6,
+#rb7:checked ~ .tabbody > #tp7,
+#rb8:checked ~ .tabbody > #tp8,
+#rb9:checked ~ .tabbody > #tp9{display:block;}
+#rb1:checked ~ .topbar .tabnav label[for="rb1"],
+#rb2:checked ~ .topbar .tabnav label[for="rb2"],
+#rb3:checked ~ .topbar .tabnav label[for="rb3"],
+#rb4:checked ~ .topbar .tabnav label[for="rb4"],
+#rb5:checked ~ .topbar .tabnav label[for="rb5"],
+#rb6:checked ~ .topbar .tabnav label[for="rb6"],
+#rb7:checked ~ .topbar .tabnav label[for="rb7"],
+#rb8:checked ~ .topbar .tabnav label[for="rb8"],
+#rb9:checked ~ .topbar .tabnav label[for="rb9"]{background:linear-gradient(135deg,#1d3a5f 0%,#1f6f78 100%);border-color:transparent;color:#fff;transform:translateY(-2px);box-shadow:0 8px 20px rgba(29,58,95,.32);}
+#rb1:checked ~ .topbar .tabnav label[for="rb1"] .ti,
+#rb2:checked ~ .topbar .tabnav label[for="rb2"] .ti,
+#rb3:checked ~ .topbar .tabnav label[for="rb3"] .ti,
+#rb4:checked ~ .topbar .tabnav label[for="rb4"] .ti,
+#rb5:checked ~ .topbar .tabnav label[for="rb5"] .ti,
+#rb6:checked ~ .topbar .tabnav label[for="rb6"] .ti,
+#rb7:checked ~ .topbar .tabnav label[for="rb7"] .ti,
+#rb8:checked ~ .topbar .tabnav label[for="rb8"] .ti,
+#rb9:checked ~ .topbar .tabnav label[for="rb9"] .ti{background:rgba(255,255,255,.22);color:#fff;}
+</style>
+<style>
+.kpi{display:flex;gap:12px;margin:14px 0;flex-wrap:wrap;}
+.kpi div{flex:1;min-width:150px;border:1px solid var(--line);border-radius:9px;padding:11px 14px;background:#fff;}
+.kpi .n{font-size:21px;font-weight:900;color:var(--navy);}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:2px;}
+.big{font-size:16px;}
+.tag2{display:inline-block;font-size:11px;font-weight:800;padding:1px 9px;border-radius:10px;background:var(--navy-soft);color:var(--navy);margin-left:6px;}
+</style>
+<style>
+/* ====== 顶部横向 tab → 左侧竖向边栏（嵌入仪表板用，纯 CSS 覆盖，不改 DOM / 不改 CSS-only 切换逻辑） ====== */
+.wrap{display:flex; flex-wrap:wrap; align-items:flex-start; max-width:1240px;}
+.topbar{
+  position:sticky; top:0; flex:0 0 210px; width:210px;
+  height:100vh; overflow-y:auto;
+  background:linear-gradient(180deg,#ffffff 0%,#eef2f6 100%);
+  border-bottom:none; border-right:1px solid #d9e0e7;
+  box-shadow:4px 0 18px rgba(21,32,43,.05);
+}
+.topbar::-webkit-scrollbar{width:6px;}
+.topbar::-webkit-scrollbar-thumb{background:#cfd8e0;border-radius:3px;}
+.brand{flex-direction:column; align-items:flex-start; gap:4px; padding:20px 16px 12px;}
+.brand .bt{font-size:16.5px; line-height:1.3;}
+.brand .bk{font-size:9.5px; letter-spacing:2px; line-height:1.5;}
+.brand .hint{display:none;}
+.tabnav{flex-direction:column; gap:6px; padding:6px 12px 22px; overflow-x:visible;}
+.tabnav .tab{flex:0 0 auto; width:100%; justify-content:flex-start; border-radius:9px; padding:10px 14px;}
+.tabbody{flex:1 1 0; min-width:0; max-width:calc(100% - 210px);}
+.footer{flex:0 0 100%; max-width:100%;}  /* footer 是 .wrap 直接子元素：占满整行、退到最底部，不再当成右侧第三列 */
+.tabpanel>section:first-child{padding-top:26px;}
+section,.cover,.footer{padding-left:40px; padding-right:40px;}
+/* 窄屏（含手机）退回顶部横向滚动栏 */
+@media (max-width:860px){
+  .wrap{flex-direction:column;}
+  .topbar{flex:none; width:100%; height:auto; position:sticky; top:0;
+          border-right:none; border-bottom:1px solid #d9e0e7; box-shadow:0 6px 18px rgba(21,32,43,.06);}
+  .brand{flex-direction:row; align-items:baseline; gap:12px; padding:12px 16px 2px;}
+  .brand .bt{font-size:16px;}
+  .tabnav{flex-direction:row; overflow-x:auto; padding:10px 12px 14px; gap:7px;}
+  .tabnav .tab{width:auto; border-radius:999px;}
+  section,.cover,.footer{padding-left:22px; padding-right:22px;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<input class="tabrb" type="radio" name="systabs" id="rb1" checked>
+<input class="tabrb" type="radio" name="systabs" id="rb2">
+<input class="tabrb" type="radio" name="systabs" id="rb3">
+<input class="tabrb" type="radio" name="systabs" id="rb4">
+<input class="tabrb" type="radio" name="systabs" id="rb5">
+<input class="tabrb" type="radio" name="systabs" id="rb6">
+<input class="tabrb" type="radio" name="systabs" id="rb7">
+<input class="tabrb" type="radio" name="systabs" id="rb8">
+<input class="tabrb" type="radio" name="systabs" id="rb9">
+<div class="topbar">
+  <div class="brand"><span class="bt">A 股交易系统</span><span class="bk">高胜率 · 交易主导 · 风控为底盘</span><span class="hint">轻点标签切换章节 →</span></div>
+  <div class="tabnav"><label class="tab" for="rb1"><span class="ti">1</span>总览</label><label class="tab" for="rb2"><span class="ti">2</span>机会发现</label><label class="tab" for="rb3"><span class="ti">3</span>仓位</label><label class="tab" for="rb4"><span class="ti">4</span>建仓</label><label class="tab" for="rb5"><span class="ti">5</span>持仓</label><label class="tab" for="rb6"><span class="ti">6</span>减仓·清仓</label><label class="tab" for="rb7"><span class="ti">7</span>风控</label><label class="tab" for="rb8"><span class="ti">8</span>当下校准</label><label class="tab" for="rb9"><span class="ti">9</span>附录</label></div>
+</div>
+<div class="tabbody">
+<div class="tabpanel" id="tp1">
+<div class="cover" style="border-top:none;padding:30px 64px 30px;">
+  <div class="kick">高胜率 · 交易主导 · 风控为底盘</div>
+  <h1>A 股交易系统</h1>
+  <div class="sub serif">一套侧重交易执行的高胜率系统:发现解决"做不做",交易解决"怎么做、做多大、何时收",而本系统的重心在后者</div>
+  <div class="rule"></div>
+  <div class="desc">
+    本系统覆盖 A 股全部机会,以成长为主轴、动量为辅轴,但<b>重心在交易执行</b>:同样一个标的,胜率与盈亏比的差异主要来自仓位、建仓、持仓、减仓、清仓五个动作的纪律,而非选股本身。
+    当前宏观与流动性背景的新主轴是<b>全球大型科技企业集中上市</b>——系统将"新股供给潮"作为贯穿择时与信号的一等模块,并据此组织交易节奏。
+  </div>
+  <div class="kpi">
+    <div><div class="n">≥30% / ≤5%</div><div class="l">年化期望收益 / 账户年度最大回撤——本系统的硬目标</div></div>
+    <div><div class="n">核心 ≤60%</div><div class="l">成长核心仓上限;每年抓两波,每波目标 +50%~100%、回撤≤5%</div></div>
+    <div><div class="n">卫星 ≤10%</div><div class="l">动量卫星仓上限;职能=保持手感 + 为核心仓侦察选股</div></div>
+    <div><div class="n">单股 ≤10% · 子行业 ≤40%</div><div class="l">单一标的 / 单一子行业的敞口上限</div></div>
+  </div>
+</div>
+<section>
+  <h2><span class="num">00</span>系统目标:把高胜率落成一组可考核的数字</h2>
+  <p class="lead">系统先定目标、再谈方法。目标是一组明确、可考核的数字,所有模块都为达成它们服务:</p>
+  <table>
+    <thead><tr><th style="width:22%">目标</th><th style="width:30%">数值</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">账户年化</td><td>期望收益 ≥ 30%,年度回撤 ≤ 5%</td><td>用尽量小的回撤换取稳定复利——回撤上限优先于收益目标。</td></tr>
+      <tr><td class="mono">核心仓(成长)</td><td>总仓 ≤ 60%(分<b>超级成长股</b>+<b>成长股</b>两层);每年抓两波;每波目标 +50%~100%;回撤 ≤ 5%</td><td>超级成长股赚利润爆发的大行情,成长股提供复利与回撤缓冲。</td></tr>
+      <tr><td class="mono">卫星仓(动量)</td><td>总仓 ≤ 10%;回撤 ≤ 10%</td><td>职能不是赚大钱,是<b>保持盘感 + 为核心仓侦察、筛选下一只标的</b>。</td></tr>
+      <tr><td class="mono">敞口纪律</td><td>单股 ≤ 10%、单一子行业 ≤ 40%;核心+卫星合计 ≤ 70%(≥30% 现金)</td><td>结构性地把组合波动压在低位,是 5% 回撤目标的物理保障。</td></tr>
+    </tbody>
+  </table>
+  <p>而要稳定达成上述数字,靠的不是预测准,是把高胜率拆成三个可优化的乘数:</p>
+  <div class="kpi">
+    <div><div class="n big">命中率</div><div class="l">只在能力圈(成长×动量)与友好环境里出手,把胜率天然高的牌打、天然低的牌弃——发现与时机模块负责。</div></div>
+    <div><div class="n big">盈亏比</div><div class="l">赢时给赢家加码、让利润奔跑;亏时小亏快出。单笔盈亏比目标≥2:1——仓位与减仓模块负责。</div></div>
+    <div><div class="n big">一致性</div><div class="l">同样的牌每次打法相同;不被情绪与盘面噪音改写动作——纪律与风控底盘负责。</div></div>
+  </div>
+  <div class="callout">
+    <span class="ct">核心恒等式</span>
+    <p>期望收益 = 命中率 × 平均盈利 − (1−命中率) × 平均亏损。系统把<em>四个变量分别交给四组规则去优化</em>,而不是把全部赌注押在"命中率"一个变量上——
+    这就是为什么系统重心放在交易执行:命中率提升有上限,盈亏比与一致性的提升空间更大、更可控。</p>
+  </div>
+</section>
+
+<!-- 1 总览 -->
+<section>
+  <h2><span class="num">01</span>系统总览</h2>
+  <div class="arch"><svg viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="12" width="872" height="316" rx="16" fill="none" stroke="#5b3a7e" stroke-width="1.6" stroke-dasharray="7,5"/><text x="450.0" y="34" font-size="11" fill="#5b3a7e" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">心态守护(后台常驻):平衡态自检 · 预写剧本 · 共识幻觉检测 —— 可随时中断任何模块</text><rect x="40" y="86" width="150" height="118" rx="10" fill="#1d3a5f"/><text x="115" y="118" font-size="13" fill="#fff" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">总开关</text><text x="115" y="138" font-size="10" fill="#cdd9ea" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">资金环境仪表盘</text><text x="115" y="156" font-size="8.5" fill="#9ec7ec" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">利率·信用·托底·政策语气</text><text x="115" y="180" font-size="9.5" fill="#9fe3c0" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">友好 → 系统运行</text><text x="115" y="196" font-size="9.5" fill="#ffb3ad" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">翻转 → 退守现金</text><defs><marker id="ar" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#33424f"/></marker></defs><line x1="190" y1="145" x2="222" y2="145" stroke="#33424f" stroke-width="2" marker-end="url(#ar)"/><rect x="228" y="104" width="92" height="58" rx="9" fill="#fff" stroke="#1f6f78" stroke-width="2.2"/><text x="274.0" y="140" font-size="13" fill="#1f6f78" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">①发现</text><line x1="320" y1="133" x2="334" y2="133" stroke="#33424f" stroke-width="2" marker-end="url(#ar)"/><rect x="334" y="104" width="92" height="58" rx="9" fill="#fff" stroke="#1f6f78" stroke-width="2.2"/><text x="380.0" y="140" font-size="13" fill="#1f6f78" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">②时机</text><line x1="426" y1="133" x2="440" y2="133" stroke="#33424f" stroke-width="2" marker-end="url(#ar)"/><rect x="440" y="104" width="92" height="58" rx="9" fill="#fff" stroke="#b5751a" stroke-width="2.2"/><text x="486.0" y="140" font-size="13" fill="#b5751a" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">③仓位</text><line x1="532" y1="133" x2="546" y2="133" stroke="#33424f" stroke-width="2" marker-end="url(#ar)"/><rect x="546" y="104" width="92" height="58" rx="9" fill="#fff" stroke="#b5751a" stroke-width="2.2"/><text x="592.0" y="140" font-size="13" fill="#b5751a" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">④建仓</text><line x1="638" y1="133" x2="652" y2="133" stroke="#33424f" stroke-width="2" marker-end="url(#ar)"/><rect x="652" y="104" width="92" height="58" rx="9" fill="#fff" stroke="#2f6b46" stroke-width="2.2"/><text x="698.0" y="140" font-size="13" fill="#2f6b46" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">⑤持有</text><line x1="744" y1="133" x2="758" y2="133" stroke="#33424f" stroke-width="2" marker-end="url(#ar)"/><rect x="758" y="104" width="92" height="58" rx="9" fill="#fff" stroke="#a8322d" stroke-width="2.2"/><text x="804.0" y="140" font-size="13" fill="#a8322d" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">⑥减仓</text><text x="274.0" y="178" font-size="7.8" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">全市场五域</text><text x="380.0" y="178" font-size="7.8" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">四层滤网</text><text x="486.0" y="178" font-size="7.8" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">手温×环境×信念÷拥挤</text><text x="592.0" y="178" font-size="7.8" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">试探→金字塔</text><text x="698.0" y="178" font-size="7.8" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">每周体检</text><text x="804.0" y="178" font-size="7.8" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">双扳机</text><rect x="228" y="196" width="622" height="50" rx="9" fill="#fbeceb" stroke="#a8322d" stroke-width="2"/><text x="539.0" y="217" font-size="12" fill="#a8322d" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">⑦ 风险控制 · 底盘(贯穿所有模块)</text><text x="539.0" y="234" font-size="8.6" fill="#a8322d" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">风险预算 · 回撤分级熔断 · 相关性与集中度 · 流动性 · 事件敞口 · 极端预案 · 错误台账</text><line x1="274.0" y1="184" x2="274.0" y2="196" stroke="#a8322d" stroke-width="1.2" stroke-dasharray="3,3"/><line x1="380.0" y1="184" x2="380.0" y2="196" stroke="#a8322d" stroke-width="1.2" stroke-dasharray="3,3"/><line x1="486.0" y1="184" x2="486.0" y2="196" stroke="#a8322d" stroke-width="1.2" stroke-dasharray="3,3"/><line x1="592.0" y1="184" x2="592.0" y2="196" stroke="#a8322d" stroke-width="1.2" stroke-dasharray="3,3"/><line x1="698.0" y1="184" x2="698.0" y2="196" stroke="#a8322d" stroke-width="1.2" stroke-dasharray="3,3"/><line x1="804.0" y1="184" x2="804.0" y2="196" stroke="#a8322d" stroke-width="1.2" stroke-dasharray="3,3"/><path d="M 115 204 C 115 246, 218 246, 228 230" fill="none" stroke="#a8322d" stroke-width="1.2" stroke-dasharray="3,3"/><path d="M 850.0 133 C 890.0 133, 890.0 296, 450.0 296" fill="none" stroke="#6b7785" stroke-width="1.6" stroke-dasharray="5,4"/><path d="M 450.0 296 C 214.0 296, 234.0 184, 274.0 170" fill="none" stroke="#6b7785" stroke-width="1.6" stroke-dasharray="5,4" marker-end="url(#ar)"/><text x="450.0" y="290" font-size="9.5" fill="#6b7785" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">复盘回流:每次离场输出教训,回写发现与时机参数</text></svg></div>
+  <p>资金环境总开关决定系统开不开;六个模块依次处理一笔交易的生命周期;风控底盘在每个动作前先说话;心态守护在每个动作上盯着执行者;每次离场回流一条教训。
+  系统在两处尤为厚重:<b>新股供给潮</b>嵌入时机模块(节奏)与持仓模块(信号);<b>交易执行的颗粒度</b>(建仓/持仓/减仓/清仓的具体扳机)逐一明确。</p>
+  <p>系统由两套并行的子系统组成,各对应一本仓:<b>成长子系统</b>负责核心仓——力求抓住某个细分行业利润高速成长的那一段,赚趋势的大钱;<b>动量子系统</b>负责卫星仓——它的首要职能不是盈利,而是<em>保持盘感、并在实战中侦察与筛选下一只可以进入核心仓的成长股</em>。卫星是核心的侦察兵与练兵场,两套子系统各用各的逻辑、各用各的扳机,严格不串轨。</p>
+</section>
+
+<!-- 2 宏观与流动性 -->
+<section>
+  <h2><span class="num">02</span>当下背景:宏观、流动性、产业趋势的三重定调</h2>
+  <table>
+    <thead><tr><th style="width:16%">维度</th><th style="width:42%">现状</th><th>对交易的指令</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">宏观</td><td>地缘政治处于逆全球化:企业需<b>全球布局才能同时拿到两个世界的红利</b>;A 股资金环境相对宽松,利率与物价未来数年大概率维持低位。近期地缘缓和、油价回落,进一步松绑利率压制。</td><td>资金面友好支撑成长估值;选股偏好<b>具备全球布局/出海能力</b>的成长龙头;总开关向"友好"修复中,需数据确认、不抢跑。</td></tr>
+      <tr><td class="mono">流动性</td><td><b>全球进入大型科技股集中上市期</b>:美股三巨头约两千亿美元、A 股长鑫(过会)与长江存储(在后)、大量 A 股公司赴港。供给侧史无前例放量。</td><td>新股潮升格为一等变量:其抽水节奏决定阶段性仓位上限,其定价结果决定情绪与估值锚(详见仓位管理与减仓清仓)。</td></tr>
+      <tr><td class="mono">产业趋势</td><td>A 股是<b>结构性市场、二分行情</b>:人工智能等新兴生产力处牛市后期高位震荡,传统产业处震荡市,这种"新兴 vs 传统"的二分大概率持续数年。AI 长周期未变,但主线已入亢奋后段、裂缝初现。</td><td>核心仓只押二分行情中"新兴生产力"一侧的成长主线;行情位置要求新开从严、卫星仓收缩、关注圈内高低切换。</td></tr>
+    </tbody>
+  </table>
+  <div class="callout amber">
+    <span class="ct">新股潮的"双刃剑"如何交易</span>
+    <p>历史复盘的结论很一致:大型 IPO 对市场是<b>脉冲式冲击</b>——短期抽水扰动流动性,但不改中长期产业趋势。
+    交易上的用法因此清晰:<em>不与脉冲对抗、利用脉冲节奏</em>——抽水高峰期降仓持币(择时),脉冲承压后的低点是名单标的的试探买点(建仓),新股定价的冷热是判断情绪位置的温度计(信号)。
+    把不可控的宏观事件,转化为可预期的仓位节奏。</p>
+  </div>
+
+  <div class="callout red">
+    <span class="ct">新股潮的另一面:高定价 IPO 压缩了低位布局的空间</span>
+    <p>这一轮上市潮还带来一个结构性变化:<b>新股普遍以很高的估值发行</b>。许多公司上市时<em>已过了利润高速成长期、或把未来多年的增长一次性透支在发行价里</em>——
+    资本(一级市场、产业资本)把成长最快、最确定的阶段留在了上市之前,留给二级市场的常常是<b>增速换挡、估值已经打满</b>的位置。
+    直接后果有两个:其一,<b>"上市即高点"成为常态</b>——这也是为什么几乎所有新股第一年都经历大幅回撤;其二,<b>价值投资者赖以获利的"估值修复"机会显著减少</b>——当一个标的发行时就贵、且基本面不再加速,就没有"被低估、等修复"的空间可言。</p>
+    <p>对本系统的含义:<b>① 不打新、不接高位次新</b>——发行价里的乐观预期已被定满,不在系统的"便宜买点"定义内;
+    <b>② 更坚定地走"成长拐点"而非"估值修复"路线</b>——本系统本就以成长为主轴(抓利润高速成长期、买盈余拐点的平台潜伏),而非低估修复;在新股高定价的环境里,这条路线的相对优势反而更突出;
+    <b>③ 把这些公司放进研究池的"观察"标签、而非当核心仓候选</b>——等它们经历首年回撤、增速与估值重新匹配、或长出新的成长曲线,转"在研"再按七维评分重新评估。</p>
+  </div>
+
+  <h3>风险与机会的天平:整体仓位与风险评估概览</h3>
+  <p class="lead">交易系统的根本任务,是在<b>风险</b>与<b>机会</b>之间持续校准——<em>既不能莽撞操作(在估值结构极端、行情亢奋的位置满仓),也不能无所作为(在利率低、流动性宽、有结构性成长的环境里空仓)。</em>
+  下表把当前五个关键维度逐一拆成"机会面"与"风险面",再合成一个整体仓位立场。</p>
+
+  <div class="arch"><svg viewBox="0 0 880 300" xmlns="http://www.w3.org/2000/svg"><rect width="880" height="300" fill="#fff"/><text x="440.0" y="30" font-size="14" fill="#1d3a5f" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">风险—机会平衡盘:当前总仓位落在“莽撞”与“无所作为”之间</text><rect x="90.0" y="147.0" width="210.0" height="26" fill="#2f6b46" opacity="0.85"/><rect x="300.0" y="147.0" width="175.0" height="26" fill="#1f6f78" opacity="0.85"/><rect x="475.0" y="147.0" width="119.0" height="26" fill="#b5751a" opacity="0.85"/><rect x="594.0" y="147.0" width="196.0" height="26" fill="#a8322d" opacity="0.85"/><line x1="90.0" y1="173.0" x2="90.0" y2="179.0" stroke="#6b7785"/><text x="90.0" y="193.0" font-size="9" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">0%</text><line x1="300.0" y1="173.0" x2="300.0" y2="179.0" stroke="#6b7785"/><text x="300.0" y="193.0" font-size="9" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">30%</text><line x1="475.0" y1="173.0" x2="475.0" y2="179.0" stroke="#6b7785"/><text x="475.00000000000006" y="193.0" font-size="9" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">55%</text><line x1="594.0" y1="173.0" x2="594.0" y2="179.0" stroke="#6b7785"/><text x="594.0" y="193.0" font-size="9" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">72%</text><line x1="790.0" y1="173.0" x2="790.0" y2="179.0" stroke="#6b7785"/><text x="790.0" y="193.0" font-size="9" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">100%</text><text x="195.0" y="137.0" font-size="9.5" fill="#2f6b46" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">过度防御 · 无所作为</text><text x="387.5" y="137.0" font-size="9.5" fill="#1f6f78" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">平衡偏防御</text><text x="534.5" y="137.0" font-size="9.5" fill="#b5751a" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">平衡偏积极</text><text x="692.0" y="137.0" font-size="9.5" fill="#a8322d" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">过度暴露 · 莽撞</text><polygon points="440.0,125.0 433.0,113.0 447.0,113.0" fill="#15202b"/><line x1="440.0" y1="125.0" x2="440.0" y2="175.0" stroke="#15202b" stroke-width="2.5"/><text x="440.0" y="107.0" font-size="11" fill="#15202b" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">当前 ≈ 五成</text><text x="146.0" y="218" font-size="9" fill="#2f6b46" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">空仓的机会成本:错过结构性机会</text><text x="706.0" y="218" font-size="9" fill="#a8322d" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">满仓的回撤风险:被量化助跌、新股抽水击穿</text><text x="440.0" y="288" font-size="9" fill="#33424f" font-weight="600" text-anchor="middle" font-family="Noto Sans SC, sans-serif">既不莽撞(右端):估值结构极端、行情亢奋后段、新股抽水——不满仓;也不无所作为(左端):利率低、流动性宽、有结构性成长——不空仓。</text></svg></div>
+
+  <table>
+    <thead><tr><th style="width:15%">维度</th><th style="width:31%">机会面(偏积极)</th><th style="width:31%">风险面(偏谨慎)</th><th>净倾向</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">宏观经济</td>
+      <td>地缘缓和、油价回落,松绑"能源通胀→高利率"压制链;逆全球化下具全球布局的龙头可享两个世界红利。</td>
+      <td>外需与出口受逆全球化扰动;传统产业处震荡市,总量增长偏弱。</td>
+      <td><span class="pill pl-g">偏机会</span></td></tr>
+
+      <tr><td class="mono">地缘政治</td>
+      <td>近期冲突缓和、风险溢价消退,短期风险偏好修复。</td>
+      <td>逆全球化是长期变量,科技博弈反复;外部突发事件随时可再起波澜。</td>
+      <td><span class="pill pl-a">中性</span></td></tr>
+
+      <tr><td class="mono">A 股整体估值</td>
+      <td>宽基指数(沪深300/上证)市盈率处近十年<b>中位偏下</b>分位,整体不贵,系统性高估风险小、有安全垫。</td>
+      <td><b>K 型估值分化</b>:人工智能等成长龙头处历史<b>高位</b>分位、透支较多,结构性回撤风险集中在高位赛道。</td>
+      <td><span class="pill pl-a">整体不贵 · 结构极端</span></td></tr>
+
+      <tr><td class="mono">利率与流动性</td>
+      <td>利率与物价低位、资金环境宽松,且大概率维持数年——<b>这是支撑成长估值、偏多的最硬底层因素</b>。</td>
+      <td>新股集中上市潮阶段性抽水,扰动边际流动性;资金面友好不等于会主动追高。</td>
+      <td><span class="pill pl-g">偏机会</span></td></tr>
+
+      <tr><td class="mono">投资者结构</td>
+      <td>机构掌握中长期定价权,与基本面成长方向同向,利于"先行业后个股"的中线持有。</td>
+      <td>量化约占成交两三成,助涨助跌、放大波动、污染短期信号;个人若拼速度必被收割。</td>
+      <td><span class="pill pl-r">偏风险(需规避其主场)</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <span class="ct">天平的结论:中性偏积极,但带足防御</span>
+    <p>把五维合起来:<b>底层因素(低利率、宽流动性、宽基估值不贵)支持不空仓</b>;<b>位置与结构因素(成长高位、行情亢奋后段、新股抽水、量化放大波动)要求不满仓</b>。
+    天平落点是<b>整体仓位约五成</b>(友好期上限七成、当前因边际转弱与抽水高峰压至五成),以<b>核心仓(成长主轴)为主体、卫星仓收缩、现金 ≥30% 待命</b>。
+    钱投向<em>K 型分化的上半支</em>(景气向上、利润高增的子行业龙头),回避高位透支赛道与量化主场(高换手小微盘)。</p>
+  </div>
+
+  <div class="callout amber">
+    <span class="ct">两种失败模式,都要避免</span>
+    <p><b>莽撞</b>(右端):在成长龙头历史高位、行情亢奋后段、新股抽水期满仓追高——一旦催化剂转向,被量化助跌与解禁抛压击穿,直接威胁 5% 的账户回撤底线。<br>
+    <b>无所作为</b>(左端):因为"看起来贵、有风险"就空仓——但宽基不贵、利率低、流动性宽、结构性成长仍在,空仓的机会成本同样是一种亏损,且会错过核心仓"每年两波"的窗口。<br>
+    <em>正确的姿态是带着防御的进攻:用足额现金和严格的单股/子行业上限兜住风险下限,用核心仓和拐点买点抓住机会上限——在两个极端之间,做一个有纪律的中间派。</em></p>
+  </div>
+</section>
+
+
+  <h2 style="margin-top:46px;"><span class="num">03</span>市场阶段定位:现在是牛市、熊市、震荡市,还是结构牛?</h2>
+  <p class="lead">在决定总仓位之前,先给市场做一次客观体检:用<b>市场价格(估值分位)、近期趋势、波动率、结构分化</b>四个可量化维度,合成一个阶段判断。
+  这一步不预测涨跌,只回答"我们现在站在什么样的市场里"——它决定了系统该用哪一档总仓位、以及该偏进攻还是偏防御。</p>
+
+  <table>
+    <thead><tr><th style="width:18%">维度</th><th style="width:50%">读数(近 50 个交易日 / 当前位置)</th><th>信号</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">① 市场价格<br>(估值分位)</td>
+      <td>宽基指数(沪深300 / 上证)市盈率处近十年<b>中位偏下</b>分位,系统性不贵;但成长端(创业板 / 科创 / AI 主线)处历史<b>高位</b>分位。沪指绝对点位在 4000 一线,属近年高位区。</td>
+      <td><span class="pill pl-a">整体不贵 · 结构高估</span></td></tr>
+      <tr><td class="mono">② 近期趋势<br>(过去 50 日)</td>
+      <td>指数自高点(沪指约 4160)冲高回落至 4000 一线,呈<b>高位震荡回调</b>,既非单边上涨、也非趋势性下跌;期间反复出现冲高回落与日内分化。</td>
+      <td><span class="pill pl-t">盘整(高位偏弱震荡)</span></td></tr>
+      <tr><td class="mono">③ 波动率<br>(中证全指方差)</td>
+      <td>过去 50 日波动<b>抬升</b>:成长指数单日 ±2%~4% 频现(科创 50 曾单日 -4.3%),量化交易助涨助跌放大振幅。</td>
+      <td><span class="pill pl-r">偏高</span></td></tr>
+      <tr><td class="mono">④ 结构分化<br>(涨跌家数趋势)</td>
+      <td><b>极端分化</b>:普跌日逾 4000 只个股下跌、普涨日资金轮动至券商/红利;AI 高位与低位成长之间高低切换,热点一日游。涨跌家数与指数频繁背离。</td>
+      <td><span class="pill pl-r">高度分化</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="arch"><svg viewBox="0 0 760 460" xmlns="http://www.w3.org/2000/svg"><rect width="760" height="460" fill="#fff"/><text x="380.0" y="30" font-size="14" fill="#1d3a5f" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">市场阶段定位盘:指数趋势 × 个股结构</text><rect x="120" y="70" width="260.0" height="165.0" fill="#e9f3f4"/><rect x="380.0" y="70" width="260.0" height="165.0" fill="#eaf3ed"/><rect x="120" y="235.0" width="260.0" height="165.0" fill="#fbeceb"/><rect x="380.0" y="235.0" width="260.0" height="165.0" fill="#fbf3e4"/><line x1="380.0" y1="70" x2="380.0" y2="400" stroke="#9aa6b2" stroke-width="1.2"/><line x1="120" y1="235.0" x2="640" y2="235.0" stroke="#9aa6b2" stroke-width="1.2"/><rect x="120" y="70" width="520" height="330" fill="none" stroke="#9aa6b2" stroke-width="1.2"/><text x="250.0" y="100" font-size="13" fill="#1f6f78" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">结构性震荡市</text><text x="250.0" y="118" font-size="9" fill="#1f6f78" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">指数盘整 + 个股分化</text><text x="510.0" y="100" font-size="13" fill="#2f6b46" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">结构性牛市</text><text x="510.0" y="118" font-size="9" fill="#2f6b46" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">指数上行 + 结构分化</text><text x="250.0" y="265.0" font-size="13" fill="#a8322d" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">熊市</text><text x="250.0" y="283.0" font-size="9" fill="#a8322d" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">指数下行 + 普跌</text><text x="510.0" y="265.0" font-size="13" fill="#b5751a" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">全面牛市</text><text x="510.0" y="283.0" font-size="9" fill="#b5751a" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">指数上行 + 普涨</text><text x="380.0" y="424" font-size="10" fill="#33424f" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">指数趋势 →（盘整/下行 … 上行）</text><text x="108" y="78" font-size="9" fill="#6b7785" font-weight="700" text-anchor="end" font-family="Noto Sans SC, sans-serif">高</text><text x="108" y="400" font-size="9" fill="#6b7785" font-weight="700" text-anchor="end" font-family="Noto Sans SC, sans-serif">低</text><text x="38" y="235.0" font-size="10" fill="#33424f" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif" transform="rotate(-90 38 235.0)">个股结构分化程度 ↑</text><circle cx="362.0" cy="148" r="9" fill="#15202b"/><circle cx="362.0" cy="148" r="16" fill="none" stroke="#15202b" stroke-width="1.5" stroke-dasharray="3,3"/><text x="362.0" y="122" font-size="12" fill="#15202b" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">当前</text><text x="512.0" y="150" font-size="9.5" fill="#15202b" font-weight="700" text-anchor="start" font-family="Noto Sans SC, sans-serif">指数高位震荡、极端分化</text><text x="512.0" y="166" font-size="9.5" fill="#15202b" font-weight="700" text-anchor="start" font-family="Noto Sans SC, sans-serif">= 结构性行情(偏结构牛)</text><text x="380.0" y="448" font-size="8.6" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">当前落点跨“结构性震荡”与“结构性牛市”之间:指数在高位盘整(非单边上行,故未入全面牛),个股极端分化、主线独强(故非熊、非普涨)。</text></svg></div>
+
+  <div class="callout">
+    <span class="ct">合成判断:结构性行情(结构牛 + 震荡市的混合)</span>
+    <p>四维合起来,落点清晰:<b>不是全面牛市</b>(宽基趋势盘整、未放量单边上行)、<b>不是熊市</b>(估值不贵、流动性宽松、指数未破位下行)、也<b>不是无方向的普通震荡</b>(主线结构极强)。
+    当前是<b>结构性行情</b>——<em>指数层面高位震荡,个股层面极端分化,资金高度集中在 AI 新兴生产力一侧(且该主线已进入亢奋后段),传统产业则处震荡市</em>。这与系统对市场的基本判断(结构性市场、二分行情)互相印证。</p>
+  </div>
+
+  <div class="callout amber">
+    <span class="ct">阶段判断对总仓位的指令</span>
+    <p>结构性行情的操作含义很明确:<b>① 不满仓</b>(指数震荡 + 波动抬升,满仓会被来回扫——总仓压至约五成);<b>② 只参与结构</b>(钱投向 K 型分化的上半支即景气向上的子行业,回避高位透支赛道与下半支);
+    <b>③ 严守个股纪律</b>(高度分化意味着选错个股的代价被放大——先行业 β 后个股 α、单股 ≤10%);<b>④ 用流动性与趋势而非估值择时</b>(详见仓位管理)。
+    一句话:<em>结构性行情既不能空仓(踏空结构机会),也不能满仓(承受震荡回撤)——这正是“带防御的进攻”的市场依据。</em></p>
+  </div>
+
+  <p style="font-size:12px; color:var(--muted);">注:四维读数基于公开收盘数据的定性刻画(估值分位、点位、涨跌家数、单日振幅);精确的市盈率历史分位与中证全指方差,以数据终端实时计算为准,本节用于定性定位而非精确测算。</p>
+
+</div>
+<div class="tabpanel" id="tp2">
+<section>
+  <h2><span class="num">04</span>机会发现:自上而下,产业 β 优先于个股 α</h2>
+  <p class="lead"><b>核心方法论:</b>当前经济与市场是<b>K 型分化</b>的——颠覆性创新行业整体被资金抬升,传统行业再优秀的公司也被压制。
+  在这样的结构里,<em>选对行业(β)比选对个股(α)更决定成败</em>。所以机会发现不是漫无目的地翻个股,而是一套<b>自上而下的漏斗</b>:先系统性地识别颠覆性创新行业,再在赛道内挑爆发力最强的龙头,最后用评分入池。视野要宽(覆盖全市场扫描),收口要狠(只留 K 型分化的上半支)。</p>
+
+  <div class="arch"><svg viewBox="0 0 820 420" xmlns="http://www.w3.org/2000/svg"><rect width="820" height="420" fill="#fff"/><text x="410.0" y="30" font-size="14" fill="#1d3a5f" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">机会发现的漏斗:自上而下,产业 β 优先于个股 α</text><polygon points="375,56 445,56 590,128 230,128" fill="#1d3a5f"/><text x="410.0" y="86" font-size="12.5" fill="#fff" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">全市场 · 31 个一级行业</text><text x="410.0" y="106" font-size="9" fill="#cdd9ea" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">月度景气排序(订单 / 价格 / 库存)</text><polygon points="342,138 478,138 550,210 270,210" fill="#1f6f78"/><text x="410.0" y="168" font-size="12.5" fill="#fff" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">第一步 · 颠覆性创新行业(β)</text><text x="410.0" y="188" font-size="9" fill="#bfe6e9" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">六条标准筛选 → 锁定 1–3 条主线</text><polygon points="310,220 510,220 510,292 310,292" fill="#2f6b46"/><text x="410.0" y="250" font-size="12.5" fill="#fff" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">第二步 · 赛道内最强龙头(α)</text><text x="410.0" y="270" font-size="9" fill="#c8e6d3" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">卡位 / 弹性 / 相对强度 → 每赛道 1–2 只</text><polygon points="278,302 542,302 470,374 350,374" fill="#b5751a"/><text x="410.0" y="332" font-size="12.5" fill="#fff" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">第三步 · 七维评分 ≥ 70 入研究池</text><text x="410.0" y="352" font-size="9" fill="#f3e2c0" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">≥85 才有满仓资格</text><text x="796" y="210.0" font-size="12" fill="#a8322d" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif" transform="rotate(90 796 210.0)">行业选错 = 逆水行舟 · 故 β 先于 α</text><text x="410.0" y="406" font-size="9" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">次序不可颠倒:行业(β)未确认前,不展开个股(α)研究 —— 避免“先爱上一只票、再反向找行业理由”。</text></svg></div>
+
+  <h3>第一步 · 系统性识别颠覆性创新行业(β):六条标准</h3>
+  <p>颠覆性创新行业是<b>创造性毁灭的发起方</b>——用新技术或新范式替代旧方案,在几年内打开数量级的空间。逐月用以下六条给候选行业打分,满足越多、颠覆性越强,锁定得分最高的 1–3 条作为主线:</p>
+  <table>
+    <thead><tr><th style="width:22%">标准</th><th style="width:46%">看什么</th><th>当下命中示例</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">① 范式断点</td><td>出现新技术/新商业模式,使旧方案被<b>替代而非改良</b>(替代才是颠覆)。</td><td>AI 重塑算力与数据基础设施。</td></tr>
+      <tr><td class="mono">② 渗透率拐点</td><td>渗透率从低位(常 &lt;10–20%)进入加速区,空间是数量级而非百分比。</td><td>AI 算力/光模块的渗透与扩张仍在加速。</td></tr>
+      <tr><td class="mono">③ 需求自驱</td><td>需求由真实落地驱动(订单/出货放量),<b>非补贴、非纯概念</b>。</td><td>海外云厂资本开支拉动的真实订单。</td></tr>
+      <tr><td class="mono">④ 产业链共振</td><td>上下游同步扩张、资本开支上行——<b>产业资本用脚投票</b>。</td><td>芯片/光模块/液冷/电源同步扩产。</td></tr>
+      <tr><td class="mono">⑤ 资本与政策顺风</td><td>国家战略支持 + 一级市场/产业资本涌入(也是新股潮的来源)。</td><td>国产替代 + 算力基建的双重顺风。</td></tr>
+      <tr><td class="mono">⑥ 多年 S 曲线</td><td>不是一次性主题,有可持续数年的成长曲线(区分颠覆 vs 脉冲题材)。</td><td>AI 长周期未变(虽主线已亢奋后段)。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>第二步 · 在赛道内选爆发力最强的龙头(α):四个维度</h3>
+  <p>行业(β)锁定后,只在这条赛道内选——<b>不平均买一篮子,只要爆发力最强的 1–2 只</b>。爆发力由四个维度决定:</p>
+  <table>
+    <thead><tr><th style="width:22%">维度</th><th>看什么</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">① 卡位环节</td><td>处于<b>价值量最大、壁垒最高</b>的环节(关键料/核心设备/卖铲子),而非红海组装端。</td></tr>
+      <tr><td class="mono">② 业绩弹性</td><td>利润对行业 β 的<b>弹性最大</b>:经营杠杆最高、市占率提升最快——行业放量时它利润涨得最猛。</td></tr>
+      <tr><td class="mono">③ 相对强度</td><td>股价相对强度领先、已被市场认作龙头(强者恒强,不去赌掉队的二线"补涨")。</td></tr>
+      <tr><td class="mono">④ 确定性与质量</td><td>订单能见度、客户结构、产能落地清晰;再过<b>七维入场评分</b>(详见建仓),≥70 入池、≥85 才有满仓资格。</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout teal">
+    <span class="ct">第三步 · β 优先于 α 的纪律(次序不可颠倒)</span>
+    <p>在 K 型分化下:<b>选对行业里的次优龙头 ≈ 顺水行舟,选错行业里的最强个股 = 逆水行舟。</b>所以方法论的铁律是<em>行业 β 先于个股 α</em>——
+    行业未被确认为颠覆性主线之前,<b>不展开个股深度研究</b>。这一步纪律专治一种常见错误:先偶然看上一只票、爱上它,再反向给它找"行业很好"的理由——次序一颠倒,人就会为持仓辩护而非客观评估。
+    先自上而下锁定 β,再自下而上精选 α,两个方向在"赛道内龙头"这一层会合。</p>
+  </div>
+
+  <h3>全市场扫描的五大猎场(漏斗的具体入口)</h3>
+  <p>上述漏斗落到操作上,全市场的机会归入以下猎场;其中<b>甲(产业成长主线)就是颠覆性创新行业 β 的主战场</b>,其余是补充与边界:</p>
+
+  <table>
+    <thead><tr><th style="width:16%">猎场</th><th style="width:13%">轴属</th><th style="width:38%">筛选方法</th><th>当下落点(2026·6)</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">甲 · 产业成长主线</td><td><span class="pill pl-g">成长·主</span></td>
+      <td>景气三问(需求真实放量?业绩开始兑现?渗透率哪一段?)+ 生命周期定位:只要三至五段。重点捕捉<b>从二段迈入三段的拐点公司</b>——盈亏平衡前后的报表拐点是成长投资者超额收益最集中的一击。</td>
+      <td><b>不止 AI——全市场自上而下扫描多条颠覆主线</b>(详见下方全景表):AI 算力链已四段(最成熟,但亢奋后段→压缩);半导体国产替代、智驾、创新药出海、储能在二至三段拐点附近(研究池·在研候选);人形机器人、固态电池、商业航天、可控核聚变多在一二段(研究池·观察,等量产/订单);各行业优质成长(成长股域)提供底盘。</td></tr>
+      <tr><td class="mono">乙 · 个股认知差</td><td><span class="pill pl-g">成长·主</span></td>
+      <td>旧标签下长出新业务、报表拐点未被定价的公司。基本面评分≥70 入池、≥85 才有满仓资格;叠加阶段判定:只要三至四段的认知差(一至二段的"认知差"本质是风险投资,弃)。</td>
+      <td>不限科技——任何行业里"旧标签下长出新业务、报表拐点未被定价"的公司皆可(如传统制造转出海、消费公司孵化新品类);二线供应链仍是科技域的最佳猎场;主线亢奋后段,新"发现"从严一档评分。</td></tr>
+      <tr><td class="mono">丙 · 趋势波段</td><td><span class="pill pl-t">动量·辅</span></td>
+      <td>价格趋势确认的板块或主题波段:突破长期平台+量能配合+板块扩散三者齐备才入场。<b>不要求深度基本面认可,但要求有最低限度的业绩叙事</b>(纯概念弃);仓位归卫星、止损紧、以周评估。</td>
+      <td>覆盖全市场主题轮动与周期右侧:科技主线亢奋后段→动量辅仓<b>收缩</b>;周期反转(化工/养殖待出清确认)、稀土战略资源重估、可控核聚变等无业绩主题,只在价格趋势确认后做卫星波段,不在末段追。</td></tr>
+      <tr><td class="mono">丁 · 政策×成长交集</td><td><span class="pill pl-p">条件型</span></td>
+      <td>政策催化必须落在成长逻辑上才参与:标的要有可验证的收入兑现路径(订单/量产时间表)。纯政策口号无业绩路径的,弃。参与方式二选一:已到三段的按成长轴建核心仓;仍在二段的只按动量轴做卫星波段。</td>
+      <td>"十五五"规划明确支持方向均在此域:具身智能、低空经济、固态电池、生物医药、深海装备、半导体、军工国防。其中军工列装、半导体替代部分已三段(研究池候选);低空、深海、商业航天多在一二段(研究池·观察)。<b>政策口号无业绩路径的弃,有量产/订单时间表的才入。</b></td></tr>
+    </tbody>
+  </table>
+
+  <h3>全市场主线全景扫描(自上而下 · 不止 AI)</h3>
+  <p>把全市场的颠覆性 / 成长机会按"驱动域"铺开,逐条用 β 六条标准与生命周期定位评估,给出系统定位。
+  这张表是机会发现的<b>雷达全图</b>——AI 只是其中最成熟的一条,雷达要扫到所有正在发生创造性毁灭、或孕育优质成长的角落。</p>
+  <table>
+    <thead><tr><th style="width:19%">主线</th><th style="width:12%">驱动域</th><th style="width:12%">β 颠覆强度</th><th style="width:29%">生命周期 · 业绩兑现</th><th>系统定位</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">AI 算力基础设施<br><span style="color:var(--muted);font-size:11px;">芯片·光模块·存储·液冷电源</span></td><td>科技颠覆</td><td><b>强</b>(六条全中)</td><td>四段 · 业绩兑现中,主线已亢奋后段</td><td><span class="pill pl-g">核心·超级成长</span> 当前压缩</td></tr>
+      <tr><td class="mono">AI 应用 · 端侧 · 智能体</td><td>科技颠覆</td><td>中强</td><td>二→三段 · 应用商业化前夜</td><td><span class="pill pl-a">研究池·观察→在研</span></td></tr>
+      <tr><td class="mono">人形机器人 · 具身智能</td><td>科技颠覆</td><td><b>强</b></td><td>一→二段 · 量产前夜,订单未放量</td><td><span class="pill pl-a">研究池·观察</span> 等量产/订单</td></tr>
+      <tr><td class="mono">智能驾驶</td><td>科技颠覆</td><td>中强</td><td>二→三段 · L3 落地推进</td><td><span class="pill pl-a">研究池·观察→在研</span></td></tr>
+      <tr><td class="mono">半导体国产替代<br><span style="color:var(--muted);font-size:11px;">设备·材料·EDA</span></td><td>科技 × 政策</td><td>中强</td><td>二→三段 · 替代加速、部分盈利</td><td><span class="pill pl-p">政策×成长·研究池候选</span></td></tr>
+      <tr><td class="mono">固态电池</td><td>能源科技</td><td>中强</td><td>一→二段 · 中试装车前</td><td><span class="pill pl-a">研究池·观察</span> 等量产装车</td></tr>
+      <tr><td class="mono">储能(系统·电池)</td><td>能源科技</td><td>中</td><td>三段 · 订单暴增、业绩兑现中</td><td><span class="pill pl-g">核心·成长股候选</span></td></tr>
+      <tr><td class="mono">可控核聚变</td><td>能源科技</td><td>强但远</td><td>零→一段 · 工程未落地、无业绩</td><td><span class="pill pl-t">卫星波段/主题</span></td></tr>
+      <tr><td class="mono">创新药出海(授权)</td><td>生命科学</td><td>中强</td><td>二→三段 · 授权收入开始兑现</td><td><span class="pill pl-g">核心·成长股候选</span></td></tr>
+      <tr><td class="mono">合成生物 · 脑机接口</td><td>生命科学</td><td>强但早</td><td>零→一段 · 概念阶段</td><td><span class="pill pl-a">研究池·观察</span></td></tr>
+      <tr><td class="mono">商业航天 · 卫星</td><td>高端制造</td><td>中强</td><td>一→二段 · 十五五工程落地期</td><td><span class="pill pl-t">研究池·观察→卫星</span></td></tr>
+      <tr><td class="mono">军工 · 国防装备</td><td>政策战略</td><td>中</td><td>三段 · 列装提速、业绩确定性高</td><td><span class="pill pl-p">政策×成长·研究池候选</span></td></tr>
+      <tr><td class="mono">工业母机 · 高端装备</td><td>高端制造</td><td>中</td><td>三段 · 制造升级、稳定增长</td><td><span class="pill pl-g">核心·成长股候选</span></td></tr>
+      <tr><td class="mono">内需修复 · 反内卷 · 银发</td><td>内需成长</td><td>分散</td><td>三→四段 · 各行业优质成长公司</td><td><span class="pill pl-g">核心·成长股底盘</span> 分散</td></tr>
+      <tr><td class="mono">稀土 / 战略资源重估</td><td>周期 × 政策</td><td>价格驱动</td><td>看价格分位与供需拐点</td><td><span class="pill pl-t">卫星波段(右侧)</span></td></tr>
+      <tr><td class="mono">周期反转(化工·养殖)</td><td>周期</td><td>价格驱动</td><td>低分位、待供给出清确认</td><td><span class="pill pl-t">卫星波段(右侧)</span></td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <span class="ct">怎么读这张全景表</span>
+    <p>① <b>绿色=核心仓候选</b>(β 够强或复利够稳、且业绩在兑现):AI 算力链(超级成长股,当前压缩)、储能/创新药出海/工业母机/内需优质成长(成长股底盘)。
+    ② <b>琥珀色=研究池·观察标签</b>(β 强但生命周期太早、业绩未兑现):人形机器人、固态电池、智驾、AI 应用、商业航天——<em>挂在雷达上盯信号,等盈亏平衡或订单放量再转"在研"标签,池内全程不配资金</em>。
+    ③ <b>紫色=政策×成长</b>(有政策顺风且收入路径可验证):半导体替代、军工——已三段的入研究池。
+    ④ <b>青色=卫星波段</b>(无业绩支撑或周期右侧):可控核聚变、商业航天主题、稀土、周期反转——只做动量、趋势破位即走。
+    <b>每月用 β 六条标准重排此表</b>,主线随业绩兑现进度在"观察→研究→核心"之间升降,这就是机会发现的动态刷新。</p>
+  </div>
+
+  <h3>池 → 仓:研究状态与资金状态是两层,别混为一谈</h3>
+  <p>机会发现产出的是"<b>池</b>"(研究状态),不是"<b>仓</b>"(资金状态)——<em>池永不直接配钱</em>。两者的转换关系如下:</p>
+  <div class="arch"><svg viewBox="0 0 880 400" xmlns="http://www.w3.org/2000/svg"><rect width="880" height="400" fill="#fff"/><defs><marker id="ar" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#33424f"/></marker></defs><text x="440.0" y="30" font-size="13.5" fill="#1d3a5f" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">池 → 仓 流转:研究状态(池·不配资金) 转 资金状态(仓·配资金)</text><rect x="60" y="70" width="470" height="150" rx="12" fill="#eef3f9" stroke="#1d3a5f" stroke-width="1.6"/><text x="295.0" y="60" font-size="11.5" fill="#1d3a5f" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">研究池(认知漏斗 · 0 资金)</text><rect x="84" y="100" width="195" height="95" rx="9" fill="#fbf3e4" stroke="#b5751a" stroke-width="1.4"/><text x="181" y="122" font-size="11" fill="#b5751a" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">标签:观察</text><text x="181" y="142" font-size="9" fill="#7a5212" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">β 强但业绩未兑现</text><text x="181" y="158" font-size="8.3" fill="#7a5212" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">(一二段:机器人/固态电池)</text><text x="181" y="178" font-size="8.6" fill="#b5751a" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">职能:挂雷达盯信号</text><rect x="310" y="100" width="195" height="95" rx="9" fill="#eaf3ed" stroke="#2f6b46" stroke-width="1.4"/><text x="407" y="122" font-size="11" fill="#2f6b46" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">标签:在研</text><text x="407" y="142" font-size="9" fill="#1f5135" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">已过盈亏平衡、业绩兑现</text><text x="407" y="158" font-size="8.3" fill="#1f5135" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">(三段:储能/创新药出海)</text><text x="407" y="178" font-size="8.6" fill="#2f6b46" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">职能:跑七维评分排队</text><line x1="279" y1="147" x2="310" y2="147" stroke="#33424f" stroke-width="1.6" marker-end="url(#ar)"/><text x="294" y="138" font-size="7.8" fill="#33424f" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">兑现</text><text x="290.0" y="243" font-size="9.5" fill="#a8322d" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">评分闸:≥70 入仓资格 · ≥85 满仓资格</text><line x1="407" y1="220" x2="407" y2="263" stroke="#33424f" stroke-width="2" marker-end="url(#ar)"/><rect x="120" y="270" width="240" height="95" rx="11" fill="#eaf3ed" stroke="#2f6b46" stroke-width="1.8"/><text x="240" y="294" font-size="11" fill="#2f6b46" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">核心仓 ≤60%(配资金)</text><text x="240" y="315" font-size="9" fill="#1f5135" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">成长趋势投资 · 盈余驱动</text><text x="240" y="332" font-size="8.5" fill="#1f5135" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">季度评估 · 无机械止损</text><text x="240" y="350" font-size="8.5" fill="#1f5135" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">超级成长股 + 成长股两层</text><rect x="390" y="270" width="240" height="95" rx="11" fill="#e9f3f4" stroke="#1f6f78" stroke-width="1.8"/><text x="510" y="294" font-size="11" fill="#1f6f78" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">卫星仓 ≤10%(配资金)</text><text x="510" y="315" font-size="9" fill="#155a61" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">价格动量交易 · 价格驱动</text><text x="510" y="332" font-size="8.5" fill="#155a61" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">周评估 · 机械止损</text><text x="510" y="350" font-size="8.5" fill="#155a61" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">趋势波段(主题/周期右侧)</text><path d="M 407 263 C 407 252, 240 252, 240 270" fill="none" stroke="#2f6b46" stroke-width="1.8" marker-end="url(#ar)"/><text x="210" y="248" font-size="8.4" fill="#2f6b46" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">在研·达标→核心仓</text><path d="M 181 195 C 181 264, 510 220, 510 270" fill="none" stroke="#1f6f78" stroke-width="1.6" stroke-dasharray="5,4" marker-end="url(#ar)"/><text x="420" y="240" font-size="8.4" fill="#1f6f78" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">主题/波段·价格确认→卫星仓</text><text x="440.0" y="388" font-size="8.6" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">关键:池永不直接配钱。“观察”等业绩兑现转“在研”;“在研”评分达标转核心仓(趋势投资);无业绩的主题/周期只走价格确认进卫星仓(动量交易)。</text></svg></div>
+  <table>
+    <thead><tr><th style="width:20%">层</th><th style="width:16%">是否配资金</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">研究池 · 观察</td><td><b>0(不配)</b></td><td>β 够强但业绩未兑现(一二段)。只挂雷达盯信号——给它仓位就等于在盈亏平衡前买入,变成能力圈外的风险投资。</td></tr>
+      <tr><td class="mono">研究池 · 在研</td><td><b>0(不配)</b></td><td>已过盈亏平衡、业绩兑现中(三段)。跑七维评分排队——评分本身不配钱,达标只是拿到"入仓资格"。</td></tr>
+      <tr><td class="mono">核心仓</td><td>含在 ≤60% 内</td><td>"在研"评分达标(≥70 入仓、≥85 满仓)后转入。<b>成长趋势投资</b>:盈余驱动、季度评估、无机械止损;超级成长股 + 成长股两层。</td></tr>
+      <tr><td class="mono">卫星仓</td><td>≤10%</td><td>无业绩支撑的主题、周期右侧标的,经价格趋势确认后直接配入(不必走七维评分)。<b>价格动量交易</b>:价格驱动、周评估、机械止损。</td></tr>
+    </tbody>
+  </table>
+  <div class="callout teal">
+    <span class="ct">为什么合并成一个"研究池"、却不合并"池"与"仓"</span>
+    <p>原先的"观察池 / 研究池"合并为<b>一个研究池,内部用"观察 / 在研"两个标签区分</b>——因为它们是同一道认知漏斗的前后两段(盯信号 → 跑评分),分成两个独立的池没有必要。
+    但<b>"池"与"仓"绝不能合并</b>:池是研究状态(0 资金),仓是资金状态(配钱);"业绩是否兑现"是观察转在研的闸,"评分是否达标"是在研转核心仓的闸——
+    这两道闸正是把<em>成长投资和风险投资、把研究和下注</em>分开的命门。<b>回答你的问题:观察与在研合并、用标签区分;但池一律不给实际仓位,仓位只在评分达标转入核心仓(趋势投资)或价格确认转入卫星仓(动量交易)时才发生。</b></p>
+  </div>
+
+  <div class="callout amber">
+    <span class="ct">周期与红利在本系统中的位置</span>
+    <p>周期品不设独立猎场,只作为丙类动量波段的子集参与(只右侧、只卫星);红利不进入选股范围(防御一律用现金与指数)。
+    月度全市场景气排序照做,但用途是<em>判断风格友好度</em>——若市场连续奖励价值与红利、惩罚成长与动量,那不是换风格的信号,是<b>降总仓位</b>的信号(见风险控制·风格漂移防线)。</p>
+  </div>
+</section>
+
+<!-- 3 仓位管理(重心) -->
+
+</div>
+<div class="tabpanel" id="tp3">
+<section>
+  <h2><span class="num">05</span>仓位管理:高胜率系统的第一引擎<span class="tag2">交易重心</span></h2>
+  <p class="lead">仓位是期望收益里"盈亏比"与"一致性"两个变量的主要载体。本系统的仓位由<b>三层叠加</b>决定:总仓位(环境定)、结构分配(风格定)、单笔规模(四因子定),三层各自独立、不互相借用。</p>
+
+  <h3>第一层 · 总仓位:由环境与新股潮节奏决定</h3>
+  <table>
+    <thead><tr><th style="width:30%">环境×节奏状态</th><th>总仓位上限</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">友好 + 新股平静期</td><td>满配:核心≤60% + 卫星≤10% = 总仓上限七成(系统始终保留 ≥30% 现金,这是 5% 回撤目标的结构保障)。</td></tr>
+      <tr><td class="mono">友好 + 新股抽水高峰</td><td>五成半至六成:为脉冲承压预留弹药与心理空间。</td></tr>
+      <tr><td class="mono">边际转弱(当前)</td><td>五成:新仓减半,只做最高确定性机会。</td></tr>
+      <tr><td class="mono">翻转</td><td>三成以下,退守现金。</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <span class="ct">总仓位的择时判据:用什么决定加减总仓——不是估值</span>
+    <p><b>从不用估值给市场择时。</b>择时只看两样:<b>流动性</b>(资金环境总开关——利率与社融方向、托底力量、新股供给抽水节奏)与<b>技术分析</b>(大盘趋势、量能、上涨家数、主线生命周期段位)。
+    这两者决定方向,从而决定总仓位上表里的档位。<b>估值不参与择时,它只回答一个问题:一旦催化剂出现、改变了市场方向,这个方向还能走多远</b>——即估值定"空间",流动性与技术定"方向与时机"。
+    所以高估值本身从不是减仓理由(催化剂未现,贵可以更贵);只有当流动性或技术信号转向时才动总仓,而此时估值越高、潜在回撤空间越大,减得越坚决。</p>
+  </div>
+
+  <h3>第二层 · 结构分配:核心 / 卫星 / 现金三仓</h3>
+  <table>
+    <thead><tr><th style="width:14%">仓</th><th style="width:14%">常态占比</th><th style="width:34%">职能与时间观</th><th>当下校准</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">核心仓<br><span style="font-weight:400;color:var(--muted);font-size:11.5px;">上限 60% · 分两层</span></td><td>合计 ≤ 60%</td><td>成长主轴:抓细分行业利润高速成长期,盈余逻辑驱动,容忍波动,季度评估,<b>无机械止损</b>(逻辑/估值退出)。回撤目标≤5%。按"成长烈度"分两层 ↓</td><td>降至四成半至五成,只留盈余轨道未伤者。</td></tr>
+      <tr><td class="mono" style="padding-left:24px;">├ 超级成长股</td><td>弹性 · 约核心仓半数</td><td><b>创造性毁灭的发起方</b>:几年内利润爆发数十倍(如当前人工智能产业链)。指数级增长、阶段短、波动极大;赚的是渗透率爆发的主升段。</td><td>主线已亢奋后段 → <b>压缩</b>,只留逻辑未伤的龙头。</td></tr>
+      <tr><td class="mono" style="padding-left:24px;">└ 成长股</td><td>弹性 · 约核心仓半数</td><td><b>优质复利者</b>:利润年均增长 20%+,各行业均有(多见于新能源、生物医药、互联网)。线性高增、阶段长、波动较小;提供复利与回撤缓冲。</td><td>相对<b>增配</b>,作为震荡市的稳健底盘。</td></tr>
+      <tr><td class="mono">卫星仓</td><td>上限 10%</td><td>动量辅轴:保持盘感 + 为核心仓侦察选股,价格逻辑驱动,止损紧,以周评估。回撤目标≤10%。</td><td>压到一成以内:行情亢奋后段+拥挤,卫星仓的钟已近尾。</td></tr>
+      <tr><td class="mono">现金仓</td><td>≥ 30%(其余)</td><td>只有现金/货基/宽基指数;是仓位不是闲置——它的去向预先指定。常驻高现金正是低回撤的来源。</td><td>升至三成半以上,去向预定:低位成长试探仓、新股脉冲低点。</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout teal">
+    <span class="ct">核心仓的两层:超级成长股 vs 成长股,同属核心、区别对待</span>
+    <p>核心仓不是铁板一块。两类成长公司的"成长烈度"不同,持有耐心、估值容忍、退出节奏也必须不同——用一套标准对待两者,要么错杀颠覆者,要么高估平庸者。</p>
+  </div>
+  <table>
+    <thead><tr><th style="width:16%">维度</th><th style="width:42%">超级成长股(颠覆者)</th><th>成长股(复利者)</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">定义</td><td><b>创造性毁灭的发起方</b>,短短几年利润爆发数十倍。</td><td><b>优质复利者</b>,利润年均增长 20% 以上、可持续多年。</td></tr>
+      <tr><td class="mono">典型行业</td><td>当前的人工智能产业链(算力芯片 / 光模块 / 存储 / 液冷电源)等被新技术重塑的赛道。</td><td>各行业均有优质成长公司,多见于新能源、生物医药、互联网。</td></tr>
+      <tr><td class="mono">生命周期段</td><td>二 → 三段陡升(渗透率从低位爆发),阶段短(常 2–3 年)。</td><td>三 → 四段持续(经营杠杆稳定释放),阶段长(可达 5 年以上)。</td></tr>
+      <tr><td class="mono">增长形态/波动</td><td>指数级、爆发式;<b>波动极大</b>,主升途中回撤 30%–50% 是常态。</td><td>线性高增、可预测;<b>波动较小</b>,回撤通常 20%–30%。</td></tr>
+      <tr><td class="mono">估值容忍</td><td><b>高</b>:为渗透率与空间定价,容忍阶段性透支(估值不参与择时,只定空间)。</td><td><b>中</b>:看增速与估值是否匹配(PEG 思路),贵了就等。</td></tr>
+      <tr><td class="mono">持有/退出</td><td>拿住爆发主升;<b>叙事降级或渗透率见顶 + 估值极端透支</b>才走(扳机一/二)。</td><td>长期复利;<b>年增速跌破 20% 阈值,或估值显著透支</b>才走。</td></tr>
+      <tr><td class="mono">仓位与分散</td><td>集中在少数主线(1–2 条);上限更严,主线亢奋后段主动压缩。单股≤10%。</td><td>跨行业分散(新能源/医药/互联网等);作底盘配置。单股≤10%。</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:13px;color:var(--muted);">两层合计 ≤ 60%,且都遵守核心仓的共同纪律:单股≤10%、单一子行业≤40%、无机械止损(只因逻辑证伪或估值透支退出)、季度评估。常态下两层各约一半,<b>主线亢奋后段则压缩超级成长股、相对增配成长股</b>——当前正是如此。</p>
+
+  <h3>第三层 · 单笔规模:四因子公式</h3>
+  <p><b>规模 = 手温 × 环境 × 信念 ÷ 拥挤</b>,且<b>单笔最大亏损额在买入时锁死</b>(按"止损距离反推规模",不是先定规模再找止损)。</p>
+  <ul>
+    <li><b>手温(年度盈亏):</b>亏损年只打小仓(≤半个标准仓)、绝不翻本;盈利年才允许放大、三共振时集中。</li>
+    <li><b>环境:</b>友好满仓、转弱减半、翻转禁开。</li>
+    <li><b>信念(评分):</b>≥85 满仓、70–85 三分之二、低于 70 不开。只认书面评分,不认盘感。</li>
+    <li><b>拥挤:</b>骤升打七折,极端直接否决——拥挤是反向信号。</li>
+  </ul>
+
+  <div class="callout red">
+    <span class="ct">仓位的硬约束(高胜率的护城河)</span>
+    <p><b>账户层:</b>年度回撤上限 5%(系统硬线,不可突破)。<b>子行业层:</b>单一子行业敞口≤40%,该主题篮子回撤达 5% 即减仓/重估(暴跌日同涨同跌的标的合并为"一个子行业")。<b>单股层:</b>单股≤10%,个股回撤达 10% 即止损。
+    据此,单股最大亏损贡献≈10%×10%=1% 账户、单主题≈40%×5%=2% 账户——层层收紧,任一层先触发即响应。<em>第一道护城河不是选对,是任何单笔错误都不致命。</em></p>
+  </div>
+</section>
+
+<!-- 4 建仓 -->
+
+</div>
+<div class="tabpanel" id="tp4">
+<section>
+  <h2><span class="num">06</span>建仓策略:试探 → 反馈 → 金字塔,核心与卫星两套手法</h2>
+  <table>
+    <thead><tr><th style="width:16%">环节</th><th style="width:43%">核心仓(成长)</th><th>卫星仓(动量)</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">入场资格</td><td><b>基本面确认硬:</b>行业景气度与利润增速加速、产业叙事升级、订单/收入/毛利拐点可验证;成长股入场评分≥70。<b>价格确认软:</b>企稳即可,不必创新高。</td><td><b>价格确认硬:</b>经一定时间盘整后、整体市场成交放大、趋势由震荡转入向上,放量突破+板块扩散。<b>基本面确认软:</b>有成长叙事即可。</td></tr>
+      <tr><td class="mono">第一笔</td><td>试探三分之一;书面写下核心假设、证伪条件、时间止损(通常两个财报季),缺一不开。</td><td>放量突破当日追入,单笔本就小;不接回调、不潜伏。</td></tr>
+      <tr><td class="mono">加仓</td><td>只在浮盈中金字塔加(第二笔三分之一、第三笔更少),每次要求趋势未破、拥挤未极端;加满即停。</td><td>一次到位或两笔完成;突破失败三日内跌回平台即全退。</td></tr>
+      <tr><td class="mono">最佳买点</td><td>盈余拐点确认后的<b>平台期潜伏</b>(价格未动报表先动,赔率最高);或趋势确认后回调至关键均线。</td><td>趋势确认初期的<b>第一次放量突破</b>;拒绝在亢奋末段追高。</td></tr>
+      <tr><td class="mono">新股潮特例</td><td><b>新股脉冲承压的低点,是名单标的的加速建仓窗口</b>(前提:盈余假设未被该脉冲伤及+价格企稳)。</td><td>新股带动的板块脉冲只做小仓波段,规模减半,破位即走。</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <span class="ct">建仓的反追高纪律(新股潮当下尤其重要)</span>
+    <p>历史数据极清楚:几乎所有新股第一年都经历大幅回撤,因为发行价定在情绪最热时。这条规律外推到整个市场——
+    <em>越是大涨日、越是利好兑现日,越不是建仓日</em>。建仓只在两种时刻:基本面拐点的平台潜伏,或情绪/脉冲杀出的企稳低点。用便宜的价格接,不用追高的手抢。</p>
+  </div>
+  <div class="callout teal">
+    <span class="ct">选股第一步 · K 型分化下:先选行业(β),再选个股(α)</span>
+    <p>当前 A 股是<b>K 型分化</b>的结构性市场:景气向上的行业整体被资金抬升,景气向下的行业再优秀的公司也被压制——<b>此时行业的 β 比个股的 α 更重要</b>。
+    所以选股分两步、次序不可颠倒:<b>第一步选对行业</b>(用机会发现的五域/景气排序与行情八段,锁定处于利润高速成长期、且行情位置在二至五段的子行业);<b>第二步在选对的行业里挑龙头个股</b>(用下面的七维评分)。
+    一句话:<em>先确认你站在 K 的上半支,再在其中选最强的标的</em>;在 K 的下半支里选股,选得再准也是逆水行舟。</p>
+  </div>
+  <div class="callout">
+    <span class="ct">选股第二步 · 成长股入场评分标准(个股 α 的七维)</span>
+    <p>核心仓的"评分≥70"由七个维度构成,缺项扣分、满足越多分越高:<b>① 当季盈利加速</b>(最近一季每股收益同比大幅增长)·<b>② 年度盈利高增</b>(多年持续高成长)·<b>③ 新要素</b>(新产品/新技术/新管理/股价创新高)·<b>④ 量价与流通结构</b>(放量突破、筹码集中)·<b>⑤ 行业龙头与相对强度</b>(细分赛道领头、强于大盘)·<b>⑥ 机构资金进场</b>(主力增持痕迹)·<b>⑦ 大盘趋势配合</b>(整体市场由震荡转上)。前三维定"成长质量",中三维定"市场认可",末一维定"环境是否友好"。</p>
+  </div>
+</section>
+
+<!-- 5 持仓 -->
+
+</div>
+<div class="tabpanel" id="tp5">
+<section>
+  <h2><span class="num">07</span>持仓评估:日检管节奏(重)、周检管方向、季判管生死</h2>
+
+  <div class="callout teal">
+    <span class="ct">为什么日检比周检更重要</span>
+    <p>周检管"方向对不对"(假设是否成立),频率低、改动慢;但<b>真正触发买卖动作的绝大多数发生在每天开盘前那十分钟</b>。
+    在量化放大波动、信息被秒级计入的市场里,<em>风险与机会都是按"日"到来的</em>——一条隔夜消息、一个跳空、一次板块切换,都可能要求当日就动手。
+    所以日检不是周检的缩小版,而是<b>持仓模块里分量最重、纪律最硬的一环</b>:周检定下"持有哪些、假设是什么",日检负责"今天对它做什么"。</p>
+  </div>
+
+  <div class="arch"><svg viewBox="0 0 880 360" xmlns="http://www.w3.org/2000/svg"><rect width="880" height="360" fill="#fff"/><defs><marker id="a" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#33424f"/></marker></defs><text x="440.0" y="28" font-size="13.5" fill="#1d3a5f" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">每日盘前决策流程:五查 → 一个动作(盘前定案,盘中只执行)</text><rect x="40" y="64" width="150" height="40" rx="7" fill="#fff" stroke="#1f6f78" stroke-width="2"/><text x="115.0" y="81" font-size="11" fill="#1f6f78" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">一查外盘</text><text x="115.0" y="96" font-size="8.5" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">属性:情绪 / 逻辑</text><rect x="40" y="116" width="150" height="40" rx="7" fill="#fff" stroke="#1f6f78" stroke-width="2"/><text x="115.0" y="133" font-size="11" fill="#1f6f78" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">二查消息</text><text x="115.0" y="148" font-size="8.5" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">是否伤“证伪条件”</text><rect x="40" y="168" width="150" height="40" rx="7" fill="#fff" stroke="#b5751a" stroke-width="2"/><text x="115.0" y="185" font-size="11" fill="#b5751a" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">三查价格</text><text x="115.0" y="200" font-size="8.5" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">对三条线的位置</text><rect x="40" y="220" width="150" height="40" rx="7" fill="#fff" stroke="#b5751a" stroke-width="2"/><text x="115.0" y="237" font-size="11" fill="#b5751a" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">四查板块</text><text x="115.0" y="252" font-size="8.5" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">扩散 / 收缩·拥挤</text><rect x="40" y="272" width="150" height="40" rx="7" fill="#fff" stroke="#5b3a7e" stroke-width="2"/><text x="115.0" y="289" font-size="11" fill="#5b3a7e" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">五查自身</text><text x="115.0" y="304" font-size="8.5" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">哪本仓·预算·手温</text><rect x="250" y="150" width="120" height="70" rx="9" fill="#1d3a5f"/><text x="310.0" y="178" font-size="12" fill="#fff" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">盘前综合</text><text x="310.0" y="196" font-size="9" fill="#cdd9ea" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">写定今日动作</text><text x="310.0" y="210" font-size="9" fill="#cdd9ea" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">+ 触发价</text><path d="M 190 84.0 C 225 84.0, 225 185.0, 250 185.0" fill="none" stroke="#33424f" stroke-width="1.3" marker-end="url(#a)"/><path d="M 190 136.0 C 225 136.0, 225 185.0, 250 185.0" fill="none" stroke="#33424f" stroke-width="1.3" marker-end="url(#a)"/><path d="M 190 188.0 C 225 188.0, 225 185.0, 250 185.0" fill="none" stroke="#33424f" stroke-width="1.3" marker-end="url(#a)"/><path d="M 190 240.0 C 225 240.0, 225 185.0, 250 185.0" fill="none" stroke="#33424f" stroke-width="1.3" marker-end="url(#a)"/><path d="M 190 292.0 C 225 292.0, 225 185.0, 250 185.0" fill="none" stroke="#33424f" stroke-width="1.3" marker-end="url(#a)"/><rect x="470" y="88" width="370" height="40" rx="7" fill="#2f6b46" opacity="0.92"/><text x="484" y="113" font-size="12" fill="#fff" font-weight="900" text-anchor="start" font-family="Noto Sans SC, sans-serif">加仓</text><text x="528" y="113" font-size="9" fill="#fff" font-weight="600" text-anchor="start" font-family="Noto Sans SC, sans-serif">五条件全满足·假设变强</text><path d="M 370 185.0 C 445 185.0, 445 108.0, 470 108.0" fill="none" stroke="#33424f" stroke-width="1.3" marker-end="url(#a)"/><rect x="470" y="142" width="370" height="40" rx="7" fill="#33424f" opacity="0.92"/><text x="484" y="167" font-size="12" fill="#fff" font-weight="900" text-anchor="start" font-family="Noto Sans SC, sans-serif">持有</text><text x="528" y="167" font-size="9" fill="#fff" font-weight="600" text-anchor="start" font-family="Noto Sans SC, sans-serif">无触发·趋势完好</text><path d="M 370 185.0 C 445 185.0, 445 162.0, 470 162.0" fill="none" stroke="#33424f" stroke-width="1.3" marker-end="url(#a)"/><rect x="470" y="196" width="370" height="40" rx="7" fill="#b5751a" opacity="0.92"/><text x="484" y="221" font-size="12" fill="#fff" font-weight="900" text-anchor="start" font-family="Noto Sans SC, sans-serif">减仓</text><text x="528" y="221" font-size="9" fill="#fff" font-weight="600" text-anchor="start" font-family="Noto Sans SC, sans-serif">止盈线/回吐过半/拥挤/超限</text><path d="M 370 185.0 C 445 185.0, 445 216.0, 470 216.0" fill="none" stroke="#33424f" stroke-width="1.3" marker-end="url(#a)"/><rect x="470" y="250" width="370" height="40" rx="7" fill="#a8322d" opacity="0.92"/><text x="484" y="275" font-size="12" fill="#fff" font-weight="900" text-anchor="start" font-family="Noto Sans SC, sans-serif">清仓</text><text x="528" y="275" font-size="9" fill="#fff" font-weight="600" text-anchor="start" font-family="Noto Sans SC, sans-serif">回撤10%/子行业5%/证伪/破位</text><path d="M 370 185.0 C 445 185.0, 445 270.0, 470 270.0" fill="none" stroke="#33424f" stroke-width="1.3" marker-end="url(#a)"/><text x="440.0" y="348" font-size="9" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">九点二十五分后只执行已写定的动作;盘中冒出的任何新想法,一律延到次日盘前清单——这是隔绝量化诱单与情绪冲动的唯一办法。</text></svg></div>
+
+  <h3>每日盘前例程(开盘前 15 分钟 · 雷打不动)</h3>
+  <p>固定时间线,把决策全部前置到盘前,<b>盘中只执行、不新增决定</b>(盘中冒出的任何想法一律记入次日盘前清单):</p>
+  <table>
+    <thead><tr><th style="width:20%">时间</th><th>动作</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">09:00–09:05</td><td>过隔夜与外盘:美股映射标的涨跌、海外突发、商品与汇率异动;判定属性(情绪性 / 逻辑性)。</td></tr>
+      <tr><td class="mono">09:05–09:15</td><td>过持仓五查(见下),逐仓核对三条线与证伪条件;写下今日每一仓的预设动作(持/加/减/清 + 触发价)。</td></tr>
+      <tr><td class="mono">09:15–09:25</td><td>看集合竞价:高低开幅度与量能是否印证或推翻预设;据竞价微调,但只在预设框架内调,不发明新逻辑。</td></tr>
+      <tr><td class="mono">09:25 后</td><td>开盘只做盘前已写定的动作;触发即执行,未触发即持有。收盘后用一行记录当日是否按计划执行(进复盘台账)。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>盘前五查(逐项)</h3>
+  <table>
+    <thead><tr><th style="width:14%">查项</th><th style="width:48%">查什么</th><th>异常判定</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">一查外盘</td><td>隔夜美股主线与持仓的关键映射标的涨跌幅度;<b>更重要的是属性</b>——情绪性(获利了结、宏观数据)还是逻辑性(需求源头、订单、监管、产品涨跌价)。</td><td>关键映射标的单日波动超 5%,或出现逻辑性利空 → 进入传导预案(风控防线五)。</td></tr>
+      <tr><td class="mono">二查消息</td><td>持仓个股公告(业绩预告、减持、定增、立案、停牌)与行业新闻(产品涨价/砍单、政策表态);区分<b>伤假设的消息</b>与噪音。</td><td>任何触及"开仓时写下的证伪条件"的消息 → 直接走清仓/止损扳机,跳过其余检查。</td></tr>
+      <tr><td class="mono">三查价格</td><td>昨收与集合竞价相对<b>三条线</b>的位置:趋势生命线(动量仓)、移动止盈线、加仓触发位;高低开幅度与对应量能。</td><td>逼近或跌破生命线 / 个股已回撤近 10% / 低开破位 → 按下方决策映射处置,不抱侥幸。</td></tr>
+      <tr><td class="mono">四查板块</td><td>持仓所在子行业昨日是扩散(上涨家数增加、二线跟上)还是收缩(只剩龙头硬撑);拥挤度边际(换手、成交集中度)。</td><td>连续两日收缩 / 拥挤骤升 → 卫星仓止盈线整体上移一档,或主动减三分之一。</td></tr>
+      <tr><td class="mono">五查自身</td><td>该仓属于哪本仓(核心/卫星)?浮盈状态与金字塔进度?风险预算还剩多少?手温档位?昨日有无未执行完的指令?</td><td>预算无空间 → 今日对该方向只许减不许加,无论信号多好;手温转冷 → 当日不新开。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>盘前决策映射:今日对已持仓增 / 减 / 清</h3>
+  <table>
+    <thead><tr><th style="width:12%">动作</th><th style="width:46%">触发条件(增仓须全满足;减/清命中任一即触发)</th><th>执行细则</th></tr></thead>
+    <tbody>
+      <tr><td class="mono" style="color:var(--green);">增仓</td>
+      <td><b>全部满足:</b>① 该仓浮盈且金字塔未加满;② 假设获新证据加强(订单/涨价/超预期)或价格回踩关键支撑不破(核心)/平台再突破(卫星);③ 子行业仍在扩散;④ 拥挤未极端;⑤ 预算与手温允许。</td>
+      <td>按金字塔递减加(第二笔三分之一、第三笔更少);<b>低开造成的"便宜"不是增仓理由——只有假设变强才是</b>。</td></tr>
+      <tr><td class="mono" style="color:var(--amber);">减仓</td>
+      <td>命中任一:① 触及移动止盈线;② 浮盈回吐过半;③ 子行业连续收缩、龙头放量滞涨;④ 拥挤骤升;⑤ 外盘情绪性大跌且自身高开乏力(借反弹减);⑥ 单票占比被动超 10%。</td>
+      <td>减三分之一到一半;核心仓减后底仓保留(假设未伤);当日减仓部分不许盘中买回。</td></tr>
+      <tr><td class="mono" style="color:var(--red);">清仓</td>
+      <td><b>卫星仓(机械止损)命中任一:</b>跌破趋势生命线(含竞价确认破位)/ 个股回撤达 10% 止损线 / 两周不涨到期 / 突破失败回落。<br><b>核心仓(逻辑止损)命中任一:</b>消息触及书面证伪条件(盈余逻辑被伤)/ 需求源头下修 / 政策对题材定性转向 / 关键映射标的逻辑性崩塌且自身假设同源。<b>核心仓只因逻辑证伪清仓,不因股价跌幅。</b></td>
+      <td>开盘即执行,不等反弹"卖个好价";核心仓证伪按三日清完;清仓写一行原因,进确认/错误台账。</td></tr>
+    </tbody>
+  </table>
+  <div class="callout amber">
+    <span class="ct">日检的两条铁律</span>
+    <p>① <b>盘前定案、盘中只执行</b>:九点二十五分后不再产生新决定,盘中的"灵感"一律延到次日盘前——这是隔绝量化诱单与情绪冲动的唯一办法。<br>
+    ② <b>低开看属性、不看幅度</b>:情绪性低开且假设无恙 → 不动甚至是补仓窗口;逻辑性低开(伤假设)→ 按扳机执行,低开多少都不等反弹。最危险的动作是"低开太多了,等反弹再卖"。</p>
+  </div>
+
+  <h3>每周体检(周末 · 管方向,不管节奏)</h3>
+  <p style="font-size:13px;color:var(--muted);">周检只回答"假设还成立吗、止盈线该不该上移",不替代日检。双轨各查各的:</p>
+  <table>
+    <thead><tr><th style="width:16%">查项</th><th style="width:43%">核心仓:查盈余轨道</th><th>卫星仓:查价格结构</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">假设/趋势</td><td>核心假设有无新证据支持或削弱?哪个判断错了仓位就不成立?</td><td>趋势线、量能、相对强度是否完好?板块扩散还是收缩?</td></tr>
+      <tr><td class="mono">波动应对</td><td><b>价格跌但假设无恙 → 不动或按计划补</b>;只有假设受伤才动仓位。</td><td><b>跌破趋势线 → 当天走</b>;"基本面其实不错"是串轨违规,不是持有理由。</td></tr>
+      <tr><td class="mono">防线棘轮</td><td colspan="2">每笔浮盈仓位的移动止盈线只上移、永不下移;浮盈回吐过半=自动减半。</td></tr>
+      <tr><td class="mono">新股潮信号</td><td colspan="2">核对在持主线相关的新股定价温度:火爆=情绪与估值锚抬升(短多但近顶);遇冷=锚下移,持仓需重估。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>每季判决(财报季)</h3>
+  <p>核心仓的生死判决日:盈余轨道兑现→续持或加;放缓但逻辑在→冻结加仓;轨道证伪→移交清仓扳机。卫星仓无季判,以周为生命单位。</p>
+</section>
+
+<!-- 6 减仓与清仓 -->
+
+</div>
+<div class="tabpanel" id="tp6">
+<section>
+  <h2><span class="num">08</span>减仓与清仓:出场是盈亏比的命门</h2>
+  <p class="lead">买入决定你能不能赢,<b>卖出决定你赢多少、亏多少</b>——而期望收益里的"平均盈利"和"平均亏损"两个变量,几乎全部由出场决定。
+  顶级交易员选股各异,但出场纪律的内核一致:<em>错了认账、利润放飞、顶部收割</em>——只是"错了"对两本仓含义不同:<b>卫星仓的"错"是趋势破位(机械止损),核心仓的"错"是买入逻辑证伪(逻辑止损)</b>。本模块先讲清出场的人性陷阱与四类扳机,再落成本系统可执行的规则。</p>
+
+  <h3>一、为什么出场比入场更难:人性是反的</h3>
+  <p>出场难,不是技术问题,是心理问题。亏损厌恶让多数人本能地<b>赢一点就跑、亏了死扛</b>——恰好做反。这会系统性地制造"小赢+大亏",盈亏比天然小于 1,越交易越亏。
+  顶级交易员的出场系统,本质就是<em>用规则强制自己做那件反人性的、对的事</em>:亏了快砍、赢了拿住。一句被反复引用的话是——"只有输家才会给输家加码。"</p>
+  <div class="arch"><svg viewBox="0 0 880 250" xmlns="http://www.w3.org/2000/svg"><rect width="880" height="250" fill="#fff"/><text x="440.0" y="26" font-size="13.5" fill="#1d3a5f" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">出场最大的人性陷阱:多数人做反了</text><rect x="50" y="52" width="370" height="160" rx="10" fill="#fbeceb"/><text x="235" y="74" font-size="11.5" fill="#a8322d" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">✕ 多数人的本能(亏损厌恶)</text><text x="235" y="104" font-size="10" fill="#a8322d" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">赢一点就跑(怕利润回吐)</text><text x="235" y="128" font-size="10" fill="#a8322d" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">亏了死扛、还摊低成本(怕认错)</text><text x="235" y="160" font-size="11" fill="#a8322d" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">结果:小赢 + 大亏</text><text x="235" y="184" font-size="9" fill="#a8322d" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">盈亏比 &lt; 1,越交易越亏</text><rect x="460" y="52" width="370" height="160" rx="10" fill="#eaf3ed"/><text x="645" y="74" font-size="11.5" fill="#2f6b46" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">✓ 奇才的纪律(反人性)</text><text x="645" y="104" font-size="10" fill="#2f6b46" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">亏了快砍(错了在哪先定好)</text><text x="645" y="128" font-size="10" fill="#2f6b46" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">赢了让它奔跑(移动止盈拿住)</text><text x="645" y="160" font-size="11" fill="#2f6b46" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">结果:小亏 + 大赢</text><text x="645" y="184" font-size="9" fill="#2f6b46" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">盈亏比 &gt; 2,错多次仍盈利</text><defs><marker id="fx" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#b5751a"/></marker></defs><line x1="425" y1="132" x2="455" y2="132" stroke="#b5751a" stroke-width="2.4" marker-end="url(#fx)"/><text x="440.0" y="236" font-size="9" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">“只有输家才会给输家加码。”出场系统的全部目的,就是强制你做那件反人性的对的事。</text></svg></div>
+
+  <h3>二、出场的四类扳机:一笔交易的出场解剖</h3>
+  <p>出场不是"在某个点卖掉",而是一套<b>进场前就写好的预案</b>。把奇才们的出场方法拆开,正好是四类扳机,各管一段:</p>
+  <div class="arch"><svg viewBox="0 0 880 340" xmlns="http://www.w3.org/2000/svg"><rect width="880" height="340" fill="#fff"/><text x="440.0" y="26" font-size="13.5" fill="#1d3a5f" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">一笔交易的出场解剖:四类扳机,各管一段</text><polyline points="70.0,250.0 73.2,250.0 76.4,250.0 79.5,250.1 82.7,250.1 85.9,250.1 89.1,250.2 92.3,250.2 95.4,250.3 98.6,250.4 101.8,250.5 105.0,250.7 108.2,250.9 111.3,251.1 114.5,251.3 117.7,251.6 120.9,251.9 124.1,252.3 127.2,252.7 130.4,253.1 133.6,253.5 136.8,254.0 140.0,254.4 143.1,254.8 146.3,255.1 149.5,254.4 152.7,253.8 155.9,253.0 159.0,252.2 162.2,251.3 165.4,250.3 168.6,249.2 171.8,248.1 174.9,246.9 178.1,245.6 181.3,244.3 184.5,243.0 187.7,241.6 190.8,240.3 194.0,238.9 197.2,237.6 200.4,236.3 203.6,235.0 206.7,233.8 209.9,232.6 213.1,231.5 216.3,230.3 219.5,229.3 222.6,228.2 225.8,227.2 229.0,226.2 232.2,225.2 235.4,224.2 238.5,223.2 241.7,222.3 244.9,221.3 248.1,220.4 251.3,219.5 254.4,218.5 257.6,217.6 260.8,216.7 264.0,215.8 267.2,214.8 270.3,213.9 273.5,213.0 276.7,212.1 279.9,211.1 283.1,210.2 286.2,209.3 289.4,208.4 292.6,207.5 295.8,206.5 299.0,205.6 302.1,204.7 305.3,203.8 308.5,202.8 311.7,201.9 314.9,201.0 318.0,200.1 321.2,199.1 324.4,198.2 327.6,197.3 330.8,196.4 333.9,195.5 337.1,194.5 340.3,193.6 343.5,192.7 346.7,191.8 349.8,190.8 353.0,189.9 356.2,189.0 359.4,188.1 362.6,187.1 365.7,186.2 368.9,185.3 372.1,184.4 375.3,183.5 378.5,182.5 381.6,181.6 384.8,180.7 388.0,179.8 391.2,178.8 394.4,177.9 397.5,177.0 400.7,176.1 403.9,175.1 407.1,174.2 410.3,173.3 413.4,172.4 416.6,171.5 419.8,170.5 423.0,169.6 426.2,168.7 429.3,167.8 432.5,166.8 435.7,165.9 438.9,165.0 442.1,164.1 445.2,163.1 448.4,162.2 451.6,161.3 454.8,160.4 457.9,159.5 461.1,158.5 464.3,157.6 467.5,156.7 470.7,155.8 473.8,154.8 477.0,153.9 480.2,153.0 483.4,152.1 486.6,151.2 489.7,150.2 492.9,149.3 496.1,148.4 499.3,147.5 502.5,146.5 505.6,145.6 508.8,144.7 512.0,143.8 515.2,142.8 518.4,141.9 521.5,141.0 524.7,140.1 527.9,139.1 531.1,138.2 534.3,137.3 537.4,136.4 540.6,135.4 543.8,134.5 547.0,133.5 550.2,132.6 553.3,131.7 556.5,130.7 559.7,129.7 562.9,128.7 566.1,127.7 569.2,126.7 572.4,125.7 575.6,124.6 578.8,123.5 582.0,122.4 585.1,121.2 588.3,120.0 591.5,118.7 594.7,117.4 597.9,116.0 601.0,114.5 604.2,112.9 607.4,111.3 610.6,109.5 613.8,107.7 616.9,105.8 620.1,103.8 623.3,101.7 626.5,99.6 629.7,97.4 632.8,95.1 636.0,92.7 639.2,90.4 642.4,88.0 645.6,85.7 648.7,83.4 651.9,81.1 655.1,79.0 658.3,76.9 661.5,75.0 664.6,73.7 667.8,73.0 671.0,72.5 674.2,72.1 677.4,72.0 680.5,72.1 683.7,72.3 686.9,72.8 690.1,73.4 693.3,74.2 696.4,76.8 699.6,79.6 702.8,82.4 706.0,85.3 709.2,88.3 712.3,91.3 715.5,94.4 718.7,97.5 721.9,100.5 725.1,103.5 728.2,106.5 731.4,109.3 734.6,112.2 737.8,114.9 741.0,117.5 744.1,120.1 747.3,122.6 750.5,125.0 753.7,127.2 756.9,129.5 760.0,131.6 763.2,133.7 766.4,135.7 769.6,137.6 772.8,139.5 775.9,141.4 779.1,143.2 782.3,145.0 785.5,146.7 788.7,148.5 791.8,150.2 795.0,151.9 798.2,153.6 801.4,155.2 804.6,156.9 807.7,158.5 810.9,160.2 814.1,161.8 817.3,163.5 820.5,165.1 823.6,166.7 826.8,168.4 830.0,170.0" fill="none" stroke="#33424f" stroke-width="2.4"/><circle cx="161" cy="252" r="5" fill="#1d3a5f"/><text x="161.2" y="272.1964535463386" font-size="9" fill="#1d3a5f" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">进场</text><line x1="70" y1="286" x2="412" y2="286" stroke="#a8322d" stroke-width="2" stroke-dasharray="6,4"/><text x="74" y="301.1964535463386" font-size="8.6" fill="#a8322d" font-weight="700" text-anchor="start" font-family="Noto Sans SC, sans-serif">① 初始止损:错了在哪出(进场前就定)</text><line x1="298" y1="233" x2="389" y2="233" stroke="#2f6b46" stroke-width="1.8"/><line x1="389" y1="233" x2="389" y2="206" stroke="#2f6b46" stroke-width="1.8"/><line x1="389" y1="206" x2="480" y2="206" stroke="#2f6b46" stroke-width="1.8"/><line x1="480" y1="206" x2="480" y2="179" stroke="#2f6b46" stroke-width="1.8"/><line x1="480" y1="179" x2="572" y2="179" stroke="#2f6b46" stroke-width="1.8"/><line x1="572" y1="179" x2="572" y2="153" stroke="#2f6b46" stroke-width="1.8"/><line x1="572" y1="153" x2="663" y2="153" stroke="#2f6b46" stroke-width="1.8"/><text x="450.0" y="206.2261873177568" font-size="8.6" fill="#2f6b46" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">③ 移动止盈:只上移、永不下移 — 让利润奔跑</text><line x1="237" y1="60" x2="237" y2="224" stroke="#b5751a" stroke-width="1.4" stroke-dasharray="3,3"/><text x="237.2" y="54" font-size="8.4" fill="#b5751a" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">② 时间止损:限期不兑现就走</text><circle cx="678" cy="72" r="5" fill="#b5751a"/><text x="678.0" y="60.004001244666085" font-size="8.6" fill="#b5751a" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">④a 主动卖给亢奋顶</text><circle cx="754" cy="127" r="5" fill="#a8322d"/><text x="760.0" y="131.24803496856092" font-size="8.6" fill="#a8322d" font-weight="800" text-anchor="start" font-family="Noto Sans SC, sans-serif">④b 防守式:走坏即出</text><text x="440.0" y="322" font-size="9" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">出场不是一个点,是一套预案:进场前定①②,持有中用③拿住利润,顶部用④收割 —— 把“何时卖”从情绪交给规则。</text></svg></div>
+  <table>
+    <thead><tr><th style="width:16%">扳机</th><th style="width:30%">奇才们怎么用</th><th style="width:26%">解决什么</th><th>本系统落点</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">① 初始止损<br>(价格止损)</td><td>"进场之前就知道:错了在哪儿卖。"压力下的决定是情绪化的,进场前才理性——开仓即设硬止损。绝不给亏损仓加码。</td><td>限定单笔最大亏损,守住本金</td><td><b>仅卫星仓:</b>建仓即写止损位,个股回撤达 10% 触及当日出,当周不在同标的重开。<b>核心仓不用价格止损</b>,改由扳机二(逻辑证伪)退出。</td></tr>
+      <tr><td class="mono">② 时间止损</td><td>"设定一个时间窗,到期没按预期启动,无论小亏小赚都出。"资金的机会成本也是成本——不让仓位"占着不动"。</td><td>释放被套牢的机会成本</td><td>卫星仓:两周不涨即弃(机械)。核心仓无机械时间止损,但盈余轨道连续两个财报季不兑现 → 触发对买入逻辑的重估(逻辑证伪则走扳机二)。</td></tr>
+      <tr><td class="mono">③ 移动止盈<br>(让利润奔跑)</td><td>"如果仓位顺着我,我就留着。"用只上移、永不下移的移动止损护住浮盈,既不提前下车、也不把大利润坐回去。</td><td>把小赢养成大赢(盈亏比的分子)</td><td>每周体检上移止盈线;浮盈回吐过半自动减半;趋势未破不主动平。</td></tr>
+      <tr><td class="mono">④ 收割出场</td><td>两种卖法:<b>④a 主动</b>——把仓位卖给亢奋的"竭尽顶"(全民疯抢时);<b>④b 防守</b>——等趋势明确走坏、回落足够说明行情已走完时卖。</td><td>在最好的价格区间兑现趋势</td><td>过热扳机对应④a(亢奋/拥挤极端时减);破位/逻辑证伪对应④b。</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <span class="ct">"对了在哪卖"与"让利润奔跑"矛盾吗?</span>
+    <p>不矛盾。进场前设的"目标"是<b>风险报酬的参照</b>(用来判断这笔值不值得做、盈亏比够不够),不是到点必须清的硬顶。真到了目标位,处理交给移动止盈和收割扳机:
+    趋势还在就用③拿住,出现亢奋竭尽或破位才用④兑现。<em>参照价帮你决定"做不做",移动止盈和收割帮你决定"何时收"——两者分工,不冲突。</em></p>
+  </div>
+
+  <h3>三、两位仍在实战者的出场范式:一个收割趋势,一个退守现金</h3>
+  <p>同样讲出场,两位至今活跃的交易员给出两种互补范式——一位偏<b>单笔交易层面的"防守式出场"</b>,一位偏<b>组合层面的"卖赢家、退现金"</b>。</p>
+  <table>
+    <thead><tr><th style="width:22%">范式</th><th style="width:42%">怎么做</th><th>本系统怎么用</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">防守式出场<br>(单笔层面)</td><td>"永远要在控制中,不靠祈祷,始终在交易,首先保护好自己。"不舒服就出场——因为总能再进;用长期均线当客观出场线,跌破就走、不当英雄;顺势的留着、逆势的立刻了结。</td><td>卫星仓以趋势生命线/长期均线为机械出场;"持有让我夜里反复看盘"本身即减仓信号;出场后回补须走试探流程。</td></tr>
+      <tr><td class="mono">卖赢家退现金<br>(组合层面)</td><td>近期实盘:高换手的本质是<b>卖出涨多的赢家以锁定利润、砍掉走坏的输家</b>,即便是"伟大的公司"(如龙头科技股)也照卖不误;当宏观/流动性转向、或找不到让人兴奋的机会时,<b>整体退守现金</b>等待。</td><td>过热扳机修剪赢家;减仓第一站永远是现金;资金环境翻转→总仓位降至防御态,不恋战、不为持仓找理由。</td></tr>
+    </tbody>
+  </table>
+  <div class="callout teal">
+    <span class="ct">两种范式的共同内核</span>
+    <p>一个在<em>单笔</em>上"逆势即走、保护自己",一个在<em>组合</em>上"卖赢家、退现金、等机会"——共同点是:<b>出场服从客观信号(均线、流动性、趋势),不服从对持仓的感情</b>。
+    再好的公司,逻辑或趋势走坏就卖;再不甘心,卖出后也不因价格上涨而追回。出场的纪律,就是把"舍不得"三个字从决策里删掉。</p>
+  </div>
+
+  <h3>四、本系统的三套出场扳机:核心仓与卫星仓的退出逻辑完全分开</h3>
+  <p>退出逻辑随仓而异,这是本模块的纲:<b>核心仓(成长)不设机械止损</b>——成长股波动天然大,只要买入逻辑还在,价格回撤不是卖出理由;它只在"买入逻辑被证伪"或"股价透支基本面发展趋势"时才止盈或止损。<b>卫星仓(动量)只用机械止损</b>——价格逻辑驱动,趋势一坏就走,不问基本面。</p>
+  <div class="gatecards">
+    <div class="gc a">
+      <h4>扳机一 · 核心仓减/止盈(股价透支基本面 · 可逆)</h4>
+      <p><b>仅核心仓。触发任一:</b>股价上涨显著<b>超出基本面发展趋势</b>(透支盈余轨道两年以上增速)/ 全民亢奋·新股井喷(竭尽顶)/ 拥挤极端 / 浮盈回吐过半(移动止盈)。</p>
+      <p><b>动作:</b>减三分之一到一半,底仓保留;止盈线上移;新仓冻结。可逆——基本面继续兑现可按金字塔回补(走试探流程、有书面理由)。<b>股价单纯下跌、但逻辑与估值都没问题,不触发本扳机:成长股的回撤是持有成本,不是卖出信号。</b></p>
+    </div>
+    <div class="gc r">
+      <h4>扳机二 · 核心仓清仓(买入逻辑证伪 · 不可逆)</h4>
+      <p><b>仅核心仓。触发任一:</b>盈余增速失约且解释不可信 / 需求源头下修 / 毛利结构性恶化 / 竞争格局逆转 / 关键量产交付证伪 / 政策对题材定性转向 / 资金环境翻转。</p>
+      <p><b>动作:</b>当日启动、三日内清完,去向现金。<b>核心仓没有价格止损——它的"止损"就是逻辑止损:</b>逻辑死了仓位才死,不因股价跌幅而砍,也不等反弹卖好价。</p>
+    </div>
+    <div class="gc r" style="border-color:#1f6f78; background:#f1f8f9;">
+      <h4 style="color:#1f6f78;">扳机三 · 卫星仓机械止损(趋势破位 · 仅卫星仓)</h4>
+      <p><b>仅卫星仓。触发任一:</b>跌破既定趋势生命线 / 突破失败三日内跌回平台 / 两周不涨到期 / 个股回撤达 10% 止损线。</p>
+      <p><b>动作:</b>当天走,不过夜、不找基本面借口、不降级成"长期持有"。<b>止损只属于卫星仓</b>;判断在进场前就做完了,这里只是机械执行。</p>
+    </div>
+  </div>
+  <div class="callout teal">
+    <span class="ct">为什么核心仓不止损、卫星仓必止损</span>
+    <p>两本仓的盈利来源不同,退出逻辑就必须不同。<b>核心仓赚的是企业利润高速成长的大趋势</b>,这种行情中途回撤两三成是常态;若套机械止损,会被正常波动反复扫出、精确卖在恐慌低点、错过最肥的主升段——所以核心仓只认"逻辑证伪"与"估值透支",不认价格回撤。<b>卫星仓赚的是价格趋势的中段</b>,趋势一旦破位,继续持有就失去了全部依据、又无基本面支撑,所以必须机械止损、当天就走。<em>用错对象就是灾难:给核心仓套上动量止损,等于把成长投资做成了追涨杀跌;给卫星仓讲基本面故事,等于把短线亏损拖成长期套牢。</em></p>
+  </div>
+  <p style="font-size:13px;color:var(--muted);">组合层面的兜底另算:核心仓虽无个股止损,但仍受风控底盘约束——子行业篮子回撤 5% 触发对该主题的<b>重估</b>(逻辑在则持、证伪则走扳机二),账户回撤 5% 是组合保命的<b>总闸</b>(极端时整体降仓)。这两者是组合级风险预算,不是对单只成长股的价格止损。</p>
+
+  <h3>五、出场后的现金去向(闭环)</h3>
+  <p>第一站永远是现金(无跷跷板环境下防御端接不住轮动,先落袋再选向);红利切换不在能力圈;现金只有两个再部署出口——
+  <b>名单上高分成长股的事件性/脉冲低点买点</b>(核心仓),或<b>新趋势确认初期的波段</b>(卫星仓)。出口没开,现金就是仓位。</p>
+
+  <div class="callout amber">
+    <span class="ct">出场的盈亏比纪律(本模块的总纲)</span>
+    <p>核心仓用"逻辑/估值"退出(减仓修剪透支的赢家、清仓砍掉逻辑证伪的)、卫星仓用"机械止损"斩断破位的错误——共同把"平均亏损"压小、"平均盈利"拉长,这就是盈亏比≥2:1 的来源。
+    两个互为镜像的致命诱惑:<em>赢时过早全卖</em>(丢掉趋势大钱)与<em>错时拖延不清</em>(把小亏拖成大亏)。系统的回答始终如一:<b>赢家用移动止盈拿住,输家用机械扳机快斩,出场只听信号、不听感情。</b></p>
+  </div>
+</section>
+
+<!-- 7 风控 -->
+
+</div>
+<div class="tabpanel" id="tp7">
+<section>
+  <h2><span class="num">09</span>风险控制:把顶级交易员的生存智慧装进系统</h2>
+  <p class="lead">风险控制是这套系统里<b>唯一不可妥协</b>的部分。纵观历代顶级交易员,他们的选股、择时方法千差万别,
+  但在风控上高度趋同——<em>因为风控不是赚钱的技巧,是活下来的前提,而活下来是赚钱的唯一前置条件</em>。
+  本模块先讲清风控背后的数学(为什么必须如此),再把这套生存智慧落成本系统的八道防线。</p>
+
+  <h3>一、为什么风控是第一性的:两张图说清</h3>
+  <p><b>第一张图 · 亏损与回本的不对称。</b>亏损不是线性的:亏 10% 涨 11% 回本,亏 50% 要涨 100% 才回本,亏 70% 要涨 233%。
+  亏得越深,回本所需呈爆炸式上升——这条曲线就是一切风控规则的数学根源。<b>所以第一要务不是追求大赢,是避免大亏</b>:把每一次亏损都摁在曲线左端"容易回来"的区域。</p>
+  <div class="arch"><svg viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg"><rect width="860" height="300" fill="#fff"/><line x1="90" y1="250" x2="820" y2="250" stroke="#9aa6b2" stroke-width="1.2"/><line x1="90" y1="40" x2="90" y2="250" stroke="#9aa6b2" stroke-width="1.2"/><line x1="171.1" y1="250" x2="171.1" y2="255" stroke="#9aa6b2"/><text x="171.11111111111111" y="268" font-size="8.5" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">-10%</text><line x1="252.2" y1="250" x2="252.2" y2="255" stroke="#9aa6b2"/><text x="252.22222222222223" y="268" font-size="8.5" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">-20%</text><line x1="333.3" y1="250" x2="333.3" y2="255" stroke="#9aa6b2"/><text x="333.3333333333333" y="268" font-size="8.5" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">-30%</text><line x1="495.6" y1="250" x2="495.6" y2="255" stroke="#9aa6b2"/><text x="495.5555555555556" y="268" font-size="8.5" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">-50%</text><line x1="657.8" y1="250" x2="657.8" y2="255" stroke="#9aa6b2"/><text x="657.7777777777777" y="268" font-size="8.5" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">-70%</text><line x1="820.0" y1="250" x2="820.0" y2="255" stroke="#9aa6b2"/><text x="820.0" y="268" font-size="8.5" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">-90%</text><text x="80" y="229.66666666666666" font-size="8.5" fill="#6b7785" font-weight="end" text-anchor="middle" font-family="Noto Sans SC, sans-serif">+100%</text><text x="80" y="206.33333333333334" font-size="8.5" fill="#6b7785" font-weight="end" text-anchor="middle" font-family="Noto Sans SC, sans-serif">+200%</text><text x="80" y="183.0" font-size="8.5" fill="#6b7785" font-weight="end" text-anchor="middle" font-family="Noto Sans SC, sans-serif">+300%</text><text x="80" y="136.33333333333331" font-size="8.5" fill="#6b7785" font-weight="end" text-anchor="middle" font-family="Noto Sans SC, sans-serif">+500%</text><text x="80" y="43.0" font-size="8.5" fill="#6b7785" font-weight="end" text-anchor="middle" font-family="Noto Sans SC, sans-serif">+900%</text><polyline points="90.0,250.0 93.7,249.9 97.3,249.8 101.0,249.7 104.7,249.6 108.3,249.5 112.0,249.3 115.7,249.2 119.3,249.1 123.0,249.0 126.7,248.9 130.4,248.8 134.0,248.7 137.7,248.5 141.4,248.4 145.0,248.3 148.7,248.2 152.4,248.1 156.0,247.9 159.7,247.8 163.4,247.7 167.0,247.6 170.7,247.4 174.4,247.3 178.0,247.2 181.7,247.0 185.4,246.9 189.0,246.8 192.7,246.6 196.4,246.5 200.1,246.3 203.7,246.2 207.4,246.1 211.1,245.9 214.7,245.8 218.4,245.6 222.1,245.5 225.7,245.3 229.4,245.2 233.1,245.0 236.7,244.8 240.4,244.7 244.1,244.5 247.7,244.4 251.4,244.2 255.1,244.0 258.7,243.9 262.4,243.7 266.1,243.5 269.7,243.4 273.4,243.2 277.1,243.0 280.8,242.8 284.4,242.6 288.1,242.5 291.8,242.3 295.4,242.1 299.1,241.9 302.8,241.7 306.4,241.5 310.1,241.3 313.8,241.1 317.4,240.9 321.1,240.7 324.8,240.5 328.4,240.3 332.1,240.1 335.8,239.9 339.4,239.6 343.1,239.4 346.8,239.2 350.5,239.0 354.1,238.7 357.8,238.5 361.5,238.3 365.1,238.0 368.8,237.8 372.5,237.5 376.1,237.3 379.8,237.0 383.5,236.8 387.1,236.5 390.8,236.2 394.5,236.0 398.1,235.7 401.8,235.4 405.5,235.1 409.1,234.9 412.8,234.6 416.5,234.3 420.2,234.0 423.8,233.7 427.5,233.4 431.2,233.1 434.8,232.7 438.5,232.4 442.2,232.1 445.8,231.8 449.5,231.4 453.2,231.1 456.8,230.7 460.5,230.4 464.2,230.0 467.8,229.7 471.5,229.3 475.2,228.9 478.8,228.5 482.5,228.1 486.2,227.7 489.8,227.3 493.5,226.9 497.2,226.5 500.9,226.0 504.5,225.6 508.2,225.2 511.9,224.7 515.5,224.2 519.2,223.8 522.9,223.3 526.5,222.8 530.2,222.3 533.9,221.8 537.5,221.3 541.2,220.7 544.9,220.2 548.5,219.7 552.2,219.1 555.9,218.5 559.5,217.9 563.2,217.3 566.9,216.7 570.6,216.1 574.2,215.4 577.9,214.8 581.6,214.1 585.2,213.4 588.9,212.7 592.6,212.0 596.2,211.3 599.9,210.5 603.6,209.7 607.2,208.9 610.9,208.1 614.6,207.3 618.2,206.4 621.9,205.5 625.6,204.6 629.2,203.7 632.9,202.8 636.6,201.8 640.3,200.8 643.9,199.7 647.6,198.7 651.3,197.6 654.9,196.5 658.6,195.3 662.3,194.1 665.9,192.9 669.6,191.6 673.3,190.3 676.9,188.9 680.6,187.5 684.3,186.1 687.9,184.6 691.6,183.0 695.3,181.4 698.9,179.7 702.6,178.0 706.3,176.2 709.9,174.3 713.6,172.4 717.3,170.4 721.0,168.3 724.6,166.1 728.3,163.8 732.0,161.4 735.6,159.0 739.3,156.4 743.0,153.7 746.6,150.8 750.3,147.8 754.0,144.7 757.6,141.4 761.3,138.0 765.0,134.3 768.6,130.5 772.3,126.4 776.0,122.1 779.6,117.5 783.3,112.7 787.0,107.5 790.7,102.0 794.3,96.1 798.0,89.8 801.7,83.0 805.3,75.7 809.0,67.9 812.7,59.4 816.3,50.1 820.0,40.0" fill="none" stroke="#a8322d" stroke-width="2.8"/><circle cx="171.1" cy="247.4" r="4" fill="#a8322d"/><circle cx="252.2" cy="244.2" r="4" fill="#a8322d"/><circle cx="495.6" cy="226.7" r="4" fill="#a8322d"/><text x="503.5555555555556" y="218.66666666666666" font-size="9" fill="#a8322d" font-weight="start" text-anchor="800" font-family="Noto Sans SC, sans-serif">亏50%→需翻倍才回本</text><circle cx="657.8" cy="195.6" r="4" fill="#a8322d"/><text x="455.0" y="24" font-size="13" fill="#1d3a5f" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">亏损与回本的不对称:为什么“活下来”先于“赚得多”</text><text x="455.0" y="283" font-size="9" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">横轴=回撤幅度,纵轴=回到原值所需涨幅。亏得越多,回本所需越呈爆炸式上升——这是所有风控规则的数学根源。</text></svg></div>
+
+  <p><b>第二张图 · 小亏多次 + 大赚少次的算术。</b>把每笔亏损都控制成"-1R"(R=单笔风险额)、让赢的单子奔跑成"+5R",
+  那么即使六笔里只对一笔(胜率约 17%),净结果仍不亏;盈亏比只要大于 1:1,长期期望就为正。
+  <em>这解释了顶级交易员共同的反直觉做法:把命押在盈亏比和生存上,而不是命中率上</em>——一位传奇宏观交易员就明言,他可以错 80% 的时间仍然不亏钱。</p>
+  <div class="arch"><svg viewBox="0 0 860 260" xmlns="http://www.w3.org/2000/svg"><rect width="860" height="260" fill="#fff"/><text x="430.0" y="24" font-size="13" fill="#1d3a5f" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">小亏多次 + 大赚少次:20%胜率仍盈利的算术</text><rect x="120" y="170" width="70" height="34" rx="4" fill="#fbeceb" stroke="#a8322d" stroke-width="1.5"/><text x="155.0" y="192" font-size="10" fill="#a8322d" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">-1R</text><rect x="208" y="170" width="70" height="34" rx="4" fill="#fbeceb" stroke="#a8322d" stroke-width="1.5"/><text x="243.0" y="192" font-size="10" fill="#a8322d" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">-1R</text><rect x="296" y="170" width="70" height="34" rx="4" fill="#fbeceb" stroke="#a8322d" stroke-width="1.5"/><text x="331.0" y="192" font-size="10" fill="#a8322d" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">-1R</text><rect x="384" y="170" width="70" height="34" rx="4" fill="#fbeceb" stroke="#a8322d" stroke-width="1.5"/><text x="419.0" y="192" font-size="10" fill="#a8322d" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">-1R</text><rect x="472" y="170" width="70" height="34" rx="4" fill="#fbeceb" stroke="#a8322d" stroke-width="1.5"/><text x="507.0" y="192" font-size="10" fill="#a8322d" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">-1R</text><rect x="580" y="40" width="80" height="130" rx="4" fill="#eaf3ed" stroke="#2f6b46" stroke-width="1.5"/><text x="620.0" y="55" font-size="13" fill="#2f6b46" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">+5R</text><line x1="90" y1="170" x2="680" y2="170" stroke="#9aa6b2" stroke-width="1.2" stroke-dasharray="4,3"/><text x="95" y="164" font-size="9" fill="#9aa6b2" font-weight="700" text-anchor="start" font-family="Noto Sans SC, sans-serif">0</text><text x="340.0" y="222" font-size="10" fill="#a8322d" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">5 次小亏 = -5R</text><text x="620.0" y="200" font-size="10" fill="#2f6b46" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">1 次大赢 = +5R</text><text x="430.0" y="238" font-size="9" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">6 笔交易里只对 1 笔(胜率约17%),净结果 = +5R - 5R = 0 仍不亏;盈亏比一旦>1:1,长期为正。每笔只赌总资金的1%,任何单笔都死不了。</text></svg></div>
+
+  <h3>二、顶级交易员的风控原则:六个角度,一个共识</h3>
+  <p>把历代顶尖交易员的风控做法拆开,会发现他们各自强调不同的角度,但拼在一起恰好是一套完整的防御体系。本系统逐条吸收:</p>
+  <table>
+    <thead><tr><th style="width:20%">原则</th><th style="width:42%">核心做法</th><th>系统落点</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">保命高于赚钱</td><td>"别想着赚钱,先想着守住已有的。"把资本保全当作进攻——每天假设自己手上每一个仓位都是错的,先想最坏情况再进场。</td><td>防线一、二:风险预算与回撤熔断;每周体检含"假设受伤"复核。</td></tr>
+      <tr><td class="mono">单笔 1% 铁律</td><td>"按 1% 下注,我对任何单笔交易都无所谓。"每笔最多亏总资金 1%(新手不超 2%);止损距离决定仓位,而非反过来。</td><td>防线一:单股≤10% 且个股回撤≤10% 止损,按止损距离反推规模。</td></tr>
+      <tr><td class="mono">先定出场再进场</td><td>"我在进场之前就知道在哪儿出。"压力下的决定是情绪化的,进场前的决定才是理性的——开仓即设硬止损,不是心理止损。</td><td>防线一+建仓模块:开仓必写证伪条件与止损位,缺一不开。</td></tr>
+      <tr><td class="mono">割肉要快</td><td>"好交易的三要素:割肉、割肉、还是割肉。"输的单子迅速了结,绝不"再等等";绝不给亏损仓加码摊低成本。</td><td>清仓扳机二、止损扳机三:当日执行,不过夜不找借口。</td></tr>
+      <tr><td class="mono">手冷缩、手热放</td><td>"交易不顺时减小规模,顺时才加大。"亏损期主动缩量(对抗"翻本"冲动),盈利期才放大——多数人正好做反。</td><td>仓位四因子里的"手温";月度回撤触发自动降档。</td></tr>
+      <tr><td class="mono">宁可交易不足</td><td>"风险管理最重要;少做、少做、再少做。"把你以为合适的仓位砍一半;用真正不相关的分散降低组合波动,而非"伪分散"。</td><td>防线三、四:压力相关性与流动性;新仓减半的环境档位。</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <span class="ct">一条贯穿所有人的共识</span>
+    <p>无论做趋势、做宏观、做成长还是做反转,顶级交易员都把同一句话放在第一位:<em>先管好风险,利润会自己照顾自己</em>。
+    他们几乎都在早年爆过仓——把风控刻进骨子里的,是亏损的痛,不是聪明。本系统的设计意图,就是<b>用规则替你预先经历那场痛,而不必真的爆一次</b>。</p>
+  </div>
+
+  <h3>三、两位至今仍在实战的交易员:把老纪律用在今天的市场</h3>
+  <p>前述原则多来自几十年前的访谈,但其中两位<b>至今仍活跃、仍在公开访谈里更新观点</b>——一位是 1987 年精准做空、至今保持极少亏损年份的宏观交易员,
+  一位是连续数十年高复合、当过前者门徒又自成一派的基金管理人。他们一个讲<b>防守优先</b>,一个讲<b>集中下注</b>,看似矛盾,实为一体——这对当下高位震荡的市场尤其有指导意义。</p>
+  <div class="arch"><svg viewBox="0 0 880 330" xmlns="http://www.w3.org/2000/svg"><rect width="880" height="330" fill="#fff"/><text x="440.0" y="26" font-size="13.5" fill="#1d3a5f" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">两位仍活跃的交易员:防守优先 × 集中下注,看似矛盾、实为一体</text><rect x="50" y="46" width="390" height="250" rx="10" fill="#f3f7fb"/><text x="240.0" y="58" font-size="11" fill="#1f6f78" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">防守优先:先定最大回撤,再谈进攻</text><polyline points="60.0,170.0 63.0,169.1 66.1,168.3 69.1,167.4 72.1,166.5 75.1,165.7 78.2,164.8 81.2,163.9 84.2,163.1 87.2,162.2 90.3,161.4 93.3,160.5 96.3,159.7 99.3,158.9 102.4,158.0 105.4,157.2 108.4,156.4 111.4,155.6 114.5,154.8 117.5,154.1 120.5,153.3 123.5,152.5 126.6,151.8 129.6,151.0 132.6,150.3 135.6,149.6 138.7,148.9 141.7,148.2 144.7,147.5 147.7,146.9 150.8,146.2 153.8,145.6 156.8,145.0 159.8,144.4 162.9,143.8 165.9,143.3 168.9,142.7 171.9,142.2 175.0,141.7 178.0,141.2 181.0,140.7 184.0,140.2 187.1,139.8 190.1,139.3 193.1,138.9 196.1,138.5 199.2,138.2 202.2,137.8 205.2,137.5 208.2,137.2 211.3,136.9 214.3,136.6 217.3,136.3 220.3,136.1 223.4,135.9 226.4,135.7 229.4,135.5 232.4,135.4 235.5,135.2 238.5,135.1 241.5,135.0 244.5,135.0 247.6,134.9 250.6,134.9 253.6,134.9 256.6,134.9 259.7,134.9 262.7,134.9 265.7,135.0 268.7,135.1 271.8,135.2 274.8,135.3 277.8,135.4 280.8,135.6 283.9,135.8 286.9,136.0 289.9,136.2 292.9,136.4 296.0,136.6 299.0,136.9 302.0,137.2 305.0,137.5 308.1,137.8 311.1,138.1 314.1,138.4 317.1,138.8 320.2,139.1 323.2,139.5 326.2,139.9 329.2,140.3 332.3,140.7 335.3,141.2 338.3,141.6 341.3,142.1 344.4,142.5 347.4,143.0 350.4,143.5 353.4,144.0 356.5,144.5 359.5,145.0 362.5,145.5 365.5,146.0 368.6,146.6 371.6,147.1 374.6,147.6 377.6,148.2 380.7,148.7 383.7,149.3 386.7,149.9 389.7,150.4 392.8,151.0 395.8,151.6 398.8,152.1 401.8,152.7 404.9,153.3 407.9,153.8 410.9,154.4 413.9,155.0 417.0,155.5 420.0,156.1" fill="none" stroke="#33424f" stroke-width="2"/><line x1="60" y1="205" x2="420" y2="205" stroke="#a8322d" stroke-width="2" stroke-dasharray="6,4"/><text x="416" y="220" font-size="8.5" fill="#a8322d" font-weight="700" text-anchor="end" font-family="Noto Sans SC, sans-serif">止损线 = 我能承受的最大亏损(进场前已定)</text><polyline points="60.0,168.0 63.0,167.9 66.1,167.8 69.1,167.7 72.1,167.7 75.1,167.6 78.2,167.5 81.2,167.4 84.2,167.3 87.2,167.2 90.3,167.2 93.3,167.1 96.3,167.0 99.3,166.9 102.4,166.8 105.4,166.7 108.4,166.7 111.4,166.6 114.5,166.5 117.5,166.4 120.5,166.3 123.5,166.2 126.6,166.2 129.6,166.1 132.6,166.0 135.6,165.9 138.7,165.8 141.7,165.7 144.7,165.6 147.7,165.6 150.8,165.5 153.8,165.4 156.8,165.3 159.8,165.2 162.9,165.1 165.9,165.1 168.9,165.0 171.9,164.9 175.0,164.8 178.0,164.7 181.0,164.6 184.0,164.6 187.1,164.5 190.1,164.4 193.1,164.3 196.1,164.2 199.2,164.1 202.2,164.1 205.2,164.0 208.2,163.9 211.3,163.8 214.3,163.7 217.3,163.6 220.3,163.5 223.4,163.5 226.4,163.4 229.4,163.3 232.4,163.2 235.5,163.1 238.5,163.0 241.5,163.0 244.5,162.9 247.6,162.8 250.6,162.7 253.6,162.6 256.6,162.5 259.7,162.5 262.7,162.4 265.7,162.3 268.7,162.2 271.8,162.1 274.8,162.0 277.8,161.9 280.8,161.9 283.9,161.8 286.9,161.7 289.9,161.6 292.9,161.5 296.0,161.4 299.0,161.4 302.0,161.3 305.0,161.2 308.1,161.1 311.1,161.0 314.1,160.9 317.1,160.9 320.2,160.8 323.2,160.7 326.2,160.6 329.2,160.5 332.3,160.4 335.3,160.4 338.3,160.3 341.3,160.2 344.4,160.1 347.4,160.0 350.4,159.9 353.4,159.8 356.5,159.8 359.5,159.7 362.5,159.6 365.5,159.5 368.6,159.4 371.6,159.3 374.6,159.3 377.6,159.2 380.7,159.1 383.7,159.0 386.7,158.9 389.7,158.8 392.8,158.8 395.8,158.7 398.8,158.6 401.8,158.5 404.9,158.4 407.9,158.3 410.9,158.3 413.9,158.2 417.0,158.1 420.0,158.0" fill="none" stroke="#b5751a" stroke-width="1.6" stroke-dasharray="3,3"/><text x="130" y="280" font-size="8.6" fill="#b5751a" font-weight="700" text-anchor="start" font-family="Noto Sans SC, sans-serif">跌破长期均线→减仓/出场,不当英雄</text><text x="240.0" y="298" font-size="9" fill="#1f6f78" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">“每天都假设我手上每个仓位都是错的。”</text><rect x="460" y="46" width="380" height="250" rx="10" fill="#fdfaf3"/><text x="645.0" y="58" font-size="11" fill="#b5751a" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">集中下注 + 资本保全:杠铃,不是平均分散</text><rect x="500" y="100" width="60" height="120" rx="5" fill="#eaf3ed" stroke="#2f6b46" stroke-width="1.6"/><text x="530" y="160" font-size="10" fill="#2f6b46" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">重注 1</text><rect x="572" y="120" width="60" height="100" rx="5" fill="#eaf3ed" stroke="#2f6b46" stroke-width="1.6"/><text x="602" y="168" font-size="10" fill="#2f6b46" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">重注 2</text><rect x="650" y="170" width="120" height="50" rx="5" fill="#eef3f9" stroke="#1d3a5f" stroke-width="1.6"/><text x="710" y="200" font-size="10" fill="#1d3a5f" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">现金 / 防御</text><text x="645.0" y="280" font-size="8.6" fill="#b5751a" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">一年只有一两次真正看准的机会 → 把鸡蛋放一个篮子,盯紧它</text><text x="645.0" y="298" font-size="9" fill="#b5751a" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">“看准了就重仓,看错了快砍;靠资本保全 + 本垒打做长期复利。”</text><text x="440.0" y="318" font-size="9" fill="#6b7785" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">二者统一:防守(单笔风险锁死)让你敢在看准时集中;集中(只押高确定性)让你不必频繁交易。错时小亏、对时重赢 —— 同一枚硬币。</text></svg></div>
+
+  <table>
+    <thead><tr><th style="width:22%">观念</th><th style="width:42%">他们怎么说、怎么做</th><th>本系统怎么用</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">防守第一,进攻第二</td><td>"交易最重要的规则是打好防守,而非进攻。"每天都假设手上每个仓位都是错的,先定好止损点、从而定义最大回撤,剩下的时间才去享受顺势的仓位。</td><td>每周体检的"假设受伤"复核 + 回撤分级熔断;开仓前先写最大亏损,而非先想能赚多少。</td></tr>
+      <tr><td class="mono">不舒服就出场,出场能再进</td><td>"如果一个亏损仓位让你不舒服,解决办法很简单:出掉它,因为你总能再进场。"出场是恢复客观判断的手段,不是认输。</td><td>清仓后现金为先;回补须走试探流程、有书面理由——出场与回补都纪律化,情绪不参与。</td></tr>
+      <tr><td class="mono">长期均线即防线</td><td>"我衡量一切的标尺是收盘价的长期均线;跌破就出场、打防守。"用一条客观的线代替主观的犹豫。</td><td>动量(卫星)仓的生命线即趋势/长期均线,跌破机械止损;成长(核心)仓用它作为降集中度的参考而非清仓信号。</td></tr>
+      <tr><td class="mono">非对称:错时小亏、对时重赢</td><td>"重要的不是你对还是错,而是对的时候赚多少、错的时候亏多少。"追求 5:1 级别的盈亏比——即使错 80% 的时间仍不亏钱。</td><td>仓位与减仓模块的核心目标:盈亏比≥2:1;赢家用棘轮止盈拿住,输家用机械扳机快斩。</td></tr>
+      <tr><td class="mono">看准时集中,做"猪"</td><td>"一年只有一两次真正让你兴奋的机会;真看准了,就把鸡蛋放进一个篮子,然后死死盯住它。"最大的盈利来自高确定性时的集中下注。</td><td>手温热 + 环境友好 + 三共振时,允许核心仓集中(在风险预算之内);其余时间保持克制,不为交易而交易。</td></tr>
+      <tr><td class="mono">集中 ≠ 不控险:卖赢家、砍输家</td><td>近期实盘印证:高换手率的本质是"卖出涨多的赢家以保住利润、砍掉走坏的输家",同时把重注押在少数高确定性方向上——<b>集中与保全同时进行</b>。</td><td>过热扳机修剪赢家、清仓扳机砍输家、集中预算押高分标的——三者并行,正是"集中下注 + 资本保全"的落地。</td></tr>
+    </tbody>
+  </table>
+  <div class="callout teal">
+    <span class="ct">两人观念的统一(本系统的底层逻辑)</span>
+    <p>防守与集中不是对立的:<em>正因为每一笔的风险都被止损锁死(防守),才敢在看准时集中下注;也正因为只在高确定性时集中(克制),才不必频繁交易、把胜率拉高</em>。
+    错的时候亏得小、对的时候赢得大——这就是本系统"仓位四因子 + 三套退出扳机"想复制的同一枚硬币。当下市场处在亢奋后段,这两人的共同动作恰恰是:<b>降低总敞口、保住已有利润、把弹药留给一两次真正看准的机会</b>。</p>
+  </div>
+
+  <h3>四、应对 A 股的投资者结构:不在算法的主场和它对打</h3>
+  <p>当前 A 股的微观结构有两个不可忽视的事实:<b>机构掌握中长期定价权</b>,而<b>程序化/量化交易约占成交的两三成</b>(高频部分经新规后已降至不足两成、整体向中低频迁移)。
+  量化让价格变化更快、助涨助跌更剧烈,直接后果是<em>短周期的价格与量能信号被严重污染</em>:盘口、分时、日内突破很多是算法在抢跑或诱单,个人投资者若照着这些失真的信号即时反馈,等于在算法最快的战场上和它拼速度——必输。本系统的应对不是去预测算法,而是<b>把自己的决策搬到算法不占优势的时间维度和信息维度上</b>。</p>
+  <table>
+    <thead><tr><th style="width:26%">风险(结构带来的)</th><th style="width:36%">为什么个人投资者吃亏</th><th>本系统的应对</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">价格信号失真</td><td>日内突破、放量、盘口挂撤单大量是算法行为,不代表真实供需;跟着分时图做即时决策=被诱多诱空。</td><td><b>拉长信号周期:</b>只认<b>周线级</b>的趋势与量价确认,忽略日内噪音;"价格确认"一律以收盘、以周为单位,不看分时突破。</td></tr>
+      <tr><td class="mono">反馈即时失效</td><td>消息出来后价格在几秒内被算法计入并常常过度反应,人去"快速反应"永远慢半拍且接在最差的价格。</td><td><b>放弃抢反应:</b>催化剂落地后<b>不在当日追</b>(对应建仓的反追高纪律与事件日预案);用预写剧本应对,而非临场对信息做反射。</td></tr>
+      <tr><td class="mono">助涨助跌放大波动</td><td>量化在趋势中加速、在拐点踩踏,使个股振幅与回撤远超基本面应有的幅度。</td><td><b>用仓位而非止损扛波动:</b>单股≤10%、个股止损线放在 10%(给量化制造的正常振幅留空间),靠事前小仓位、而非频繁止损来承受放大的波动。</td></tr>
+      <tr><td class="mono">小微盘超额失效</td><td>量化把小微盘的短线超额持续性打断,高换手小票是算法的主场,个人在此毫无胜算。</td><td><b>回避算法主场:</b>负面清单明确不碰高换手小微盘的量价博弈(见机会发现);只做有机构定价、有基本面锚的中大盘成长。</td></tr>
+      <tr><td class="mono">拥挤与同质踩踏</td><td>大量资金挤在相同因子上,平时低相关、暴跌日相关性趋同,集中反向。</td><td><b>拥挤度作为反向信号:</b>换手/波动/成交集中度骤升即打折或否决开仓(对应仓位四因子与防线五);拥挤的末段是算法的坟场,不去接。</td></tr>
+    </tbody>
+  </table>
+  <div class="callout teal">
+    <span class="ct">核心原则:在自己的优势维度作战</span>
+    <p>不要试图在算法最擅长的领域(速度、日内、海量因子、高换手)击败它——那是用人的短板撞机器的长板。
+    个人投资者唯一稳定的优势在三件算法目前的短板上:<b>对行业的深度理解、对公司的长期跟踪、对周期的耐心等待</b>。
+    本系统的全部设计——成长为主轴、以季度为持有单位、先行业β后个股α、周线级信号、预写剧本——本质上就是<em>把战场从"谁反应快"切换到"谁看得深、拿得久"</em>。
+    与机构的中长期定价权同向(它们决定数月以上的方向),与量化的短期噪音解耦(不与它抢日内),是个人投资者在当前结构下唯一可持续的活法。</p>
+  </div>
+
+  <h3>五、本系统的八道防线(逐层兜底)</h3>
+  <table>
+    <thead><tr><th style="width:20%">防线</th><th style="width:14%">源头智慧</th><th>核心规则</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">一 · 风险预算</td><td>先定出场 / 三层限额</td><td>敞口上限:<b>单股</b>≤10%、<b>子行业</b>≤40%、核心+卫星合计≤70%。止损分仓而治:<b>卫星仓</b>个股回撤达 10% 机械止损(单笔亏损贡献≈1% 账户);<b>核心仓不设个股价格止损</b>,改由"逻辑证伪即清、估值透支即减"退出,其风险由子行业上限、主题篮子回撤 5% 重估、账户回撤 5% 熔断三层兜底。</td></tr>
+      <tr><td class="mono">二 · 回撤熔断</td><td>账户回撤上限</td><td>账户回撤 3% 警戒(冻结新仓一周+全持仓体检、查回撤是单笔失误还是系统性);<b>5% 熔断</b>(降至防御态≤三成、休整两周、过重启清单方恢复)。<b>5% 是计划设定的账户回撤上限,不可突破,到点自动执行。</b></td></tr>
+      <tr><td class="mono">三 · 压力相关性</td><td>真分散 / 反伪分散</td><td>分散看暴跌日相关性,不看平时;光模块+印制电路板+液冷+国产芯片在暴跌日是"一个"板块。真分散只来自不同驱动、不同仓、现金。集中下注必须在预算之内。</td></tr>
+      <tr><td class="mono">四 · 流动性与杠杆</td><td>宁可交易不足</td><td>退出能力测试(仓位占日均成交超 8% 改基金或弃);常态零融资,例外仅手温热+环境友好+三共振,单计预算上限 15%、环境转弱当日清零。把自以为合适的仓位先砍一半。</td></tr>
+      <tr><td class="mono">五 · 波动率适配</td><td>波动率退出</td><td>目标方向波动率/换手骤升→仓位打七折,极端→否决开仓;<b>当一个市场对重要利好/利空不再按"该有的方向"反应时,视为危险信号</b>(它在告诉你逻辑变了),降敞口。</td></tr>
+      <tr><td class="mono">六 · 事件与传导</td><td>先想最坏情况</td><td>重大事件(巨型新股、会议、海外龙头财报)前核对合计敞口、预写好中坏三剧本;海外映射标的单日跌超 5%→次日盘前完成"跌因属性/传导敞口/扳机核对"。</td></tr>
+      <tr><td class="mono">七 · 心理熔断与台账</td><td>割肉要快 / 反翻本 / 戒自负</td><td>单日主动交易超三笔/盘中改计划/想加倍捞回→次日强制空仓;<b>最大的亏损往往紧跟最大的胜利之后(自负期)</b>,大胜后主动降一档规模。每笔亏损 48 小时内写三行复盘;同类错误三次,规则必须修订。</td></tr>
+      <tr><td class="mono">八 · 风格漂移</td><td>坚守自身边界</td><td>给套牢动量仓找基本面续命、给成长仓套短线止损、抄底圈外资产、追初创彩票、踏空后追风格——任一即违规,立即纠正记台账;回撤进二级档后,每笔交易前强制自问"哪本仓?圈内吗?"</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout amber">
+    <span class="ct">风控的最终检验</span>
+    <p>一套风控是否合格,只看一个问题:<em>遇到你设想不到的那种黑天鹅,系统会不会让你出局?</em>
+    八道防线的共同目的不是让你不亏——亏损是交易的成本——而是确保<b>任何单一事件、任何连续失误、任何极端行情,都打不穿你的本金底线</b>。
+    赚钱的机会下个月还会有,但只有当你还在场时才接得住。</p>
+  </div>
+</section>
+
+<!-- 8 当下校准 -->
+
+</div>
+<div class="tabpanel" id="tp8">
+<section>
+  <h2><span class="num">10</span>当下校准(2026 年 6 月)</h2>
+  <p class="lead">本章用<b>入场评分七维</b>(① 当季盈利加速 · ② 年度盈利高增 · ③ 新要素 · ④ 量价与流通结构 · ⑤ 行业龙头与相对强度 · ⑥ 机构资金进场 · ⑦ 大盘趋势配合)逐个评估当前子行业的现状,并据此与"总仓位 / 单一行业上限"一起给出指令。前三维定成长质量,中三维定市场认可,末一维定环境。</p>
+
+  <h3>仓位框架(按当下环境刷新)</h3>
+  <table>
+    <thead><tr><th style="width:24%">仓位项</th><th style="width:42%">现状</th><th>上限 / 指令</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">总仓位</td><td>环境边际转弱 × 新股抽水高峰临近(美股 AI 巨头接力上市 + 长鑫发行 + 赴港潮)。⑦ 大盘趋势对成长不再友好。</td><td><b>降至五成</b>(友好期满配上限为七成 = 核心≤60% + 卫星≤10%);其余 ≥ 三成现金,去向预留给脉冲低点。</td></tr>
+      <tr><td class="mono">单一行业上限</td><td>主线拥挤度高,暴跌日同涨同跌的子行业需合并计敞口。</td><td>单一子行业 ≤ 40%(压力相关合并计);单股 ≤ 10%。任一超限先降回限内。</td></tr>
+      <tr><td class="mono">核心仓 / 卫星仓</td><td>主线处第⑥段(亢奋后段),卫星(动量)的钟已近尾;核心(成长)中仅拐点方向仍具新建价值。</td><td>核心 ≤ 60%(当前压至四成半至五成,只留盈余轨道未伤者);卫星 ≤ 10%(当前压到一成以内)。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>各子行业:七维现状与指令</h3>
+  <table>
+    <thead><tr><th style="width:16%">行业</th><th style="width:50%">现状(七维评分)</th><th>指令</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">光模块 · 印制电路板<br><span class="pill pl-g">北美共振链</span></td>
+      <td>①②<b>强</b>(订单饱满、盈余高增兑现中);③ 新代际(1.6T)红利已被price in;④ 高位放量滞涨、⑤ 龙头相对强度边际走弱、⑥ 聪明钱边际流出、⑦ 主线第⑥段利好失效。<b>基本面强 × 市场面转弱的典型背离</b>(公司四段 / 行情⑥段)。</td>
+      <td>核心仓底仓续持(①②未伤);按扳机一兑现过热部分,止盈线上移;卫星仓应已收缩;不新增。</td></tr>
+
+      <tr><td class="mono">液冷 · 电源<br><span class="pill pl-a">拐点甜蜜区</span></td>
+      <td>① 当季盈利刚加速(拐点)、② 年度转入高增;③ 液冷渗透率快速提升=真实新需求;④ 量价未过度拥挤、⑤ 细分新龙头相对强度上行、⑥ 机构开始进场;⑦ 受主线连累但自身逻辑独立。<b>七维多数转强、估值未透支</b>(公司三段甜蜜区)。</td>
+      <td><b>当下唯一可新建核心仓方向</b>:跑评分 ≥ 70 入池,用新股脉冲低点加速建仓,单股 ≤ 10%。</td></tr>
+
+      <tr><td class="mono">国产算力芯片<br><span class="pill pl-p">政策驱动</span></td>
+      <td>①② <b>弱</b>(多数刚扭亏或未扭亏,成长质量未达标);③ 新要素强(国产替代叙事、新品流片);④ 被新股潮抽血、筹码分流;⑤ 龙头相对强度受 IPO 压制;⑥ 结构性进场;⑦ 政策驱动、与大盘弱相关。<b>叙事强但盈利未兑现</b>(公司二段,对成长轴偏早)。</td>
+      <td>核心仓不建(等三段确认:连续两季盈利 + 量产兑现);卫星仓政策脉冲只做小仓波段,破位即走。</td></tr>
+
+      <tr><td class="mono">存储 · 模组<br><span class="pill pl-r">纯周期</span></td>
+      <td>① 当季盈利看似强,但来自存储价格周期与低价备货的库存收益(剪刀差);② 周期性而非结构性盈利;③ 新要素弱;④ 价格处历史<b>高分位</b>;⑤ 模组厂非链条核心;⑥⑦ 周期博弈。<b>盈利不可持续 + 高分位,周期顶双杀风险累积</b>。</td>
+      <td>核心仓<b>禁入</b>(圈外);卫星仓仅价格上行趋势内持有,破位即走,高分位不新增。</td></tr>
+
+      <tr><td class="mono">存储 · 设计(兆易创新)<br><span class="pill pl-a">周期成长混合</span></td>
+      <td>① 当季盈利回升但部分系于存储价格;② 成长内核(利基存储/车规/定制化)+ 周期叠加;③ 新品新要素具备;④⑤ 设计龙头、相对强度中性偏强;⑥ 机构有进场;⑦ 混合。<b>周期成长混合体,七维约八十档</b>。</td>
+      <td>核心仓可持,仓位按混合体<b>降半档</b>;"存储价格分位"列入周检,周期转向时即使公司逻辑未伤也冻结加仓。</td></tr>
+
+      <tr><td class="mono">存储 · 接口芯片(澜起科技)<br><span class="pill pl-g">成长带标准</span></td>
+      <td>① 当季盈利强(内存代际升级驱动)、② 年度持续高增;③ 新代际渗透 + 配套价值量提升;④ 量价相对健康、⑤ 强卡位与相对强度、⑥ 机构持续增持;⑦ 受主线情绪波及但基本面独立。<b>七维近乎全绿,存储链最干净一只</b>(九十档,公司四段)。</td>
+      <td>核心仓<b>首选</b>;行情⑥段影响的是建仓时点而非资格——回调至关键支撑 + 拥挤回落是少数可加仓窗口,不追高;扳机二盯代际渗透节奏证伪。</td></tr>
+
+      <tr><td class="mono">低位成长<br><span class="pill pl-t">新能源 / 创新药</span></td>
+      <td>① 部分拐点显现、② 部分开始修复(分化);③ 新逻辑(固态电池 / 出海授权);④ 低位、近期放量(资金高低切换接力);⑤ 各有龙头、⑥ 机构开始低吸;⑦ 切换初期、确认未成序列。<b>圈内轮动而非出圈</b>。</td>
+      <td>升为研究池<b>第一优先级</b>:先跑评分,等价格确认(放量续涨 + 收复关键均线)再以试探仓介入,不追第一天。</td></tr>
+
+      <tr><td class="mono">新股潮本身<br><span class="pill pl-n">供给变量</span></td>
+      <td>SpaceX 平稳 +19% 为后续科技 IPO 定调;A 股长鑫 / 长江存储抽水在后。④ 全市场流通资金被阶段性抽离。</td>
+      <td>不打新、看公投:新股定价冷热 = 情绪温度计;脉冲承压低点 = 名单标的(尤其液冷/电源、澜起)的买点窗口。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>新股潮的交易节奏图</h3>
+  <div class="arch"><svg viewBox="0 0 900 250" xmlns="http://www.w3.org/2000/svg"><rect x="70" y="60" width="180" height="120" rx="6" fill="#eaf3ed"/><rect x="250" y="60" width="80" height="120" rx="6" fill="#fbf3e4"/><rect x="330" y="60" width="210" height="120" rx="6" fill="#fbeceb"/><rect x="540" y="60" width="320" height="120" rx="6" fill="#e9f3f4"/><text x="160" y="52" font-size="10" fill="#2f6b46" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">上市前约一月 · 预热</text><text x="290" y="52" font-size="10" fill="#b5751a" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">上市日</text><text x="435" y="52" font-size="10" fill="#a8322d" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">上市后一到两周 · 脉冲承压</text><text x="700" y="52" font-size="10" fill="#1f6f78" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">增量资金消化 · 重定价(机会区)</text><polyline points="70.0,150.0 73.1,149.6 76.1,149.2 79.2,148.8 82.2,148.5 85.3,148.1 88.3,147.7 91.4,147.3 94.4,146.9 97.5,146.5 100.5,146.1 103.6,145.8 106.6,145.4 109.7,145.0 112.7,144.6 115.8,144.2 118.8,143.8 121.9,143.4 124.9,143.1 128.0,142.7 131.0,142.3 134.1,141.9 137.1,141.5 140.2,141.1 143.2,140.7 146.3,140.3 149.3,140.0 152.4,139.6 155.4,139.2 158.5,138.8 161.5,138.4 164.6,138.0 167.6,137.6 170.7,137.3 173.7,136.9 176.8,136.5 179.8,136.1 182.9,135.7 185.9,135.3 189.0,134.9 192.0,134.6 195.1,134.2 198.1,133.8 201.2,133.4 204.2,133.0 207.3,132.6 210.3,132.2 213.4,131.9 216.4,131.5 219.5,131.1 222.5,130.7 225.6,130.3 228.6,129.9 231.7,129.5 234.7,129.2 237.8,128.8 240.8,128.4 243.9,128.0 246.9,127.6 250.0,127.2 253.0,126.8 256.1,126.4 259.1,126.1 262.2,125.7 265.2,125.3 268.3,124.9 271.3,124.5 274.4,124.1 277.4,123.7 280.5,123.4 283.5,123.0 286.6,122.6 289.6,122.2 292.7,121.8 295.7,121.4 298.8,121.0 301.8,120.7 304.9,120.3 307.9,120.2 311.0,120.8 314.0,121.5 317.1,122.1 320.1,122.8 323.2,123.4 326.2,124.1 329.3,124.7 332.3,125.4 335.4,126.0 338.4,126.7 341.5,127.3 344.5,128.0 347.6,128.6 350.6,129.3 353.7,129.9 356.7,130.6 359.8,131.2 362.8,131.9 365.9,132.5 368.9,133.2 372.0,133.8 375.0,134.5 378.1,135.1 381.1,135.8 384.2,136.4 387.2,137.1 390.3,137.7 393.3,138.4 396.4,139.0 399.4,139.7 402.5,140.3 405.5,141.0 408.6,141.6 411.6,142.2 414.7,142.9 417.7,143.5 420.8,144.2 423.8,144.8 426.9,145.5 429.9,146.1 433.0,146.8 436.0,147.4 439.1,148.1 442.1,148.7 445.2,149.4 448.2,150.0 451.3,150.7 454.3,151.3 457.4,152.0 460.4,152.6 463.5,153.3 466.5,153.9 469.6,154.6 472.6,155.2 475.7,155.9 478.7,156.5 481.8,157.2 484.8,157.8 487.9,158.5 490.9,159.1 494.0,159.8 497.0,160.4 500.1,161.1 503.1,161.7 506.2,161.8 509.2,161.3 512.3,160.9 515.3,160.5 518.4,160.0 521.4,159.6 524.5,159.2 527.5,158.8 530.6,158.3 533.6,157.9 536.7,157.5 539.7,157.0 542.8,156.6 545.8,156.2 548.9,155.8 551.9,155.3 555.0,154.9 558.0,154.5 561.1,154.0 564.1,153.6 567.2,153.2 570.2,152.8 573.3,152.3 576.3,151.9 579.4,151.5 582.4,151.0 585.5,150.6 588.5,150.2 591.6,149.8 594.6,149.3 597.7,148.9 600.7,148.5 603.8,148.0 606.8,147.6 609.9,147.2 612.9,146.7 616.0,146.3 619.0,145.9 622.1,145.5 625.1,145.0 628.2,144.6 631.2,144.2 634.3,143.7 637.3,143.3 640.4,142.9 643.4,142.5 646.5,142.0 649.5,141.6 652.6,141.2 655.6,140.7 658.7,140.3 661.7,139.9 664.8,139.5 667.8,139.0 670.9,138.6 673.9,138.2 677.0,137.7 680.0,137.3 683.1,136.9 686.1,136.5 689.2,136.0 692.2,135.6 695.3,135.2 698.3,134.7 701.4,134.3 704.4,133.9 707.5,133.5 710.5,133.0 713.6,132.6 716.6,132.2 719.7,131.7 722.7,131.3 725.8,130.9 728.8,130.4 731.9,130.0 734.9,129.6 738.0,129.2 741.0,128.7 744.1,128.3 747.1,127.9 750.2,127.4 753.2,127.0 756.3,126.6 759.3,126.2 762.4,125.7 765.4,125.3 768.5,124.9 771.5,124.4 774.6,124.0 777.6,123.6 780.7,123.2 783.7,122.7 786.8,122.3 789.8,121.9 792.9,121.4 795.9,121.0 799.0,120.6 802.0,120.2 805.1,119.7 808.1,119.3 811.2,118.9 814.2,118.4 817.3,118.0 820.3,117.6 823.4,117.1 826.4,116.7 829.5,116.3 832.5,115.9 835.6,115.4 838.6,115.0 841.7,114.6 844.7,114.1 847.8,113.7 850.8,113.3 853.9,112.9 856.9,112.4 860.0,112.0" fill="none" stroke="#1d3a5f" stroke-width="2.6"/><circle cx="290" cy="120" r="5" fill="#b5751a"/><circle cx="455" cy="160" r="5" fill="#a8322d"/><text x="455" y="180" font-size="8.5" fill="#a8322d" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">低点 = 试探买点窗口的边缘</text><text x="465.0" y="205" font-size="8.6" fill="#33424f" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">节奏可量化(招商证券25个大型IPO样本):落地前一月相关板块平均+2.4%、过半上涨;上市后一两周情绪走弱、指数小幅承压;</text><text x="465.0" y="221" font-size="8.6" fill="#33424f" font-weight="400" text-anchor="middle" font-family="Noto Sans SC, sans-serif">约一到两周被增量资金消化。脉冲式冲击,不改中长期产业趋势 —— 但每一次脉冲都是仓位节奏的可预期窗口。</text></svg></div>
+
+  <div class="closer">
+    <span class="ct">系统的一句话</span>
+    <p>高胜率不靠预测,靠把命中率、盈亏比、一致性分别交给四组规则;
+    <em>仓位决定能亏多少、建仓决定用什么价接、持仓决定拿多久、减清决定怎么收</em>——新股潮是当下最大的节奏变量,把它当窗口用,不当对手打。</p>
+    <p>系统只保证:<em>圈内的拐点不漏、趋势不丢、错误不大、极端日后还在场</em>。活着,是高胜率的前提。</p>
+  </div>
+</section>
+
+
+<!-- 附录 -->
+
+</div>
+<div class="tabpanel" id="tp9">
+<section>
+  <h2><span class="num">附录甲</span>风格定位:能力圈的边界</h2>
+  <p class="lead">把投资风格放到企业生命周期上看,每种风格只在特定阶段有效。本系统的猎场由两条带圈定:
+  <b>成长带(三至五段,主)</b>看盈余增长与每股收益,<b>动量带(二至四段,辅)</b>看价格趋势。
+  两带的交集——<em>三至四段,盈亏平衡迈向经营杠杆、盈余拐点与价格趋势共振之处</em>——是本系统的甜蜜区,也是研究火力的第一优先级。</p>
+
+  <div class="arch"><svg viewBox="0 0 920 330" xmlns="http://www.w3.org/2000/svg"><rect x="205" y="58" width="405" height="22" rx="5" fill="#e9f3f4"/><text x="407" y="73" font-size="10" fill="#1f6f78" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">动量猎场 · 阶段 2–4(价格趋势驱动 · 辅)</text><rect x="340" y="30" width="405" height="22" rx="5" fill="#eaf3ed"/><text x="542" y="45" font-size="10" fill="#2f6b46" font-weight="800" text-anchor="middle" font-family="Noto Sans SC, sans-serif">成长猎场 · 阶段 3–5(盈余增长驱动 · 主)</text><rect x="340" y="86" width="270" height="180" fill="#fbf3e4" opacity="0.55"/><text x="475" y="103" font-size="10.5" fill="#b5751a" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">甜蜜区 · 阶段 3–4:盈余拐点 × 价格趋势共振</text><line x1="70" y1="86" x2="70" y2="272" stroke="#cfd6dd" stroke-width="1" stroke-dasharray="3,3"/><text x="137.5" y="288" font-size="10" fill="#33424f" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">1 初创</text><line x1="205" y1="86" x2="205" y2="272" stroke="#cfd6dd" stroke-width="1" stroke-dasharray="3,3"/><text x="272.5" y="288" font-size="10" fill="#33424f" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">2 超速增长</text><line x1="340" y1="86" x2="340" y2="272" stroke="#cfd6dd" stroke-width="1" stroke-dasharray="3,3"/><text x="407.5" y="288" font-size="10" fill="#33424f" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">3 盈亏平衡</text><line x1="475" y1="86" x2="475" y2="272" stroke="#cfd6dd" stroke-width="1" stroke-dasharray="3,3"/><text x="542.5" y="288" font-size="10" fill="#33424f" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">4 经营杠杆</text><line x1="610" y1="86" x2="610" y2="272" stroke="#cfd6dd" stroke-width="1" stroke-dasharray="3,3"/><text x="677.5" y="288" font-size="10" fill="#33424f" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">5 资本回报</text><line x1="745" y1="86" x2="745" y2="272" stroke="#cfd6dd" stroke-width="1" stroke-dasharray="3,3"/><text x="812.5" y="288" font-size="10" fill="#33424f" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">6 衰退</text><line x1="880" y1="86" x2="880" y2="272" stroke="#cfd6dd" stroke-width="1" stroke-dasharray="3,3"/><line x1="70" y1="210" x2="880" y2="210" stroke="#9aa6b2" stroke-width="1" stroke-dasharray="4,3"/><text x="56" y="214" font-size="10" fill="#9aa6b2" font-weight="700" text-anchor="end" font-family="Noto Sans SC, sans-serif">0</text><polyline points="70.0,188.8 72.7,188.7 75.4,188.6 78.1,188.4 80.8,188.3 83.5,188.1 86.3,188.0 89.0,187.8 91.7,187.6 94.4,187.5 97.1,187.3 99.8,187.1 102.5,186.9 105.2,186.8 107.9,186.6 110.6,186.4 113.3,186.2 116.1,186.0 118.8,185.8 121.5,185.6 124.2,185.4 126.9,185.2 129.6,185.0 132.3,184.7 135.0,184.5 137.7,184.3 140.4,184.0 143.1,183.8 145.9,183.6 148.6,183.3 151.3,183.1 154.0,182.8 156.7,182.5 159.4,182.3 162.1,182.0 164.8,181.7 167.5,181.4 170.2,181.1 172.9,180.8 175.7,180.5 178.4,180.2 181.1,179.9 183.8,179.6 186.5,179.3 189.2,178.9 191.9,178.6 194.6,178.2 197.3,177.9 200.0,177.5 202.7,177.2 205.5,176.8 208.2,176.4 210.9,176.0 213.6,175.6 216.3,175.2 219.0,174.8 221.7,174.4 224.4,174.0 227.1,173.6 229.8,173.1 232.5,172.7 235.3,172.3 238.0,171.8 240.7,171.3 243.4,170.9 246.1,170.4 248.8,169.9 251.5,169.4 254.2,168.9 256.9,168.4 259.6,167.9 262.3,167.4 265.1,166.8 267.8,166.3 270.5,165.7 273.2,165.2 275.9,164.6 278.6,164.1 281.3,163.5 284.0,162.9 286.7,162.3 289.4,161.7 292.1,161.1 294.8,160.5 297.6,159.8 300.3,159.2 303.0,158.6 305.7,157.9 308.4,157.3 311.1,156.6 313.8,155.9 316.5,155.2 319.2,154.5 321.9,153.8 324.6,153.1 327.4,152.4 330.1,151.7 332.8,151.0 335.5,150.3 338.2,149.5 340.9,148.8 343.6,148.0 346.3,147.3 349.0,146.5 351.7,145.7 354.4,145.0 357.2,144.2 359.9,143.4 362.6,142.6 365.3,141.8 368.0,141.0 370.7,140.2 373.4,139.3 376.1,138.5 378.8,137.7 381.5,136.9 384.2,136.0 387.0,135.2 389.7,134.4 392.4,133.5 395.1,132.7 397.8,131.8 400.5,130.9 403.2,130.1 405.9,129.2 408.6,128.3 411.3,127.5 414.0,126.6 416.8,125.7 419.5,124.9 422.2,124.0 424.9,123.1 427.6,122.2 430.3,121.4 433.0,120.5 435.7,119.6 438.4,118.7 441.1,117.8 443.8,117.0 446.6,116.1 449.3,115.2 452.0,114.3 454.7,113.5 457.4,112.6 460.1,111.7 462.8,110.9 465.5,110.0 468.2,109.1 470.9,108.3 473.6,107.4 476.4,106.6 479.1,105.7 481.8,104.9 484.5,104.0 487.2,103.2 489.9,102.4 492.6,101.6 495.3,100.7 498.0,99.9 500.7,99.1 503.4,98.3 506.2,97.5 508.9,96.7 511.6,95.9 514.3,95.1 517.0,94.3 519.7,93.6 522.4,92.8 525.1,92.0 527.8,91.3 530.5,90.5 533.2,89.8 536.0,89.1 538.7,88.4 541.4,87.6 544.1,86.9 546.8,86.2 549.5,85.5 552.2,84.8 554.9,84.2 557.6,83.5 560.3,82.8 563.0,82.2 565.8,81.5 568.5,80.9 571.2,80.2 573.9,79.6 576.6,79.0 579.3,78.4 582.0,77.8 584.7,77.2 587.4,76.6 590.1,76.0 592.8,75.4 595.6,74.9 598.3,74.3 601.0,73.8 603.7,73.2 606.4,72.7 609.1,72.2 611.8,71.6 614.5,71.1 617.2,70.6 619.9,70.1 622.6,69.7 625.4,69.2 628.1,68.7 630.8,68.2 633.5,67.8 636.2,67.3 638.9,66.9 641.6,66.5 644.3,66.0 647.0,65.6 649.7,65.2 652.4,64.8 655.2,64.4 657.9,64.0 660.6,63.6 663.3,63.2 666.0,62.9 668.7,62.5 671.4,62.1 674.1,61.8 676.8,61.5 679.5,61.1 682.2,60.8 684.9,60.4 687.7,60.1 690.4,59.8 693.1,59.5 695.8,59.2 698.5,58.9 701.2,58.6 703.9,58.3 706.6,58.0 709.3,57.8 712.0,57.5 714.7,57.2 717.5,57.0 720.2,56.7 722.9,56.5 725.6,56.2 728.3,56.0 731.0,55.7 733.7,55.5 736.4,55.3 739.1,55.1 741.8,54.8 744.5,54.6 747.3,54.4 750.0,54.2 752.7,54.0 755.4,53.8 758.1,53.6 760.8,53.8 763.5,54.1 766.2,54.4 768.9,54.8 771.6,55.1 774.3,55.4 777.1,55.7 779.8,56.0 782.5,56.3 785.2,56.7 787.9,57.0 790.6,57.3 793.3,57.6 796.0,58.0 798.7,58.3 801.4,58.7 804.1,59.0 806.9,59.4 809.6,59.7 812.3,60.1 815.0,60.4 817.7,60.8 820.4,61.2 823.1,61.5 825.8,61.9 828.5,62.3 831.2,62.6 833.9,63.0 836.7,63.4 839.4,63.8 842.1,64.2 844.8,64.5 847.5,64.9 850.2,65.3 852.9,65.7 855.6,66.1 858.3,66.5 861.0,66.9 863.7,67.3 866.5,67.7 869.2,68.1 871.9,68.5 874.6,68.9 877.3,69.3 880.0,69.7" fill="none" stroke="#4a90c4" stroke-width="2.6"/><polyline points="70.0,223.4 72.7,224.1 75.4,224.8 78.1,225.5 80.8,226.2 83.5,227.0 86.3,227.7 89.0,228.5 91.7,229.3 94.4,230.1 97.1,230.9 99.8,231.8 102.5,232.6 105.2,233.5 107.9,234.3 110.6,235.2 113.3,236.1 116.1,236.9 118.8,237.8 121.5,238.7 124.2,239.6 126.9,240.4 129.6,241.3 132.3,242.2 135.0,243.0 137.7,243.9 140.4,244.7 143.1,245.5 145.9,246.3 148.6,247.1 151.3,247.9 154.0,248.6 156.7,249.3 159.4,250.0 162.1,250.7 164.8,251.3 167.5,251.9 170.2,252.4 172.9,253.0 175.7,253.4 178.4,253.9 181.1,254.3 183.8,254.6 186.5,255.0 189.2,255.2 191.9,255.4 194.6,255.6 197.3,255.7 200.0,255.8 202.7,255.8 205.5,255.8 208.2,255.7 210.9,255.6 213.6,255.4 216.3,255.1 219.0,254.8 221.7,254.5 224.4,254.1 227.1,253.6 229.8,253.1 232.5,252.5 235.3,251.9 238.0,251.2 240.7,250.5 243.4,249.7 246.1,248.9 248.8,248.0 251.5,247.1 254.2,246.1 256.9,245.1 259.6,244.0 262.3,242.9 265.1,241.8 267.8,240.6 270.5,239.4 273.2,238.2 275.9,236.9 278.6,235.6 281.3,234.3 284.0,232.9 286.7,231.5 289.4,230.1 292.1,228.7 294.8,227.3 297.6,225.8 300.3,224.3 303.0,222.8 305.7,221.3 308.4,219.8 311.1,218.3 313.8,216.8 316.5,215.3 319.2,213.7 321.9,212.2 324.6,210.7 327.4,209.2 330.1,207.6 332.8,206.1 335.5,204.6 338.2,203.1 340.9,201.6 343.6,200.1 346.3,198.6 349.0,197.2 351.7,195.7 354.4,194.3 357.2,192.8 359.9,191.4 362.6,190.0 365.3,188.7 368.0,187.3 370.7,185.9 373.4,184.6 376.1,183.3 378.8,182.0 381.5,180.7 384.2,179.5 387.0,178.2 389.7,177.0 392.4,175.8 395.1,174.6 397.8,173.4 400.5,172.3 403.2,171.1 405.9,170.0 408.6,168.9 411.3,167.8 414.0,166.8 416.8,165.7 419.5,164.7 422.2,163.7 424.9,162.7 427.6,161.7 430.3,160.8 433.0,159.8 435.7,158.9 438.4,158.0 441.1,157.1 443.8,156.2 446.6,155.3 449.3,154.5 452.0,153.7 454.7,152.8 457.4,152.0 460.1,151.2 462.8,150.5 465.5,149.7 468.2,148.9 470.9,148.2 473.6,147.5 476.4,146.8 479.1,146.1 481.8,145.4 484.5,144.7 487.2,144.0 489.9,143.4 492.6,142.7 495.3,142.1 498.0,141.5 500.7,140.9 503.4,140.3 506.2,139.7 508.9,139.1 511.6,138.6 514.3,138.0 517.0,137.5 519.7,136.9 522.4,136.4 525.1,135.9 527.8,135.4 530.5,134.9 533.2,134.4 536.0,134.0 538.7,133.5 541.4,133.0 544.1,132.6 546.8,132.2 549.5,131.7 552.2,131.3 554.9,130.9 557.6,130.5 560.3,130.1 563.0,129.7 565.8,129.4 568.5,129.0 571.2,128.6 573.9,128.3 576.6,127.9 579.3,127.6 582.0,127.3 584.7,127.0 587.4,126.7 590.1,126.3 592.8,126.0 595.6,125.8 598.3,125.5 601.0,125.2 603.7,124.9 606.4,124.7 609.1,124.4 611.8,124.1 614.5,123.9 617.2,123.7 619.9,123.4 622.6,123.2 625.4,123.0 628.1,122.8 630.8,122.5 633.5,122.3 636.2,122.1 638.9,121.9 641.6,121.7 644.3,121.6 647.0,121.4 649.7,121.2 652.4,121.0 655.2,120.9 657.9,120.7 660.6,120.5 663.3,120.4 666.0,120.2 668.7,120.1 671.4,119.9 674.1,119.8 676.8,119.7 679.5,119.5 682.2,119.4 684.9,119.3 687.7,119.2 690.4,119.0 693.1,118.9 695.8,118.8 698.5,118.7 701.2,118.6 703.9,118.5 706.6,118.4 709.3,118.3 712.0,118.2 714.7,118.1 717.5,118.0 720.2,118.6 722.9,119.4 725.6,120.1 728.3,120.9 731.0,121.7 733.7,122.4 736.4,123.2 739.1,124.0 741.8,124.7 744.5,125.5 747.3,126.3 750.0,127.1 752.7,127.9 755.4,128.6 758.1,129.4 760.8,130.2 763.5,131.0 766.2,131.8 768.9,132.6 771.6,133.4 774.3,134.2 777.1,135.0 779.8,135.8 782.5,136.6 785.2,137.4 787.9,138.2 790.6,139.0 793.3,139.8 796.0,140.6 798.7,141.4 801.4,142.2 804.1,143.0 806.9,143.8 809.6,144.6 812.3,145.4 815.0,146.2 817.7,147.0 820.4,147.8 823.1,148.7 825.8,149.5 828.5,150.3 831.2,151.1 833.9,151.9 836.7,152.7 839.4,153.6 842.1,154.4 844.8,155.2 847.5,156.0 850.2,156.8 852.9,157.7 855.6,158.5 858.3,159.3 861.0,160.1 863.7,161.0 866.5,161.8 869.2,162.6 871.9,163.4 874.6,164.3 877.3,165.1 880.0,165.9" fill="none" stroke="#2f6b46" stroke-width="2.6"/><text x="250" y="125" font-size="11" fill="#4a90c4" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">收入</text><text x="640" y="150" font-size="11" fill="#2f6b46" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">利润</text><text x="137" y="118" font-size="11" fill="#a8322d" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">✕ 不碰</text><text x="137" y="134" font-size="8.5" fill="#a8322d" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">初创彩票</text><text x="812" y="118" font-size="11" fill="#a8322d" font-weight="900" text-anchor="middle" font-family="Noto Sans SC, sans-serif">✕ 不碰</text><text x="812" y="134" font-size="8.5" fill="#a8322d" font-weight="700" text-anchor="middle" font-family="Noto Sans SC, sans-serif">红利/衰退/低波</text></svg></div>
+
+  <h3>主辅关系的精确定义(防止两套逻辑互相污染)</h3>
+  <table>
+    <thead><tr><th style="width:14%"></th><th style="width:43%">成长轴(主)</th><th>动量轴(辅)</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">回答的问题</td><td>买什么:哪些公司的盈余在加速、空间有多大、确定性多高。</td><td>何时与多重:趋势是否确认、市场是否同意、该上几成弹药。</td></tr>
+      <tr><td class="mono">判断依据</td><td>订单、收入、毛利、每股收益的轨道;基本面评分(百分制)。</td><td>价格与均线结构、量能、相对强度、板块赚钱效应。</td></tr>
+      <tr><td class="mono">对应仓位</td><td><b>核心仓:</b>盈余逻辑驱动,容忍波动,以季度为期评估。</td><td><b>卫星仓:</b>价格逻辑驱动,止损紧,以周为期评估。</td></tr>
+      <tr><td class="mono">退出扳机</td><td>盈余逻辑证伪(增速失约、逻辑破坏)——价格波动<em>不是</em>卖出理由。</td><td>趋势破位即走——基本面"还好"<em>不是</em>持有借口。</td></tr>
+      <tr><td class="mono">最高纪律</td><td colspan="2"><b>禁止串轨:</b>不许给被套的动量仓找基本面理由("其实它业绩也不错"),不许给成长仓套日线止损("先出来躲一躲")。串轨是本系统第一大违规来源。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>明确放弃清单(与猎场同等重要——写下来,贴在屏幕边)</h3>
+  <ul>
+    <li><b>初创彩票(一段):</b>未盈利、靠故事定价的标的。那是风险投资者的猎场,需要的是组合式撒网与十年期资金,不在本系统的工具箱内。</li>
+    <li><b>价值抄底与困境反转(逆向风格):</b>左侧买入需要"越跌越买"的心理结构与资产负债表精算能力,与动量纪律(趋势破位即走)根本冲突。两者不可兼得,选动量,弃逆向。</li>
+    <li><b>红利收息与低波防御(五至六段):</b>防御需求一律用<em>现金、货币基金、宽基指数</em>满足,不做主动红利选股——选股火力百分之百留给成长。</li>
+    <li><b>纯周期左侧:</b>价格低分位的供给出清博弈属于价值逆向。周期品只有一种参与方式:<em>价格已上行 + 叠加成长逻辑(渗透率/新需求)时,作为动量卫星仓参与</em>,趋势破位即走。</li>
+    <li><b>无业绩纯题材:</b>没有盈余兑现路径的概念炒作,既不满足成长轴也撑不起动量轴的胜率,放弃。</li>
+  </ul>
+
+  <div class="callout">
+    <span class="ct">放弃的含义</span>
+    <p>放弃不是认为那些机会不赚钱,是承认<em>那些钱需要我没有的能力结构去赚</em>。每一类放弃都换回一样东西:把有限的研究时间、心理带宽和风险预算,
+    全部压在胜率被验证过的两条带上。<b>错过圈外的行情不记入系统失误;圈内的机会漏掉、做错,才记入错误台账。</b></p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">附录乙</span>行情八段:行情层的钟(定义与判据)</h2>
+  <p>"八段"指<b>主线行情的生命周期</b>——它是行情层的钟,度量一条主线从启动到出清的位置;与公司层的钟(企业生命周期六段,度量单个公司基本面的成熟度)互相独立。
+  两个钟可以背离(好公司处在坏行情段),背离时正是核心仓与卫星仓分轨的价值时刻:核心仓按公司钟决定去留,卫星仓按行情钟决定进退。</p>
+  <table>
+    <thead><tr><th style="width:14%">段位</th><th style="width:46%">特征与判据</th><th>仓位规则</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">① 萌芽</td><td>少数公司报表先动、价格未动,无人关注,叙事尚未成形。</td><td>认知差猎场;核心仓可潜伏(平台期建仓的最佳赔率区)。</td></tr>
+      <tr><td class="mono">② 确认</td><td>放量突破长期平台、龙头创阶段新高、叙事成形、首批资金进场。</td><td>双重确认成立,正常建仓;卫星仓趋势波段启动。</td></tr>
+      <tr><td class="mono">③ 回踩</td><td>第一次像样的洗盘与质疑出现;回踩关键均线缩量企稳,趋势未破。</td><td>核心仓最好的加仓窗口。</td></tr>
+      <tr><td class="mono">④ 主升</td><td>业绩与价格共振、板块扩散、二线跟随,利好持续推动上涨。</td><td>金字塔加满,让利润奔跑;移动止盈随新高上移。</td></tr>
+      <tr><td class="mono">⑤ 亢奋</td><td>估值透支盈余轨道、全民进场、行情扩散到劣质标的、换手与波动骤升。</td><td>收紧:启动过热兑现(扳机一),新开从严。</td></tr>
+      <tr><td class="mono">⑥ 裂缝初现</td><td><b>利好开始失效</b>(业绩超预期股价不涨)、单点业绩失约出现、聪明钱边际流出。</td><td><b>该主线停止新开多仓</b>;止盈线全面上移;证伪扳机逐项盯。</td></tr>
+      <tr><td class="mono">⑦ 高位钝化</td><td>高位宽幅震荡、热点一日游、上涨家数持续收窄、反弹无延续。</td><td>卫星仓清退完毕;核心仓只留底仓。</td></tr>
+      <tr><td class="mono">⑧ 反转崩落</td><td>逻辑证伪落地(需求源头下修被证实)、生命线集体跌破、流动性踩踏出清。</td><td>证伪扳机(扳机二)执行;现金等待下一轮①段。</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:13px;">当前读数:人工智能主线处<b>⑤段尾部、跨入⑥段</b>("亢奋后段、裂缝初现")——利好失效已有实证、单家失约已现,但需求源头未转,⑧段的证伪条件均未触发。</p>
+
+  
+</section>
+
+
+</div>
+</div>
+<div class="footer">
+  <b>使用说明 ·</b> 本系统侧重交易执行,以成长为主轴、动量为辅轴,新股供给潮为当前一等变量。各阈值参数(回撤分级、仓位上限、评分线、盈亏比目标)为建议初值,应按个人资金规模与回撤承受力校准;"当下校准"为 2026 年 6 月快照,需随市场即时重核。
+  <b>免责声明 ·</b> 本文件不构成投资建议,所涉板块与公司均为示例与观察对象;投资有风险,决策需自负盈亏。
+</div>
+
+</div>
+
+<script>
+(function(){
+  var labs=document.querySelectorAll('.tabnav .tab'); if(!labs.length) return;
+  var bar=document.querySelector('.topbar');
+  for(var i=0;i<labs.length;i++){
+    labs[i].addEventListener('click', function(){
+      // CSS handles the switch; this only re-aligns scroll to the top of the section
+      setTimeout(function(){
+        var y=(bar?bar.getBoundingClientRect().top:0)+window.pageYOffset;
+        window.scrollTo(0,y);
+      },0);
+    });
+  }
+})();
+</script>
+</body>
+</html>

@@ -342,12 +342,20 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <button class="tab" onclick="switchTab(3)">🔴 产业链监控</button>
     <button class="tab" onclick="switchTab(4)">📋 历史持仓</button>
     <button class="tab" onclick="switchTab(5)">🧭 盘前自检</button>
+    <button class="tab" onclick="switchTab(6)">📐 交易系统</button>
   </div>
 </nav>
 
 
 <!-- ═══ MAIN ═══ -->
 <main class="main">
+
+<!-- ════════════════ TAB 交易系统（iframe 嵌入，懒加载） ════════════════ -->
+<div class="tab-content" id="tTrade">
+  <iframe id="tradeFrame" data-src="trading_system.html" title="A股交易系统"
+    style="width:100%;height:calc(100vh - 70px);min-height:620px;border:0;border-radius:12px;
+           background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.06);display:block"></iframe>
+</div>
 
 <!-- ════════════════ TAB 投资组合 ════════════════ -->
 <div class="tab-content active" id="tPort">
@@ -4561,7 +4569,7 @@ function renderValTable(){
 }
 
 // ── TAB ──────────────────────────────────────────────────────
-const TAB_ORDER=['tPort','tVal','t0','tStage','tHist','tPre'];
+const TAB_ORDER=['tPort','tVal','t0','tStage','tHist','tPre','tTrade'];
 let _macroAutoFetched=false;
 const _TAB_TS={};  // 各标签页最近一次动态刷新的时间戳（用于节流）
 const _TAB_THROTTLE=30000; // 30秒内不重复刷新
@@ -4585,6 +4593,11 @@ function switchTab(idx){
   const target=document.getElementById(TAB_ORDER[idx]);
   if(target) target.classList.add('active');
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  // 交易系统 iframe 懒加载：首次切到该页才真正载入，避免拖慢首屏
+  if(TAB_ORDER[idx]==='tTrade'){
+    const f=document.getElementById('tradeFrame');
+    if(f && !f.src && f.dataset.src){ f.src=f.dataset.src; }
+  }
   _tabRefresh(idx); // 切换时刷新该标签页动态数据
 }
 
