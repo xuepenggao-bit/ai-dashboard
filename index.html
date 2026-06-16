@@ -466,12 +466,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="card" style="min-width:0;border-top:3px solid #f59e0b;background:linear-gradient(135deg,#fffbeb 0%,#fff 60%)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <span style="font-size:14px;font-weight:800;color:#92400e;letter-spacing:.02em">📊 主要指数</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:10px;color:#a16207" id="idxTs"></span>
-          <button onclick="fetchIndexPrices()" id="idxRefBtn"
-            style="background:#fef3c7;border:1px solid #fde68a;color:#b45309;border-radius:6px;
-                   padding:3px 10px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700">↻ 刷新</button>
-        </div>
+        <span style="font-size:10px;color:#a16207" id="idxTs"></span>
       </div>
       <div id="portIndexList">
         <div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0">加载中…</div>
@@ -638,12 +633,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <!-- 标题行 -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <span style="font-size:13px;font-weight:800;color:#374151;letter-spacing:.01em">📊 涨跌统计</span>
-        <div style="display:flex;align-items:center;gap:5px">
-          <span id="mktBreadthTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
-          <button onclick="fetchMarketStats()" id="mktBreadthBtn"
-            style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
-                   padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
-        </div>
+        <span id="mktBreadthTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
       </div>
       <!-- 家数统计：左列上涨/下跌，右列涨停/跌停 -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-bottom:12px">
@@ -672,7 +662,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
       <!-- 分布直方图（JS 填充） -->
       <div id="mktBreadthChart">
-        <div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">点击↻加载</div>
+        <div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">加载中…</div>
       </div>
       <!-- 平盘提示（JS 填充） -->
       <div id="mktFlatRow" style="display:none;font-size:10px;color:#94a3b8;text-align:center;margin-top:6px"></div>
@@ -685,12 +675,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           <span style="font-size:13px;font-weight:800;color:#374151">💰 成交分析</span>
           <span id="mktTurnTs" style="font-size:11px;color:#94a3b8;font-weight:500"></span>
         </div>
-        <button onclick="fetchMarketStats()" id="mktTurnBtn"
-          style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
-                 padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
       </div>
       <div id="mktTurnoverBody">
-        <div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">点击↻加载</div>
+        <div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">加载中…</div>
       </div>
     </div>
   </div>
@@ -4580,10 +4567,11 @@ const _TAB_THROTTLE=30000; // 30秒内不重复刷新
 //    必须等持仓股价(含港股回退链)全部跑完才开始；改为各路并行，总时长 = 最长的一条，不再累加。
 function refreshPortAll(){
   try{ fetchPortPrices();   }catch(e){ console.warn('[refreshPortAll] portPrices', e); }
-  try{ fetchIndexPrices();  }catch(e){ console.warn('[refreshPortAll] indexPrices', e); }
+  try{ fetchIndexPrices();  }catch(e){ console.warn('[refreshPortAll] indexPrices', e); }   // 主要指数：与股价同步刷新
   try{ fetchMainFlow();     }catch(e){ console.warn('[refreshPortAll] mainFlow', e); }
-  try{ fetchMarketStats();  }catch(e){ console.warn('[refreshPortAll] marketStats', e); }  // 自带 _mktStatsFetching 去重
   try{ fetchXqHot();        }catch(e){ console.warn('[refreshPortAll] xqHot', e); }
+  // 涨跌统计/成交分析较重（分页拉全市场），延后 600ms 自动触发：避开与股价抢东财连接（按需求可比股价稍晚刷新）
+  setTimeout(function(){ try{ fetchMarketStats(); }catch(e){ console.warn('[refreshPortAll] marketStats', e); } }, 600);  // 自带 _mktStatsFetching 去重
 }
 
 function _tabRefresh(idx){
