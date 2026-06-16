@@ -478,10 +478,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
     </div>
 
-    <!-- 今日涨幅 TOP 10 -->
+    <!-- 今日涨幅 TOP 6 -->
     <div class="card" style="min-width:0;border-top:3px solid var(--red)">
       <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--red)">
-        📈 今日涨幅 TOP 10
+        📈 今日涨幅 TOP 6
       </div>
       <div id="portTop3Up" style="margin-top:8px">
         <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
@@ -490,10 +490,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
     </div>
 
-    <!-- 今日跌幅 TOP 10 -->
+    <!-- 今日跌幅 TOP 6 -->
     <div class="card" style="min-width:0;border-top:3px solid var(--green)">
       <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--green)">
-        📉 今日跌幅 TOP 10
+        📉 今日跌幅 TOP 6
       </div>
       <div id="portTop3Down" style="margin-top:8px">
         <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
@@ -502,10 +502,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
     </div>
 
-    <!-- 重仓 TOP 10（按仓位高低） -->
+    <!-- 重仓 TOP 6（按仓位高低） -->
     <div class="card" style="min-width:0;border-top:3px solid var(--blue)">
       <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--blue)">
-        🏋️ 重仓 TOP 10
+        🏋️ 重仓 TOP 6
       </div>
       <div id="portTop5W" style="margin-top:8px">
         <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
@@ -7170,8 +7170,8 @@ function renderPortTop3(){
 
   // 排序
   entries.sort(function(a,b){ return b.pct - a.pct; });
-  var top5 = entries.slice(0, 10);
-  var bot5 = entries.slice(-10).reverse();
+  var top5 = entries.slice(0, 6);
+  var bot5 = entries.slice(-6).reverse();
 
   function mkRow(item, rank, isUp){
     var color  = isUp ? 'var(--red)' : 'var(--green)';
@@ -7315,7 +7315,7 @@ function _renderPortBreadth(){
   el.style.display = 'block';
 }
 
-// ── 重仓 TOP10（与今日涨幅TOP10逻辑一致：依赖 _PORT_PRICES，刷新后展示）──
+// ── 重仓 TOP6（与今日涨幅TOP6逻辑一致：依赖 _PORT_PRICES，刷新后展示）──
 function _renderPortTopW(){
   var wEl = document.getElementById('portTop5W');
   if(!wEl) return;
@@ -7366,7 +7366,7 @@ function _renderPortTopW(){
     var wb = b.w != null ? b.w : -1;
     return wb - wa;
   });
-  var topW = wEntries.slice(0, 10);
+  var topW = wEntries.slice(0, 6);
 
   wEl.innerHTML = topW.map(function(item, i){
     var rank     = i + 1;
