@@ -361,7 +361,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <div class="tab-content active" id="tPort">
   <!-- ══ 投资组合页眉（浅色） ══ -->
   <div style="display:flex;align-items:center;justify-content:space-between;
-              padding:16px 24px 14px;margin-bottom:20px;
+              padding:9px 22px 8px;margin-bottom:16px;
               background:linear-gradient(135deg,#f0f4ff 0%,#fafbff 55%,#eff6ff 100%);
               border:1px solid #e0e7ff;border-radius:16px;
               position:relative;overflow:hidden;
@@ -385,11 +385,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <!-- 中：时钟（绝对居中） -->
     <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;z-index:1;pointer-events:none">
       <div id="portClock"
-        style="font-size:36px;font-weight:200;color:#1e293b;letter-spacing:.1em;
+        style="font-size:26px;font-weight:200;color:#1e293b;letter-spacing:.08em;
                font-variant-numeric:tabular-nums;
                font-family:'SF Mono','Consolas','Courier New',monospace;
                text-shadow:0 2px 14px rgba(99,102,241,.22)">--:--:--</div>
-      <div style="font-size:9px;color:#94a3b8;letter-spacing:.1em;margin-top:3px">实时时钟</div>
     </div>
 
     <!-- 右：操作区（统一外壳，三格等宽） -->
@@ -400,7 +399,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <!-- ① 同步 -->
       <button onclick="portForcePush()" title="将当前浏览器的仓位数据推送到云端"
         style="flex:1;min-width:90px;display:flex;flex-direction:column;align-items:center;
-               justify-content:center;gap:4px;padding:10px 18px;background:transparent;
+               justify-content:center;gap:4px;padding:6px 16px;background:transparent;
                border:none;cursor:pointer;font-family:inherit;transition:background .15s"
         onmouseover="this.style.background='rgba(109,40,217,.07)'"
         onmouseout="this.style.background='transparent'"
@@ -416,7 +415,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <!-- ② 刷新股价 -->
       <button id="portPriceBtn" onclick="refreshPortAll()"
         style="flex:1;min-width:96px;display:flex;flex-direction:column;align-items:center;
-               justify-content:center;gap:4px;padding:10px 18px;background:transparent;
+               justify-content:center;gap:4px;padding:6px 16px;background:transparent;
                border:none;cursor:pointer;font-family:inherit;transition:background .15s"
         onmouseover="this.style.background='rgba(37,99,235,.07)'"
         onmouseout="this.style.background='transparent'"
@@ -433,7 +432,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <!-- ③ 自动刷新 -->
       <div id="autoRefreshBox"
         style="flex:1;min-width:90px;display:flex;flex-direction:column;align-items:center;
-               justify-content:center;gap:4px;padding:10px 18px;transition:background .15s">
+               justify-content:center;gap:4px;padding:6px 16px;transition:background .15s">
         <div id="autoRefreshInner" style="display:flex;align-items:center;gap:5px">
           <span style="font-size:12px;color:#0284c7;flex-shrink:0">⏱</span>
           <select id="autoRefreshSel" onchange="setAutoRefresh(this.value)"
@@ -1147,9 +1146,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
     <!-- TOP3 行业仓位变化 -->
     <div class="card mt16">
-      <div class="ch"><span class="ct">TOP3 行业仓位变化</span><span class="cbadge">近5天 · 按行业加总</span></div>
+      <div class="ch"><span class="ct">TOP3 行业仓位变化</span><span class="cbadge">近10天 · 按行业加总</span></div>
       <div id="histTopInd" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:4px">
-        <div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">记录持仓后显示行业仓位 TOP3 及其近 5 天变化</div>
+        <div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">记录持仓后显示行业仓位 TOP3 及其近 10 天变化</div>
       </div>
     </div>
   </div>
@@ -5964,11 +5963,11 @@ function renderTopIndustries(){
   const el=document.getElementById('histTopInd');
   if(!el) return;
   const hist=(PORT&&Array.isArray(PORT.history))?PORT.history.slice():[];
-  if(!hist.length){ el.innerHTML='<div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">记录持仓后显示行业仓位 TOP3 及其近 5 天变化</div>'; return; }
+  if(!hist.length){ el.innerHTML='<div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">记录持仓后显示行业仓位 TOP3 及其近 10 天变化</div>'; return; }
   hist.sort((a,b)=>a.date.localeCompare(b.date));
-  const last5=hist.slice(-5);
+  const last10=hist.slice(-10);
   // 每天按行业(industry优先，空则用分类sector)加总仓位
-  const dayInd=last5.map(rec=>{
+  const dayInd=last10.map(rec=>{
     const m={};
     (rec.stocks||[]).forEach(s=>{
       const k=(s.industry&&s.industry.trim())?s.industry.trim():(s.sector||'其他');
