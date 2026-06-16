@@ -147,12 +147,24 @@ ul{padding-left:22px; margin:8px 0;} li{margin:5px 0; color:var(--ink2);}
 }
 .topbar::-webkit-scrollbar{width:6px;}
 .topbar::-webkit-scrollbar-thumb{background:#cfd8e0;border-radius:3px;}
-.brand{flex-direction:column; align-items:flex-start; gap:4px; padding:20px 16px 12px;}
-.brand .bt{font-size:16.5px; line-height:1.3;}
-.brand .bk{font-size:9.5px; letter-spacing:2px; line-height:1.5;}
-.brand .hint{display:none;}
-.tabnav{flex-direction:column; gap:6px; padding:6px 12px 22px; overflow-x:visible;}
-.tabnav .tab{flex:0 0 auto; width:100%; justify-content:flex-start; border-radius:9px; padding:10px 14px;}
+.brand{display:none;}  /* 顶部品牌块已删除 */
+/* 极简“目录”头（替代已删的 brand） */
+.navhead{display:flex; align-items:center; gap:7px; padding:18px 18px 13px; margin-bottom:6px;
+         border-bottom:1px solid #e4eaf0;}
+.navhead .nh-ico{font-size:14px;}
+.navhead .nh-tx{font-size:13.5px; font-weight:900; letter-spacing:4px; color:var(--navy);}
+.navhead .nh-en{font-size:8px; font-weight:700; letter-spacing:2px; color:#aab5c1; margin-left:auto;}
+/* 目录项：清爽留白 + 序号圆点 + hover 反馈；active 沿用原渐变高亮 */
+.tabnav{flex-direction:column; gap:3px; padding:6px 12px 22px; overflow-x:visible;}
+.tabnav .tab{flex:0 0 auto; width:100%; justify-content:flex-start;
+             border:1px solid transparent; background:transparent; box-shadow:none;
+             border-radius:10px; padding:9px 13px; color:var(--ink2); font-weight:700; font-size:13.5px;}
+.tabnav .tab .ti{width:21px; height:21px; border-radius:50%; display:inline-flex;
+                 align-items:center; justify-content:center; flex:0 0 auto;
+                 font-size:11px; font-weight:800; background:#e9eef3; color:#8c98a6; transition:all .16s;}
+.tabnav .tab:hover{background:#ffffff; border-color:#dde6ee; color:var(--navy);
+                   transform:translateX(3px); box-shadow:0 3px 10px rgba(31,111,120,.12);}
+.tabnav .tab:hover .ti{background:var(--teal-soft); color:var(--teal);}
 .tabbody{flex:1 1 0; min-width:0; max-width:calc(100% - 210px);}
 .footer{flex:0 0 100%; max-width:100%;}  /* footer 是 .wrap 直接子元素：占满整行、退到最底部，不再当成右侧第三列 */
 .tabpanel>section:first-child{padding-top:26px;}
@@ -162,8 +174,7 @@ section,.cover,.footer{padding-left:40px; padding-right:40px;}
   .wrap{flex-direction:column;}
   .topbar{flex:none; width:100%; height:auto; position:sticky; top:0;
           border-right:none; border-bottom:1px solid #d9e0e7; box-shadow:0 6px 18px rgba(21,32,43,.06);}
-  .brand{flex-direction:row; align-items:baseline; gap:12px; padding:12px 16px 2px;}
-  .brand .bt{font-size:16px;}
+  .navhead{padding:11px 16px 9px; margin-bottom:0;}
   .tabnav{flex-direction:row; overflow-x:auto; padding:10px 12px 14px; gap:7px;}
   .tabnav .tab{width:auto; border-radius:999px;}
   section,.cover,.footer{padding-left:22px; padding-right:22px;}
@@ -182,7 +193,7 @@ section,.cover,.footer{padding-left:40px; padding-right:40px;}
 <input class="tabrb" type="radio" name="systabs" id="rb8">
 <input class="tabrb" type="radio" name="systabs" id="rb9">
 <div class="topbar">
-  <div class="brand"><span class="bt">A 股交易系统</span><span class="bk">高胜率 · 交易主导 · 风控为底盘</span><span class="hint">轻点标签切换章节 →</span></div>
+  <div class="navhead"><span class="nh-ico">📑</span><span class="nh-tx">目录</span><span class="nh-en">CONTENTS</span></div>
   <div class="tabnav"><label class="tab" for="rb1"><span class="ti">1</span>总览</label><label class="tab" for="rb2"><span class="ti">2</span>机会发现</label><label class="tab" for="rb3"><span class="ti">3</span>仓位</label><label class="tab" for="rb4"><span class="ti">4</span>建仓</label><label class="tab" for="rb5"><span class="ti">5</span>持仓</label><label class="tab" for="rb6"><span class="ti">6</span>减仓·清仓</label><label class="tab" for="rb7"><span class="ti">7</span>风控</label><label class="tab" for="rb8"><span class="ti">8</span>当下校准</label><label class="tab" for="rb9"><span class="ti">9</span>附录</label></div>
 </div>
 <div class="tabbody">
