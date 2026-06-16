@@ -2376,6 +2376,7 @@ function renderAlerts(){
   const liveRisks = BASE.risks.filter(r=>r._live);
   const high = liveRisks.filter(r=>r.lvl==='high');
   const el = document.getElementById('riskAlerts');
+  if(!el) return;  // riskAlerts 容器已随旧标签页移除：缺失则安全跳过（否则 updateRiskDashboard→fetchIndexPrices 收尾会被中断）
   if(liveRisks.length === 0){
     el.innerHTML = `<div class="alert a-info"><span>ℹ</span><span>数据加载中，请点击「产业链监控」标签刷新后返回查看</span></div>`;
     return;
@@ -5683,12 +5684,16 @@ async function fetchIndexPrices(){
 
   const rowMap = {};   // label → {label, price, pct, region}
 
-  // ── ① 腾讯 GBK API（A股 + 港股，重试2次）──────────────────
-  try{
-    const tUrl = 'https://qt.gtimg.cn/q=' + _IDX_TENCENT.map(i=>i.tc).join(',') + '&_=' + Date.now();
-    const txt  = await _idxFetch(tUrl, {timeout:3000, retries:1, gbk:true});
+  // ── ① 腾讯 GBK API（A股+港股）与 ①b 新浪港股指数实时源「并行」获取（B档优化：原先两段串行 await）──
+  const _idxTUrl = 'https://qt.gtimg.cn/q=' + _IDX_TENCENT.map(i=>i.tc).join(',') + '&_=' + Date.now();
+  const [_idxTTxt, _idxSina] = await Promise.all([
+    _idxFetch(_idxTUrl, {timeout:3000, retries:1, gbk:true}).catch(e=>{ console.warn('[IDX] 腾讯API失败（将回填缓存）:', e.message||e); return ''; }),
+    _fetchSinaRT(['rt_hkHSI','rt_hkHSTECH']).catch(e=>{ console.warn('[IDX] 新浪港股指数:', e.message); return {}; })
+  ]);
+  // 腾讯：A股 + 港股指数解析
+  if(_idxTTxt){
     _IDX_TENCENT.forEach(idx=>{
-      const m = txt.match(new RegExp('v_' + idx.tc + '="([^"]+)"'));
+      const m = _idxTTxt.match(new RegExp('v_' + idx.tc + '="([^"]+)"'));
       if(!m) return;
       const p     = m[1].split('~');
       const price = parseFloat(p[3]);
@@ -5698,14 +5703,10 @@ async function fetchIndexPrices(){
       if(isFinite(price) && price > 0)
         rowMap[idx.label] = {label:idx.label, price, pct:isFinite(pct)?pct:0, region:idx.region||'a'};
     });
-  }catch(e){ console.warn('[IDX] 腾讯API失败（将回填缓存）:', e); }
-
-  // ── ①b 港股指数新浪 rt 实时优先（恒生指数/恒生科技；成功则东财/腾讯自动跳过）──
-  try{
-    const sinaIdx = await _fetchSinaRT(['rt_hkHSI','rt_hkHSTECH']);
-    if(sinaIdx['rt_hkHSI'])    rowMap['恒生指数'] = {label:'恒生指数', price:sinaIdx['rt_hkHSI'].price,    pct:sinaIdx['rt_hkHSI'].pct,    region:'hk'};
-    if(sinaIdx['rt_hkHSTECH']) rowMap['恒生科技'] = {label:'恒生科技', price:sinaIdx['rt_hkHSTECH'].price, pct:sinaIdx['rt_hkHSTECH'].pct, region:'hk'};
-  }catch(e){ console.warn('[IDX] 新浪港股指数:', e.message); }
+  }
+  // 新浪港股指数实时值覆盖腾讯（恒生/恒生科技更实时）
+  if(_idxSina['rt_hkHSI'])    rowMap['恒生指数'] = {label:'恒生指数', price:_idxSina['rt_hkHSI'].price,    pct:_idxSina['rt_hkHSI'].pct,    region:'hk'};
+  if(_idxSina['rt_hkHSTECH']) rowMap['恒生科技'] = {label:'恒生科技', price:_idxSina['rt_hkHSTECH'].price, pct:_idxSina['rt_hkHSTECH'].pct, region:'hk'};
 
   // ── ② 东方财富 ulist API（仅补腾讯不提供的指数）──
   // 逐个候选 secid 单独请求（避免无效 secid 与有效 secid 拼在一起导致整批返回空），
@@ -5716,24 +5717,29 @@ async function fetchIndexPrices(){
     const allCodes = [idx.code, ...(idx.altCodes||[])].map(c=>c.toUpperCase());
     // 港股指数要求最实时：仅用 push2 实时服务器（push2delay 为延迟行情，不用于港股）
     const hosts = (idx.region === 'hk') ? ['https://push2.eastmoney.com'] : _EM_HOSTS;
-    for(const secid of idx.secids){          // 逐个候选 secid 单独请求
+    // B档优化：所有候选 secid × host 组合「并发」请求，第一个命中即用。
+    // 原先 for/for 逐个串行 await，单指数若全部候选失败会串行耗尽 N×超时（最坏 4×3s）。
+    const tries = [];
+    for(const secid of idx.secids){
       for(const host of hosts){
-        try{
+        tries.push((async ()=>{
           const url = host + '/api/qt/ulist.np/get?secids=' + secid
                     + '&fltt=2&invt=2&fields=f12,f14,f2,f3&_=' + Date.now();
-          const j = await _idxFetch(url, {timeout:3000, retries:1});
+          const j = await _idxFetch(url, {timeout:3000, retries:0});  // 并发冗余，单个不再重试
           const diff = (j && j.data && j.data.diff) || [];
           const hit = diff.find(d=>{
             const c = String(d.f12).toUpperCase();
             return (allCodes.includes(c) || allCodes.includes(c.padStart(6,'0'))) && parseFloat(d.f2) > 0;
           });
-          if(hit){
-            rowMap[idx.label] = {label:idx.label, price:parseFloat(hit.f2), pct:parseFloat(hit.f3)||0, region:idx.region||'a'};
-            return;  // 命中，结束该指数
-          }
-        }catch(e){ /* 试下一个域名 / 下一个候选 secid */ }
+          if(!hit) throw new Error('no hit');  // 未命中视为失败，交给 Promise.any 取下一个
+          return {label:idx.label, price:parseFloat(hit.f2), pct:parseFloat(hit.f3)||0, region:idx.region||'a'};
+        })());
       }
     }
+    try{
+      const row = await Promise.any(tries);     // 第一个命中即返回
+      if(!rowMap[idx.label]) rowMap[idx.label] = row;
+    }catch(e){ /* 所有候选都失败：靠后续港股兜底 / 粘性缓存回填 */ }
   };
   await Promise.all(_IDX_EM.map(_emFetchOne));
 
@@ -6996,11 +7002,16 @@ async function fetchPortPrices(){
             : Promise.resolve(null),
       emUrl ? _pfFetch(emUrl).then(function(r){ return r.json(); })
                           .catch(function(e){ console.warn('[HK东方财富]',e.message); return null; })
-            : Promise.resolve(null)
+            : Promise.resolve(null),
+      // B档优化：港股新浪实时源并入并行（原先在 Promise.all 之后才 await，徒增一段串行等待）
+      hkStocks.length ? _fetchSinaRT(hkStocks.map(function(s){ return 'rt_hk'+s.code; }))
+                          .catch(function(e){ console.warn('[HK]新浪',e.message); return {}; })
+            : Promise.resolve({})
     ]);
     var aTxt   = results[0];
     var mcJson = results[1];
     var emJson = results[2];
+    var sinaRes= results[3];
 
     // ��─ 处理 A股行情 ────────────────────────────────────────────────
     if(aStocks.length && aTxt){
@@ -7033,15 +7044,12 @@ async function fetchPortPrices(){
     if(hkStocks.length){
       var hkDone = {};   // code → true，记录已取到价格的港股
 
-      // ⓪ 新浪 rt_hk 实时主源（JSONP/script 绕 CORS，港股全程实时；被拒则回退东财/腾讯）
-      try{
-        var sinaRes = await _fetchSinaRT(hkStocks.map(function(s){ return 'rt_hk'+s.code; }));
-        hkStocks.forEach(function(s){
-          var d = sinaRes['rt_hk'+s.code];
-          if(d){ _PORT_PRICES[s.code] = {price:d.price, pct:d.pct, name:s.name, mkt:s.mkt, w:s.w, src:'sina'}; hkDone[s.code]=true; }
-        });
-        console.log('[HK] 新浪实时', Object.keys(hkDone).length, '/', hkStocks.length, '只');
-      }catch(e){ console.warn('[HK] 新浪:', e.message); }
+      // ⓪ 新浪 rt_hk 实时主源：已并入上方 Promise.all 并行获取，此处直接用结果 sinaRes 填充（被拒则回退东财/腾讯）
+      hkStocks.forEach(function(s){
+        var d = sinaRes && sinaRes['rt_hk'+s.code];
+        if(d){ _PORT_PRICES[s.code] = {price:d.price, pct:d.pct, name:s.name, mkt:s.mkt, w:s.w, src:'sina'}; hkDone[s.code]=true; }
+      });
+      console.log('[HK] 新浪实时', Object.keys(hkDone).length, '/', hkStocks.length, '只');
 
       // ① 东财 push2（新浪未取到的，仍是实时源）— 复用 Promise.all 的 emJson
       if(emJson){
@@ -7069,7 +7077,6 @@ async function fetchPortPrices(){
       // ② 东财 push2 重试 1 次（实时源，争取最新数据）
       var hkMissed = hkStocks.filter(function(s){ return !hkDone[s.code]; });
       if(hkMissed.length){
-        await new Promise(function(r){ setTimeout(r, 400); });
         try{
           var hkSids2 = hkMissed.map(function(s){ return '116.'+s.code; }).join(',');
           var emUrl2  = 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids2
