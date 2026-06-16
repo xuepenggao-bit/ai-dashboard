@@ -5374,11 +5374,12 @@ function setAutoRefresh(val){
   const ms = sec * 1000;
   if(inner){ inner.style.background='#dbeafe'; inner.style.borderColor='#93c5fd'; }
 
-  // 立刻刷一次，然后按周期持续刷
-  fetchPortPrices();
+  // 立刻刷一次，然后按周期持续刷（定时刷新走 refreshPortAll：与手动/切标签同规则——
+  //  股价+主要指数同步刷新，涨跌统计/成交分析延后 600ms；fetchMarketStats 自带 inflight 去重，高频也不会堆叠）
+  refreshPortAll();
   _arNext = Date.now() + ms;
   _arTimer = setInterval(()=>{
-    fetchPortPrices();
+    refreshPortAll();
     _arNext = Date.now() + ms;
   }, ms);
 
