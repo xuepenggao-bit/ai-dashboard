@@ -6399,13 +6399,38 @@ async function _doFetchBreadth(){
   }
 }
 
+// 前一交易日两市全天成交额（亿元）；按日缓存，避免高频自动刷新重复请求
+var _prevTurnoverCache = { date:'', yi:0 };
+async function _prevDayTurnoverYi(){
+  const today = new Date().toLocaleDateString('en-CA');   // YYYY-MM-DD（本地）
+  if(_prevTurnoverCache.date===today && _prevTurnoverCache.yi>0) return _prevTurnoverCache.yi;
+  const one = async (secid)=>{
+    const u='https://push2his.eastmoney.com/api/qt/stock/kline/get?secid='+secid
+          +'&fields1=f1&fields2=f51,f57&klt=101&fqt=0&end=20500101&lmt=3&_='+Date.now();
+    const j=await (await fetch(u)).json();
+    const kl=(j&&j.data&&j.data.klines)||[];
+    for(let i=kl.length-1;i>=0;i--){            // 取最后一根「日期 < 今天」的日线 = 前一交易日
+      const p=kl[i].split(',');
+      if(p[0]<today) return parseFloat(p[1])||0; // f57 成交额(元)
+    }
+    return 0;
+  };
+  const arr=await Promise.all([one('1.000001'), one('0.399106')]);  // 上证综指 + 深证综指（与今日同口径）
+  const yi=(arr[0]+arr[1])/1e8;                  // 元 → 亿元
+  if(yi>0) _prevTurnoverCache={date:today, yi:yi};
+  return yi;
+}
+
 // ── 成交分析（腾讯行情，完全独立）────────────────────────────────
 async function _doFetchTurnover(){
   const tTs   = document.getElementById('mktTurnTs');
   const bodyEl= document.getElementById('mktTurnoverBody');
   if(tTs) tTs.textContent='加载中…';
   try{
-    const raw = await (await fetch('https://qt.gtimg.cn/q=s_sh000001,s_sz399106&_='+Date.now())).arrayBuffer();
+    const [raw, prevYi] = await Promise.all([
+      fetch('https://qt.gtimg.cn/q=s_sh000001,s_sz399106&_='+Date.now()).then(r=>r.arrayBuffer()),
+      _prevDayTurnoverYi().catch(()=>0)   // 前一交易日全天成交额（亿元）；失败回退 0 → 不显示对比
+    ]);
     const txt = new TextDecoder('gbk').decode(raw);
     const _wan = code=>{
       const m=txt.match(new RegExp('v_s_'+code+'="([^"]+)"'));
@@ -6427,17 +6452,35 @@ async function _doFetchTurnover(){
       +`<div style="font-size:10px;color:#1d4ed8;font-weight:700;margin-bottom:6px">沪深两市成交额</div>`
       +`<div style="font-size:22px;font-weight:900;color:#1e40af;line-height:1.1;letter-spacing:-.02em">${fmt(totalYi)}</div>`
       +`<div style="font-size:10px;color:#3b82f6;margin-top:5px">实时 · ${timeStr}</div></div>`;
+    let cmpBase=0, baseLabel='';
     if(elapsed>15&&elapsed<235){
       const pred=totalYi*(240/elapsed);
+      cmpBase=pred; baseLabel='预测全天';
       html+=`<div style="background:#e0f2fe;border-radius:10px;padding:11px 12px">`
         +`<div style="font-size:10px;color:#0369a1;font-weight:700;margin-bottom:6px">预测全天成交额</div>`
         +`<div style="font-size:22px;font-weight:900;color:#075985;line-height:1.1;letter-spacing:-.02em">${fmt(pred)}</div>`
         +`<div style="font-size:10px;color:#0284c7;margin-top:5px">已交易 ${elapsed}min / 240min</div></div>`;
     }else{
+      if(elapsed>=235){ cmpBase=totalYi; baseLabel='今日全天'; }   // 已收盘：今日全天即实际全天
       html+=`<div style="background:#f8fafc;border-radius:10px;padding:11px 12px;display:flex;align-items:center;justify-content:center">`
         +`<span style="font-size:11px;color:#94a3b8">${elapsed===0?'未开盘':'已收盘'}</span></div>`;
     }
-    html+=`</div><div style="font-size:10px;color:#94a3b8;text-align:center">沪综指+深综指 · 腾讯行情</div>`;
+    html+=`</div>`;
+    // 与上一交易日成交额对比（前一日全天值 + 放量/缩量；A股惯例红增绿减）
+    if(prevYi>0){
+      let cmpHtml='';
+      if(cmpBase>0){
+        const diff=(cmpBase/prevYi-1)*100, up=diff>=0;
+        cmpHtml=`<span style="font-size:10px;color:#64748b">${baseLabel}较前一日</span>`
+          +`<span style="font-size:14px;font-weight:900;margin-left:6px;color:${up?'#dc2626':'#16a34a'}">`
+          +`${up?'+':''}${diff.toFixed(2)}% ${up?'放量':'缩量'}</span>`;
+      }
+      html+=`<div style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border-radius:8px;padding:8px 12px;margin-top:8px">`
+        +`<div><span style="font-size:10px;color:#64748b">前一交易日全天</span>`
+        +`<span style="font-size:13px;font-weight:800;color:#475569;margin-left:6px">${fmt(prevYi)}</span></div>`
+        +`<div style="text-align:right">${cmpHtml}</div></div>`;
+    }
+    html+=`<div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:6px">沪综指+深综指 · 腾讯实时 + 东财日K(前一日)</div>`;
     if(bodyEl) bodyEl.innerHTML=html;
     if(tTs)    tTs.textContent=timeStr;
   }catch(e){
