@@ -678,6 +678,26 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
+  <!-- Row 4.5: 财经要闻 + 7×24 快讯 -->
+  <div class="card mb16" style="border-top:3px solid #0ea5e9">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <span style="font-size:13px;font-weight:800;color:#374151">📰 财经要闻</span>
+      <span style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
+                   padding:1px 7px;border-radius:10px;font-weight:600">东方财富 · 实时</span>
+      <span id="newsTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px 18px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#0369a1;margin-bottom:2px;letter-spacing:.02em">要闻 TOP5</div>
+        <div id="newsTop"><div style="color:#94a3b8;font-size:11px;text-align:center;padding:16px 0">加载中…</div></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#0369a1;margin-bottom:2px;letter-spacing:.02em">7×24 快讯</div>
+        <div id="newsFlash"><div style="color:#94a3b8;font-size:11px;text-align:center;padding:16px 0">加载中…</div></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Row 5: 雪球热股榜 -->
   <div class="card mb16" style="border-top:3px solid #f97316">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -4568,6 +4588,8 @@ function refreshPortAll(){
   try{ fetchXqHot();        }catch(e){ console.warn('[refreshPortAll] xqHot', e); }
   // 涨跌统计/成交分析较重（分页拉全市场），延后 600ms 自动触发：避开与股价抢东财连接（按需求可比股价稍晚刷新）
   setTimeout(function(){ try{ fetchMarketStats(); }catch(e){ console.warn('[refreshPortAll] marketStats', e); } }, 600);  // 自带 _mktStatsFetching 去重
+  // 财经要闻：延后 900ms，且 60s 内不重复拉（要闻不必随股价每 5s 刷新）
+  setTimeout(function(){ try{ fetchNews(); }catch(e){ console.warn('[refreshPortAll] news', e); } }, 900);
 }
 
 function _tabRefresh(idx){
@@ -6509,6 +6531,53 @@ async function _doFetchTurnover(){
   }
 }
 
+// ── 财经要闻（要闻 TOP5：前端实时；7×24 快讯：后台 data/news_flash.json）──────────
+var _newsTS = 0;
+function fetchNews(force){
+  // 节流：60s 内不重复拉（要闻无需随股价每 5s 刷新，类似涨跌统计可延时）
+  if(!force && _newsTS && Date.now()-_newsTS < 60000) return;
+  _newsTS = Date.now();
+  _fetchNewsTop();
+  _fetchNewsFlash();
+  const ts=document.getElementById('newsTs');
+  if(ts) ts.textContent='更新 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+}
+function _newsRow(url,title,src,time){
+  const a = url
+    ? '<a href="'+_escH(url)+'" target="_blank" rel="noopener" style="color:#1e293b;text-decoration:none">'+_escH(title)+'</a>'
+    : _escH(title);
+  return '<div style="padding:6px 0;border-bottom:1px solid #f1f5f9">'
+    +'<div style="font-size:12.5px;line-height:1.45;font-weight:600">'+a+'</div>'
+    +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">'+(time||'')+(src?' · '+_escH(src):'')+'</div></div>';
+}
+function _newsEmpty(msg){ return '<div style="color:#94a3b8;font-size:11px;text-align:center;padding:16px 0">'+msg+'</div>'; }
+// 要闻 TOP5：东财 np-listapi getNewsByColumns（column=350 财经要闻，CORS 放行，前端可直取）
+async function _fetchNewsTop(){
+  const el=document.getElementById('newsTop'); if(!el) return;
+  try{
+    const u='https://np-listapi.eastmoney.com/comm/web/getNewsByColumns?client=web&biz=web_news'
+          +'&column=350&order=1&needInteractData=0&page_index=1&page_size=5&req_trace=1&fields=&types=1,20&_='+Date.now();
+    const j=await (await fetch(u)).json();
+    const list=((j&&j.data&&j.data.list)||[]).slice(0,5);
+    if(!list.length){ el.innerHTML=_newsEmpty('暂无要闻'); return; }
+    el.innerHTML=list.map(function(n){
+      return _newsRow(n.uniqueUrl||n.url||'', n.title||'', n.mediaName||'', (n.showTime||'').slice(5,16));
+    }).join('');
+  }catch(e){ console.warn('[要闻]',e.message); el.innerHTML=_newsEmpty('要闻获取失败'); }
+}
+// 7×24 快讯：读后台生成的 data/news_flash.json（该源 CORS 拦截前端，由 GitHub Actions 定时抓取）
+async function _fetchNewsFlash(){
+  const el=document.getElementById('newsFlash'); if(!el) return;
+  try{
+    const j=await (await fetch('data/news_flash.json?_='+Date.now(),{cache:'no-store'})).json();
+    const list=((j&&j.list)||[]).slice(0,6);
+    if(!list.length){ el.innerHTML=_newsEmpty('快讯待后台生成'); return; }
+    el.innerHTML=list.map(function(n){
+      return _newsRow(n.url||'', n.title||'', '', (n.time||'').slice(11,16));
+    }).join('');
+  }catch(e){ el.innerHTML=_newsEmpty('快讯待后台工作流生成'); }
+}
+
 // 兼容旧调用（tab 切换、股价刷新后联动）
 function fetchMarketBreadth()  { fetchMarketStats(); }
 function fetchMarketTurnover() { fetchMarketStats(); }
@@ -7495,6 +7564,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   fetchMainFlow();      // 初始化时立即拉取主力净流入榜
   fetchMarketBreadth(); // 市场涨跌统计（主要用腾讯 API，极少命中东方财富限流）
   fetchXqHot();       // 雪球热股榜（近1小时 Top20）
+  fetchNews();        // 财经要闻 TOP5（前端实时）+ 7×24 快讯（后台 JSON）
   fetchKolSummary();  // X关注意见领袖：从 data/twitter_kol_summary.json 加载
   // 30s 后检查是否成功，若仍是占位文字则自动重试一次
   setTimeout(()=>{
