@@ -1,0 +1,37 @@
+name: Refresh 7x24 News Flash (东方财富快讯)
+
+on:
+  schedule:
+    - cron: '*/20 0-15 * * *'   # 北京时间约 8:00-23:00 每 20 分钟
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: '手动触发原因'
+        required: false
+        default: 'Manual news flash refresh'
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install requests
+      - name: Run news flash refresh script
+        run: python .github/scripts/refresh_news_flash.py
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/news_flash.json
+          git diff --staged --quiet && echo "No changes." && exit 0
+          git commit -m "chore: refresh news flash $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git pull --rebase origin main
+          git push
