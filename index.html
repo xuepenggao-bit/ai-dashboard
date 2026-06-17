@@ -6399,26 +6399,33 @@ async function _doFetchBreadth(){
   }
 }
 
-// 前一交易日两市全天成交额（亿元）；按日缓存，避免高频自动刷新重复请求
-var _prevTurnoverCache = { date:'', yi:0 };
-async function _prevDayTurnoverYi(){
-  const today = new Date().toLocaleDateString('en-CA');   // YYYY-MM-DD（本地）
-  if(_prevTurnoverCache.date===today && _prevTurnoverCache.yi>0) return _prevTurnoverCache.yi;
-  const one = async (secid)=>{
-    const u='https://push2his.eastmoney.com/api/qt/stock/kline/get?secid='+secid
-          +'&fields1=f1&fields2=f51,f57&klt=101&fqt=0&end=20500101&lmt=3&_='+Date.now();
+// 成交额「同期对比」：用东财分时(trends2, ndays=2)按同一时刻累计成交额对比。
+// 日内量能不均(早盘尾盘重、午间轻)，必须「今日此刻累计 vs 昨日同一时刻累计」才是正确的相对增速。
+// 返回 { todayCumYi, yestSameYi, yestFullYi, tod }（亿元）；缺昨日数据返回 null。
+// 25s 短缓存：同期增速分钟级才变，无需每次刷新都拉分时。
+var _turnoverCmpCache = { ts:0, data:null };
+async function _turnoverCompare(){
+  if(_turnoverCmpCache.data && Date.now()-_turnoverCmpCache.ts < 25000) return _turnoverCmpCache.data;
+  const fetchT = async secid=>{
+    const u='https://push2his.eastmoney.com/api/qt/stock/trends2/get?secid='+secid
+          +'&fields1=f1&fields2=f51,f57&iscr=0&ndays=2&_='+Date.now();
     const j=await (await fetch(u)).json();
-    const kl=(j&&j.data&&j.data.klines)||[];
-    for(let i=kl.length-1;i>=0;i--){            // 取最后一根「日期 < 今天」的日线 = 前一交易日
-      const p=kl[i].split(',');
-      if(p[0]<today) return parseFloat(p[1])||0; // f57 成交额(元)
-    }
-    return 0;
+    return (j&&j.data&&j.data.trends)||[];        // 每行 "YYYY-MM-DD HH:MM,该分钟成交额(元)"
   };
-  const arr=await Promise.all([one('1.000001'), one('0.399106')]);  // 上证综指 + 深证综指（与今日同口径）
-  const yi=(arr[0]+arr[1])/1e8;                  // 元 → 亿元
-  if(yi>0) _prevTurnoverCache={date:today, yi:yi};
-  return yi;
+  const arrs = await Promise.all([fetchT('1.000001'), fetchT('0.399106')]);  // 上证综指 + 深证综指
+  const parse = arr=>{ const d={}; arr.forEach(s=>{ const p=s.split(','); const sp=p[0].split(' '); if(sp.length<2)return; (d[sp[0]]=d[sp[0]]||[]).push({tod:sp[1], amt:parseFloat(p[1])||0}); }); return d; };
+  const days = arrs.map(parse);
+  const ds = Object.keys(days[0]||{}).sort();
+  if(ds.length<2) return null;                    // 缺昨日（如长假后首日分时未含昨日）则不对比
+  const yDay=ds[0], tDay=ds[ds.length-1];
+  const tArr=days[0][tDay];
+  const tod = tArr[tArr.length-1].tod;            // 今日最新时分（用市场时间，比墙钟更准）
+  const sumBy=(d,day,upto)=> (d[day]||[]).filter(x=>!upto||x.tod<=upto).reduce((s,x)=>s+x.amt,0);
+  let todayCum=0, yestSame=0, yestFull=0;
+  days.forEach(d=>{ todayCum+=sumBy(d,tDay); yestSame+=sumBy(d,yDay,tod); yestFull+=sumBy(d,yDay); });
+  const out={ todayCumYi:todayCum/1e8, yestSameYi:yestSame/1e8, yestFullYi:yestFull/1e8, tod:tod };  // 元→亿元
+  if(out.yestSameYi>0 && out.yestFullYi>0) _turnoverCmpCache={ ts:Date.now(), data:out };
+  return out;
 }
 
 // ── 成交分析（腾讯行情，完全独立）────────────────────────────────
@@ -6427,16 +6434,16 @@ async function _doFetchTurnover(){
   const bodyEl= document.getElementById('mktTurnoverBody');
   if(tTs) tTs.textContent='加载中…';
   try{
-    const [raw, prevYi] = await Promise.all([
+    const [raw, cmp] = await Promise.all([
       fetch('https://qt.gtimg.cn/q=s_sh000001,s_sz399106&_='+Date.now()).then(r=>r.arrayBuffer()),
-      _prevDayTurnoverYi().catch(()=>0)   // 前一交易日全天成交额（亿元）；失败回退 0 → 不显示对比
+      _turnoverCompare().catch(()=>null)   // 分时同期对比数据；失败回退 null → 不显示对比
     ]);
     const txt = new TextDecoder('gbk').decode(raw);
     const _wan = code=>{
       const m=txt.match(new RegExp('v_s_'+code+'="([^"]+)"'));
       return m?(parseFloat(m[1].split('~')[7])||0):0;
     };
-    const totalYi=(_wan('sh000001')+_wan('sz399106'))/10000;
+    const totalYi=(_wan('sh000001')+_wan('sz399106'))/10000;   // 今日实时累计成交额（腾讯）
     const now=new Date();
     const timeStr=now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
     const curMin=now.getHours()*60+now.getMinutes();
@@ -6447,40 +6454,52 @@ async function _doFetchTurnover(){
     else if(curMin<=900) elapsed=120+(curMin-780);
     else                 elapsed=240;
     const fmt=v=>v>=10000?(v/10000).toFixed(2)+'万亿元':v>=1000?(v/1000).toFixed(2)+'千亿元':Math.round(v)+'亿元';
+
+    // 同期对比：今日累计 vs 昨日「同一时刻」累计（量能 U 型不均，必须同期比才准）；
+    // 预测全天 = 昨日全天 × 今日同期放量倍数（按昨日日内形态推算，比线性外推更贴近真实）。
+    let growthPct=null, predYi=0;
+    if(cmp && cmp.yestSameYi>0 && cmp.todayCumYi>0 && elapsed>0){
+      const ratio=cmp.todayCumYi/cmp.yestSameYi;
+      growthPct=(ratio-1)*100;
+      predYi   = cmp.yestFullYi*ratio;
+    }
+
     let html=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">`
       +`<div style="background:#dbeafe;border-radius:10px;padding:11px 12px">`
       +`<div style="font-size:10px;color:#1d4ed8;font-weight:700;margin-bottom:6px">沪深两市成交额</div>`
       +`<div style="font-size:22px;font-weight:900;color:#1e40af;line-height:1.1;letter-spacing:-.02em">${fmt(totalYi)}</div>`
       +`<div style="font-size:10px;color:#3b82f6;margin-top:5px">实时 · ${timeStr}</div></div>`;
-    let cmpBase=0, baseLabel='';
-    if(elapsed>15&&elapsed<235){
-      const pred=totalYi*(240/elapsed);
-      cmpBase=pred; baseLabel='预测全天';
+    if(elapsed>0 && elapsed<235 && predYi>0){
+      html+=`<div style="background:#e0f2fe;border-radius:10px;padding:11px 12px">`
+        +`<div style="font-size:10px;color:#0369a1;font-weight:700;margin-bottom:6px">预测全天成交额</div>`
+        +`<div style="font-size:22px;font-weight:900;color:#075985;line-height:1.1;letter-spacing:-.02em">${fmt(predYi)}</div>`
+        +`<div style="font-size:10px;color:#0284c7;margin-top:5px">按昨日同期形态推算</div></div>`;
+    }else if(elapsed>15 && elapsed<235){
+      const pred=totalYi*(240/elapsed);   // 分时数据缺失时回退线性外推
       html+=`<div style="background:#e0f2fe;border-radius:10px;padding:11px 12px">`
         +`<div style="font-size:10px;color:#0369a1;font-weight:700;margin-bottom:6px">预测全天成交额</div>`
         +`<div style="font-size:22px;font-weight:900;color:#075985;line-height:1.1;letter-spacing:-.02em">${fmt(pred)}</div>`
-        +`<div style="font-size:10px;color:#0284c7;margin-top:5px">已交易 ${elapsed}min / 240min</div></div>`;
+        +`<div style="font-size:10px;color:#0284c7;margin-top:5px">线性估算 ${elapsed}/240min</div></div>`;
     }else{
-      if(elapsed>=235){ cmpBase=totalYi; baseLabel='今日全天'; }   // 已收盘：今日全天即实际全天
       html+=`<div style="background:#f8fafc;border-radius:10px;padding:11px 12px;display:flex;align-items:center;justify-content:center">`
         +`<span style="font-size:11px;color:#94a3b8">${elapsed===0?'未开盘':'已收盘'}</span></div>`;
     }
     html+=`</div>`;
-    // 与上一交易日成交额对比（前一日全天值 + 放量/缩量；A股惯例红增绿减）
-    if(prevYi>0){
+    // 与上一交易日「同期」对比：今日此刻累计 vs 昨日同一时刻累计 → 正确的相对增速（A股惯例红增绿减）
+    if(cmp && cmp.yestFullYi>0){
       let cmpHtml='';
-      if(cmpBase>0){
-        const diff=(cmpBase/prevYi-1)*100, up=diff>=0;
-        cmpHtml=`<span style="font-size:10px;color:#64748b">${baseLabel}较前一日</span>`
+      if(growthPct!==null){
+        const up=growthPct>=0;
+        cmpHtml=`<span style="font-size:10px;color:#64748b">较前一日同期(${cmp.tod})</span>`
           +`<span style="font-size:14px;font-weight:900;margin-left:6px;color:${up?'#dc2626':'#16a34a'}">`
-          +`${up?'+':''}${diff.toFixed(2)}% ${up?'放量':'缩量'}</span>`;
+          +`${up?'+':''}${growthPct.toFixed(2)}% ${up?'放量':'缩量'}</span>`;
       }
       html+=`<div style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border-radius:8px;padding:8px 12px;margin-top:8px">`
         +`<div><span style="font-size:10px;color:#64748b">前一交易日全天</span>`
-        +`<span style="font-size:13px;font-weight:800;color:#475569;margin-left:6px">${fmt(prevYi)}</span></div>`
+        +`<span style="font-size:13px;font-weight:800;color:#475569;margin-left:6px">${fmt(cmp.yestFullYi)}</span></div>`
         +`<div style="text-align:right">${cmpHtml}</div></div>`;
     }
-    html+=`<div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:6px">沪综指+深综指 · 腾讯实时 + 东财日K(前一日)</div>`;
+    html+=`<div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:6px">沪综指+深综指 · 腾讯实时 + 东财分时同期对比</div>`;
     if(bodyEl) bodyEl.innerHTML=html;
     if(tTs)    tTs.textContent=timeStr;
   }catch(e){
