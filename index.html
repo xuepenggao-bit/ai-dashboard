@@ -359,98 +359,98 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ════════════════ TAB 投资组合 ════════════════ -->
 <div class="tab-content active" id="tPort">
-  <!-- ══ 投资组合页眉（浅色） ══ -->
-  <div style="display:flex;align-items:center;justify-content:space-between;
-              padding:9px 22px 8px;margin-bottom:16px;
-              background:linear-gradient(135deg,#f0f4ff 0%,#fafbff 55%,#eff6ff 100%);
-              border:1px solid #e0e7ff;border-radius:16px;
-              position:relative;overflow:hidden;
-              box-shadow:0 2px 18px rgba(99,102,241,.08)">
-    <!-- 装饰光晕（柔和浅色） -->
-    <div style="position:absolute;top:-40px;left:130px;width:200px;height:200px;
-                background:rgba(139,92,246,.07);border-radius:50%;filter:blur(50px);pointer-events:none"></div>
-    <div style="position:absolute;bottom:-30px;right:190px;width:160px;height:160px;
-                background:rgba(59,130,246,.06);border-radius:50%;filter:blur(40px);pointer-events:none"></div>
+  <!-- ══ 投资组合页眉（深色 Hero） ══ -->
+  <div style="position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;
+              padding:14px 24px;margin-bottom:18px;border-radius:18px;
+              background:linear-gradient(120deg,#3730a3 0%,#4f46e5 40%,#6d28d9 100%);
+              box-shadow:0 10px 30px rgba(79,70,229,.30)">
+    <!-- 装饰光晕 -->
+    <div style="position:absolute;top:-70px;left:9%;width:260px;height:260px;
+                background:rgba(255,255,255,.10);border-radius:50%;filter:blur(48px);pointer-events:none"></div>
+    <div style="position:absolute;bottom:-80px;right:16%;width:220px;height:220px;
+                background:rgba(167,139,250,.28);border-radius:50%;filter:blur(50px);pointer-events:none"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.07),transparent 42%);pointer-events:none"></div>
 
-    <!-- 左：标题 -->
-    <div style="flex-shrink:0;z-index:1">
-      <div style="font-size:9.5px;font-weight:500;color:#94a3b8;
-                  letter-spacing:.16em;text-transform:uppercase;margin-bottom:5px">Portfolio</div>
-      <div style="font-size:19px;color:#1e293b;letter-spacing:.02em;line-height:1;
-                  font-family:'PingFang SC','Microsoft YaHei',sans-serif">
-        <span style="font-weight:300">投资</span><span style="font-weight:700">组合</span><span style="font-weight:300">管理</span>
+    <!-- 左：Logo 徽标 + 标题 -->
+    <div style="display:flex;align-items:center;gap:13px;flex-shrink:0;z-index:1">
+      <div style="width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+                  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.30);font-size:21px;
+                  box-shadow:0 3px 12px rgba(0,0,0,.14)">💼</div>
+      <div style="line-height:1.15">
+        <div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:.05em;
+                    font-family:'PingFang SC','Microsoft YaHei',sans-serif;text-shadow:0 1px 10px rgba(0,0,0,.20)">投资组合管理</div>
+        <div style="font-size:10.5px;font-weight:500;color:rgba(255,255,255,.72);letter-spacing:.05em;margin-top:3px">持仓 · 行情 · 资金流 实时监控</div>
       </div>
     </div>
 
     <!-- 中：时钟（绝对居中） -->
     <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;z-index:1;pointer-events:none">
       <div id="portClock"
-        style="font-size:26px;font-weight:200;color:#1e293b;letter-spacing:.08em;
+        style="font-size:28px;font-weight:300;color:#fff;letter-spacing:.10em;
                font-variant-numeric:tabular-nums;
                font-family:'SF Mono','Consolas','Courier New',monospace;
-               text-shadow:0 2px 14px rgba(99,102,241,.22)">--:--:--</div>
+               text-shadow:0 2px 18px rgba(0,0,0,.32)">--:--:--</div>
     </div>
 
-    <!-- 右：操作区（统一外壳，三格等宽） -->
+    <!-- 右：操作区（玻璃拟态外壳，三格等宽） -->
     <div style="display:flex;align-items:stretch;flex-shrink:0;z-index:1;
-                background:#f5f7ff;border:1.5px solid #dde3f5;border-radius:14px;
-                overflow:hidden;box-shadow:0 1px 10px rgba(99,102,241,.07)">
+                background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.30);border-radius:14px;
+                overflow:hidden;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+                box-shadow:0 3px 14px rgba(0,0,0,.14)">
 
       <!-- ① 同步 -->
       <button onclick="portForcePush()" title="将当前浏览器的仓位数据推送到云端"
         style="flex:1;min-width:90px;display:flex;flex-direction:column;align-items:center;
-               justify-content:center;gap:4px;padding:6px 16px;background:transparent;
+               justify-content:center;gap:3px;padding:7px 16px;background:transparent;
                border:none;cursor:pointer;font-family:inherit;transition:background .15s"
-        onmouseover="this.style.background='rgba(109,40,217,.07)'"
+        onmouseover="this.style.background='rgba(255,255,255,.16)'"
         onmouseout="this.style.background='transparent'"
         onmousedown="this.style.opacity='.75'" onmouseup="this.style.opacity='1'">
-        <span style="font-size:13px;font-weight:700;color:#6d28d9;letter-spacing:.03em;white-space:nowrap">☁ 同步</span>
-        <span id="portSyncTs" style="font-size:9px;color:#94a3b8;white-space:nowrap;
+        <span style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.03em;white-space:nowrap">☁ 同步</span>
+        <span id="portSyncTs" style="font-size:9px;color:rgba(255,255,255,.72);white-space:nowrap;
                max-width:100px;overflow:hidden;text-overflow:ellipsis">☁️ 加载中…</span>
       </button>
 
       <!-- 分割线 -->
-      <div style="width:1px;background:#dde3f5;flex-shrink:0"></div>
+      <div style="width:1px;background:rgba(255,255,255,.24);flex-shrink:0"></div>
 
       <!-- ② 刷新股价 -->
       <button id="portPriceBtn" onclick="refreshPortAll()"
         style="flex:1;min-width:96px;display:flex;flex-direction:column;align-items:center;
-               justify-content:center;gap:4px;padding:6px 16px;background:transparent;
+               justify-content:center;gap:3px;padding:7px 16px;background:transparent;
                border:none;cursor:pointer;font-family:inherit;transition:background .15s"
-        onmouseover="this.style.background='rgba(37,99,235,.07)'"
+        onmouseover="this.style.background='rgba(255,255,255,.16)'"
         onmouseout="this.style.background='transparent'"
         onmousedown="this.style.opacity='.75'" onmouseup="this.style.opacity='1'">
-        <span style="font-size:13px;font-weight:700;color:#2563eb;letter-spacing:.03em;white-space:nowrap">
+        <span style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.03em;white-space:nowrap">
           <span class="ricon" style="display:inline-block">↻</span> 刷新股价</span>
-        <span id="portPriceTs" style="font-size:9px;color:#94a3b8;white-space:nowrap;
+        <span id="portPriceTs" style="font-size:9px;color:rgba(255,255,255,.72);white-space:nowrap;
                max-width:100px;overflow:hidden;text-overflow:ellipsis">股价未加载</span>
       </button>
 
       <!-- 分割线 -->
-      <div style="width:1px;background:#dde3f5;flex-shrink:0"></div>
+      <div style="width:1px;background:rgba(255,255,255,.24);flex-shrink:0"></div>
 
       <!-- ③ 自动刷新 -->
       <div id="autoRefreshBox"
-        style="flex:1;min-width:90px;display:flex;flex-direction:column;align-items:center;
-               justify-content:center;gap:4px;padding:6px 16px;transition:background .15s">
-        <div id="autoRefreshInner" style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:12px;color:#0284c7;flex-shrink:0">⏱</span>
+        style="flex:1;min-width:92px;display:flex;flex-direction:column;align-items:center;
+               justify-content:center;gap:3px;padding:7px 16px;transition:background .15s">
+        <div id="autoRefreshInner" style="display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:9px;transition:background .15s">
+          <span style="font-size:12px;color:#fff;flex-shrink:0">⏱</span>
           <select id="autoRefreshSel" onchange="setAutoRefresh(this.value)"
-            style="font-size:13px;font-weight:700;color:#0369a1;font-family:inherit;
+            style="font-size:13px;font-weight:700;color:#fff;font-family:inherit;
                    border:none;background:transparent;cursor:pointer;outline:none;
                    padding:0;letter-spacing:.02em">
-            <option value="0">手动</option>
-            <option value="5">5秒</option>
-            <option value="10">10秒</option>
-            <option value="30">30秒</option>
-            <option value="60">1分钟</option>
-            <option value="300">5分钟</option>
-            <option value="600">10分钟</option>
-            <option value="1800">30分钟</option>
+            <option value="0" style="color:#1e293b">手动</option>
+            <option value="5" style="color:#1e293b">5秒</option>
+            <option value="10" style="color:#1e293b">10秒</option>
+            <option value="30" style="color:#1e293b">30秒</option>
+            <option value="60" style="color:#1e293b">1分钟</option>
+            <option value="300" style="color:#1e293b">5分钟</option>
           </select>
         </div>
         <span id="autoRefreshCd"
-          style="font-size:9px;color:#2563eb;font-weight:700;min-height:13px;
+          style="font-size:9px;color:rgba(255,255,255,.9);font-weight:700;min-height:13px;
                  letter-spacing:.02em"></span>
       </div>
 
@@ -5417,12 +5417,12 @@ function setAutoRefresh(val){
 
   if(!sec){
     if(cdEl)  cdEl.textContent = '';
-    if(inner){ inner.style.background='#f0f9ff'; inner.style.borderColor='#bae6fd'; }
+    if(inner){ inner.style.background='transparent'; }  // 手动：不高亮（深色 Hero 头）
     return;
   }
 
   const ms = sec * 1000;
-  if(inner){ inner.style.background='#dbeafe'; inner.style.borderColor='#93c5fd'; }
+  if(inner){ inner.style.background='rgba(255,255,255,.22)'; }  // 自动刷新开启：白色半透明高亮（深色 Hero 头）
 
   // 立刻刷一次，然后按周期持续刷（定时刷新走 refreshPortAll：与手动/切标签同规则——
   //  股价+主要指数同步刷新，涨跌统计/成交分析延后 600ms；fetchMarketStats 自带 inflight 去重，高频也不会堆叠）
