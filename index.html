@@ -679,21 +679,53 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   </div>
 
   <!-- Row 4.5: 财经要闻 + 7×24 快讯 -->
-  <div class="card mb16" style="border-top:3px solid #0ea5e9">
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-      <span style="font-size:13px;font-weight:800;color:#374151">📰 财经要闻</span>
-      <span style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
-                   padding:1px 7px;border-radius:10px;font-weight:600">东方财富 · 实时</span>
-      <span id="newsTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
+  <style>
+  .news-card{border-top:3px solid #0ea5e9}
+  .news-hd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:13px;padding-bottom:10px;border-bottom:1px solid #eef2f7}
+  .news-hd .t{font-size:14.5px;font-weight:900;color:#0f172a;letter-spacing:.02em}
+  .news-hd .bdg{font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;padding:1px 8px;border-radius:10px;font-weight:700}
+  .news-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
+  @media(max-width:680px){.news-grid{grid-template-columns:1fr}}
+  .news-col-r{position:relative}
+  .news-col-r::before{content:"";position:absolute;left:-12px;top:2px;bottom:2px;width:1px;background:#e6ebf1}
+  @media(max-width:680px){.news-col-r::before{display:none}.news-col-r{margin-top:12px;padding-top:12px;border-top:1px solid #eef2f7}}
+  .news-colhd{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+  .news-colhd .dot{width:7px;height:7px;border-radius:50%}
+  .news-colhd .lbl{font-size:11.5px;font-weight:800;letter-spacing:.05em}
+  .news-colhd .cnt{font-size:10px;color:#9aa7b5;font-weight:700;margin-left:auto;letter-spacing:.04em}
+  /* 要闻：排名榜（序号色块，Top1-3 红→橙→金，4-5 灰）*/
+  .nrow{display:flex;gap:11px;align-items:flex-start;padding:9px 8px;border-radius:9px;text-decoration:none;transition:background .15s}
+  .nrow+.nrow{border-top:1px solid #f3f5f8}
+  .nrow:hover{background:#f8fafc}
+  .nrk{flex:0 0 auto;width:20px;height:20px;border-radius:6px;font-size:11px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .nrk.r1{background:#dc2626}.nrk.r2{background:#ea580c}.nrk.r3{background:#f59e0b}.nrk.r4,.nrk.r5{background:#cbd5e1;color:#475569}
+  .nttl{font-size:13px;line-height:1.5;font-weight:600;color:#1e293b}
+  .nrow:hover .nttl{color:#0369a1}
+  .nmeta{font-size:10px;color:#9aa7b5;margin-top:3px;font-weight:500}
+  /* 快讯：时间线（蓝色时间胶囊，最新一条标红）*/
+  .frow{display:flex;gap:10px;align-items:flex-start;padding:9px 8px;border-radius:9px;text-decoration:none;transition:background .15s}
+  .frow+.frow{border-top:1px solid #f3f5f8}
+  .frow:hover{background:#f0f9ff}
+  .ftime{flex:0 0 auto;font-size:10.5px;font-weight:800;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:2px 7px;margin-top:1px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .frow.fresh .ftime{background:#fee2e2;color:#dc2626}
+  .fttl{font-size:12.5px;line-height:1.5;color:#334155;font-weight:500}
+  .frow:hover .fttl{color:#0369a1}
+  .news-empty{color:#9aa7b5;font-size:11px;text-align:center;padding:20px 0}
+  </style>
+  <div class="card mb16 news-card">
+    <div class="news-hd">
+      <span class="t">📰 财经要闻</span>
+      <span class="bdg">东方财富</span>
+      <span id="newsTs" style="font-size:10px;color:#9aa7b5;font-weight:600;margin-left:auto"></span>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px 18px">
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#0369a1;margin-bottom:2px;letter-spacing:.02em">要闻 TOP5</div>
-        <div id="newsTop"><div style="color:#94a3b8;font-size:11px;text-align:center;padding:16px 0">加载中…</div></div>
+    <div class="news-grid">
+      <div class="news-col-l">
+        <div class="news-colhd"><span class="dot" style="background:#dc2626"></span><span class="lbl" style="color:#b91c1c">要闻 · 实时精选</span><span class="cnt">TOP 5</span></div>
+        <div id="newsTop"><div class="news-empty">加载中…</div></div>
       </div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#0369a1;margin-bottom:2px;letter-spacing:.02em">7×24 快讯</div>
-        <div id="newsFlash"><div style="color:#94a3b8;font-size:11px;text-align:center;padding:16px 0">加载中…</div></div>
+      <div class="news-col-r">
+        <div class="news-colhd"><span class="dot" style="background:#0ea5e9"></span><span class="lbl" style="color:#0369a1">7×24 快讯</span><span class="cnt">滚动</span></div>
+        <div id="newsFlash"><div class="news-empty">加载中…</div></div>
       </div>
     </div>
   </div>
@@ -6542,15 +6574,21 @@ function fetchNews(force){
   const ts=document.getElementById('newsTs');
   if(ts) ts.textContent='更新 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
 }
-function _newsRow(url,title,src,time){
-  const a = url
-    ? '<a href="'+_escH(url)+'" target="_blank" rel="noopener" style="color:#1e293b;text-decoration:none">'+_escH(title)+'</a>'
-    : _escH(title);
-  return '<div style="padding:6px 0;border-bottom:1px solid #f1f5f9">'
-    +'<div style="font-size:12.5px;line-height:1.45;font-weight:600">'+a+'</div>'
-    +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">'+(time||'')+(src?' · '+_escH(src):'')+'</div></div>';
+// 要闻：带排名色块的行
+function _newsTopRow(url,title,src,time,rank){
+  const inner='<span class="nrk r'+rank+'">'+rank+'</span>'
+    +'<div style="min-width:0"><div class="nttl">'+_escH(title)+'</div>'
+    +'<div class="nmeta">'+(src?_escH(src):'')+(src&&time?' · ':'')+(time||'')+'</div></div>';
+  return url ? '<a class="nrow" href="'+_escH(url)+'" target="_blank" rel="noopener">'+inner+'</a>'
+             : '<div class="nrow">'+inner+'</div>';
 }
-function _newsEmpty(msg){ return '<div style="color:#94a3b8;font-size:11px;text-align:center;padding:16px 0">'+msg+'</div>'; }
+// 快讯：时间线行（fresh=最新一条标红）
+function _flashRow(url,title,time,fresh){
+  const inner='<span class="ftime">'+(time||'--:--')+'</span><div class="fttl" style="min-width:0">'+_escH(title)+'</div>';
+  return url ? '<a class="frow'+(fresh?' fresh':'')+'" href="'+_escH(url)+'" target="_blank" rel="noopener">'+inner+'</a>'
+             : '<div class="frow'+(fresh?' fresh':'')+'">'+inner+'</div>';
+}
+function _newsEmpty(msg){ return '<div class="news-empty">'+msg+'</div>'; }
 // 要闻 TOP5：东财 np-listapi getNewsByColumns（column=350 财经要闻，CORS 放行，前端可直取）
 async function _fetchNewsTop(){
   const el=document.getElementById('newsTop'); if(!el) return;
@@ -6560,8 +6598,8 @@ async function _fetchNewsTop(){
     const j=await (await fetch(u)).json();
     const list=((j&&j.data&&j.data.list)||[]).slice(0,5);
     if(!list.length){ el.innerHTML=_newsEmpty('暂无要闻'); return; }
-    el.innerHTML=list.map(function(n){
-      return _newsRow(n.uniqueUrl||n.url||'', n.title||'', n.mediaName||'', (n.showTime||'').slice(5,16));
+    el.innerHTML=list.map(function(n,i){
+      return _newsTopRow(n.uniqueUrl||n.url||'', n.title||'', n.mediaName||'', (n.showTime||'').slice(5,16), i+1);
     }).join('');
   }catch(e){ console.warn('[要闻]',e.message); el.innerHTML=_newsEmpty('要闻获取失败'); }
 }
@@ -6572,8 +6610,8 @@ async function _fetchNewsFlash(){
     const j=await (await fetch('data/news_flash.json?_='+Date.now(),{cache:'no-store'})).json();
     const list=((j&&j.list)||[]).slice(0,6);
     if(!list.length){ el.innerHTML=_newsEmpty('快讯待后台生成'); return; }
-    el.innerHTML=list.map(function(n){
-      return _newsRow(n.url||'', n.title||'', '', (n.time||'').slice(11,16));
+    el.innerHTML=list.map(function(n,i){
+      return _flashRow(n.url||'', n.title||'', (n.time||'').slice(11,16), i===0);
     }).join('');
   }catch(e){ el.innerHTML=_newsEmpty('快讯待后台工作流生成'); }
 }
