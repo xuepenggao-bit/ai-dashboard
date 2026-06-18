@@ -6652,17 +6652,19 @@ async function _fetchNewsTop(){
     }).join('');
   }catch(e){ console.warn('[要闻]',e.message); el.innerHTML=_newsEmpty('要闻获取失败'); }
 }
-// 7×24 快讯：读后台生成的 data/news_flash.json（该源 CORS 拦截前端，由 GitHub Actions 定时抓取）
+// 7×24 快讯：东财 np-listapi getNewsByColumns（column=349 滚动快讯，CORS 放行，前端实时直取——与要闻完全同机制）
 async function _fetchNewsFlash(){
   const el=document.getElementById('newsFlash'); if(!el) return;
   try{
-    const j=await (await fetch('data/news_flash.json?_='+Date.now(),{cache:'no-store'})).json();
-    const list=((j&&j.list)||[]).slice(0,6);
-    if(!list.length){ el.innerHTML=_newsEmpty('快讯待后台生成'); return; }
+    const u='https://np-listapi.eastmoney.com/comm/web/getNewsByColumns?client=web&biz=web_news'
+          +'&column=349&order=1&needInteractData=0&page_index=1&page_size=8&req_trace=1&fields=&types=1,20&_='+Date.now();
+    const j=await (await fetch(u)).json();
+    const list=((j&&j.data&&j.data.list)||[]).slice(0,8);
+    if(!list.length){ el.innerHTML=_newsEmpty('暂无快讯'); return; }
     el.innerHTML=list.map(function(n,i){
-      return _flashRow(n.url||'', n.title||'', (n.time||'').slice(11,16), i===0);
+      return _flashRow(n.uniqueUrl||n.url||'', n.title||'', (n.showTime||'').slice(11,16), i===0);
     }).join('');
-  }catch(e){ el.innerHTML=_newsEmpty('快讯待后台工作流生成'); }
+  }catch(e){ console.warn('[快讯]',e.message); el.innerHTML=_newsEmpty('快讯获取失败'); }
 }
 
 // 兼容旧调用（tab 切换、股价刷新后联动）
