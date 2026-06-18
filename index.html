@@ -372,90 +372,81 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .ar-opt:hover{background:#eef2ff;color:#4338ca}
   .ar-opt.on{background:#4f46e5;color:#fff}
   </style>
-  <!-- ══ 投资组合页眉（深色 Hero） ══ -->
-  <div style="position:relative;display:flex;align-items:center;justify-content:space-between;
-              padding:14px 24px;margin-bottom:18px;border-radius:18px;
-              background:linear-gradient(120deg,#6b76e5 0%,#838dee 48%,#a593ef 100%);
-              box-shadow:0 6px 22px rgba(99,102,241,.18)">
-    <!-- 装饰光晕（独立内层裁切，避免裁掉下拉菜单）-->
-    <div style="position:absolute;inset:0;overflow:hidden;border-radius:18px;pointer-events:none">
-      <div style="position:absolute;top:-70px;left:9%;width:260px;height:260px;
-                  background:rgba(255,255,255,.10);border-radius:50%;filter:blur(48px)"></div>
-      <div style="position:absolute;bottom:-80px;right:16%;width:220px;height:220px;
-                  background:rgba(167,139,250,.28);border-radius:50%;filter:blur(50px)"></div>
-      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.07),transparent 42%)"></div>
-    </div>
+  <!-- ══ 投资组合页眉（浅色·紧凑） ══ -->
+  <div style="position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;
+              padding:8px 18px 8px 20px;margin-bottom:16px;border-radius:13px;
+              background:#ffffff;border:1px solid #e7ebf3;box-shadow:0 2px 10px rgba(79,70,229,.06)">
+    <!-- 左侧渐变 accent 细条 -->
+    <div style="position:absolute;left:0;top:0;bottom:0;width:4px;
+                background:linear-gradient(180deg,#6366f1,#a78bfa)"></div>
 
-    <!-- 左：Logo 徽标 + 标题 -->
-    <div style="display:flex;align-items:center;gap:13px;flex-shrink:0;z-index:1">
-      <div style="width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;
-                  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.30);font-size:21px;
-                  box-shadow:0 3px 12px rgba(0,0,0,.14)">💼</div>
-      <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:.06em;
-                  font-family:'PingFang SC','Microsoft YaHei',sans-serif;text-shadow:0 1px 8px rgba(0,0,0,.12)">投资组合管理</div>
+    <!-- 左：Logo + 标题 -->
+    <div style="display:flex;align-items:center;gap:11px;flex-shrink:0">
+      <div style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+                  background:linear-gradient(135deg,#6366f1,#8b5cf6);font-size:17px;
+                  box-shadow:0 3px 9px rgba(99,102,241,.26)">💼</div>
+      <div style="font-size:17px;font-weight:700;color:#1e293b;letter-spacing:.04em;
+                  font-family:'PingFang SC','Microsoft YaHei',sans-serif">投资组合管理</div>
     </div>
 
     <!-- 中：时钟（绝对居中） -->
-    <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;z-index:1;pointer-events:none">
+    <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none">
       <div id="portClock"
-        style="font-size:28px;font-weight:300;color:#fff;letter-spacing:.10em;
+        style="font-size:22px;font-weight:500;color:#334155;letter-spacing:.06em;
                font-variant-numeric:tabular-nums;
-               font-family:'SF Mono','Consolas','Courier New',monospace;
-               text-shadow:0 2px 14px rgba(0,0,0,.18)">--:--:--</div>
+               font-family:'SF Mono','Consolas','Courier New',monospace">--:--:--</div>
     </div>
 
-    <!-- 右：操作区（玻璃拟态外壳，三格等宽） -->
-    <div style="display:flex;align-items:stretch;flex-shrink:0;z-index:1;
-                background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.30);border-radius:14px;
-                overflow:hidden;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-                box-shadow:0 3px 14px rgba(0,0,0,.14)">
+    <!-- 右：操作区（浅色外壳，三格等宽） -->
+    <div style="display:flex;align-items:stretch;flex-shrink:0;
+                background:#f6f7fb;border:1px solid #e3e7f1;border-radius:11px;overflow:hidden">
 
       <!-- ① 同步 -->
       <button onclick="portForcePush()" title="将当前浏览器的仓位数据推送到云端"
-        style="flex:1;min-width:90px;display:flex;flex-direction:column;align-items:center;
-               justify-content:center;gap:3px;padding:7px 16px;background:transparent;
+        style="flex:1;min-width:84px;display:flex;flex-direction:column;align-items:center;
+               justify-content:center;gap:2px;padding:5px 14px;background:transparent;
                border:none;cursor:pointer;font-family:inherit;transition:background .15s"
-        onmouseover="this.style.background='rgba(255,255,255,.16)'"
+        onmouseover="this.style.background='rgba(124,58,237,.08)'"
         onmouseout="this.style.background='transparent'"
-        onmousedown="this.style.opacity='.75'" onmouseup="this.style.opacity='1'">
-        <span style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.03em;white-space:nowrap">☁ 同步</span>
-        <span id="portSyncTs" style="font-size:10px;color:rgba(255,255,255,.92);font-weight:600;white-space:nowrap;
-               max-width:110px;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,.18)">☁️ 加载中…</span>
+        onmousedown="this.style.opacity='.7'" onmouseup="this.style.opacity='1'">
+        <span style="font-size:12.5px;font-weight:700;color:#7c3aed;letter-spacing:.02em;white-space:nowrap">☁ 同步</span>
+        <span id="portSyncTs" style="font-size:9.5px;color:#94a3b8;font-weight:500;white-space:nowrap;
+               max-width:108px;overflow:hidden;text-overflow:ellipsis">☁️ 加载中…</span>
       </button>
 
       <!-- 分割线 -->
-      <div style="width:1px;background:rgba(255,255,255,.24);flex-shrink:0"></div>
+      <div style="width:1px;background:#e3e7f1;flex-shrink:0"></div>
 
       <!-- ② 刷新股价 -->
       <button id="portPriceBtn" onclick="refreshPortAll()"
-        style="flex:1;min-width:96px;display:flex;flex-direction:column;align-items:center;
-               justify-content:center;gap:3px;padding:7px 16px;background:transparent;
+        style="flex:1;min-width:90px;display:flex;flex-direction:column;align-items:center;
+               justify-content:center;gap:2px;padding:5px 14px;background:transparent;
                border:none;cursor:pointer;font-family:inherit;transition:background .15s"
-        onmouseover="this.style.background='rgba(255,255,255,.16)'"
+        onmouseover="this.style.background='rgba(37,99,235,.08)'"
         onmouseout="this.style.background='transparent'"
-        onmousedown="this.style.opacity='.75'" onmouseup="this.style.opacity='1'">
-        <span style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.03em;white-space:nowrap">
+        onmousedown="this.style.opacity='.7'" onmouseup="this.style.opacity='1'">
+        <span style="font-size:12.5px;font-weight:700;color:#2563eb;letter-spacing:.02em;white-space:nowrap">
           <span class="ricon" style="display:inline-block">↻</span> 刷新股价</span>
-        <span id="portPriceTs" style="font-size:10px;color:rgba(255,255,255,.92);font-weight:600;white-space:nowrap;
-               max-width:110px;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,.18)">股价未加载</span>
+        <span id="portPriceTs" style="font-size:9.5px;color:#94a3b8;font-weight:500;white-space:nowrap;
+               max-width:108px;overflow:hidden;text-overflow:ellipsis">股价未加载</span>
       </button>
 
       <!-- 分割线 -->
-      <div style="width:1px;background:rgba(255,255,255,.24);flex-shrink:0"></div>
+      <div style="width:1px;background:#e3e7f1;flex-shrink:0"></div>
 
       <!-- ③ 自动刷新 -->
       <div id="autoRefreshBox"
-        style="flex:1;min-width:92px;display:flex;flex-direction:column;align-items:center;
-               justify-content:center;gap:3px;padding:7px 16px;transition:background .15s">
+        style="flex:1;min-width:88px;display:flex;flex-direction:column;align-items:center;
+               justify-content:center;gap:2px;padding:5px 12px">
         <div style="position:relative">
           <button id="arBtn" type="button" onclick="_arToggle(event)"
-            style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);
-                   border:1px solid rgba(255,255,255,.34);border-radius:10px;padding:5px 11px;cursor:pointer;
-                   font-family:inherit;color:#fff;font-size:13px;font-weight:700;letter-spacing:.02em;transition:background .15s"
-            onmouseover="this.style.background='rgba(255,255,255,.30)'"
-            onmouseout="this.style.background=(_arCur>0?'rgba(255,255,255,.30)':'rgba(255,255,255,.18)')">
-            <span style="font-size:12px">⏱</span><span id="arLabel">手动</span>
-            <span style="font-size:8px;opacity:.85;margin-left:1px">▼</span>
+            style="display:flex;align-items:center;gap:5px;background:#eef1f8;
+                   border:1px solid #dde3f0;border-radius:8px;padding:4px 9px;cursor:pointer;
+                   font-family:inherit;color:#4338ca;font-size:12.5px;font-weight:700;letter-spacing:.02em;transition:background .15s"
+            onmouseover="this.style.background='#e3e8f6'"
+            onmouseout="this.style.background=(_arCur>0?'#e0e7ff':'#eef1f8')">
+            <span style="font-size:11px">⏱</span><span id="arLabel">手动</span>
+            <span style="font-size:8px;opacity:.7;margin-left:1px">▼</span>
           </button>
           <div id="arMenu" class="ar-menu">
             <button type="button" class="ar-opt on" data-v="0"   onclick="_arPick(0,'手动')">手动</button>
@@ -467,7 +458,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           </div>
         </div>
         <span id="autoRefreshCd"
-          style="font-size:9px;color:rgba(255,255,255,.9);font-weight:700;min-height:13px;
+          style="font-size:9.5px;color:#2563eb;font-weight:700;min-height:12px;
                  letter-spacing:.02em"></span>
       </div>
 
@@ -5447,7 +5438,7 @@ function _arPick(v,label){
   const m=document.getElementById('arMenu'); if(m) m.classList.remove('open');
   document.querySelectorAll('#arMenu .ar-opt').forEach(b=>b.classList.toggle('on', b.dataset.v===String(v)));
   const btn=document.getElementById('arBtn');
-  if(btn) btn.style.background = (_arCur>0)?'rgba(255,255,255,.30)':'rgba(255,255,255,.18)';
+  if(btn) btn.style.background = (_arCur>0)?'#e0e7ff':'#eef1f8';   // 开启自动刷新时淡靛蓝高亮（浅色头）
   setAutoRefresh(v);
 }
 document.addEventListener('click', function(){ const m=document.getElementById('arMenu'); if(m) m.classList.remove('open'); });
