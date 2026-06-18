@@ -2,7 +2,7 @@ name: Refresh 7x24 News Flash (东方财富快讯)
 
 on:
   schedule:
-    - cron: '*/15 0-23 * * *'
+    - cron: '*/60 0-23 * * *'
   workflow_dispatch:
     inputs:
       reason:
