@@ -7,7 +7,7 @@
 
 依赖：requests。无需任何密钥（GITHUB_TOKEN 仅用于提交）。
 """
-import os, json, datetime, requests
+import os, json, time, datetime, requests
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT  = os.path.normpath(os.path.join(SCRIPT_DIR, '..', '..'))
@@ -24,11 +24,19 @@ def main():
     url = ('https://np-weblist.eastmoney.com/comm/web/getFastNewsList'
            '?client=web&biz=web_724&fastColumn=102&sortEnd=&pageSize=20&req_trace=1')
     headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'https://kuaixun.eastmoney.com/'}
-    try:
-        r = requests.get(url, headers=headers, timeout=20)
-        data = r.json()
-    except Exception as e:
-        print('fetch failed, keep existing:', e)
+    # 重试 3 次，保障刷新成功（东财偶发限流/超时）
+    data = None
+    for attempt in range(1, 4):
+        try:
+            r = requests.get(url, headers=headers, timeout=20)
+            data = r.json()
+            break
+        except Exception as e:
+            print('attempt %d failed: %s' % (attempt, e))
+            if attempt < 3:
+                time.sleep(3 * attempt)
+    if data is None:
+        print('all attempts failed, keep existing')
         return
     raw = (data.get('data') or {}).get('fastNewsList') or []
     items = []
