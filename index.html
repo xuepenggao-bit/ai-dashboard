@@ -368,38 +368,33 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
               box-shadow:0 4px 22px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.04)">
     <!-- 左侧渐变 accent 细条 -->
     <div style="position:absolute;left:0;top:0;bottom:0;width:4px;
-                background:linear-gradient(180deg,#6366f1,#a78bfa)"></div>
+                background:linear-gradient(180deg,#10b981,#0d9488)"></div>
 
     <!-- 左：Logo + 标题 -->
     <div style="display:flex;align-items:center;gap:11px;flex-shrink:0">
-      <!-- Logo：绿底股价走势小表盘（原创绘制，填满圆角方块、边缘裁切）-->
-      <div style="width:42px;height:42px;border-radius:13px;overflow:hidden;flex-shrink:0;
-                  box-shadow:0 3px 12px rgba(6,78,59,.34)">
-        <svg width="42" height="42" viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+      <!-- Logo：股票App风格图标（原创：棕色表框 + 白屏 + 绿/橙双色面积走势，圆角裁切）-->
+      <div style="width:44px;height:44px;border-radius:13px;overflow:hidden;flex-shrink:0;
+                  background:linear-gradient(150deg,#a89b88 0%,#7d7160 52%,#5d5345 100%);
+                  box-shadow:0 3px 13px rgba(75,63,47,.36);padding:4.5px;box-sizing:border-box">
+        <svg width="35" height="35" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" style="display:block">
           <defs>
-            <linearGradient id="wfBg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#1ba066"/><stop offset="100%" stop-color="#0a4a31"/>
-            </linearGradient>
+            <linearGradient id="lgOrg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb923c"/><stop offset="1" stop-color="#fde6d3"/></linearGradient>
+            <linearGradient id="lgGrn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#d7f5e6"/></linearGradient>
           </defs>
-          <rect width="42" height="42" fill="url(#wfBg)"/>
-          <!-- 竖向时间网格 -->
-          <g stroke="rgba(255,255,255,.13)" stroke-width="1">
-            <line x1="13" y1="5" x2="13" y2="37"/>
-            <line x1="23.5" y1="5" x2="23.5" y2="37"/>
-            <line x1="34" y1="5" x2="34" y2="37"/>
-          </g>
-          <!-- 虚线基准线 -->
-          <line x1="3" y1="22.5" x2="39" y2="22.5" stroke="rgba(255,255,255,.28)" stroke-width="0.9" stroke-dasharray="2 2"/>
-          <!-- 股价走势线（原创）-->
-          <path d="M2 19 L5 12.5 L7.5 16 L10 9.5 L12.5 18 L15.5 14.5 L18 21 L21 17 L24.5 24 L27.5 20.5 L31 26 L34.5 22.5 L40 25.5"
-                fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="0" y="0" width="36" height="36" rx="8" fill="#ffffff"/>
+          <!-- 橙色面积（下层）-->
+          <path d="M2 31 L8 23 L13 27 L19 17 L25 23 L30 13 L34 19 L34 34 L2 34 Z" fill="url(#lgOrg)"/>
+          <!-- 绿色面积（上层）-->
+          <path d="M2 27 L8 19 L13 23 L19 13 L25 19 L30 9 L34 15 L34 34 L2 34 Z" fill="url(#lgGrn)" opacity=".82"/>
+          <!-- 走势线 -->
+          <path d="M2 27 L8 19 L13 23 L19 13 L25 19 L30 9 L34 15" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 31 L8 23 L13 27 L19 17 L25 23 L30 13 L34 19" fill="none" stroke="#f97316" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
         </svg>
       </div>
-      <div style="font-family:Georgia,'Times New Roman','PingFang SC',serif;font-size:21px;font-weight:700;
-                  letter-spacing:.015em;line-height:1;white-space:nowrap;
-                  background:linear-gradient(115deg,#059669 0%,#0d9488 30%,#4f46e5 70%,#7c3aed 100%);
-                  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
-                  text-shadow:0 1px 1px rgba(15,23,42,.04)">Real Time Wealth</div>
+      <div style="font-family:Georgia,'Times New Roman','PingFang SC',serif;font-size:22px;font-weight:700;
+                  letter-spacing:.012em;line-height:1;white-space:nowrap;
+                  background:linear-gradient(100deg,#1e293b 0%,#0f766e 52%,#15a34a 100%);
+                  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">Trend Following</div>
     </div>
 
     <!-- 中：模拟时钟(Apple风) + 数字时钟（绝对居中） -->
@@ -5760,9 +5755,11 @@ const _IDX_EM = [
   {secids:['100.HSAHP'], code:'HSAHP', altCodes:['HSCAHPI'], label:'A/H溢价', region:'ah'},
   {secids:['104.CN00Y'], code:'CN00Y', altCodes:['CN00'],    label:'A50期指', region:'fut'},  // SGX A50期指当月连续
   {secids:['103.NQ00Y'], code:'NQ00Y', altCodes:['NQ00'],    label:'纳指期指', region:'fut'},  // CME 小型纳指当月连续
+  {secids:['100.KOSPI200'], code:'KOSPI200', altCodes:[], label:'韩国KOSPI200', region:'intl'},  // 韩国 KOSPI 200
+  {secids:['100.TWII'],     code:'TWII',     altCodes:[], label:'台湾加权',     region:'intl'},  // 台湾加权指数 TAIEX
 ];
 // 渲染顺序固定（A股平均股价紧随中证全指；港股在 A/H溢价前，期指置底）
-const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股平均股价','恒生指数','恒生科技','A/H溢价','A50期指','纳指期指'];
+const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股平均股价','恒生指数','恒生科技','A/H溢价','韩国KOSPI200','台湾加权','A50期指','纳指期指'];
 
 // 粘性缓存：每个指数上次成功获取的值。某数据源偶发失败时回填，保证不闪现消失
 let _IDX_CACHE = {};   // label → {label, price, pct, region, ts}
@@ -5904,6 +5901,9 @@ async function fetchIndexPrices(){
       } else if(r.region === 'fut'){
         accent = '#7c3aed'; bg = '#f5f3ff';
         badge = ' <span style="font-size:9px;background:#ede9fe;color:#5b21b6;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">期</span>';
+      } else if(r.region === 'intl'){
+        accent = '#0369a1'; bg = '#f0f9ff';
+        badge = ' <span style="font-size:9px;background:#e0f2fe;color:#075985;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">外盘</span>';
       }
       const priceStr = (r.region === 'hk') ? r.price.toFixed(0)
                      : (r.region === 'fut') ? r.price.toFixed(2)
