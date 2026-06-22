@@ -368,7 +368,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
               box-shadow:0 4px 22px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.04)">
     <!-- 左侧渐变 accent 细条 -->
     <div style="position:absolute;left:0;top:0;bottom:0;width:4px;
-                background:linear-gradient(180deg,#10b981,#0d9488)"></div>
+                background:linear-gradient(180deg,#e11d48,#d97706)"></div>
 
     <!-- 左：Logo + 标题 -->
     <div style="display:flex;align-items:center;gap:11px;flex-shrink:0">
@@ -391,23 +391,33 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           <path d="M2 31 L8 23 L13 27 L19 17 L25 23 L30 13 L34 19" fill="none" stroke="#f97316" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
         </svg>
       </div>
-      <div style="font-family:Georgia,'Times New Roman','PingFang SC',serif;font-size:22px;font-weight:700;
+      <div style="font-family:Georgia,'Times New Roman','PingFang SC',serif;font-size:22px;font-weight:700;font-style:italic;
                   letter-spacing:.012em;line-height:1;white-space:nowrap;
-                  background:linear-gradient(100deg,#1e293b 0%,#0f766e 52%,#15a34a 100%);
-                  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">Trend Following</div>
+                  background:linear-gradient(105deg,#7f1d1d 0%,#b91c1c 42%,#e11d48 100%);
+                  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+                  text-shadow:0 1px 1px rgba(127,29,29,.08)">Trend Following</div>
     </div>
 
     <!-- 中：模拟时钟(Apple风) + 数字时钟（绝对居中） -->
     <div style="position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;pointer-events:none">
-      <svg id="portAnalog" width="58" height="58" viewBox="0 0 40 40" style="flex-shrink:0;filter:drop-shadow(0 3px 7px rgba(15,23,42,.15))" xmlns="http://www.w3.org/2000/svg">
+      <svg id="portAnalog" width="64" height="64" viewBox="0 0 40 40" style="flex-shrink:0;filter:drop-shadow(0 4px 10px rgba(15,23,42,.24))" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id="paFace" cx="50%" cy="42%" r="62%">
-            <stop offset="0%" stop-color="#ffffff"/><stop offset="78%" stop-color="#fdfdfe"/><stop offset="100%" stop-color="#f4f6fa"/>
+          <radialGradient id="paFace" cx="50%" cy="40%" r="66%">
+            <stop offset="0%" stop-color="#ffffff"/><stop offset="72%" stop-color="#fbfcfe"/><stop offset="100%" stop-color="#eef1f6"/>
+          </radialGradient>
+          <linearGradient id="paBezel" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fcfdff"/><stop offset="48%" stop-color="#d7dde7"/><stop offset="100%" stop-color="#b3bccb"/>
+          </linearGradient>
+          <radialGradient id="paInner" cx="50%" cy="50%" r="50%">
+            <stop offset="76%" stop-color="rgba(15,23,42,0)"/><stop offset="100%" stop-color="rgba(15,23,42,.12)"/>
           </radialGradient>
         </defs>
-        <!-- 表盘 + 双层 bezel -->
-        <circle cx="20" cy="20" r="19.3" fill="#eef1f6"/>
-        <circle cx="20" cy="20" r="18.7" fill="url(#paFace)" stroke="#dfe4ee" stroke-width="0.5"/>
+        <!-- 金属渐变表框（上亮下暗，立体凸起）-->
+        <circle cx="20" cy="20" r="19.6" fill="url(#paBezel)"/>
+        <!-- 盘面 -->
+        <circle cx="20" cy="20" r="18.1" fill="url(#paFace)"/>
+        <!-- 盘面内阴影（边缘压暗，凹陷立体感）-->
+        <circle cx="20" cy="20" r="18.1" fill="url(#paInner)"/>
         <!-- 60 分钟刻度 / 12 整点刻度（JS 生成）-->
         <g id="paMinTicks" stroke="#c2c8d4" stroke-width="0.45" stroke-linecap="round"></g>
         <g id="paHrTicks"  stroke="#7c8595" stroke-width="1.05" stroke-linecap="round"></g>
@@ -509,10 +519,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
     </div>
 
-    <!-- 今日涨幅 TOP 8 -->
+    <!-- 今日涨幅 TOP 7 -->
     <div class="card" style="min-width:0;border-top:3px solid var(--red)">
       <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--red)">
-        📈 今日涨幅 TOP 8
+        📈 今日涨幅 TOP 7
       </div>
       <div id="portTop3Up" style="margin-top:8px">
         <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
@@ -521,10 +531,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
     </div>
 
-    <!-- 今日跌幅 TOP 8 -->
+    <!-- 今日跌幅 TOP 7 -->
     <div class="card" style="min-width:0;border-top:3px solid var(--green)">
       <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--green)">
-        📉 今日跌幅 TOP 8
+        📉 今日跌幅 TOP 7
       </div>
       <div id="portTop3Down" style="margin-top:8px">
         <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
@@ -533,10 +543,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
     </div>
 
-    <!-- 重仓 TOP 8（按仓位高低） -->
+    <!-- 重仓 TOP 7（按仓位高低） -->
     <div class="card" style="min-width:0;border-top:3px solid var(--blue)">
       <div class="klabel" style="display:flex;align-items:center;gap:6px;color:var(--blue)">
-        🏋️ 重仓 TOP 8
+        🏋️ 重仓 TOP 7
       </div>
       <div id="portTop5W" style="margin-top:8px">
         <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0">
@@ -7416,8 +7426,8 @@ function renderPortTop3(){
 
   // 排序
   entries.sort(function(a,b){ return b.pct - a.pct; });
-  var top5 = entries.slice(0, 8);
-  var bot5 = entries.slice(-8).reverse();
+  var top5 = entries.slice(0, 7);
+  var bot5 = entries.slice(-7).reverse();
 
   function mkRow(item, rank, isUp){
     var color  = isUp ? 'var(--red)' : 'var(--green)';
@@ -7569,7 +7579,7 @@ function _renderPortBreadth(){
   el.style.display = 'block';
 }
 
-// ── 重仓 TOP8（与今日涨幅TOP8逻辑一致：依赖 _PORT_PRICES，刷新后展示）──
+// ── 重仓 TOP7（与今日涨幅TOP7逻辑一致：依赖 _PORT_PRICES，刷新后展示）──
 function _renderPortTopW(){
   var wEl = document.getElementById('portTop5W');
   if(!wEl) return;
@@ -7620,7 +7630,7 @@ function _renderPortTopW(){
     var wb = b.w != null ? b.w : -1;
     return wb - wa;
   });
-  var topW = wEntries.slice(0, 8);
+  var topW = wEntries.slice(0, 7);
 
   wEl.innerHTML = topW.map(function(item, i){
     var rank     = i + 1;
