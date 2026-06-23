@@ -7489,9 +7489,12 @@ function renderPortTop3(){
   var bot5 = entries.slice(-7).reverse();
 
   function mkRow(item, rank, isUp){
-    var color  = isUp ? 'var(--red)' : 'var(--green)';
-    var bgBadge= isUp ? '#fee2e2' : '#d1fae5';
-    var bgRow  = isUp ? (rank===1?'#fff5f5':'#fff') : (rank===1?'#f0fdf4':'#fff');
+    // 颜色按个股「真实涨跌」定（A股惯例 涨红/跌绿/平灰），而非按所在榜单——
+    // 这样涨幅榜里若混入下跌股，股价/涨跌幅会正确显示为绿色。
+    var posn   = item.pct > 0, negn = item.pct < 0;
+    var color  = posn ? 'var(--red)' : negn ? 'var(--green)' : 'var(--text2)';
+    var bgBadge= posn ? '#fee2e2' : negn ? '#d1fae5' : '#f1f5f9';
+    var bgRow  = rank===1 ? (posn?'#fff5f5':negn?'#f0fdf4':'#f8fafc') : '#fff';
     var sign   = item.pct >= 0 ? '+' : '';
     var priceStr = item.mkt==='HK'
       ? Number(item.price).toFixed(3)
