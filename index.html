@@ -1254,6 +1254,14 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         <div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">记录持仓后显示行业仓位 TOP3 及其近 10 天变化</div>
       </div>
     </div>
+
+    <!-- TOP3 股票仓位变化 -->
+    <div class="card mt16">
+      <div class="ch"><span class="ct">TOP3 股票仓位变化</span><span class="cbadge">近10天 · 按个股</span></div>
+      <div id="histTopStk" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:4px">
+        <div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">记录持仓后显示个股仓位 TOP3 及其近 10 天变化</div>
+      </div>
+    </div>
   </div>
 
   <!-- ── 二级：单日持仓明细 ── -->
@@ -6074,6 +6082,7 @@ function renderHistTable(){
     }).join('')}</tbody>
   </table>`;
   renderTopIndustries();
+  renderTopStocks();
 }
 
 // 迷你折线 SVG（行业仓位近5天趋势）
@@ -6128,6 +6137,52 @@ function renderTopIndustries(){
       +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:9px">'
         +'<span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:'+color+'1a;color:'+color+';font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center">'+(i+1)+'</span>'
         +'<span style="font-size:13px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+ind+'">'+ind+'</span>'
+      +'</div>'
+      +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">'
+        +'<span style="font-size:23px;font-weight:900;color:'+color+';letter-spacing:-.02em;line-height:1">'+curW.toFixed(1)+'%</span>'
+        +'<span style="font-size:12px;font-weight:800;color:'+chgCol+';white-space:nowrap">'+arrow+' '+Math.abs(chg).toFixed(1)+'%</span>'
+      +'</div>'
+      +_hsSpark(series,color)
+      +'<div style="font-size:10px;color:var(--text2);margin-top:5px">近'+series.length+'天 '+first.toFixed(1)+'% → '+last.toFixed(1)+'%</div>'
+    +'</div>';
+  }).join('');
+}
+
+// 历史持仓底部：TOP3 股票仓位变化（最近一天按个股取 top3，展示近10天趋势与变化；逻辑同行业版）
+function renderTopStocks(){
+  const el=document.getElementById('histTopStk');
+  if(!el) return;
+  const hist=(PORT&&Array.isArray(PORT.history))?PORT.history.slice():[];
+  if(!hist.length){ el.innerHTML='<div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">记录持仓后显示个股仓位 TOP3 及其近 10 天变化</div>'; return; }
+  hist.sort((a,b)=>a.date.localeCompare(b.date));
+  const last10=hist.slice(-10);
+  // 每天按个股(code)汇总仓位，并记录名称
+  const nameByCode={};
+  const dayStk=last10.map(rec=>{
+    const m={};
+    (rec.stocks||[]).forEach(s=>{
+      const code=s.code||s.name||'?';
+      m[code]=(m[code]||0)+(+s.w||0);
+      if(s.name) nameByCode[code]=s.name;
+    });
+    return m;
+  });
+  const lastM=dayStk[dayStk.length-1];
+  const top3=Object.keys(lastM).map(k=>[k,lastM[k]]).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  if(!top3.length){ el.innerHTML='<div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">暂无个股仓位数据</div>'; return; }
+  const colors=['#dc2626','#d97706','#7c3aed'];
+  el.innerHTML=top3.map(function(pair,i){
+    const code=pair[0], curW=pair[1], color=colors[i]||'#64748b';
+    const nm=nameByCode[code]||code;
+    const series=dayStk.map(m=>+((m[code]||0)).toFixed(2));
+    const first=series[0], last=series[series.length-1];
+    const chg=+(last-first).toFixed(1);
+    const chgCol=chg>0?'#dc2626':chg<0?'#16a34a':'#94a3b8';
+    const arrow=chg>0?'▲':chg<0?'▼':'─';
+    return '<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid '+color+';border-radius:10px;padding:12px 14px;min-width:0">'
+      +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:9px">'
+        +'<span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:'+color+'1a;color:'+color+';font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center">'+(i+1)+'</span>'
+        +'<span style="font-size:13px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+nm+'">'+nm+'</span>'
       +'</div>'
       +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">'
         +'<span style="font-size:23px;font-weight:900;color:'+color+';letter-spacing:-.02em;line-height:1">'+curW.toFixed(1)+'%</span>'
