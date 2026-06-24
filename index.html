@@ -37,8 +37,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .rbtn.loading .ricon{animation:spin 1s linear infinite}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 /* Trend Following 标题：在页眉空白处左右轻摆晃悠 */
-@keyframes tfSway{0%{transform:translateX(0) rotate(-1.2deg)}50%{transform:translateX(20px) rotate(1.2deg)}100%{transform:translateX(0) rotate(-1.2deg)}}
-.tf-sway{animation:tfSway 4s ease-in-out infinite;transform-origin:left center;will-change:transform}
+@keyframes tfSway{0%{transform:translateX(0) rotate(-1deg)}50%{transform:translateX(var(--tf-amp,150px)) rotate(1deg)}100%{transform:translateX(0) rotate(-1deg)}}
+.tf-sway{animation:tfSway 6s ease-in-out infinite;transform-origin:left center;will-change:transform}
 @media (prefers-reduced-motion: reduce){ .tf-sway{animation:none} }
 
 /* ── Tabs ── */
@@ -7760,6 +7760,19 @@ document.addEventListener('DOMContentLoaded',()=>{
     tick();
     setInterval(tick, 1000);
   })();
+
+  // Trend Following 晃悠幅度：动态算到「接近模拟时钟」（响应视口宽度，留余量不重叠）
+  function _tfSwayAmp(){
+    const t=document.querySelector('.tf-sway'), c=document.getElementById('portAnalog');
+    if(!t||!c) return;
+    const prev=t.style.animation; t.style.animation='none';      // 暂停动画，测静止位置
+    const tr=t.getBoundingClientRect(), cr=c.getBoundingClientRect();
+    t.style.animation=prev;
+    const amp=Math.max(40, Math.round(cr.left - tr.right - 18)); // 标题右缘逼近时钟，留 18px 余量
+    document.documentElement.style.setProperty('--tf-amp', amp+'px');
+  }
+  _tfSwayAmp();
+  window.addEventListener('resize', _tfSwayAmp);
 
   // 保存雪球 token（供复制命令时使用）
   if (!localStorage.getItem('xq_token')) localStorage.setItem('xq_token','e288b77b0cfc260278ce68a979f01534a8e8b923');
