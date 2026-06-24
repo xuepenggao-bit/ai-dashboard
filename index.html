@@ -5847,7 +5847,8 @@ async function fetchIndexPrices(){
   // 每个 secid 再配合多域名重试，命中即停。
   const _EM_HOSTS = ['https://push2.eastmoney.com','https://push2delay.eastmoney.com'];
   const _emFetchOne = async (idx)=>{
-    if(rowMap[idx.label]) return;  // 已被腾讯填充则跳过
+    // 港股指数：东财 push2 为实时权威（逐秒更新），即使已被腾讯/新浪填充也要拉取并覆盖为最新；其余指数已填则跳过
+    if(idx.region!=='hk' && rowMap[idx.label]) return;
     const allCodes = [idx.code, ...(idx.altCodes||[])].map(c=>c.toUpperCase());
     // 港股指数要求最实时：仅用 push2 实时服务器（push2delay 为延迟行情，不用于港股）
     const hosts = (idx.region === 'hk') ? ['https://push2.eastmoney.com'] : _EM_HOSTS;
@@ -7341,18 +7342,11 @@ async function fetchPortPrices(){
       });
     }
 
-    // ── 处理港股：唯一数据源 = 东财 push2 实时（push2 偶发未返回则同源重试）──────
+    // ── 处理港股：东财 push2 为「实时主源」（实测逐秒更新、零延迟）；新浪 rt_hk 不稳且偶返旧值，降为仅补位 ──
     if(hkStocks.length){
       var hkDone = {};   // code → true，记录已取到价格的港股
 
-      // ⓪ 新浪 rt_hk 实时主源：已并入上方 Promise.all 并行获取，此处直接用结果 sinaRes 填充（被拒则回退东财/腾讯）
-      hkStocks.forEach(function(s){
-        var d = sinaRes && sinaRes['rt_hk'+s.code];
-        if(d){ _PORT_PRICES[s.code] = {price:d.price, pct:d.pct, name:s.name, mkt:s.mkt, w:s.w, src:'sina'}; hkDone[s.code]=true; }
-      });
-      console.log('[HK] 新浪实时', Object.keys(hkDone).length, '/', hkStocks.length, '只');
-
-      // ① 东财 push2（新浪未取到的，仍是实时源）— 复用 Promise.all 的 emJson
+      // ① 东财 push2 实时主源（复用 Promise.all 并行取的 emJson）——优先用东财，避免新浪旧值覆盖实时价
       if(emJson){
         var diff = emJson?.data?.diff || [];
         diff.forEach(function(d){
@@ -7372,8 +7366,16 @@ async function fetchPortPrices(){
             hkDone[matched.code] = true;
           }
         });
-        console.log('[HK] 东方财富 获取', Object.keys(hkDone).length, '/', hkStocks.length, '只');
+        console.log('[HK] 东财实时', Object.keys(hkDone).length, '/', hkStocks.length, '只');
       }
+
+      // ⓪ 新浪 rt_hk 补位：仅填东财未取到的（新浪不稳，不再作主源覆盖东财实时价）
+      hkStocks.forEach(function(s){
+        if(hkDone[s.code]) return;
+        var d = sinaRes && sinaRes['rt_hk'+s.code];
+        if(d){ _PORT_PRICES[s.code] = {price:d.price, pct:d.pct, name:s.name, mkt:s.mkt, w:s.w, src:'sina'}; hkDone[s.code]=true; }
+      });
+      console.log('[HK] 新浪补位后合计', Object.keys(hkDone).length, '/', hkStocks.length, '只');
 
       // ② 东财 push2 重试 1 次（实时源，争取最新数据）
       var hkMissed = hkStocks.filter(function(s){ return !hkDone[s.code]; });
