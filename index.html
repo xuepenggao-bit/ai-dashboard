@@ -40,9 +40,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 /* Trend Following：外层横向慢速左右 sway + 内层纵向较快 sin 波动 → 叠加成波浪路径 */
 @keyframes tfSwayX{0%{transform:translateX(0)}50%{transform:translateX(var(--tf-amp,150px))}100%{transform:translateX(0)}}
 @keyframes tfWaveY{0%{transform:translateY(0) rotate(-1.4deg)}25%{transform:translateY(-7px) rotate(0deg)}50%{transform:translateY(0) rotate(1.4deg)}75%{transform:translateY(7px) rotate(0deg)}100%{transform:translateY(0) rotate(-1.4deg)}}
-.tf-swayx{display:inline-block;animation:tfSwayX 13s ease-in-out infinite;transform-origin:left center;will-change:transform}
+.tf-swayx{display:inline-flex;align-items:center;gap:11px;animation:tfSwayX 13s ease-in-out infinite;transform-origin:left center;will-change:transform}
 .tf-sway{display:inline-block;animation:tfWaveY 2.6s ease-in-out infinite;will-change:transform}
-@media (prefers-reduced-motion: reduce){ .tf-swayx,.tf-sway{animation:none} }
+/* 冲浪者：自身轻快前后律动+上下起伏(领先标题，营造被追逐) */
+@keyframes tfSurf{0%{transform:translateX(0) translateY(0) rotate(-3deg)}25%{transform:translateX(5px) translateY(-3px) rotate(2deg)}50%{transform:translateX(8px) translateY(1px) rotate(4deg)}75%{transform:translateX(5px) translateY(-3px) rotate(2deg)}100%{transform:translateX(0) translateY(0) rotate(-3deg)}}
+.tf-surf{display:inline-block;animation:tfSurf 2.2s ease-in-out infinite;transform-origin:50% 80%;will-change:transform}
+@media (prefers-reduced-motion: reduce){ .tf-swayx,.tf-sway,.tf-surf{animation:none} }
 
 /* ── Tabs ── */
 .tabs{
@@ -402,7 +405,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
                   letter-spacing:.01em;line-height:1.25;white-space:nowrap;
                   background:linear-gradient(105deg,#dc2626 0%,#f43f5e 48%,#fb6f8e 100%);
                   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
-                  text-shadow:0 1px 1px rgba(127,29,29,.08)">Trend Following</div></div>
+                  text-shadow:0 1px 1px rgba(127,29,29,.08)">Trend Following</div><svg class="tf-surf" width="52" height="40" viewBox="0 0 58 44" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;overflow:visible"><defs><linearGradient id="tfSurfG" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#86efac"/><stop offset="0.5" stop-color="#22c55e"/><stop offset="1" stop-color="#15803d"/></linearGradient></defs><path d="M0 33 Q11 26 21 32 Q30 37 40 31 Q49 26 58 32 L58 42 Q47 37 38 40 Q27 44 16 40 Q8 37 0 41 Z" fill="url(#tfSurfG)" opacity="0.45"/><ellipse cx="31" cy="35.5" rx="18" ry="2.7" transform="rotate(-9 31 35.5)" fill="url(#tfSurfG)"/><g stroke="url(#tfSurfG)" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M28 14 L31 23" stroke-width="5.2"/><path d="M31 23 L27 27 L24.5 32.5" stroke-width="3.6"/><path d="M31 23 L35 26.5 L38.5 32" stroke-width="3.6"/><path d="M28.5 16 L23 13 L19 9.5" stroke-width="3"/><path d="M28.5 16 L34.5 17.5 L40.5 16.5" stroke-width="3"/></g><circle cx="27" cy="10" r="3.4" fill="url(#tfSurfG)"/><path d="M24.6 9.2 Q17 5 12.5 8.4 Q18 7.6 24 11.2 Z" fill="url(#tfSurfG)"/></svg></div>
     </div>
 
     <!-- 中：模拟时钟(Apple风) + 数字时钟（绝对居中） -->
@@ -7768,13 +7771,13 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   // Trend Following 晃悠幅度：动态算到「接近模拟时钟」（响应视口宽度，留余量不重叠）
   function _tfSwayAmp(){
-    const wx=document.querySelector('.tf-swayx'), ti=document.querySelector('.tf-sway'), c=document.getElementById('portAnalog');
+    const wx=document.querySelector('.tf-swayx'), ti=document.querySelector('.tf-sway'), su=document.querySelector('.tf-surf'), c=document.getElementById('portAnalog');
     if(!wx||!c) return;
-    const px=wx.style.animation, pi=ti?ti.style.animation:'';
-    wx.style.animation='none'; if(ti) ti.style.animation='none';     // 暂停两层动画，测静止位置
+    const px=wx.style.animation, pi=ti?ti.style.animation:'', ps=su?su.style.animation:'';
+    wx.style.animation='none'; if(ti) ti.style.animation='none'; if(su) su.style.animation='none';   // 暂停三层动画，测静止位置
     const tr=wx.getBoundingClientRect(), cr=c.getBoundingClientRect();
-    wx.style.animation=px; if(ti) ti.style.animation=pi;
-    const amp=Math.max(40, Math.round(cr.left - tr.right - 18));     // 标题右缘逼近时钟，留 18px 余量
+    wx.style.animation=px; if(ti) ti.style.animation=pi; if(su) su.style.animation=ps;
+    const amp=Math.max(40, Math.round(cr.left - tr.right - 26));     // 整组(含冲浪者)右缘逼近时钟，留 26px 余量(吸收冲浪者前后律动)
     document.documentElement.style.setProperty('--tf-amp', amp+'px');
   }
   _tfSwayAmp();
