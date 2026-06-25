@@ -7293,7 +7293,7 @@ async function fetchPortPrices(){
     var _pfFetch = function(url){
       var ctrl = new AbortController();
       var tid  = setTimeout(function(){ ctrl.abort(); }, _PF_TIMEOUT);
-      return fetch(url, {signal: ctrl.signal}).finally(function(){ clearTimeout(tid); });
+      return fetch(url, {signal: ctrl.signal, cache:'no-store'}).finally(function(){ clearTimeout(tid); });
     };
     var results = await Promise.all([
       qUrl  ? _pfFetch(qUrl).then(function(r){ return r.arrayBuffer(); }).then(function(b){ return new TextDecoder('gbk').decode(b); })
@@ -7384,7 +7384,7 @@ async function fetchPortPrices(){
           var hkSids2 = hkMissed.map(function(s){ return '116.'+s.code; }).join(',');
           var emUrl2  = 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids2
                       + '&fltt=2&invt=2&fields=f12,f14,f2,f3,f20,f50,f11&_='+Date.now();
-          var j2    = await fetch(emUrl2).then(function(r){ return r.json(); });
+          var j2    = await fetch(emUrl2, {cache:'no-store'}).then(function(r){ return r.json(); });
           var diff2 = (j2 && j2.data && j2.data.diff) || [];
           diff2.forEach(function(d){
             var price = parseFloat(d.f2), pct = parseFloat(d.f3);
@@ -7409,7 +7409,7 @@ async function fetchPortPrices(){
       if(hkMissed.length){
         try{
           var qUrl2 = 'https://qt.gtimg.cn/q=' + hkMissed.map(function(s){ return 'hk'+s.code; }).join(',') + '&_=' + Date.now();
-          var resp2 = await fetch(qUrl2);
+          var resp2 = await fetch(qUrl2, {cache:'no-store'});
           var txt2  = new TextDecoder('gbk').decode(await resp2.arrayBuffer());
           hkMissed.forEach(function(s){
             var m = txt2.match(new RegExp('v_hk' + s.code + '="([^"]+)"'));
