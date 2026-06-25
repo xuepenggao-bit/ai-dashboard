@@ -6587,10 +6587,10 @@ async function _doFetchBreadth(){
       const bh  = Math.max(2, Math.round((cnt/maxCnt)*MAX_H));
       const r   = Math.min(5, Math.ceil(bh/2));
       return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0">`
-        +`<div style="font-size:8px;font-weight:800;color:${b.lblCol};min-height:12px;text-align:center;line-height:1.2;margin-bottom:1px">${cnt||''}</div>`
+        +`<div style="font-size:11.5px;font-weight:800;color:${b.lblCol};min-height:15px;text-align:center;line-height:1.15;margin-bottom:2px">${cnt||''}</div>`
         +`<div style="display:flex;flex-direction:column;justify-content:flex-end;height:${MAX_H}px;width:88%">`
         +`<div style="width:100%;height:${bh}px;background:${b.barCol};border-radius:${r}px ${r}px 0 0"></div></div>`
-        +`<div style="font-size:7.5px;color:#6b7280;text-align:center;margin-top:3px;white-space:nowrap;line-height:1.2">${b.label}</div></div>`;
+        +`<div style="font-size:9px;color:#6b7280;text-align:center;margin-top:3px;white-space:nowrap;line-height:1.2">${b.label}</div></div>`;
     }).join('');
     const _hm = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
     if(chartEl) chartEl.innerHTML=
