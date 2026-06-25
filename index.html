@@ -7290,6 +7290,8 @@ async function fetchPortPrices(){
 
     if(!aStocks.length && !hkStocks.length){ ts.textContent = '无持仓'; return; }
 
+    // 快照上一时刻成功取到的价格：本轮某只取不到新值时回填，绝不让其消失/清零（用户要求：得不到数据就保持上一时刻不变）
+    var _prevPrices = _PORT_PRICES || {};
     _PORT_PRICES = {};
 
     // ── 并行发起 A股行情 / A股市值 / 港股行情 三路请求 ──────────────
@@ -7437,16 +7439,31 @@ async function fetchPortPrices(){
       console.log('[HK] 港股获取', _hkOk, '/', hkStocks.length, '只（东财实时优先，腾讯兜底）');
     }
 
+    // ── 粘性回填：本轮未取到新值的个股，沿用上一时刻成功值（标记 stale），绝不让其消失/清零 ──
+    // 仅回填仍在当前持仓内的代码，避免已删除标的留下「幽灵」价格。
+    var _curCodes = {};
+    aStocks.concat(hkStocks).forEach(function(s){ _curCodes[s.code] = true; });
+    Object.keys(_prevPrices).forEach(function(code){
+      if(_curCodes[code] && !_PORT_PRICES[code] && _prevPrices[code] && _prevPrices[code].price > 0){
+        var old = _prevPrices[code];
+        old.stale = true;                 // 沿用上一时刻的值
+        _PORT_PRICES[code] = old;
+      }
+    });
+
     var n = Object.keys(_PORT_PRICES).length;
+    var staleN = Object.keys(_PORT_PRICES).filter(function(c){ return _PORT_PRICES[c].stale; }).length;
     var total = aStocks.length + hkStocks.length;
     ts.textContent = n > 0
-      ? (_isTradingNow() ? '实时' : '收盘') + '涨跌幅 ' + n + '只 · '
+      ? (_isTradingNow() ? '实时' : '收盘') + '涨跌幅 ' + n + '只'
+        + (staleN ? '（' + staleN + '只沿用上次）' : '') + ' · '
         + new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})
       : '接口正常，解析到0只（共发送' + total + '只）';
 
   } catch(err) {
-    _PORT_PRICES = {};
-    ts.textContent = '获取失败: ' + (err.message || String(err));
+    // 整轮异常：保留上一时刻成功取到的价格，不清空（_prevPrices 在错误发生于快照前时为 undefined，则维持当前 _PORT_PRICES）
+    _PORT_PRICES = (typeof _prevPrices !== 'undefined' && _prevPrices) ? _prevPrices : _PORT_PRICES;
+    ts.textContent = '刷新失败，沿用上次价格 · ' + new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
     console.error('fetchPortPrices:', err);
   } finally {
     _portSort.col = 'w';
