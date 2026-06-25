@@ -42,10 +42,19 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @keyframes tfWaveY{0%{transform:translateY(0) rotate(-1.4deg)}25%{transform:translateY(-7px) rotate(0deg)}50%{transform:translateY(0) rotate(1.4deg)}75%{transform:translateY(7px) rotate(0deg)}100%{transform:translateY(0) rotate(-1.4deg)}}
 .tf-swayx{display:inline-flex;align-items:center;gap:11px;animation:tfSwayX 13s ease-in-out infinite;transform-origin:left center;will-change:transform}
 .tf-sway{display:inline-block;animation:tfWaveY 2.6s ease-in-out infinite;will-change:transform}
-/* 冲浪者：自身轻快前后律动+上下起伏(领先标题，营造被追逐) */
-@keyframes tfSurf{0%{transform:translateX(0) translateY(0) rotate(-3deg)}25%{transform:translateX(5px) translateY(-3px) rotate(2deg)}50%{transform:translateX(8px) translateY(1px) rotate(4deg)}75%{transform:translateX(5px) translateY(-3px) rotate(2deg)}100%{transform:translateX(0) translateY(0) rotate(-3deg)}}
-.tf-surf{display:inline-block;animation:tfSurf 2.2s ease-in-out infinite;transform-origin:50% 80%;will-change:transform}
-@media (prefers-reduced-motion: reduce){ .tf-swayx,.tf-sway,.tf-surf{animation:none} }
+/* 冲浪者：自身前后律动+上下起伏(领先标题，营造被追逐) */
+@keyframes tfSurf{0%{transform:translateX(0) translateY(0) rotate(-4deg)}25%{transform:translateX(6px) translateY(-4px) rotate(3deg)}50%{transform:translateX(9px) translateY(1px) rotate(6deg)}75%{transform:translateX(5px) translateY(-3px) rotate(2deg)}100%{transform:translateX(0) translateY(0) rotate(-4deg)}}
+.tf-surf{display:inline-block;animation:tfSurf 2s ease-in-out infinite;transform-origin:50% 85%;will-change:transform}
+/* 冲浪细节动感：浪起伏、板俯仰、马尾迎风飘、板尾浪花飞溅 */
+.tf-surf .tf-wave{transform-box:fill-box;transform-origin:center;animation:tfWaveBob 2.4s ease-in-out infinite}
+@keyframes tfWaveBob{0%,100%{transform:translateY(0) scaleY(1);opacity:.34}50%{transform:translateY(1.4px) scaleY(1.14);opacity:.5}}
+.tf-surf .tf-board{transform-box:fill-box;transform-origin:center;animation:tfBoardRock 2s ease-in-out infinite}
+@keyframes tfBoardRock{0%,100%{transform:rotate(-1.6deg)}50%{transform:rotate(2.2deg)}}
+.tf-surf .tf-pony{transform-box:fill-box;transform-origin:100% 50%;animation:tfPony 1.05s ease-in-out infinite}
+@keyframes tfPony{0%,100%{transform:rotate(4deg)}50%{transform:rotate(-11deg)}}
+.tf-surf .tf-spray{transform-box:fill-box;transform-origin:center;animation:tfSpray 1.25s ease-in-out infinite}
+@keyframes tfSpray{0%{transform:translate(2px,1px) scale(.5);opacity:0}35%{opacity:.95}100%{transform:translate(-5px,-5px) scale(1.2);opacity:0}}
+@media (prefers-reduced-motion: reduce){ .tf-swayx,.tf-sway,.tf-surf,.tf-surf .tf-wave,.tf-surf .tf-board,.tf-surf .tf-pony,.tf-surf .tf-spray{animation:none} }
 
 /* ── Tabs ── */
 .tabs{
@@ -405,7 +414,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
                   letter-spacing:.01em;line-height:1.25;white-space:nowrap;
                   background:linear-gradient(105deg,#dc2626 0%,#f43f5e 48%,#fb6f8e 100%);
                   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
-                  text-shadow:0 1px 1px rgba(127,29,29,.08)">Trend Following</div><svg class="tf-surf" width="52" height="40" viewBox="0 0 58 44" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;overflow:visible"><defs><linearGradient id="tfSurfG" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#86efac"/><stop offset="0.5" stop-color="#22c55e"/><stop offset="1" stop-color="#15803d"/></linearGradient></defs><path d="M0 33 Q11 26 21 32 Q30 37 40 31 Q49 26 58 32 L58 42 Q47 37 38 40 Q27 44 16 40 Q8 37 0 41 Z" fill="url(#tfSurfG)" opacity="0.45"/><ellipse cx="31" cy="35.5" rx="18" ry="2.7" transform="rotate(-9 31 35.5)" fill="url(#tfSurfG)"/><g stroke="url(#tfSurfG)" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M28 14 L31 23" stroke-width="5.2"/><path d="M31 23 L27 27 L24.5 32.5" stroke-width="3.6"/><path d="M31 23 L35 26.5 L38.5 32" stroke-width="3.6"/><path d="M28.5 16 L23 13 L19 9.5" stroke-width="3"/><path d="M28.5 16 L34.5 17.5 L40.5 16.5" stroke-width="3"/></g><circle cx="27" cy="10" r="3.4" fill="url(#tfSurfG)"/><path d="M24.6 9.2 Q17 5 12.5 8.4 Q18 7.6 24 11.2 Z" fill="url(#tfSurfG)"/></svg></div>
+                  text-shadow:0 1px 1px rgba(127,29,29,.08)">Trend Following</div><svg class="tf-surf" width="54" height="41" viewBox="0 0 58 44" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;overflow:visible;filter:drop-shadow(0 1.4px 1.3px rgba(161,98,7,.5))"><defs><linearGradient id="tfSurfG" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fde047"/><stop offset="0.5" stop-color="#facc15"/><stop offset="1" stop-color="#eab308"/></linearGradient><linearGradient id="tfSurfBd" x1="0" y1="0" x2="1" y2="0.25"><stop offset="0" stop-color="#fef08a"/><stop offset="0.55" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs><path class="tf-wave" d="M0 33 Q11 26 21 32 Q30 37 40 31 Q49 26 58 32 L58 42 Q47 37 38 40 Q27 44 16 40 Q8 37 0 41 Z" fill="url(#tfSurfG)" opacity="0.4"/><g class="tf-spray" fill="#fde047"><circle cx="13.5" cy="33" r="1.4"/><circle cx="10" cy="31.2" r="1"/><circle cx="15.5" cy="30.4" r="0.9"/><circle cx="11.5" cy="34.6" r="0.7"/></g><g class="tf-board"><ellipse cx="31" cy="35.5" rx="18.5" ry="2.8" transform="rotate(-9 31 35.5)" fill="url(#tfSurfBd)"/></g><g stroke="url(#tfSurfG)" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M28 14 L31 23" stroke-width="5.2"/><path d="M31 23 L27 27 L24.5 32.5" stroke-width="3.6"/><path d="M31 23 L35 26.5 L38.5 32" stroke-width="3.6"/><path d="M28.5 16 L23 13 L19 9.5" stroke-width="3"/><path d="M28.5 16 L34.5 17.5 L40.5 16.5" stroke-width="3"/></g><circle cx="27" cy="10" r="3.4" fill="url(#tfSurfG)"/><path class="tf-pony" d="M24.6 9.2 Q17 5 12.5 8.4 Q18 7.6 24 11.2 Z" fill="url(#tfSurfG)"/></svg></div>
     </div>
 
     <!-- 中：模拟时钟(Apple风) + 数字时钟（绝对居中） -->
