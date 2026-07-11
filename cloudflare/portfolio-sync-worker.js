@@ -46,6 +46,7 @@ async function github(request, env, path, options={}){
     ...options,
     headers: {
       'Accept':'application/vnd.github+json',
+      'User-Agent':'ai-dashboard-sync-worker',
       'Authorization':`Bearer ${env.GITHUB_TOKEN}`,
       'X-GitHub-Api-Version':'2022-11-28',
       ...(options.headers || {}),
