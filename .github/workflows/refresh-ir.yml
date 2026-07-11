@@ -1,8 +1,8 @@
-name: Refresh Portfolio Data (热股榜 + 权重股舆情)
+name: Refresh Portfolio IR Records
 
 on:
   schedule:
-    - cron: '*/15 1-7 * * 1-5'
+    - cron: '30 1 * * 1-5'
   workflow_dispatch:
     inputs:
       reason:
@@ -11,7 +11,7 @@ on:
         default: 'Dashboard manual refresh'
 
 concurrency:
-  group: refresh-xueqiu
+  group: refresh-ir
   cancel-in-progress: false
 
 jobs:
@@ -35,19 +35,17 @@ jobs:
       - name: Install dependencies
         run: pip install requests duckduckgo_search
 
-      - name: Run refresh script
+      - name: Refresh investor-relations records
         env:
-          XQ_COOKIE: ${{ secrets.XQ_COOKIE }}
-          XQ_TOKEN: ${{ secrets.XQ_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python .github/scripts/refresh_data.py
 
-      - name: Commit and push data files
+      - name: Commit and push data file
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/xq_hot.json data/ir_records.json
+          git add data/ir_records.json
           git diff --staged --quiet && echo "No changes." && exit 0
-          git commit -m "chore: refresh data $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git commit -m "chore: refresh IR records $(date -u '+%Y-%m-%d %H:%M UTC')"
           git pull --rebase origin main
           git push

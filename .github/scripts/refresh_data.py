@@ -1,21 +1,11 @@
 #!/usr/bin/env python3
 """
-Refresh Xueqiu hot stocks and portfolio Top5 sentiment data.
-Sentiment pipeline:
-  1. Xueqiu user_timeline (requires XQ_TOKEN; GitHub Actions IPs are bot-detected)
-  2. Yahoo Finance news search (globally accessible, no auth needed; English headlines
-     are handled by GPT-4o-mini which summarises them into Chinese pos/neg points)
-  3. Keyword-based fallback on whatever posts are available
+Refresh portfolio investor-relations records and summaries.
 
-Outputs: data/xq_hot.json  data/xq_sentiment.json
+Outputs: data/ir_records.json
 """
 import os, json, time, datetime, re, requests
-from http.cookies import SimpleCookie
 
-# XQ_COOKIE 应为浏览器请求头中的完整 Cookie 字符串。雪球热榜目前至少需要
-# `u` 与 `xq_a_token` 两个登录态；只传 token 会被接口判定为未登录/过期。
-XQ_COOKIE     = os.environ.get('XQ_COOKIE', '').strip()
-XQ_TOKEN      = os.environ.get('XQ_TOKEN', '').strip()  # 兼容旧配置，建议改用 XQ_COOKIE
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '')
 
 UA_BROWSER = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
@@ -61,7 +51,7 @@ def score_sentiment(text):
     if not text: return 0
     return sum(1 for w in POS_WORDS if w in text) - sum(1 for w in NEG_WORDS if w in text)
 
-def xq_symbol(sk):
+def market_symbol(sk):
     mkt, code = sk.get('mkt',''), str(sk.get('code',''))
     return ('HK' + code.zfill(5)) if mkt == 'HK' else (mkt + code)
 
@@ -82,177 +72,7 @@ def _yahoo_symbol(symbol):
         return f'{m.group(2)}.{suffix}'
     return symbol
 
-# ── Xueqiu Session ───────────────────────────────────────────────
-
-_xq_sess = None
-
-def xq_session():
-    global _xq_sess
-    if _xq_sess:
-        return _xq_sess
-    s = requests.Session()
-    s.headers.update({
-        'User-Agent': UA_BROWSER,
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Language': 'zh-CN,zh;q=0.9',
-        'Referer': 'https://xueqiu.com/',
-        'Origin':  'https://xueqiu.com',
-    })
-    if XQ_COOKIE:
-        # 将 GitHub Secret 中的完整 Cookie 安全拆分后注入 Session；不打印值。
-        parsed = SimpleCookie()
-        parsed.load(XQ_COOKIE)
-        for name, morsel in parsed.items():
-            s.cookies.set(name, morsel.value, domain='.xueqiu.com', path='/')
-        required = {'u', 'xq_a_token'}
-        missing = required - set(parsed.keys())
-        if missing:
-            print(f'  [XQ-Session] XQ_COOKIE 缺少: {", ".join(sorted(missing))}')
-        else:
-            print(f'  [XQ-Session] 已注入完整登录 Cookie（{len(parsed)} 项）')
-    elif XQ_TOKEN:
-        s.cookies.set('xq_a_token',  XQ_TOKEN, domain='.xueqiu.com')
-        s.cookies.set('xq_is_login', '1',       domain='.xueqiu.com')
-        print('  [XQ-Session] 仅注入旧版 XQ_TOKEN；建议配置完整 XQ_COOKIE')
-    else:
-        print('  [XQ-Session] 未配置 XQ_COOKIE，热榜请求会被雪球拒绝')
-    try:
-        # 预热放在 Cookie 注入之后，使雪球返回的 WAF Cookie 与登录态处于同一 Session。
-        r = s.get('https://xueqiu.com/', timeout=12)
-        print(f'  [XQ-Session] 首页预热 HTTP {r.status_code}，'
-              f'cookies: {list(s.cookies.keys())}')
-    except Exception as e:
-        print(f'  [XQ-Session] 首页预热失败: {e}')
-    _xq_sess = s
-    return s
-
-def _is_html(r):
-    ct = r.headers.get('Content-Type', '')
-    return 'html' in ct or r.text.lstrip().startswith('<')
-
-# ── 热股榜（Xueqiu） ────────────────────────────────────────────
-
-def fetch_hot_stocks():
-    """获取雪球「全球 1 小时最热门股票」。返回 (list, error)。"""
-    stamp = int(time.time() * 1000)
-    # hot_stock 是雪球当前页面使用的热榜接口；旧 screener 接口保留作兼容降级。
-    sources = [
-        ('hot_stock',
-         'https://stock.xueqiu.com/v5/stock/hot_stock/list.json'
-         f'?page=1&size=20&order=desc&order_by=value&_={stamp}&type=20&x=0.5'),
-        ('screener',
-         'https://stock.xueqiu.com/v5/stock/screener/quote/list.json'
-         '?market=CN&order=desc&order_by=value&page=1&size=20&type=hot_1h'),
-    ]
-    errors = []
-    for source, url in sources:
-        try:
-            r = xq_session().get(url, timeout=15)
-            print(f'  [热股榜/{source}] HTTP {r.status_code}')
-            r.raise_for_status()
-            data = r.json().get('data', {})
-            raw = data.get('items') or data.get('list') or []
-            if not isinstance(raw, list) or not raw:
-                raise ValueError('返回中没有有效热股列表')
-            hot = [{'rank': i + 1, 'symbol': s.get('symbol', ''), 'name': s.get('name', ''),
-                    'current': s.get('current'), 'percent': s.get('percent'),
-                    'value': s.get('value'), 'chg': s.get('chg')}
-                   for i, s in enumerate(raw)]
-            return hot, ''
-        except Exception as e:
-            msg = f'{source}: {e}'
-            errors.append(msg)
-            print(f'  [热股榜] {msg}')
-    return [], '；'.join(errors)
-
-def write_hot_stocks(ts, hot, error=''):
-    """只在抓到有效列表时覆盖榜单；失败仅记录状态，保护上一份有效数据。"""
-    path = 'data/xq_hot.json'
-    previous = {}
-    try:
-        with open(path, encoding='utf-8') as f:
-            previous = json.load(f)
-    except (OSError, json.JSONDecodeError):
-        pass
-
-    if hot:
-        payload = {
-            'ts': ts, 'last_attempt': ts, 'status': 'ok', 'source': 'xueqiu',
-            'list': hot,
-        }
-        print(f'   ✅ {len(hot)} 只 → {path}')
-    else:
-        # 保留旧的有效列表和其生成时间，避免临时鉴权/网络错误把页面变成空白。
-        payload = previous if isinstance(previous, dict) else {}
-        payload['last_attempt'] = ts
-        payload['status'] = 'error'
-        payload['error'] = (error or '雪球未返回有效热榜')[:500]
-        payload.setdefault('ts', '')
-        payload.setdefault('source', 'xueqiu')
-        payload.setdefault('list', [])
-        print(f'   ⚠️ 未覆盖旧榜单：{payload["error"]}')
-
-    with open(path, 'w', encoding='utf-8') as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
-
-# ── 情感来源 1：Xueqiu 用户时间线 ───────────────────────────────
-
-def _xueqiu_posts(symbol, pages=2):
-    """雪球个股讨论搜索接口 symbol/search/status.json（先 GET 首页取 cookie，
-    本地/常规 IP 可用；配 XQ_TOKEN 登录态可提升数据中心 IP 成功率）。"""
-    posts = []
-    sess = xq_session()
-    for page in range(1, pages + 1):
-        url = ('https://xueqiu.com/query/v1/symbol/search/status.json'
-               f'?count=20&comment=0&symbol={symbol}&hl=0&source=all'
-               f'&sort=time&page={page}&type=11&_={int(time.time()*1000)}')
-        try:
-            r = sess.get(url, timeout=15, headers={'Referer': f'https://xueqiu.com/S/{symbol}'})
-            print(f'  [{symbol}] XQ status 第{page}页 HTTP {r.status_code}')
-            if r.status_code in (400, 401, 403):
-                break
-            r.raise_for_status()
-            if _is_html(r):
-                print(f'  [{symbol}] XQ 返回 HTML（Bot 检测），停止')
-                break
-            lst = r.json().get('list', [])
-            posts.extend(lst)
-            if len(lst) < 15:
-                break
-        except Exception as e:
-            print(f'  [{symbol}] XQ 第{page}页异常: {e}')
-            break
-        if page < pages:
-            time.sleep(0.6)
-    return posts
-
-def _hk_to_ashare(name):
-    """港股名称 → 同名 A 股 symbol（雪球 suggest 接口）。
-    很多港股有同名 A 股且讨论更活跃，故用 A 股代抓。无同名 A 股返回 None。"""
-    if not name:
-        return None
-    try:
-        sess = xq_session()
-        url = 'https://xueqiu.com/query/v1/suggest_stock.json?q=' + requests.utils.quote(name)
-        r = sess.get(url, timeout=10, headers={'Referer': 'https://xueqiu.com/'})
-        if r.status_code != 200 or _is_html(r):
-            return None
-        data = r.json().get('data', [])
-        # 优先精确同名的 A 股（SH/SZ）
-        for it in data:
-            code = it.get('code', '')
-            if code[:2] in ('SH', 'SZ') and it.get('query', '') == name:
-                return code
-        # 放宽：第一个 A 股匹配
-        for it in data:
-            code = it.get('code', '')
-            if code[:2] in ('SH', 'SZ'):
-                return code
-    except Exception as e:
-        print(f'  [{name}] 港股→A股映射失败: {e}')
-    return None
-
-# ── 情感来源 2：Yahoo Finance 新闻（全球可达，无需认证） ─────────
+# ── Yahoo Finance 新闻（全球可达，无需认证） ─────────────────────
 
 def _yahoo_news_posts(symbol, name='', industry=''):
     """
@@ -422,41 +242,26 @@ def _em_news(name, n=10):
         return []
 
 def fetch_stock_posts(symbol, name='', industry=''):
-    """雪球讨论 → 东财个股新闻 → DDG中文新闻 → 公告 → Yahoo（五级降级）。
-    港股用同名 A 股抓数据；雪球在数据中心IP被反爬时，东财新闻为A股舆情主力。"""
-    # 港股 → 同名 A 股 symbol
-    xq_sym = symbol
-    if symbol.startswith('HK') and name:
-        a = _hk_to_ashare(name)
-        if a:
-            print(f'  [{symbol}] 港股→同名A股 {a} 抓数据')
-            xq_sym = a
-
-    # 1. 雪球个股讨论（本地/常规IP可用；GitHub Actions 数据中心IP常被Bot检测拦截）
-    posts = _xueqiu_posts(xq_sym, pages=2)
-    if posts:
-        print(f'  [{symbol}] 雪球获取成功 {len(posts)} 条（symbol={xq_sym}）')
-        return posts
-
-    # 2. 东方财富个股新闻（中文，个股相关，Actions 主力源）
-    print(f'  [{symbol}] 雪球无数据，切换东财个股新闻…')
+    """东财个股新闻 → DDG中文新闻 → 公告 → Yahoo 的无登录态降级链。"""
+    # 1. 东方财富个股新闻（中文，个股相关，Actions 主力源）
+    print(f'  [{symbol}] 获取东方财富个股新闻…')
     posts = _em_news(name)
     if posts:
         return posts
 
-    # 3. DuckDuckGo 中文新闻（兜底；Actions 数据中心IP 可能被限）
+    # 2. DuckDuckGo 中文新闻（兜底；Actions 数据中心IP 可能被限）
     print(f'  [{symbol}] 东财新闻无数据，切换 DDG…')
     posts = _ddg_cn_news(name, industry)
     if posts:
         return posts
 
-    # 4. 公告（东方财富/巨潮）
+    # 3. 公告（东方财富/巨潮）
     print(f'  [{symbol}] DDG无数据，切换公告接口…')
     posts = _cn_announcements(symbol)
     if posts:
         return posts
 
-    # 5. Yahoo Finance（A股几乎无料，最后兜底）
+    # 4. Yahoo Finance（A股几乎无料，最后兜底）
     print(f'  [{symbol}] 公告失败，切换 Yahoo Finance…')
     posts = _yahoo_news_posts(symbol, name=name, industry=industry)
     if posts:
@@ -636,16 +441,8 @@ def main():
     ts = now_ts()
     print(f'\n=== 数据刷新  {ts} ===\n')
 
-    xq_session()  # 预热一次
-
-    # 1. 热股榜
-    print('\n📊 获取雪球热股榜…')
-    hot, hot_error = fetch_hot_stocks()
-    write_hot_stocks(ts, hot, hot_error)
-
-
-    # 2. 权重股投资者关系活动记录表（最近一次 → 全文 → GPT摘要）
-    #    热股榜每 15 分钟刷新；公告/记录表一天难得更新一次，故每天只抓一次：
+    # 权重股投资者关系活动记录表（最近一次 → 全文 → GPT摘要）
+    # 公告/记录表一天难得更新一次，故每天只抓一次：
     #    若已有 ir_records.json 且其日期为今天，则跳过（手动触发可设 FORCE_IR=1 强制刷新）。
     today    = ts[:10]
     force_ir = (os.environ.get('FORCE_IR', '').strip() in ('1', 'true', 'yes')
@@ -657,7 +454,7 @@ def main():
                 _old = json.load(f)
             if _old.get('ts', '')[:10] == today and _old.get('records'):
                 skip_ir = True
-                print(f'\n📋 权重股公告今日已抓取（{_old.get("ts")}），本次跳过，仅刷新热股榜')
+                print(f'\n📋 权重股公告今日已抓取（{_old.get("ts")}），本次跳过')
         except Exception:
             pass
     if skip_ir:
@@ -668,7 +465,7 @@ def main():
     ir_results = []
     if portfolio:
         for sk in get_top_weights(portfolio, 8):
-            sym  = xq_symbol(sk)
+            sym  = market_symbol(sk)
             name = sk.get('name', sym)
             w    = sk.get('w', 0)
             # A股直接用代码；港股映射到同名A股代码

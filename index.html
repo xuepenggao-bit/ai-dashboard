@@ -802,33 +802,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 5: 雪球热股榜 -->
-  <div class="card mb16" style="border-top:3px solid #f97316">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:13px;font-weight:800;color:#374151">🔥 雪球热股榜</span>
-        <span style="font-size:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;
-                     padding:1px 7px;border-radius:10px;font-weight:600">近1小时 Top20</span>
-        <span id="xqHotTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
-      </div>
-      <button onclick="triggerHotViaWorkflow()" id="xqHotBtn" title="触发后台刷新雪球热股榜（约1-2分钟）"
-        style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
-               padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
-    </div>
-    <div id="xqHotGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
-      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px 0">
-        点击「↻」加载雪球热股榜
-      </div>
-    </div>
-    <div id="xqHotGuide" style="display:none;margin-top:10px;padding:10px 12px;background:#fff7ed;border-radius:8px;border:1px solid #fed7aa">
-      <div style="font-size:11px;color:#92400e;margin-bottom:6px;font-weight:600">⏳ 数据尚未生成 · 由 GitHub Actions 自动刷新</div>
-      <div style="font-size:10px;color:#78350f;margin-bottom:8px">每30分钟自动更新（交易时段），或点击下方按钮立即触发刷新（约1分钟后生效）</div>
-      <button onclick="triggerHotRefresh()" id="xqTriggerBtn"
-        style="background:#f97316;color:#fff;border:none;border-radius:5px;padding:4px 12px;
-               cursor:pointer;font-size:11px;font-family:inherit;font-weight:600">⚡ 立即触发刷新</button>
-    </div>
-  </div>
-
   <!-- Sector cards (rendered by JS) -->
   <div id="portSectors"></div>
 
@@ -4765,10 +4738,10 @@ let _macroAutoFetched=false;
 const _TAB_TS={};  // 各标签页最近一次动态刷新的时间戳（用于节流）
 const _TAB_THROTTLE=30000; // 30秒内不重复刷新
 
-// ── 投资组合页“并行刷新”：股价/指数/主力/大盘/热股 同时发起，互不阻塞 ──
+// ── 投资组合页“并行刷新”：股价/指数/主力/大盘/要闻同时发起，互不阻塞 ──
 //    A档优化：原先指数(fetchIndexPrices)与大盘(market stats)串在 fetchPortPrices 的 finally 之后，
 //    必须等持仓股价(含港股回退链)全部跑完才开始；改为各路并行，总时长 = 最长的一条，不再累加。
-let _rpaHeavyTs = 0;   // 上次刷新「重活」(主力榜/热股/大盘统计/要闻)的时间戳
+let _rpaHeavyTs = 0;   // 上次刷新「重活」(主力榜/大盘统计/要闻)的时间戳
 // force=true：手动点刷新/切标签 → 全部刷新；force=false（自动刷新定时器）→ 仅价格+指数每轮刷，
 // 重活 ≥45s 才刷一次。这样默认 10s 自动刷新时，每轮只做轻量取价(港股实时)，不会反复重拉全市场。
 function refreshPortAll(force){
@@ -4778,7 +4751,6 @@ function refreshPortAll(force){
   if(force || now-_rpaHeavyTs >= 45000){
     _rpaHeavyTs = now;
     try{ fetchMainFlow();   }catch(e){ console.warn('[refreshPortAll] mainFlow', e); }
-    try{ fetchXqHot();      }catch(e){ console.warn('[refreshPortAll] xqHot', e); }
     // 涨跌统计/成交分析较重（分页拉全市场），延后 600ms：避开与股价抢东财连接
     setTimeout(function(){ try{ fetchMarketStats(); }catch(e){ console.warn('[refreshPortAll] marketStats', e); } }, 600);  // 自带 _mktStatsFetching 去重
     setTimeout(function(){ try{ fetchNews(); }catch(e){ console.warn('[refreshPortAll] news', e); } }, 900);
@@ -6927,34 +6899,9 @@ var _mfAutoRetried  = false;
 
 // ── 工具函数 ───────────────────────────────────────────────────────
 
-// 根据 portfolio sk 对象拼接雪球 symbol（如 SH600519 / HK00700）
-function _xqSym(sk) {
-  if (sk.mkt === 'HK') return 'HK' + String(sk.code).padStart(5, '0');
-  return (sk.mkt || '') + sk.code;
-}
-
 // HTML 特殊字符转义
 function _escH(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// 触发 GitHub Actions workflow_dispatch（手动刷新数据）
-async function _triggerGhAction() {
-  const owner = 'xuepenggao-bit', repo = 'ai-dashboard';
-  const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/refresh-xueqiu.yml/dispatches`;
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `token ${PORT_GH_TOKEN}`,
-      'Accept':        'application/vnd.github+json',
-      'Content-Type':  'application/json',
-    },
-    body: JSON.stringify({ ref: 'main', inputs: { reason: 'Dashboard manual refresh' } }),
-  });
-  if (!r.ok && r.status !== 204) {
-    const txt = await r.text().catch(() => '');
-    throw new Error(`GitHub API ${r.status}: ${txt.slice(0, 120)}`);
-  }
 }
 
 // ── X 关注意见领袖 ────────────────────────────────────────────────
@@ -7062,104 +7009,6 @@ async function fetchKolSummary(force) {
   if (btn) { btn.disabled = false; btn.textContent = '↻'; }
 }
 
-// ── 雪球热股榜 ────────────────────────────────────────────────
-
-function _renderXqHotGrid(data) {
-  const grid  = document.getElementById('xqHotGrid');
-  const tsEl  = document.getElementById('xqHotTs');
-  const guide = document.getElementById('xqHotGuide');
-  if (!grid) return;
-  if (guide) guide.style.display = 'none';
-
-  const list = data.list || [];
-  if (!list.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px">暂无数据</div>';
-    return;
-  }
-
-  grid.innerHTML = list.map(s => {
-    const up  = s.percent >= 0;
-    const pct = (up ? '+' : '') + Number(s.percent).toFixed(2) + '%';
-    const pctColor = up ? '#dc2626' : '#16a34a';
-    const bg     = up ? '#fff5f5' : '#f0fdf4';
-    const border = up ? '#fecaca' : '#bbf7d0';
-    const name   = (s.name || '').slice(0, 5);
-    const code   = (s.symbol || '').replace(/^[A-Z]+/, '');
-    const hot    = s.value || 0;
-    // 东方财富个股页链接：SH/SZ/BJ → /sh600519.html，HK → /hk/00700.html
-    const _m = String(s.symbol||'').match(/^([A-Z]+)(\d+)$/);
-    let url = '';
-    if(_m){ const mk=_m[1].toUpperCase(), c=_m[2];
-      url = mk==='HK' ? `https://quote.eastmoney.com/hk/${c}.html`
-          : (mk==='SH'||mk==='SZ'||mk==='BJ') ? `https://quote.eastmoney.com/${mk.toLowerCase()}${c}.html` : ''; }
-    const nameH = url
-      ? `<a href="${url}" target="_blank" rel="noopener" title="${name} 东方财富行情"
-            style="font-size:12px;font-weight:700;color:#1d4ed8;text-decoration:none;display:block;
-                   white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</a>`
-      : `<div style="font-size:12px;font-weight:700;color:#1e293b;
-                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>`;
-    return `<div style="display:flex;align-items:center;gap:4px;padding:5px 6px;
-                 border-radius:6px;background:${bg};border:1px solid ${border};min-width:0">
-      <span style="font-size:10px;color:#9ca3af;width:18px;text-align:right;
-                   flex-shrink:0;font-weight:600">${s.rank}</span>
-      <div style="flex:1;min-width:0;overflow:hidden">
-        ${nameH}
-        <div style="font-size:9px;color:#94a3b8">${code}</div>
-      </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div style="font-size:11px;font-weight:700;color:${pctColor}">${pct}</div>
-        <div style="font-size:9px;color:#d1d5db">热${hot}</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  const t = new Date();
-  const hm = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
-  if (tsEl) {
-    const stale = data.status === 'error';
-    tsEl.textContent = stale ? `${data.ts || hm} 上次有效 · 刷新失败` : `${data.ts || hm} 更新`;
-    tsEl.title = stale ? (data.error || '雪球暂未返回有效数据') : '';
-  }
-}
-
-// 从 GitHub Pages 同源 data/xq_hot.json 加载热股榜
-async function fetchXqHot() {
-  const btn   = document.getElementById('xqHotBtn');
-  const grid  = document.getElementById('xqHotGrid');
-  const guide = document.getElementById('xqHotGuide');
-  if (btn)  { btn.disabled = true; btn.textContent = '…'; }
-  if (guide) guide.style.display = 'none';
-  if (grid)  grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px">加载中…</div>';
-
-  try {
-    const r = await fetch('data/xq_hot.json?_=' + Date.now(), { cache: 'no-store' });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const data = await r.json();
-    if (!data.list || !data.list.length) throw new Error('empty');
-    _renderXqHotGrid(data);
-    console.log('[XqHot] 同源 JSON 加载成功，', data.list.length, '只');
-  } catch(e) {
-    console.warn('[XqHot] 加载失败:', e.message);
-    if (grid)  grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:18px">暂无数据，可点击「⚡ 立即触发刷新」生成</div>';
-    if (guide) guide.style.display = 'block';
-  }
-  if (btn) { btn.disabled = false; btn.textContent = '↻'; }
-}
-
-// 触发 GitHub Actions 刷新热股榜数据（↻ 引导区 button）
-async function triggerHotRefresh() {
-  const btn = document.getElementById('xqTriggerBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ 触发中…'; }
-  try {
-    await _triggerGhAction();
-    if (btn) { btn.textContent = '✅ 已触发！约1分钟后刷新页面'; btn.disabled = false; }
-    setTimeout(() => fetchXqHot(), 70000);
-  } catch(e) {
-    console.warn('[TriggerAction] 热股触发失败:', e.message);
-    if (btn) { btn.textContent = '❌ 触发失败（检查 token）'; btn.disabled = false; }
-  }
-}
-
 const _sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // 点 ↻：触发后台 GitHub 工作流，轮询数据文件时间戳直到更新，自动呈现新数据。
@@ -7236,19 +7085,6 @@ function triggerKolRefresh(){
   });
 }
 
-// 雪球热股榜 ↻：触发 refresh-xueqiu.yml
-function triggerHotViaWorkflow(){
-  _refreshViaWorkflow({
-    file:     'refresh-xueqiu.yml',
-    dataUrl:  'data/xq_hot.json',
-    tsField:  'ts',
-    statusEl: document.getElementById('xqHotTs'),
-    btn:      document.getElementById('xqHotBtn'),
-    render:   _renderXqHotGrid,
-    validate: j => j.list && j.list.length
-  });
-}
-
 // ── 权重股公告（后端抓投资者关系活动记录表+GPT摘要，前端读 ir_records.json）──
 // 标题为超链接，点击打开 ir_detail.html 展示完整记录表全文。
 function _escSent(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -7284,7 +7120,7 @@ function _renderIR(data){
   }).join('');
 }
 
-async function fetchXqSentiment(){
+async function fetchIrRecords(){
   const grid = document.getElementById('sentGrid');
   try{
     const r = await fetch('data/ir_records.json?_=' + Date.now(), { cache:'no-store' });
@@ -7299,10 +7135,10 @@ async function fetchXqSentiment(){
   }
 }
 
-// ↻：触发后台抓投资者关系记录表+GPT摘要（refresh-xueqiu.yml），轮询后呈现
+// ↻：触发后台抓投资者关系记录表+GPT摘要（refresh-ir.yml），轮询后呈现
 function triggerSentimentRefresh(){
   _refreshViaWorkflow({
-    file:     'refresh-xueqiu.yml',
+    file:     'refresh-ir.yml',
     dataUrl:  'data/ir_records.json',
     tsField:  'ts',
     statusEl: document.getElementById('sentTs'),
@@ -7971,7 +7807,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   try{ _arPick(10, '10秒'); }catch(e){ console.warn('[default auto-refresh]', e); }
   fetchMainFlow();      // 初始化时立即拉取主力净流入榜
   fetchMarketBreadth(); // 市场涨跌统计（主要用腾讯 API，极少命中东方财富限流）
-  fetchXqHot();       // 雪球热股榜（近1小时 Top20）
   fetchNews();        // 财经要闻 TOP5（前端实时）+ 7×24 快讯（后台 JSON）
   setInterval(function(){ try{ fetchNews(true); }catch(e){} }, 180000);  // 每 3 分钟定时刷新要闻/快讯（独立于股价刷新）
   fetchKolSummary();  // X关注意见领袖：从 data/twitter_kol_summary.json 加载
