@@ -10,8 +10,12 @@ Sentiment pipeline:
 Outputs: data/xq_hot.json  data/xq_sentiment.json
 """
 import os, json, time, datetime, re, requests
+from http.cookies import SimpleCookie
 
-XQ_TOKEN     = os.environ.get('XQ_TOKEN', '')
+# XQ_COOKIE 应为浏览器请求头中的完整 Cookie 字符串。雪球热榜目前至少需要
+# `u` 与 `xq_a_token` 两个登录态；只传 token 会被接口判定为未登录/过期。
+XQ_COOKIE     = os.environ.get('XQ_COOKIE', '').strip()
+XQ_TOKEN      = os.environ.get('XQ_TOKEN', '').strip()  # 兼容旧配置，建议改用 XQ_COOKIE
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '')
 
 UA_BROWSER = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
@@ -78,7 +82,7 @@ def _yahoo_symbol(symbol):
         return f'{m.group(2)}.{suffix}'
     return symbol
 
-# ── Xueqiu Session（预热首页，绕过 bot 检测） ────────────────────
+# ── Xueqiu Session ───────────────────────────────────────────────
 
 _xq_sess = None
 
@@ -94,16 +98,31 @@ def xq_session():
         'Referer': 'https://xueqiu.com/',
         'Origin':  'https://xueqiu.com',
     })
+    if XQ_COOKIE:
+        # 将 GitHub Secret 中的完整 Cookie 安全拆分后注入 Session；不打印值。
+        parsed = SimpleCookie()
+        parsed.load(XQ_COOKIE)
+        for name, morsel in parsed.items():
+            s.cookies.set(name, morsel.value, domain='.xueqiu.com', path='/')
+        required = {'u', 'xq_a_token'}
+        missing = required - set(parsed.keys())
+        if missing:
+            print(f'  [XQ-Session] XQ_COOKIE 缺少: {", ".join(sorted(missing))}')
+        else:
+            print(f'  [XQ-Session] 已注入完整登录 Cookie（{len(parsed)} 项）')
+    elif XQ_TOKEN:
+        s.cookies.set('xq_a_token',  XQ_TOKEN, domain='.xueqiu.com')
+        s.cookies.set('xq_is_login', '1',       domain='.xueqiu.com')
+        print('  [XQ-Session] 仅注入旧版 XQ_TOKEN；建议配置完整 XQ_COOKIE')
+    else:
+        print('  [XQ-Session] 未配置 XQ_COOKIE，热榜请求会被雪球拒绝')
     try:
+        # 预热放在 Cookie 注入之后，使雪球返回的 WAF Cookie 与登录态处于同一 Session。
         r = s.get('https://xueqiu.com/', timeout=12)
         print(f'  [XQ-Session] 首页预热 HTTP {r.status_code}，'
               f'cookies: {list(s.cookies.keys())}')
     except Exception as e:
         print(f'  [XQ-Session] 首页预热失败: {e}')
-    if XQ_TOKEN:
-        s.cookies.set('xq_a_token',  XQ_TOKEN, domain='.xueqiu.com')
-        s.cookies.set('xq_is_login', '1',       domain='.xueqiu.com')
-        print('  [XQ-Session] 已注入 xq_a_token')
     _xq_sess = s
     return s
 
@@ -114,19 +133,67 @@ def _is_html(r):
 # ── 热股榜（Xueqiu） ────────────────────────────────────────────
 
 def fetch_hot_stocks():
-    url = ('https://stock.xueqiu.com/v5/stock/screener/quote/list.json'
-           '?market=CN&order=desc&order_by=value&page=1&size=20&type=hot_1h')
+    """获取雪球「全球 1 小时最热门股票」。返回 (list, error)。"""
+    stamp = int(time.time() * 1000)
+    # hot_stock 是雪球当前页面使用的热榜接口；旧 screener 接口保留作兼容降级。
+    sources = [
+        ('hot_stock',
+         'https://stock.xueqiu.com/v5/stock/hot_stock/list.json'
+         f'?page=1&size=20&order=desc&order_by=value&_={stamp}&type=20&x=0.5'),
+        ('screener',
+         'https://stock.xueqiu.com/v5/stock/screener/quote/list.json'
+         '?market=CN&order=desc&order_by=value&page=1&size=20&type=hot_1h'),
+    ]
+    errors = []
+    for source, url in sources:
+        try:
+            r = xq_session().get(url, timeout=15)
+            print(f'  [热股榜/{source}] HTTP {r.status_code}')
+            r.raise_for_status()
+            data = r.json().get('data', {})
+            raw = data.get('items') or data.get('list') or []
+            if not isinstance(raw, list) or not raw:
+                raise ValueError('返回中没有有效热股列表')
+            hot = [{'rank': i + 1, 'symbol': s.get('symbol', ''), 'name': s.get('name', ''),
+                    'current': s.get('current'), 'percent': s.get('percent'),
+                    'value': s.get('value'), 'chg': s.get('chg')}
+                   for i, s in enumerate(raw)]
+            return hot, ''
+        except Exception as e:
+            msg = f'{source}: {e}'
+            errors.append(msg)
+            print(f'  [热股榜] {msg}')
+    return [], '；'.join(errors)
+
+def write_hot_stocks(ts, hot, error=''):
+    """只在抓到有效列表时覆盖榜单；失败仅记录状态，保护上一份有效数据。"""
+    path = 'data/xq_hot.json'
+    previous = {}
     try:
-        r = xq_session().get(url, timeout=15)
-        print(f'  [热股榜] HTTP {r.status_code}')
-        r.raise_for_status()
-        raw = r.json().get('data', {}).get('list', [])
-        return [{'rank':i+1,'symbol':s.get('symbol',''),'name':s.get('name',''),
-                 'current':s.get('current'),'percent':s.get('percent'),
-                 'value':s.get('value'),'chg':s.get('chg')} for i,s in enumerate(raw)]
-    except Exception as e:
-        print(f'  [热股榜] 失败: {e}')
-        return []
+        with open(path, encoding='utf-8') as f:
+            previous = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        pass
+
+    if hot:
+        payload = {
+            'ts': ts, 'last_attempt': ts, 'status': 'ok', 'source': 'xueqiu',
+            'list': hot,
+        }
+        print(f'   ✅ {len(hot)} 只 → {path}')
+    else:
+        # 保留旧的有效列表和其生成时间，避免临时鉴权/网络错误把页面变成空白。
+        payload = previous if isinstance(previous, dict) else {}
+        payload['last_attempt'] = ts
+        payload['status'] = 'error'
+        payload['error'] = (error or '雪球未返回有效热榜')[:500]
+        payload.setdefault('ts', '')
+        payload.setdefault('source', 'xueqiu')
+        payload.setdefault('list', [])
+        print(f'   ⚠️ 未覆盖旧榜单：{payload["error"]}')
+
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
 
 # ── 情感来源 1：Xueqiu 用户时间线 ───────────────────────────────
 
@@ -573,10 +640,8 @@ def main():
 
     # 1. 热股榜
     print('\n📊 获取雪球热股榜…')
-    hot = fetch_hot_stocks()
-    with open('data/xq_hot.json','w',encoding='utf-8') as f:
-        json.dump({'ts':ts,'list':hot}, f, ensure_ascii=False, indent=2)
-    print(f'   ✅ {len(hot)} 只 → data/xq_hot.json')
+    hot, hot_error = fetch_hot_stocks()
+    write_hot_stocks(ts, hot, hot_error)
 
 
     # 2. 权重股投资者关系活动记录表（最近一次 → 全文 → GPT摘要）

@@ -3128,6 +3128,8 @@ let _PORT_PRICES = {};
 let _pfInflight = false;   // fetchPortPrices 进行中标志：防止上一轮未完又触发（自动刷新高频时避免重叠/快照竞争）
 let _portSort = {col:'w', dir:1};
 let _portDirty = false;   // 有本地修改未同步到云端时为 true
+let _portRevision = 0;    // 本地组合版本；旧的异步同步完成时不得覆盖新版本状态
+let _portSyncQueue = Promise.resolve(); // GitHub Contents API 只允许按顺序写，避免旧请求回写
 
 function togglePortSort(col){
   // 首次点击某列：降序（dir=1，即 b-a，由高到低）
@@ -3148,6 +3150,37 @@ function _b64Encode(str){
 function _setSyncTs(msg, color){
   const el = document.getElementById('portSyncTs');
   if(el){ el.textContent = msg; el.style.color = color || 'var(--text2)'; }
+}
+
+function _clonePortfolio(data){
+  return JSON.parse(JSON.stringify(data));
+}
+
+function _portGhHeaders(){
+  return {
+    'Authorization': `token ${PORT_GH_TOKEN}`,
+    'Accept': 'application/vnd.github.v3+json',
+    'Cache-Control': 'no-cache',
+  };
+}
+
+function _decodeGhContent(content){
+  const bytes = Uint8Array.from(atob((content||'').replace(/\n/g,'')), c => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder('utf-8').decode(bytes));
+}
+
+const _portSleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+/* GitHub API 是仓位的权威来源。带完整 cache buster + no-store，避免 Safari 返回旧 SHA。 */
+async function _fetchPortfolioRemote(){
+  const r = await fetch(
+    `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}?_=${Date.now()}`,
+    {headers:_portGhHeaders(), cache:'no-store'}
+  );
+  if(r.status===404) return {data:null, sha:null};
+  if(!r.ok) throw new Error(`读取云端失败（HTTP ${r.status}）`);
+  const j = await r.json();
+  return {data:_decodeGhContent(j.content), sha:j.sha};
 }
 
 /* 计算数据"丰富度"：非 null 仓位的股票数（越多越好） */
@@ -3175,49 +3208,81 @@ function _mergeRemoteFields(local, remote){
   });
 }
 
-/* 将组合数据写回 GitHub（后台静默执行） */
-async function portSaveRemote(){
-  try{
-    _setSyncTs('☁️ 同步中…', '#f59e0b');
-    const headers = {
-      'Authorization': `token ${PORT_GH_TOKEN}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json'
-    };
-    // 获取当前 SHA（文件不存在时忽略）
-    let sha = null;
+/*
+ * 将一个不可变快照写入 GitHub。
+ * - 所有写入进入队列，杜绝“旧请求后完成而覆盖新仓位”。
+ * - 每次写入前取最新 SHA；409 冲突时回读并重试。
+ * - 写入后必须回读验证 _savedAt，不能仅凭 HTTP 200 宣称成功。
+ */
+function portSaveRemote(snapshot=_clonePortfolio(PORT), revision=_portRevision){
+  const task = async()=>{
     try{
-      const meta = await fetch(`https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`, {headers});
-      if(meta.ok){ const j = await meta.json(); sha = j.sha; }
-    }catch(_){}
-    // 写入
-    const body = {
-      message: 'Update portfolio data',
-      content: _b64Encode(JSON.stringify(PORT, null, 2)),
-      ...(sha ? {sha} : {})
-    };
-    const res = await fetch(`https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,{
-      method:'PUT', headers, body: JSON.stringify(body)
-    });
-    if(res.ok){
-      _portDirty = false;
-      const savedTs = PORT._savedAt ? new Date(PORT._savedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
-      _setSyncTs('☁️ 已同步 · 数据时间 '+savedTs, '#10b981');
-      console.log('[portSync] 成功写入 GitHub，_savedAt=', PORT._savedAt);
-    } else {
-      const err = await res.json().catch(()=>({}));
-      throw new Error(err.message || res.status);
+      _setSyncTs('☁️ 同步中…', '#f59e0b');
+      const headers = {..._portGhHeaders(), 'Content-Type':'application/json'};
+      let saved = false;
+
+      for(let attempt=0; attempt<3 && !saved; attempt++){
+        const remote = await _fetchPortfolioRemote();
+        const remoteTs = remote.data?._savedAt || 0;
+        const localTs  = snapshot?._savedAt || 0;
+        // 另一台设备已写入更晚版本时，不悄悄覆盖它；保留本地并明确报错。
+        if(remote.data && remoteTs > localTs){
+          throw new Error('云端已有更新版本；已保留本地改动，请重新确认后再同步');
+        }
+        // 保留远端新增的补充字段，避免旧浏览器覆盖行业标签等数据。
+        if(remote.data) _mergeRemoteFields(snapshot, remote.data);
+        const body = {
+          message: 'Update portfolio data', branch:'main',
+          content: _b64Encode(JSON.stringify(snapshot, null, 2)),
+          ...(remote.sha ? {sha:remote.sha} : {})
+        };
+        const res = await fetch(`https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,{
+          method:'PUT', headers, cache:'no-store', body:JSON.stringify(body)
+        });
+        if(res.status===409){
+          await _portSleep(250 * (attempt + 1));
+          continue; // SHA 已变化：下一轮重新读取权威版本后再决定是否写入
+        }
+        if(!res.ok){
+          const err = await res.json().catch(()=>({}));
+          throw new Error(err.message || `HTTP ${res.status}`);
+        }
+
+        // GitHub Contents API 写入后回读确认，避免 Safari/网络缓存导致“假成功”。
+        for(let check=0; check<3; check++){
+          const confirmed = await _fetchPortfolioRemote();
+          if(confirmed.data?._savedAt === localTs){ saved = true; break; }
+          await _portSleep(300 * (check + 1));
+        }
+      }
+      if(!saved) throw new Error('写入后未能确认最新版本，请稍后重试');
+
+      // 仅当这个快照仍是当前版本时，才清除“未同步”标志并更新成功提示。
+      if(revision === _portRevision && PORT?._savedAt === snapshot?._savedAt){
+        _portDirty = false;
+        const savedTs = new Date(snapshot._savedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        _setSyncTs('☁️ 已同步 · 数据时间 '+savedTs, '#10b981');
+      } else {
+        _portDirty = true;
+        _setSyncTs('📝 已有更新版本待同步', '#f59e0b');
+      }
+      console.log('[portSync] 已确认 GitHub 版本，_savedAt=', snapshot._savedAt);
+    }catch(e){
+      console.error('portSaveRemote:', e);
+      if(revision === _portRevision) _setSyncTs('⚠️ 云端同步失败：' + e.message, '#ef4444');
     }
-  }catch(e){
-    console.error('portSaveRemote:', e);
-    _setSyncTs('⚠️ 云端同步失败：' + e.message, '#ef4444');
-  }
+  };
+  const queued = _portSyncQueue.then(task, task);
+  // 队列本身始终恢复，后续同步不能被一次失败永久阻塞。
+  _portSyncQueue = queued.catch(()=>{});
+  return queued;
 }
 
 /* 只写本地，标记待同步；需用户手动点击"同步到云端"才推送 */
 function portSave(){
   PORT._savedAt = Date.now();   // 写入修改时间戳，供冲突解决使用
   localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
+  _portRevision++;
   _portDirty = true;
   _setSyncTs('📝 有改动未同步，点击"同步到云端"', '#f59e0b');
 }
@@ -3261,37 +3326,38 @@ async function portInit(){
     if(s) localData = JSON.parse(s);
   }catch(e){}
 
-  // ③ 读取云端数据：优先 GitHub Pages 同源 raw（走 CDN，300ms~1s，快且稳；分钟级缓存键命中缓存、
-  //    新鲜度≤1分钟）。同源拿不到再回退 api.github.com。这是历史持仓载入提速的关键。
+  // ③ 读取云端数据：GitHub API 为权威来源。Pages CDN 只在 API 不可达时作降级，
+  //    不能再用 CDN 缓存决定“谁的版本更新”，否则 Safari 可能把旧仓位回写回来。
   let remoteData = null;
   let remoteOk   = false;  // true = 云端可达（无论文件是否存在）
+  let remoteAuthoritative = false;
   try{
     const ctrl = new AbortController();
     const tid  = setTimeout(()=>ctrl.abort(), 8000);
     try{
-      const r = await fetch(`${PORT_GH_FILE}?v=${Math.floor(Date.now()/60000)}`, {signal: ctrl.signal});
-      if(r.ok){ remoteOk = true; remoteData = await r.json(); }
-      else if(r.status === 404){ remoteOk = true; }
+      const r = await fetch(
+        `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}?_=${Date.now()}`,
+        {headers:_portGhHeaders(), cache:'no-store', signal:ctrl.signal}
+      );
+      if(r.ok){
+        const j = await r.json();
+        remoteOk = true; remoteAuthoritative = true; remoteData = _decodeGhContent(j.content);
+      } else if(r.status === 404){ remoteOk = true; remoteAuthoritative = true; }
     }finally{ clearTimeout(tid); }
-  }catch(e){ console.warn('portLoadRemote(pages):', e.name==='AbortError'?'同源超时':e); }
+  }catch(e){ console.warn('portLoadRemote(api):', e.name==='AbortError'?'API超时':e); }
   if(!remoteData){
     try{
-      const ghHeaders = {'Authorization': `token ${PORT_GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json'};
       const ctrl = new AbortController();
       const tid  = setTimeout(()=>ctrl.abort(), 8000);
       try{
-        const metaResp = await fetch(
-          `https://api.github.com/repos/${PORT_GH_REPO}/contents/${PORT_GH_FILE}`,
-          {headers: ghHeaders, cache:'no-store', signal: ctrl.signal}
-        );
-        if(metaResp.ok){
-          remoteOk = true;
-          const metaJson = await metaResp.json();
-          const bytes = Uint8Array.from(atob(metaJson.content.replace(/\n/g,'')), c => c.charCodeAt(0));
-          remoteData  = JSON.parse(new TextDecoder('utf-8').decode(bytes));
-        } else if(metaResp.status === 404){ remoteOk = true; }
+        const pageResp = await fetch(`${PORT_GH_FILE}?_=${Date.now()}`,
+          {cache:'no-store', signal:ctrl.signal, headers:{'Cache-Control':'no-cache'}});
+        if(pageResp.ok){
+          remoteData = await pageResp.json();
+          remoteAuthoritative = false;
+        }
       }finally{ clearTimeout(tid); }
-    }catch(e){ console.warn('portLoadRemote(api):', e.name==='AbortError'?'API超时':e); }
+    }catch(e){ console.warn('portLoadRemote(pages):', e.name==='AbortError'?'同源超时':e); }
   }
 
   // ④ GitHub 完成后重新读本地（防竞争：用户可能在等待期间编辑了行业等字段）
@@ -3308,13 +3374,16 @@ async function portInit(){
   const rt = remoteData?._savedAt || 0;  // 远端修改时间戳（ms）
   const ts = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
 
-  // 远端胜出条件：有数据 AND (远端更新 OR 同时间戳且数量≥本地)
-  const remoteWins = remoteData && rw >= 0 && (rt > lt || (rt === lt && rw >= lw));
+  // 远端胜出条件：权威 API 的版本可在同时间戳时取胜；CDN 降级数据只能在时间明确更晚时取胜。
+  const remoteWins = remoteData && rw >= 0 &&
+    (rt > lt || (remoteAuthoritative && rt === lt && rw >= lw));
 
   if(remoteWins){
     // 远端更新或相等 → 使用远端，同步本地缓存，重新渲染
     PORT = remoteData;
     localStorage.setItem(PORT_KEY, JSON.stringify(remoteData));
+    _portRevision++; // 使任何在此之前创建的旧同步任务失效，不能清除当前状态
+    _portDirty = false;
     _setSyncTs('☁️ 已从云端加载 ' + ts, '#10b981');
     renderPortfolio();
     updateRiskDashboard();
@@ -3336,7 +3405,8 @@ async function portInit(){
       _setSyncTs(remoteData
         ? '☁️ 本地数据更新，正在同步至云端…'
         : '☁️ 云端无数据，正在上传本地备份', '#f59e0b');
-      portSaveRemote();
+      _portDirty = true;
+      portSaveRemote(_clonePortfolio(PORT), _portRevision);
     } else {
       // GitHub 不可达（超时/离线）→ 不推送，只提示
       _setSyncTs('☁️ 云端暂时无法访问，已使用本地缓存', '#f59e0b');
@@ -3361,8 +3431,12 @@ async function portForcePush(){
   // 用户主动同步 → 强制刷新时间戳，确保此版本在任何冲突解决中优先
   PORT._savedAt = Date.now();
   localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
+  _portRevision++;
+  _portDirty = true;
+  const snapshot = _clonePortfolio(PORT);
+  const revision = _portRevision;
   _setSyncTs('☁️ 强制同步中…', '#f59e0b');
-  await portSaveRemote();
+  await portSaveRemote(snapshot, revision);
 }
 
 function renderPortfolio(){
@@ -7041,7 +7115,11 @@ function _renderXqHotGrid(data) {
 
   const t = new Date();
   const hm = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
-  if (tsEl) tsEl.textContent = (data.ts || hm) + ' 更新';
+  if (tsEl) {
+    const stale = data.status === 'error';
+    tsEl.textContent = stale ? `${data.ts || hm} 上次有效 · 刷新失败` : `${data.ts || hm} 更新`;
+    tsEl.title = stale ? (data.error || '雪球暂未返回有效数据') : '';
+  }
 }
 
 // 从 GitHub Pages 同源 data/xq_hot.json 加载热股榜
@@ -7887,8 +7965,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   _tfSwayAmp();
   window.addEventListener('resize', _tfSwayAmp);
 
-  // 保存雪球 token（供复制命令时使用）
-  if (!localStorage.getItem('xq_token')) localStorage.setItem('xq_token','e288b77b0cfc260278ce68a979f01534a8e8b923');
   portInit();   // 优先从 GitHub 云端加载组合数据
   // 默认开启 10 秒自动刷新：确保盘中价格(尤其港股实时源)持续更新，不再停留在加载时刻；
   // 仅交易时段实际轮询(见 setAutoRefresh)，用户可在右上角下拉改回「手动」。
@@ -7938,6 +8014,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 1(tVal)  不预加载，首次切换时立即拉取（同原逻辑）。
   // 8(t3)    静态内容，无需节流。
   [2,3,5,6,7].forEach(i=>_TAB_TS[i]=_initTs);
+});
+
+// Safari 从前进/后退缓存（bfcache）恢复页面时不会重跑 DOMContentLoaded。
+// 此时重新走一次权威 API 校验，避免展示或自动写回过期的组合快照。
+window.addEventListener('pageshow', event=>{
+  if(event.persisted){
+    _setSyncTs('☁️ 正在校验云端最新仓位…', '#f59e0b');
+    portInit();
+  }
 });
 </script>
 </body>
