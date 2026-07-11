@@ -12,7 +12,7 @@ function corsHeaders(request, env){
     // 这不是鉴权；仅避免其他网页在浏览器中直接调用接口。
     'Access-Control-Allow-Origin': origin === allowedOrigin ? origin : allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, PUT, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Cache-Control, Accept',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin',
   };
