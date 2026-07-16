@@ -36,6 +36,23 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .ricon{display:inline-block;transition:transform .3s}
 .rbtn.loading .ricon{animation:spin 1s linear infinite}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+/* Trend Following 标题与冲浪者：恢复原版的轻摆、巡游和起伏动画。 */
+@keyframes tfWaveY{0%{transform:translateY(0) rotate(-1.4deg)}25%{transform:translateY(-7px) rotate(0deg)}50%{transform:translateY(0) rotate(1.4deg)}75%{transform:translateY(7px) rotate(0deg)}100%{transform:translateY(0) rotate(-1.4deg)}}
+.tf-swayx{display:inline-flex;align-items:center;gap:11px}
+.tf-sway{display:inline-block;animation:tfWaveY 2.6s ease-in-out infinite;will-change:transform}
+@keyframes tfSurfTravel{0%{transform:translateX(0) scaleX(1)}43%{transform:translateX(var(--tf-amp,150px)) scaleX(1)}47%{transform:translateX(var(--tf-amp,150px)) scaleX(.12)}50%{transform:translateX(var(--tf-amp,150px)) scaleX(-1)}93%{transform:translateX(0) scaleX(-1)}97%{transform:translateX(0) scaleX(.12)}100%{transform:translateX(0) scaleX(1)}}
+.tf-surf-travel{display:inline-block;animation:tfSurfTravel 11s ease-in-out infinite;transform-origin:center;will-change:transform}
+@keyframes tfSurf{0%{transform:translateY(0) rotate(-3deg)}25%{transform:translateY(-3px) rotate(2deg)}50%{transform:translateY(.5px) rotate(4deg)}75%{transform:translateY(-3px) rotate(2deg)}100%{transform:translateY(0) rotate(-3deg)}}
+.tf-surf{display:inline-block;animation:tfSurf 2s ease-in-out infinite;transform-origin:50% 85%;will-change:transform}
+.tf-surf .tf-wave{transform-box:fill-box;transform-origin:center;animation:tfWaveBob 2.4s ease-in-out infinite}
+@keyframes tfWaveBob{0%,100%{transform:translateY(0) scaleY(1);opacity:.34}50%{transform:translateY(1.4px) scaleY(1.14);opacity:.5}}
+.tf-surf .tf-board{transform-box:fill-box;transform-origin:center;animation:tfBoardRock 2s ease-in-out infinite}
+@keyframes tfBoardRock{0%,100%{transform:rotate(-1.6deg)}50%{transform:rotate(2.2deg)}}
+.tf-surf .tf-pony{transform-box:fill-box;transform-origin:100% 50%;animation:tfPony 1.05s ease-in-out infinite}
+@keyframes tfPony{0%,100%{transform:rotate(4deg)}50%{transform:rotate(-11deg)}}
+.tf-surf .tf-spray{transform-box:fill-box;transform-origin:center;animation:tfSpray 1.25s ease-in-out infinite}
+@keyframes tfSpray{0%{transform:translate(2px,1px) scale(.5);opacity:0}35%{opacity:.95}100%{transform:translate(-5px,-5px) scale(1.2);opacity:0}}
+@media (prefers-reduced-motion: reduce){.tf-swayx,.tf-sway,.tf-surf-travel,.tf-surf,.tf-surf .tf-wave,.tf-surf .tf-board,.tf-surf .tf-pony,.tf-surf .tf-spray{animation:none}}
 /* ── Tabs ── */
 .tabs{
   background:rgba(252,252,253,.80);
@@ -350,15 +367,19 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <style>
   /* 自定义刷新间隔下拉（替代原生 select，与玻璃头协调）*/
   .ar-menu{display:none;position:fixed;z-index:9999;
-    background:#fff;border:1px solid #e6ebf2;border-radius:11px;
-    box-shadow:0 12px 30px rgba(15,23,42,.20);padding:5px;min-width:112px}
+    background:rgba(255,255,255,.96);border:1px solid rgba(60,60,67,.13);border-radius:13px;
+    box-shadow:0 14px 34px rgba(15,23,42,.20),inset 0 1px 0 rgba(255,255,255,.92);
+    backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
+    padding:6px;min-width:122px}
   .ar-menu.open{display:block;animation:arpop .14s ease}
   @keyframes arpop{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
-  .ar-opt{display:block;width:100%;text-align:left;border:none;background:transparent;
-    font-family:inherit;font-size:13px;font-weight:600;color:#334155;padding:7px 12px;
-    border-radius:8px;cursor:pointer;letter-spacing:.02em;transition:background .12s,color .12s}
+  .ar-opt{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;border:none;background:transparent;
+    font-family:inherit;font-size:13px;font-weight:600;color:#334155;padding:8px 11px;
+    border-radius:9px;cursor:pointer;letter-spacing:.01em;transition:background .12s,color .12s,transform .12s}
   .ar-opt:hover{background:#eef2ff;color:#4338ca}
+  .ar-opt:active{transform:scale(.98)}
   .ar-opt.on{background:#4f46e5;color:#fff}
+  .ar-opt.on::after{content:'✓';font-size:12px;font-weight:800}
 
   /* 投资组合操作区：Apple 风格三段控制器。固定三列，动态状态文字不参与宽度计算。 */
   .port-actions{
@@ -374,9 +395,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .port-action-wrap{position:relative;min-width:0;display:flex}
   .port-action{
     position:relative;min-width:0;width:100%;height:100%;border:0;border-radius:14px;
-    padding:6px 9px;background:transparent;color:#1d1d1f;cursor:pointer;
+    padding:6px 8px 5px;background:transparent;color:#1d1d1f;cursor:pointer;
     display:grid;grid-template-columns:20px minmax(0,1fr);grid-template-rows:20px 15px;
-    column-gap:7px;align-content:center;align-items:center;text-align:left;
+    column-gap:5px;row-gap:1px;align-content:center;align-items:center;text-align:left;
     font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC','Microsoft YaHei',sans-serif;
     -webkit-tap-highlight-color:transparent;
     transition:background-color .18s ease,box-shadow .18s ease,transform .12s ease,opacity .18s ease
@@ -390,43 +411,25 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .port-action:focus-visible{outline:3px solid rgba(0,113,227,.28);outline-offset:-2px}
   .port-action:disabled{cursor:default;opacity:.62}
   .port-action.is-active{background:rgba(255,255,255,.94);box-shadow:0 2px 10px rgba(15,23,42,.08)}
-  .port-action-icon{width:19px;height:19px;grid-row:1/3;align-self:center;color:#0071e3;stroke:currentColor}
+  .port-action-icon{width:18px;height:18px;grid-column:1;grid-row:1;align-self:center;justify-self:center;color:#0071e3;stroke:currentColor}
   .port-action-title{
-    min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    font-size:12.5px;font-weight:600;letter-spacing:-.01em;line-height:20px;color:#1d1d1f
+    min-width:0;overflow:visible;white-space:nowrap;display:flex;align-items:center;gap:4px;
+    font-size:12.5px;font-weight:650;letter-spacing:-.015em;line-height:20px;color:#1d1d1f
   }
   .port-action-meta{
-    display:block;min-width:0;width:100%;height:15px;line-height:15px;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    font-size:9.5px;font-weight:500;letter-spacing:.005em;color:#86868b;
+    display:block;grid-column:1/-1;grid-row:2;min-width:0;width:100%;height:15px;line-height:15px;
+    overflow:hidden;text-align:center;white-space:nowrap;
+    font-size:9.3px;font-weight:520;letter-spacing:0;color:#86868b;
     font-variant-numeric:tabular-nums
   }
-  .port-action-chevron{display:inline-block;margin-left:3px;font-size:8px;color:#86868b;vertical-align:1px}
+  .port-action-chevron{
+    width:17px;height:17px;flex:0 0 17px;margin-left:auto;border-radius:50%;
+    display:inline-grid;place-items:center;color:#0071e3;background:rgba(0,113,227,.11);
+    border:1px solid rgba(0,113,227,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.72)
+  }
+  .port-action-chevron svg{width:10px;height:10px;display:block;stroke:currentColor;transition:transform .16s ease}
+  #arBtn[aria-expanded="true"] .port-action-chevron svg{transform:rotate(180deg)}
   .port-action.loading .port-action-icon{animation:spin 1s linear infinite}
-  /* 左侧品牌：Apple 风格的克制层级、玻璃质感图标和系统字体。 */
-  .port-hero-title{flex:0 0 286px;min-width:0}
-  .port-brand{display:flex;align-items:center;gap:12px;min-width:0}
-  .port-brand-mark{
-    position:relative;width:48px;height:48px;flex:0 0 48px;overflow:hidden;
-    display:grid;place-items:center;border-radius:15px;
-    background:linear-gradient(145deg,#5ac8fa 0%,#0a84ff 43%,#5e5ce6 100%);
-    border:1px solid rgba(255,255,255,.58);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.72),inset 0 -8px 16px rgba(31,41,107,.16),0 8px 18px rgba(0,113,227,.20)
-  }
-  .port-brand-mark::after{
-    content:'';position:absolute;left:5px;right:5px;top:3px;height:19px;border-radius:12px 12px 50% 50%;
-    background:linear-gradient(180deg,rgba(255,255,255,.36),rgba(255,255,255,0));pointer-events:none
-  }
-  .port-brand-mark svg{position:relative;z-index:1;width:35px;height:35px;display:block}
-  .port-brand-copy{min-width:0;display:flex;flex-direction:column;justify-content:center}
-  .port-brand-name{
-    color:#1d1d1f;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','PingFang SC','Microsoft YaHei',sans-serif;
-    font-size:21px;font-weight:700;line-height:1.12;letter-spacing:-.045em;white-space:nowrap
-  }
-  .port-brand-sub{
-    margin-top:4px;color:#86868b;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC','Microsoft YaHei',sans-serif;
-    font-size:10.5px;font-weight:550;line-height:1.2;letter-spacing:.055em;white-space:nowrap
-  }
   /* 中央时钟：渲染尺寸 78px，内部使用 80×80 矢量坐标，刻度和指针更清晰。 */
   .port-hero-clock{gap:12px!important}
   #portAnalog{width:78px;height:78px}
@@ -437,7 +440,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   @media(max-width:1080px){.port-hero-clock{display:none!important}}
   @media(max-width:720px){
     .port-hero{flex-direction:column;align-items:stretch!important;gap:13px;padding:14px!important}
-    .port-hero-title{justify-content:center;flex-basis:auto;width:100%}
+    .port-hero-title{justify-content:center;width:100%}
     .port-actions{width:100%;height:62px;flex-basis:62px}
   }
   </style>
@@ -446,27 +449,32 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
               padding:7px 24px 7px 26px;margin-bottom:18px;border-radius:18px;
               background:linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%);border:1px solid #edf0f5;
               box-shadow:0 4px 22px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.04)">
-    <!-- 左侧轻量 accent 细条 -->
+    <!-- 左侧渐变 accent 细条 -->
     <div style="position:absolute;left:0;top:0;bottom:0;width:4px;
-                background:linear-gradient(180deg,#5ac8fa,#0a84ff 52%,#5e5ce6)"></div>
+                background:linear-gradient(180deg,#e11d48,#d97706)"></div>
 
     <!-- 左：Logo + 标题 -->
-    <div class="port-hero-title" style="display:flex;align-items:center;flex-shrink:0">
-      <div class="port-brand" aria-label="Trend Following · 投资组合策略">
-        <div class="port-brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <path d="M7.2 10.5H32.8M7.2 20H32.8M7.2 29.5H32.8M10.5 7.2V32.8M20 7.2V32.8M29.5 7.2V32.8"
-                  fill="none" stroke="rgba(255,255,255,.19)" stroke-width=".8"/>
-            <path d="M7 28.5 13.2 22l5 3.6 7.1-11.2 7.7-5.1" fill="none" stroke="#fff" stroke-width="3"
-                  stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="33" cy="9.3" r="2.2" fill="#fff"/>
-          </svg>
-        </div>
-        <div class="port-brand-copy">
-          <div class="port-brand-name">Trend Following</div>
-          <div class="port-brand-sub">投资组合策略</div>
-        </div>
+    <div class="port-hero-title" style="display:flex;align-items:center;gap:11px;flex-shrink:0">
+      <div style="width:44px;height:44px;border-radius:13px;overflow:hidden;flex-shrink:0;
+                  background:linear-gradient(150deg,#a89b88 0%,#7d7160 52%,#5d5345 100%);
+                  box-shadow:0 3px 13px rgba(75,63,47,.36);padding:4.5px;box-sizing:border-box">
+        <svg width="35" height="35" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" style="display:block">
+          <defs>
+            <linearGradient id="lgOrg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb923c"/><stop offset="1" stop-color="#fde6d3"/></linearGradient>
+            <linearGradient id="lgGrn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#d7f5e6"/></linearGradient>
+          </defs>
+          <rect x="0" y="0" width="36" height="36" rx="8" fill="#ffffff"/>
+          <path d="M2 31 L8 23 L13 27 L19 17 L25 23 L30 13 L34 19 L34 34 L2 34 Z" fill="url(#lgOrg)"/>
+          <path d="M2 27 L8 19 L13 23 L19 13 L25 19 L30 9 L34 15 L34 34 L2 34 Z" fill="url(#lgGrn)" opacity=".82"/>
+          <path d="M2 27 L8 19 L13 23 L19 13 L25 19 L30 9 L34 15" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 31 L8 23 L13 27 L19 17 L25 23 L30 13 L34 19" fill="none" stroke="#f97316" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
+        </svg>
       </div>
+      <div class="tf-swayx"><div class="tf-sway" style="font-family:'Monotype Corsiva','Segoe Script','Lucida Handwriting','Brush Script MT',cursive;font-size:26px;font-weight:700;
+                  letter-spacing:.01em;line-height:1.25;white-space:nowrap;
+                  background:linear-gradient(105deg,#dc2626 0%,#f43f5e 48%,#fb6f8e 100%);
+                  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+                  text-shadow:0 1px 1px rgba(127,29,29,.08)">Trend Following</div><span class="tf-surf-travel"><svg class="tf-surf" width="54" height="41" viewBox="0 0 58 44" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;overflow:visible;filter:drop-shadow(0 1.4px 1.3px rgba(161,98,7,.5))"><defs><linearGradient id="tfSurfG" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fde047"/><stop offset="0.5" stop-color="#facc15"/><stop offset="1" stop-color="#eab308"/></linearGradient><linearGradient id="tfSurfBd" x1="0" y1="0" x2="1" y2="0.25"><stop offset="0" stop-color="#fef08a"/><stop offset="0.55" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs><path class="tf-wave" d="M0 33 Q11 26 21 32 Q30 37 40 31 Q49 26 58 32 L58 42 Q47 37 38 40 Q27 44 16 40 Q8 37 0 41 Z" fill="url(#tfSurfG)" opacity="0.4"/><g class="tf-spray" fill="#fde047"><circle cx="13.5" cy="33" r="1.4"/><circle cx="10" cy="31.2" r="1"/><circle cx="15.5" cy="30.4" r="0.9"/><circle cx="11.5" cy="34.6" r="0.7"/></g><g class="tf-board"><ellipse cx="31" cy="35.5" rx="18.5" ry="2.8" transform="rotate(-9 31 35.5)" fill="url(#tfSurfBd)"/></g><g stroke="url(#tfSurfG)" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M28 14 L31 23" stroke-width="5.2"/><path d="M31 23 L27 27 L24.5 32.5" stroke-width="3.6"/><path d="M31 23 L35 26.5 L38.5 32" stroke-width="3.6"/><path d="M28.5 16 L23 13 L19 9.5" stroke-width="3"/><path d="M28.5 16 L34.5 17.5 L40.5 16.5" stroke-width="3"/></g><circle cx="27" cy="10" r="3.4" fill="url(#tfSurfG)"/><path class="tf-pony" d="M24.6 9.2 Q17 5 12.5 8.4 Q18 7.6 24 11.2 Z" fill="url(#tfSurfG)"/></svg></span></div>
     </div>
 
     <!-- 中：高清模拟时钟 + 数字时钟（绝对居中） -->
@@ -534,16 +542,16 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           <svg class="port-action-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.6 1.6M9.5 3h5M12 3v2.5"/>
           </svg>
-          <span class="port-action-title"><span id="arLabel">手动</span><span class="port-action-chevron">⌄</span></span>
+          <span class="port-action-title"><span id="arLabel">手动</span><span class="port-action-chevron" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none"><path d="m3 4.5 3 3 3-3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
           <span id="autoRefreshCd" class="port-action-meta">未开启</span>
         </button>
         <div id="arMenu" class="ar-menu">
             <button type="button" class="ar-opt on" data-v="0"   onclick="_arPick(0,'手动')">手动</button>
+            <button type="button" class="ar-opt"    data-v="3"   onclick="_arPick(3,'3秒')">3秒</button>
             <button type="button" class="ar-opt"    data-v="5"   onclick="_arPick(5,'5秒')">5秒</button>
             <button type="button" class="ar-opt"    data-v="10"  onclick="_arPick(10,'10秒')">10秒</button>
             <button type="button" class="ar-opt"    data-v="30"  onclick="_arPick(30,'30秒')">30秒</button>
             <button type="button" class="ar-opt"    data-v="60"  onclick="_arPick(60,'1分钟')">1分钟</button>
-            <button type="button" class="ar-opt"    data-v="300" onclick="_arPick(300,'5分钟')">5分钟</button>
         </div>
       </div>
     </div>
@@ -3135,7 +3143,21 @@ function togglePortSort(col){
 
 function _setSyncTs(msg, color){
   const el = document.getElementById('portSyncTs');
-  if(el){ el.textContent = msg; el.title = msg; el.style.color = color || '#86868b'; }
+  if(!el) return;
+  const full = String(msg || '');
+  let compact = full
+    .replace('云端已载入', '已载入')
+    .replace('正在校验云端…', '校验云端…')
+    .replace('GitHub 暂不可用 · 本地缓存', '云端不可用 · 本地')
+    .replace('正在上传本地备份…', '备份上传中…')
+    .replace('本地更新 · 上传中…', '本地上传中…')
+    .replace('待同步 · 点击连接', '待同步 · 请连接')
+    .replace('授权失败 · 检查 PAT', '授权失败 · 检查PAT')
+    .replace(/(\d{2}:\d{2}):\d{2}/g, '$1');
+  if(compact.startsWith('同步失败 · ')) compact = '同步失败 · 请重试';
+  el.textContent = compact;
+  el.title = full;
+  el.style.color = color || '#86868b';
 }
 
 function _clonePortfolio(data){
@@ -7384,7 +7406,7 @@ async function fetchPortPrices(){
   var btn = document.getElementById('portPriceBtn');
   var ts  = document.getElementById('portPriceTs');
   if(btn){ btn.classList.add('loading'); btn.disabled = true; }
-  if(ts)  ts.textContent = '正在获取股价…';
+  if(ts){ ts.textContent = '正在获取…'; ts.title = '正在获取股价…'; }
 
   try {
     portLoad();
@@ -7400,7 +7422,7 @@ async function fetchPortPrices(){
       });
     });
 
-    if(!aStocks.length && !hkStocks.length){ ts.textContent = '无持仓'; return; }
+    if(!aStocks.length && !hkStocks.length){ ts.textContent = '无持仓'; ts.title = '当前没有持仓股票'; return; }
 
     // 快照上一时刻成功取到的价格：本轮某只取不到新值时回填，绝不让其消失/清零（用户要求：得不到数据就保持上一时刻不变）
     var _prevPrices = _PORT_PRICES || {};
@@ -7575,16 +7597,22 @@ async function fetchPortPrices(){
     var n = Object.keys(_PORT_PRICES).length;
     var staleN = Object.keys(_PORT_PRICES).filter(function(c){ return _PORT_PRICES[c].stale; }).length;
     var total = aStocks.length + hkStocks.length;
-    ts.textContent = n > 0
-      ? (_isTradingNow() ? '实时' : '收盘') + '涨跌幅 ' + n + '只'
-        + (staleN ? '（' + staleN + '只沿用上次）' : '') + ' · '
-        + new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})
+    var priceTime = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    var priceMode = _isTradingNow() ? '实时' : '收盘';
+    var priceFull = n > 0
+      ? priceMode + '涨跌幅 ' + n + '只' + (staleN ? '（' + staleN + '只沿用上次）' : '') + ' · ' + priceTime
       : '接口正常，解析到0只（共发送' + total + '只）';
+    ts.textContent = n > 0
+      ? priceMode + ' · ' + priceTime + (staleN ? ' · 沿用' + staleN : '')
+      : '暂无有效行情';
+    ts.title = priceFull;
 
   } catch(err) {
     // 整轮异常：保留上一时刻成功取到的价格，不清空（_prevPrices 在错误发生于快照前时为 undefined，则维持当前 _PORT_PRICES）
     _PORT_PRICES = (typeof _prevPrices !== 'undefined' && _prevPrices) ? _prevPrices : _PORT_PRICES;
-    ts.textContent = '刷新失败，沿用上次价格 · ' + new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    var failTime = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    ts.textContent = '刷新失败 · ' + failTime;
+    ts.title = '刷新失败，沿用上次价格 · ' + failTime;
     console.error('fetchPortPrices:', err);
   } finally {
     _pfInflight = false;   // 释放进行中标志
@@ -7916,6 +7944,17 @@ document.addEventListener('DOMContentLoaded',()=>{
     tick();
     setInterval(tick, 1000);
   })();
+
+  // 恢复原版冲浪者巡游：根据标题与放大后的模拟时钟间距动态计算位移，避免与表盘重叠。
+  function _tfSwayAmp(){
+    const wx=document.querySelector('.tf-swayx'), c=document.getElementById('portAnalog');
+    if(!wx||!c) return;
+    const tr=wx.getBoundingClientRect(), cr=c.getBoundingClientRect();
+    const amp=Math.max(60, Math.round(cr.left - tr.right - 24));
+    document.documentElement.style.setProperty('--tf-amp', amp+'px');
+  }
+  _tfSwayAmp();
+  window.addEventListener('resize', _tfSwayAmp);
 
   portInit();   // 优先从 GitHub 加载组合数据
   // 默认开启 10 秒自动刷新：确保盘中价格(尤其港股实时源)持续更新，不再停留在加载时刻；
