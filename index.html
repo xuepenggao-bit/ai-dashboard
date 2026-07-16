@@ -382,9 +382,59 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     border-radius:8px;cursor:pointer;letter-spacing:.02em;transition:background .12s,color .12s}
   .ar-opt:hover{background:#eef2ff;color:#4338ca}
   .ar-opt.on{background:#4f46e5;color:#fff}
+
+  /* 投资组合操作区：Apple 风格三段控制器。固定三列，动态状态文字不参与宽度计算。 */
+  .port-actions{
+    width:354px;height:64px;flex:0 0 354px;
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;
+    padding:4px;border-radius:18px;
+    background:rgba(242,242,247,.82);
+    border:1px solid rgba(60,60,67,.12);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.86),0 8px 26px rgba(15,23,42,.08);
+    backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
+    overflow:visible;isolation:isolate
+  }
+  .port-action-wrap{position:relative;min-width:0;display:flex}
+  .port-action{
+    position:relative;min-width:0;width:100%;height:100%;border:0;border-radius:14px;
+    padding:6px 9px;background:transparent;color:#1d1d1f;cursor:pointer;
+    display:grid;grid-template-columns:20px minmax(0,1fr);grid-template-rows:20px 15px;
+    column-gap:7px;align-content:center;align-items:center;text-align:left;
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC','Microsoft YaHei',sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    transition:background-color .18s ease,box-shadow .18s ease,transform .12s ease,opacity .18s ease
+  }
+  .port-action:not(.port-action-last)::after{
+    content:'';position:absolute;right:-2px;top:10px;bottom:10px;width:1px;
+    background:rgba(60,60,67,.13);pointer-events:none
+  }
+  .port-action:hover{background:rgba(255,255,255,.82);box-shadow:0 2px 10px rgba(15,23,42,.07)}
+  .port-action:active{transform:scale(.975);background:rgba(255,255,255,.96)}
+  .port-action:focus-visible{outline:3px solid rgba(0,113,227,.28);outline-offset:-2px}
+  .port-action:disabled{cursor:default;opacity:.62}
+  .port-action.is-active{background:rgba(255,255,255,.94);box-shadow:0 2px 10px rgba(15,23,42,.08)}
+  .port-action-icon{width:19px;height:19px;grid-row:1/3;align-self:center;color:#0071e3;stroke:currentColor}
+  .port-action-title{
+    min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-size:12.5px;font-weight:600;letter-spacing:-.01em;line-height:20px;color:#1d1d1f
+  }
+  .port-action-meta{
+    display:block;min-width:0;width:100%;height:15px;line-height:15px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-size:9.5px;font-weight:500;letter-spacing:.005em;color:#86868b;
+    font-variant-numeric:tabular-nums
+  }
+  .port-action-chevron{display:inline-block;margin-left:3px;font-size:8px;color:#86868b;vertical-align:1px}
+  .port-action.loading .port-action-icon{animation:spin 1s linear infinite}
+  @media(max-width:1080px){.port-hero-clock{display:none!important}}
+  @media(max-width:720px){
+    .port-hero{flex-direction:column;align-items:stretch!important;gap:13px;padding:14px!important}
+    .port-hero-title{justify-content:center}
+    .port-actions{width:100%;height:62px;flex-basis:62px}
+  }
   </style>
   <!-- ══ 投资组合页眉（浅色·紧凑） ══ -->
-  <div style="position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;
+  <div class="port-hero" style="position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;
               padding:14px 24px 14px 26px;margin-bottom:18px;border-radius:18px;
               background:linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%);border:1px solid #edf0f5;
               box-shadow:0 4px 22px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.04)">
@@ -393,7 +443,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
                 background:linear-gradient(180deg,#e11d48,#d97706)"></div>
 
     <!-- 左：Logo + 标题 -->
-    <div style="display:flex;align-items:center;gap:11px;flex-shrink:0">
+    <div class="port-hero-title" style="display:flex;align-items:center;gap:11px;flex-shrink:0">
       <!-- Logo：股票App风格图标（原创：棕色表框 + 白屏 + 绿/橙双色面积走势，圆角裁切）-->
       <div style="width:44px;height:44px;border-radius:13px;overflow:hidden;flex-shrink:0;
                   background:linear-gradient(150deg,#a89b88 0%,#7d7160 52%,#5d5345 100%);
@@ -421,7 +471,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
 
     <!-- 中：模拟时钟(Apple风) + 数字时钟（绝对居中） -->
-    <div style="position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;pointer-events:none">
+    <div class="port-hero-clock" style="position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;pointer-events:none">
       <svg id="portAnalog" width="64" height="64" viewBox="0 0 40 40" style="flex-shrink:0;filter:drop-shadow(0 4px 10px rgba(15,23,42,.24))" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="paFace" cx="50%" cy="40%" r="66%">
@@ -461,71 +511,41 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
                font-family:'SF Mono','Consolas','Courier New',monospace">--:--:--</div>
     </div>
 
-    <!-- 右：操作区（浅色外壳，三格等宽） -->
-    <div style="display:flex;align-items:stretch;flex-shrink:0;
-                background:#f6f7fb;border:1px solid #e3e7f1;border-radius:11px;overflow:hidden">
-
-      <!-- ① 同步 -->
-      <button onclick="portForcePush()" title="首次同步需输入 GitHub PAT；同一浏览器会长期保存"
-        style="flex:1;min-width:84px;display:flex;flex-direction:column;align-items:center;
-               justify-content:center;gap:2px;padding:5px 14px;background:transparent;
-               border:none;cursor:pointer;font-family:inherit;transition:background .15s"
-        onmouseover="this.style.background='rgba(124,58,237,.08)'"
-        onmouseout="this.style.background='transparent'"
-        onmousedown="this.style.opacity='.7'" onmouseup="this.style.opacity='1'">
-        <span style="font-size:12.5px;font-weight:700;color:#7c3aed;letter-spacing:.02em;white-space:nowrap">☁ 同步</span>
-        <span id="portSyncTs" style="font-size:9.5px;color:#94a3b8;font-weight:500;white-space:nowrap;
-               max-width:108px;overflow:hidden;text-overflow:ellipsis">☁️ 加载中…</span>
+    <!-- 右：固定三列的 Apple 风格分段控制器 -->
+    <div class="port-actions" aria-label="投资组合操作">
+      <button class="port-action" onclick="portForcePush()" title="首次同步需输入 GitHub PAT；同一浏览器会长期保存" aria-label="同步投资组合">
+        <svg class="port-action-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7.5 18.5h9.25a4.25 4.25 0 0 0 .7-8.44A5.75 5.75 0 0 0 6.6 8.34 4.5 4.5 0 0 0 7.5 18.5Z"/><path d="M12 15V9.5m0 0-2.1 2.1M12 9.5l2.1 2.1"/>
+        </svg>
+        <span class="port-action-title">同步</span>
+        <span id="portSyncTs" class="port-action-meta">正在载入…</span>
       </button>
 
-      <!-- 分割线 -->
-      <div style="width:1px;background:#e3e7f1;flex-shrink:0"></div>
-
-      <!-- ② 刷新股价 -->
-      <button id="portPriceBtn" onclick="refreshPortAll(true)"
-        style="flex:1;min-width:90px;display:flex;flex-direction:column;align-items:center;
-               justify-content:center;gap:2px;padding:5px 14px;background:transparent;
-               border:none;cursor:pointer;font-family:inherit;transition:background .15s"
-        onmouseover="this.style.background='rgba(37,99,235,.08)'"
-        onmouseout="this.style.background='transparent'"
-        onmousedown="this.style.opacity='.7'" onmouseup="this.style.opacity='1'">
-        <span style="font-size:12.5px;font-weight:700;color:#2563eb;letter-spacing:.02em;white-space:nowrap">
-          <span class="ricon" style="display:inline-block">↻</span> 刷新股价</span>
-        <span id="portPriceTs" style="font-size:9.5px;color:#94a3b8;font-weight:500;white-space:nowrap;
-               max-width:108px;overflow:hidden;text-overflow:ellipsis">股价未加载</span>
+      <button id="portPriceBtn" class="port-action" onclick="refreshPortAll(true)" aria-label="刷新股价">
+        <svg class="port-action-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19.1 8.2A7.7 7.7 0 0 0 5.5 6.5L4 8"/><path d="M4 4.8V8h3.2"/><path d="M4.9 15.8a7.7 7.7 0 0 0 13.6 1.7L20 16"/><path d="M20 19.2V16h-3.2"/>
+        </svg>
+        <span class="port-action-title">刷新股价</span>
+        <span id="portPriceTs" class="port-action-meta">尚未刷新</span>
       </button>
 
-      <!-- 分割线 -->
-      <div style="width:1px;background:#e3e7f1;flex-shrink:0"></div>
-
-      <!-- ③ 自动刷新 -->
-      <div id="autoRefreshBox"
-        style="flex:1;min-width:88px;display:flex;flex-direction:column;align-items:center;
-               justify-content:center;gap:2px;padding:5px 12px">
-        <div style="position:relative">
-          <button id="arBtn" type="button" onclick="_arToggle(event)"
-            style="display:flex;align-items:center;gap:5px;background:#eef1f8;
-                   border:1px solid #dde3f0;border-radius:8px;padding:4px 9px;cursor:pointer;
-                   font-family:inherit;color:#4338ca;font-size:12.5px;font-weight:700;letter-spacing:.02em;transition:background .15s"
-            onmouseover="this.style.background='#e3e8f6'"
-            onmouseout="this.style.background=(_arCur>0?'#e0e7ff':'#eef1f8')">
-            <span style="font-size:11px">⏱</span><span id="arLabel">手动</span>
-            <span style="font-size:8px;opacity:.7;margin-left:1px">▼</span>
-          </button>
-          <div id="arMenu" class="ar-menu">
+      <div id="autoRefreshBox" class="port-action-wrap">
+        <button id="arBtn" type="button" class="port-action port-action-last" onclick="_arToggle(event)" aria-label="选择自动刷新间隔" aria-haspopup="true" aria-expanded="false">
+          <svg class="port-action-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.6 1.6M9.5 3h5M12 3v2.5"/>
+          </svg>
+          <span class="port-action-title"><span id="arLabel">手动</span><span class="port-action-chevron">⌄</span></span>
+          <span id="autoRefreshCd" class="port-action-meta">未开启</span>
+        </button>
+        <div id="arMenu" class="ar-menu">
             <button type="button" class="ar-opt on" data-v="0"   onclick="_arPick(0,'手动')">手动</button>
             <button type="button" class="ar-opt"    data-v="5"   onclick="_arPick(5,'5秒')">5秒</button>
             <button type="button" class="ar-opt"    data-v="10"  onclick="_arPick(10,'10秒')">10秒</button>
             <button type="button" class="ar-opt"    data-v="30"  onclick="_arPick(30,'30秒')">30秒</button>
             <button type="button" class="ar-opt"    data-v="60"  onclick="_arPick(60,'1分钟')">1分钟</button>
             <button type="button" class="ar-opt"    data-v="300" onclick="_arPick(300,'5分钟')">5分钟</button>
-          </div>
         </div>
-        <span id="autoRefreshCd"
-          style="font-size:9.5px;color:#2563eb;font-weight:700;min-height:12px;
-                 letter-spacing:.02em"></span>
       </div>
-
     </div>
   </div>
 
@@ -3115,7 +3135,7 @@ function togglePortSort(col){
 
 function _setSyncTs(msg, color){
   const el = document.getElementById('portSyncTs');
-  if(el){ el.textContent = msg; el.style.color = color || 'var(--text2)'; }
+  if(el){ el.textContent = msg; el.title = msg; el.style.color = color || '#86868b'; }
 }
 
 function _clonePortfolio(data){
@@ -3217,11 +3237,11 @@ function portSaveRemote(snapshot=_clonePortfolio(PORT), revision=_portRevision){
       if(!_getGithubToken()){
         if(revision===_portRevision){
           _portDirty = true;
-          _setSyncTs('📝 有改动未同步，点击“同步”连接 GitHub', '#d97706');
+          _setSyncTs('待同步 · 点击连接', '#bf6a02');
         }
         return;
       }
-      _setSyncTs('☁️ 同步中…', '#f59e0b');
+      _setSyncTs('同步中…', '#0071e3');
       const headers = _githubApiHeaders({'Content-Type':'application/json'});
       let saved = false;
 
@@ -3266,10 +3286,10 @@ function portSaveRemote(snapshot=_clonePortfolio(PORT), revision=_portRevision){
       if(revision === _portRevision && PORT?._savedAt === snapshot?._savedAt){
         _portDirty = false;
         const savedTs = new Date(snapshot._savedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-        _setSyncTs('☁️ 已同步 · 数据时间 '+savedTs, '#10b981');
+        _setSyncTs('已同步 · '+savedTs, '#248a3d');
       } else {
         _portDirty = true;
-        _setSyncTs('📝 已有更新版本待同步', '#f59e0b');
+        _setSyncTs('有更新待同步', '#bf6a02');
       }
       console.log('[portSync] 已确认 GitHub 版本，_savedAt=', snapshot._savedAt);
     }catch(e){
@@ -3279,9 +3299,9 @@ function portSaveRemote(snapshot=_clonePortfolio(PORT), revision=_portRevision){
       if(/HTTP (401|403|404)|(401|403|404)\)/.test(message)){
         _githubTokenMemory = '';
         try{ localStorage.removeItem(GH_TOKEN_LOCAL_KEY); }catch(_){}
-        _setSyncTs('🔑 GitHub 授权失败，请检查 PAT 的仓库和 Contents 权限后重试', '#ef4444');
+        _setSyncTs('授权失败 · 检查 PAT', '#d70015');
       }else{
-        _setSyncTs('⚠️ 云端同步失败：' + message, '#ef4444');
+        _setSyncTs('同步失败 · ' + message, '#d70015');
       }
     }
   };
@@ -3297,7 +3317,7 @@ function portSave(){
   localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
   _portRevision++;
   _portDirty = true;
-  _setSyncTs('📝 有改动未同步，点击"同步到云端"', '#f59e0b');
+  _setSyncTs('待同步 · 点击同步', '#bf6a02');
 }
 
 /* 读取本地 localStorage 数据（fallback） */
@@ -3319,7 +3339,7 @@ function portLoad(){
  * 完成之前被调用，确保首屏不依赖网络请求即可显示列表和股价。
  */
 async function portInit(){
-  _setSyncTs('☁️ 加载中…', '#f59e0b');
+  _setSyncTs('正在载入…', '#0071e3');
 
   // ① 无条件立即初始化（localStorage 有数据用缓存，无则用 BASE.portfolio 默认模板）
   portLoad();   // 同步：保证 PORT 不为 null
@@ -3330,7 +3350,7 @@ async function portInit(){
   try{ updateRiskDashboard(); }catch(e){ console.warn('[portInit updateRiskDashboard]', e); }
   // fetchPortPrices 独立 try，确保上面任何一步抛错都不会跳过它
   try{ fetchPortPrices(); }catch(e){ console.warn('[portInit fetchPortPrices]', e); }
-  _setSyncTs('☁️ 校验云端数据中…', '#f59e0b');
+  _setSyncTs('正在校验云端…', '#0071e3');
 
   // ② 读本地快照（用于后续冲突判断基准）
   let localData = null;
@@ -3393,7 +3413,7 @@ async function portInit(){
     localStorage.setItem(PORT_KEY, JSON.stringify(remoteData));
     _portRevision++; // 使任何在此之前创建的旧同步任务失效，不能清除当前状态
     _portDirty = false;
-    _setSyncTs('☁️ 已从云端加载 ' + ts, '#10b981');
+    _setSyncTs('云端已载入 · ' + ts, '#248a3d');
     renderPortfolio();
     updateRiskDashboard();
     if(typeof renderHistTable==='function') renderHistTable();   // 立即刷新历史持仓表
@@ -3412,16 +3432,16 @@ async function portInit(){
     if(remoteOk && _getGithubToken()){
       // GitHub 可达、已保存 PAT 且本地更新 → 推送合并后的本地数据到云端
       _setSyncTs(remoteData
-        ? '☁️ 本地数据更新，正在同步至云端…'
-        : '☁️ 云端无数据，正在上传本地备份', '#f59e0b');
+        ? '本地更新 · 上传中…'
+        : '正在上传本地备份…', '#0071e3');
       _portDirty = true;
       portSaveRemote(_clonePortfolio(PORT), _portRevision);
     } else if(remoteOk){
       _portDirty = true;
-      _setSyncTs('📝 有改动未同步，点击“同步”连接 GitHub', '#d97706');
+      _setSyncTs('待同步 · 点击连接', '#bf6a02');
     } else {
       // GitHub API 不可达（超时/离线）→ 不推送，只提示
-      _setSyncTs('☁️ GitHub 暂时无法访问，已使用本地缓存', '#f59e0b');
+      _setSyncTs('GitHub 暂不可用 · 本地缓存', '#bf6a02');
     }
     // 本地数据可能因用户在 GitHub fetch 期间编辑而变化，重新渲染以确保 UI 最新
     // 股价无需重新拉取（第一阶段已拉取且持仓未变），fetchIndexPrices 由 fetchPortPrices.finally 统一调用
@@ -3430,14 +3450,14 @@ async function portInit(){
     if(typeof renderHistTable==='function') renderHistTable();   // 立即刷新历史持仓表
   } else {
     // 本地和远端均无有效数据，已在①用默认数据渲染，无需处理
-    _setSyncTs('📂 使用默认数据', '#94a3b8');
+    _setSyncTs('使用默认数据', '#86868b');
   }
 }
 
 /* 手动强制将当前数据推送到云端（用于应急修复） */
 async function portForcePush(){
   if(!_requestGithubToken()){
-    _setSyncTs('🔑 未连接 GitHub，未执行云端同步', '#d97706');
+    _setSyncTs('未连接 GitHub', '#bf6a02');
     return;
   }
   // 从 localStorage 重新读取最新数据，避免使用内存中的旧快照（多标签场景）
@@ -3451,7 +3471,7 @@ async function portForcePush(){
   _portDirty = true;
   const snapshot = _clonePortfolio(PORT);
   const revision = _portRevision;
-  _setSyncTs('☁️ 强制同步中…', '#f59e0b');
+  _setSyncTs('正在同步…', '#0071e3');
   await portSaveRemote(snapshot, revision);
 }
 
@@ -5590,7 +5610,11 @@ function _arToggle(e){
   if(e) e.stopPropagation();
   const m=document.getElementById('arMenu'), btn=document.getElementById('arBtn');
   if(!m) return;
-  if(m.classList.contains('open')){ m.classList.remove('open'); return; }
+  if(m.classList.contains('open')){
+    m.classList.remove('open');
+    if(btn) btn.setAttribute('aria-expanded','false');
+    return;
+  }
   // 移到 body 下：玻璃壳的 backdrop-filter / overflow:hidden 会成为 fixed 定位的包含块并裁切菜单
   if(m.parentNode !== document.body) document.body.appendChild(m);
   if(btn){                                   // fixed 定位：按按钮坐标右对齐下方
@@ -5600,6 +5624,7 @@ function _arToggle(e){
     m.style.left  = 'auto';
   }
   m.classList.add('open');
+  if(btn) btn.setAttribute('aria-expanded','true');
 }
 function _arPick(v,label){
   _arCur = +v;
@@ -5607,27 +5632,31 @@ function _arPick(v,label){
   const m=document.getElementById('arMenu'); if(m) m.classList.remove('open');
   document.querySelectorAll('#arMenu .ar-opt').forEach(b=>b.classList.toggle('on', b.dataset.v===String(v)));
   const btn=document.getElementById('arBtn');
-  if(btn) btn.style.background = (_arCur>0)?'#e0e7ff':'#eef1f8';   // 开启自动刷新时淡靛蓝高亮（浅色头）
+  if(btn){
+    btn.classList.toggle('is-active',_arCur>0);
+    btn.setAttribute('aria-expanded','false');
+  }
   setAutoRefresh(v);
 }
-document.addEventListener('click', function(){ const m=document.getElementById('arMenu'); if(m) m.classList.remove('open'); });
+document.addEventListener('click', function(){
+  const m=document.getElementById('arMenu'),btn=document.getElementById('arBtn');
+  if(m) m.classList.remove('open');
+  if(btn) btn.setAttribute('aria-expanded','false');
+});
 
 function setAutoRefresh(val){
   // 清理旧定时器
   if(_arTimer)   { clearInterval(_arTimer);   _arTimer=null; }
   if(_arCdTimer) { clearInterval(_arCdTimer); _arCdTimer=null; }
   const cdEl   = document.getElementById('autoRefreshCd');
-  const inner  = document.getElementById('autoRefreshInner');
   const sec    = parseInt(val) || 0;   // option 值现在直接是秒数
 
   if(!sec){
-    if(cdEl)  cdEl.textContent = '';
-    if(inner){ inner.style.background='transparent'; }  // 手动：不高亮（深色 Hero 头）
+    if(cdEl) cdEl.textContent = '未开启';
     return;
   }
 
   const ms = sec * 1000;
-  if(inner){ inner.style.background='rgba(255,255,255,.22)'; }  // 自动刷新开启：白色半透明高亮（深色 Hero 头）
 
   // 立刻全刷一次，然后按周期持续刷。定时轮询仅在交易时段执行（收盘价不变，无谓轮询；
   //  港股盘中含 15:00-16:00 由 _isTradingNow 覆盖），且走轻量分支(仅价格+指数，重活 45s 节流)。
@@ -7975,7 +8004,7 @@ window.addEventListener('online',_refreshIndexAfterResume);
 window.addEventListener('pageshow', event=>{
   if(event.persisted){
     _idxResumeRequestTs=Date.now();
-    _setSyncTs('☁️ 正在校验云端最新仓位…', '#f59e0b');
+    _setSyncTs('正在校验云端…', '#0071e3');
     portInit();
   }
 });
