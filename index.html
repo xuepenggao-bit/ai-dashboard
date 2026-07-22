@@ -5706,15 +5706,42 @@ function setAutoRefresh(val){
 }
 
 // ── PORTFOLIO PRICE REFRESH ──────────────────────────────────
-// 判断当前是否为交易时段（北京时间，工作日）。取 A股(9:30-11:30/13:00-15:00) 与
-// 港股(9:30-12:00/13:00-16:00) 的并集 = 9:30-12:00 / 13:00-16:00；
-// 否则港股独有时段(11:30-12:00、15:00-16:00)会被误判为收盘、且自动刷新会在港股盘中停摆。
-function _isTradingNow(){
-  const bj=new Date(Date.now()+8*3600000); // UTC→北京
-  const day=bj.getUTCDay();
-  if(day===0||day===6) return false;
-  const m=bj.getUTCHours()*60+bj.getUTCMinutes();
-  return (m>=570&&m<720)||(m>=780&&m<960);
+// 返回北京时间的星期与当日分钟数；允许传入时间戳，便于校验开盘边界。
+function _beijingMarketClock(nowMs){
+  const ts = nowMs == null ? Date.now() : Number(nowMs);
+  const bj=new Date(ts+8*3600000); // UTC→北京
+  return {day:bj.getUTCDay(), minutes:bj.getUTCHours()*60+bj.getUTCMinutes()};
+}
+
+function _isWeekdayMarketClock(clock){
+  return clock.day!==0 && clock.day!==6;
+}
+
+// 09:00（含）—09:15（不含）：港股已有行情，沪深 A 股榜单涨跌幅按 0 展示。
+function _isAPreOpenZeroWindow(nowMs){
+  const clock=_beijingMarketClock(nowMs);
+  return _isWeekdayMarketClock(clock) && clock.minutes>=540 && clock.minutes<555;
+}
+
+function _isAStockMarket(mkt){
+  const market=String(mkt||'').toUpperCase();
+  return market==='SH' || market==='SZ' || market==='A';
+}
+
+// 仅供三个 TOP7 榜单展示和排序使用，不改写 _PORT_PRICES 中的原始行情。
+function _portTopDisplayPct(mkt, pct, nowMs){
+  const value=Number(pct);
+  if(!isFinite(value)) return value;
+  return _isAStockMarket(mkt) && _isAPreOpenZeroWindow(nowMs) ? 0 : value;
+}
+
+// 判断当前是否为交易刷新时段（北京时间，工作日）。按页面业务口径，港股从 09:00 开始刷新；
+// 下午仍覆盖港股独有的 15:00—16:00，避免自动刷新在港股盘中停摆。
+function _isTradingNow(nowMs){
+  const clock=_beijingMarketClock(nowMs);
+  if(!_isWeekdayMarketClock(clock)) return false;
+  const m=clock.minutes;
+  return (m>=540&&m<720)||(m>=780&&m<960);
 }
 
 // ── K线通用助手（腾讯 JSONP → 东方财富 push2his 双备源）──────
@@ -7636,6 +7663,7 @@ function renderPortTop3(){
   var upEl   = document.getElementById('portTop3Up');
   var downEl = document.getElementById('portTop3Down');
   if(!upEl || !downEl) return;
+  var topNow = Date.now(); // 同一轮三个榜单使用同一时间快照，避免 09:15 边界出现不一致
 
   // 收集所有已有价格的持仓（不限仓位，任何仓位都参与 TOP5 排序）
   var entries = [];
@@ -7645,11 +7673,12 @@ function renderPortTop3(){
         var pi = _PORT_PRICES[sk.code];
         if(pi && isFinite(pi.pct)){
           var w = (pi.w != null ? pi.w : sk.w);
+          var market = pi.mkt || sk.mkt;
           entries.push({
             name:  pi.name || sk.name,
             code:  sk.code,
-            mkt:   pi.mkt  || sk.mkt,
-            pct:   pi.pct,
+            mkt:   market,
+            pct:   _portTopDisplayPct(market, pi.pct, topNow),
             price: pi.price,
             w:     w
           });
@@ -7679,7 +7708,7 @@ function renderPortTop3(){
     var color  = posn ? 'var(--red)' : negn ? 'var(--green)' : 'var(--text2)';
     var bgBadge= posn ? '#fee2e2' : negn ? '#d1fae5' : '#f1f5f9';
     var bgRow  = rank===1 ? (posn?'#fff5f5':negn?'#f0fdf4':'#f8fafc') : '#fff';
-    var sign   = item.pct >= 0 ? '+' : '';
+    var sign   = item.pct > 0 ? '+' : '';
     var priceStr = item.mkt==='HK'
       ? Number(item.price).toFixed(3)
       : Number(item.price).toFixed(2);
@@ -7829,6 +7858,7 @@ function _renderPortBreadth(){
 function _renderPortTopW(){
   var wEl = document.getElementById('portTop5W');
   if(!wEl) return;
+  var topNow = Date.now();
 
   // 没有价格数据时保持占位提示，等待用户点击"刷新股价"
   if(!_PORT_PRICES || !Object.keys(_PORT_PRICES).length){
@@ -7853,11 +7883,12 @@ function _renderPortTopW(){
       sec.stocks.forEach(function(sk){
         var pi = _PORT_PRICES[sk.code];
         if(pi && isFinite(pi.pct)){
+          var market = pi.mkt || sk.mkt;
           wEntries.push({
             name:  pi.name || sk.name,
-            mkt:   pi.mkt  || sk.mkt,
+            mkt:   market,
             w:     codeW[sk.code],   // null 表示未设置
-            pct:   pi.pct,
+            pct:   _portTopDisplayPct(market, pi.pct, topNow),
             price: pi.price
           });
         }
@@ -7882,7 +7913,7 @@ function _renderPortTopW(){
     var rank     = i + 1;
     var pctColor = item.pct > 0 ? 'var(--red)' : item.pct < 0 ? 'var(--green)' : 'var(--text2)';
     var bgRow    = item.pct > 0 ? (rank===1?'#fff5f5':'#fff') : item.pct < 0 ? (rank===1?'#f0fdf4':'#fff') : '#fff';
-    var sign     = item.pct >= 0 ? '+' : '';
+    var sign     = item.pct > 0 ? '+' : '';
     var priceStr = item.mkt==='HK' ? Number(item.price).toFixed(3) : Number(item.price).toFixed(2);
     var wLine    = item.w != null
       ? '<div style="font-size:11px;color:var(--blue);font-weight:700;margin-top:2px">仓位 '+Number(item.w).toFixed(1)+'%</div>'
