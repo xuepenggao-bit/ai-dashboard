@@ -3248,6 +3248,90 @@ function _mergeRemoteFields(local, remote){
 }
 
 /*
+ * 历史持仓必须按“日期 + 单条记录版本”合并，不能跟随整个 portfolio.json 的
+ * _savedAt 一起整段覆盖。否则旧设备只要刚改过当前仓位，就会用缺少某些日期的
+ * 本地 history 覆盖云端完整历史。
+ *
+ * _updatedAt：某一天记录最后一次明确修改的时间。
+ * _historyDeleted：用户明确删除某一天时留下的删除标记；仅“本地没有该日期”
+ *                  不再被当作删除，避免旧缓存误删云端记录。
+ */
+function _historyDeletedMap(data){
+  const source = data && data._historyDeleted;
+  if(!source || typeof source!=='object' || Array.isArray(source)) return {};
+  const result = {};
+  Object.keys(source).forEach(date=>{
+    const ts = Number(source[date]);
+    if(date && Number.isFinite(ts) && ts>0) result[date] = ts;
+  });
+  return result;
+}
+
+function _historyRecordTs(record){
+  const ts = Number(record && record._updatedAt);
+  return Number.isFinite(ts) && ts>0 ? ts : 0;
+}
+
+function _mergePortfolioHistory(preferred, other){
+  const deleted = _historyDeletedMap(other);
+  Object.entries(_historyDeletedMap(preferred)).forEach(([date,ts])=>{
+    deleted[date] = Math.max(deleted[date]||0, ts);
+  });
+
+  const records = new Map();
+  const addRecords = (data, isPreferred)=>{
+    const list = data && Array.isArray(data.history) ? data.history : [];
+    list.forEach(record=>{
+      if(!record || !record.date) return;
+      const current = records.get(record.date);
+      if(!current){
+        records.set(record.date, {record:_clonePortfolio(record), preferred:isPreferred});
+        return;
+      }
+      const nextTs = _historyRecordTs(record);
+      const currentTs = _historyRecordTs(current.record);
+      // 有单条版本时选较新记录；旧数据都没有版本时由整体较新的 preferred 决定。
+      if(nextTs>currentTs || (nextTs===currentTs && isPreferred && !current.preferred)){
+        records.set(record.date, {record:_clonePortfolio(record), preferred:isPreferred});
+      }
+    });
+  };
+  addRecords(other, false);
+  addRecords(preferred, true);
+
+  const history = [];
+  records.forEach(({record},date)=>{
+    const deletedAt = deleted[date] || 0;
+    const updatedAt = _historyRecordTs(record);
+    // 删除标记比记录更新（旧记录无 _updatedAt 时也成立）才真正删除。
+    if(deletedAt && deletedAt>=updatedAt) return;
+    history.push(record);
+    // 该日期后来被重新记录，旧删除标记已失效。
+    if(updatedAt>deletedAt) delete deleted[date];
+  });
+  history.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  return {history, deleted};
+}
+
+function _mergePortfolioData(preferred, other){
+  const base = preferred || other;
+  if(!base) return null;
+  const merged = _clonePortfolio(base);
+  const hist = _mergePortfolioHistory(preferred, other);
+  merged.history = hist.history;
+  if(Object.keys(hist.deleted).length) merged._historyDeleted = hist.deleted;
+  else delete merged._historyDeleted;
+  return merged;
+}
+
+function _historyState(data){
+  const history = data && Array.isArray(data.history)
+    ? [...data.history].sort((a,b)=>String(b.date).localeCompare(String(a.date)))
+    : [];
+  return JSON.stringify({history, deleted:_historyDeletedMap(data)});
+}
+
+/*
  * 将一个不可变快照直接写入 GitHub Contents API。
  * - 所有写入进入队列，杜绝“旧请求后完成而覆盖新仓位”。
  * - 每次写入前取最新 SHA；409 冲突时回读并重试。
@@ -3275,6 +3359,9 @@ function portSaveRemote(snapshot=_clonePortfolio(PORT), revision=_portRevision){
         if(remote.data && remoteTs > localTs){
           throw new Error('云端已有更新版本；已保留本地改动，请重新确认后再同步');
         }
+        // 当前仓位仍以本次明确同步的快照为准，但历史持仓逐日合并；远端独有日期
+        // 绝不能因为这台设备缓存较旧而消失。
+        if(remote.data) snapshot = _mergePortfolioData(snapshot, remote.data);
         // 保留远端新增的补充字段，避免旧浏览器覆盖行业标签等数据。
         if(remote.data) _mergeRemoteFields(snapshot, remote.data);
         const body = {
@@ -3306,6 +3393,10 @@ function portSaveRemote(snapshot=_clonePortfolio(PORT), revision=_portRevision){
 
       // 仅当这个快照仍是当前版本时，才清除“未同步”标志并更新成功提示。
       if(revision === _portRevision && PORT?._savedAt === snapshot?._savedAt){
+        // 写入前可能合并了另一台设备新增的历史记录，立即回填当前页面和本地缓存。
+        PORT = _mergePortfolioData(PORT, snapshot);
+        localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
+        if(typeof renderHistTable==='function') renderHistTable();
         _portDirty = false;
         const savedTs = new Date(snapshot._savedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
         _setSyncTs('已同步 · '+savedTs, '#248a3d');
@@ -3430,12 +3521,24 @@ async function portInit(){
     (rt > lt || (remoteAuthoritative && rt === lt && rw >= lw));
 
   if(remoteWins){
-    // 远端更新或相等 → 使用远端，同步本地缓存，重新渲染
-    PORT = remoteData;
-    localStorage.setItem(PORT_KEY, JSON.stringify(remoteData));
+    // 当前仓位使用较新的远端版本；历史持仓仍逐日合并，保留本地尚未上传的日期。
+    PORT = _mergePortfolioData(remoteData, localData);
+    const historyNeedsUpload = _historyState(PORT) !== _historyState(remoteData);
+    if(historyNeedsUpload){
+      // 合并结果是一个新版本，时间戳必须晚于远端，之后才能安全回写。
+      PORT._savedAt = Math.max(Date.now(), rt + 1);
+    }
+    localStorage.setItem(PORT_KEY, JSON.stringify(PORT));
     _portRevision++; // 使任何在此之前创建的旧同步任务失效，不能清除当前状态
-    _portDirty = false;
-    _setSyncTs('云端已载入 · ' + ts, '#248a3d');
+    _portDirty = historyNeedsUpload;
+    if(historyNeedsUpload && remoteOk && _getGithubToken()){
+      _setSyncTs('正在合并历史…', '#0071e3');
+      portSaveRemote(_clonePortfolio(PORT), _portRevision);
+    }else if(historyNeedsUpload){
+      _setSyncTs('历史已合并 · 待同步', '#bf6a02');
+    }else{
+      _setSyncTs('云端已载入 · ' + ts, '#248a3d');
+    }
     renderPortfolio();
     updateRiskDashboard();
     if(typeof renderHistTable==='function') renderHistTable();   // 立即刷新历史持仓表
@@ -3446,7 +3549,8 @@ async function portInit(){
     if(_rosterChanged) fetchPortPrices();
   } else if(localData && lw >= 0){
     // 本地更新（或远端不可用）→ 使用本地；先将远端已有的新字段（如 industry）合并进来，
-    // 防止旧缓存覆盖其他浏览器同步好的行业标签等数据
+    // 并逐日合并历史记录，防止旧缓存覆盖其他浏览器新增的历史日期。
+    if(remoteData) localData = _mergePortfolioData(localData, remoteData);
     if(remoteData) _mergeRemoteFields(localData, remoteData);
     PORT = localData;
     if(!PORT._savedAt) PORT._savedAt = Date.now();
@@ -6509,6 +6613,21 @@ function renderHistDetail(date){
   </table>`;
 }
 
+function _touchHistoryRecord(record, updatedAt=Date.now()){
+  if(!record || !record.date) return;
+  record._updatedAt = updatedAt;
+  if(PORT && PORT._historyDeleted && PORT._historyDeleted[record.date]){
+    delete PORT._historyDeleted[record.date];
+    if(!Object.keys(PORT._historyDeleted).length) delete PORT._historyDeleted;
+  }
+}
+
+function _markHistoryDeleted(date, deletedAt=Date.now()){
+  if(!PORT || !date) return;
+  PORT._historyDeleted = _historyDeletedMap(PORT);
+  PORT._historyDeleted[date] = Math.max(PORT._historyDeleted[date]||0, deletedAt);
+}
+
 async function addHistRecord(){
   if(!PORT) portLoad();
   if(!PORT.history) PORT.history=[];
@@ -6574,6 +6693,7 @@ async function addHistRecord(){
     note:    '',
     stocks:  _snapStocks
   };
+  _touchHistoryRecord(rec);
   PORT.history.unshift(rec);
   portSave();
   portSaveRemote();
@@ -6598,7 +6718,8 @@ async function fixHistCsi(){
   const miss=PORT.history.filter(r=>r.csiPct==null||!isFinite(r.csiPct));
   if(!miss.length){ alert('没有缺失中证全指的记录，无需补正。'); return; }
   if(!confirm('将用主要指数「中证全指」'+v.toFixed(2)+'% 补正以下 '+miss.length+' 天的缺失值：\n'+miss.map(r=>r.date).join('、')+'\n\n确认补正并同步到云端？')) return;
-  miss.forEach(r=>{ r.csiPct=v; });
+  const updatedAt=Date.now();
+  miss.forEach(r=>{ r.csiPct=v; _touchHistoryRecord(r, updatedAt); });
   portSave();
   portSaveRemote();
   renderHistTable();
@@ -6609,6 +6730,7 @@ var _noteRemoteTimer = null;
 function updateHistNote(idx,val){
   if(!PORT||!PORT.history||PORT.history[idx]==null) return;
   PORT.history[idx].note = val.trim();
+  _touchHistoryRecord(PORT.history[idx]);
   portSave();                          // 立即写本地 localStorage
   // 防抖：停止输入 800ms 后才推送远端，避免每次击键都触发 GitHub API
   clearTimeout(_noteRemoteTimer);
@@ -6619,6 +6741,7 @@ function updateHistNote(idx,val){
 function saveHistNoteNow(idx,val){
   if(!PORT||!PORT.history||PORT.history[idx]==null) return;
   PORT.history[idx].note = (val||'').trim();
+  _touchHistoryRecord(PORT.history[idx]);
   clearTimeout(_noteRemoteTimer);
   portSave();
   portSaveRemote();
@@ -6628,6 +6751,7 @@ function deleteHistRecord(idx){
   if(!PORT||!PORT.history||PORT.history[idx]==null) return;
   const r=PORT.history[idx];
   if(!confirm(`确认删除 ${r.date} 的记录？`)) return;
+  _markHistoryDeleted(r.date);
   PORT.history.splice(idx,1);
   portSave();
   portSaveRemote();
@@ -6645,7 +6769,11 @@ function recomputeHistReturns(){
     if(!cur.stocks||!cur.stocks.length){ skipped++; continue; }   // 无快照无法重算
     const prev=(i>0)?asc[i-1]:null;
     const np=_computePortPct(cur.stocks, (prev&&prev.stocks&&prev.stocks.length)?prev.stocks:null);
-    if(np!=null && np!==cur.portPct){ cur.portPct=np; changed++; }   // 直接改引用，即 PORT.history 内对象
+    if(np!=null && np!==cur.portPct){
+      cur.portPct=np;
+      _touchHistoryRecord(cur);
+      changed++;
+    }   // 直接改引用，即 PORT.history 内对象
   }
   portSave();
   portSaveRemote();
