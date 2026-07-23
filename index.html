@@ -89,12 +89,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .tab.active:hover{transform:translateY(-2px)}
 /* 各标签激活态专属主色（白字，对比充足） */
 .tabs-inner .tab:nth-child(1){--tab-c:#2563eb;--tab-sh:rgba(37,99,235,.34)}   /* 投资组合 */
-.tabs-inner .tab:nth-child(2){--tab-c:#d97706;--tab-sh:rgba(217,119,6,.32)}   /* 估值分析 */
-.tabs-inner .tab:nth-child(3){--tab-c:#7c3aed;--tab-sh:rgba(124,58,237,.32)}  /* 宏观趋势 */
-.tabs-inner .tab:nth-child(4){--tab-c:#0d9488;--tab-sh:rgba(13,148,136,.32)}  /* 产业链监控 */
-.tabs-inner .tab:nth-child(5){--tab-c:#4f46e5;--tab-sh:rgba(79,70,229,.32)}   /* 历史持仓 */
-.tabs-inner .tab:nth-child(6){--tab-c:#b45309;--tab-sh:rgba(180,83,9,.30)}    /* 盘前自检 */
-.tabs-inner .tab:nth-child(7){--tab-c:#475569;--tab-sh:rgba(71,85,105,.30)}   /* 交易系统 */
+.tabs-inner .tab:nth-child(2){--tab-c:#7c3aed;--tab-sh:rgba(124,58,237,.32)}  /* 宏观趋势 */
+.tabs-inner .tab:nth-child(3){--tab-c:#4f46e5;--tab-sh:rgba(79,70,229,.32)}   /* 历史持仓 */
+.tabs-inner .tab:nth-child(4){--tab-c:#b45309;--tab-sh:rgba(180,83,9,.30)}    /* 盘前自检 */
+.tabs-inner .tab:nth-child(5){--tab-c:#475569;--tab-sh:rgba(71,85,105,.30)}   /* 交易系统 */
+.tabs-inner .tab:nth-child(6){--tab-c:#d97706;--tab-sh:rgba(217,119,6,.32)}   /* 估值分析 */
+.tabs-inner .tab:nth-child(7){--tab-c:#0d9488;--tab-sh:rgba(13,148,136,.32)}  /* 产业链监控 */
 /* 盘前自检问卷 */
 #tPre .pcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:16px}
 #tPre .pcard h3{font-size:14px;font-weight:800;color:var(--text);margin:0 0 4px;display:flex;align-items:center;gap:8px}
@@ -342,12 +342,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <nav class="tabs">
   <div class="tabs-inner">
     <button class="tab active" onclick="switchTab(0)">💼 投资组合</button>
-    <button class="tab" onclick="switchTab(1)">📊 估值分析</button>
-    <button class="tab" onclick="switchTab(2)">🌐 宏观趋势</button>
-    <button class="tab" onclick="switchTab(3)">🔴 产业链监控</button>
-    <button class="tab" onclick="switchTab(4)">📋 历史持仓</button>
-    <button class="tab" onclick="switchTab(5)">🧭 盘前自检</button>
-    <button class="tab" onclick="switchTab(6)">📐 交易系统</button>
+    <button class="tab" onclick="switchTab(1)">🌐 宏观趋势</button>
+    <button class="tab" onclick="switchTab(2)">📋 历史持仓</button>
+    <button class="tab" onclick="switchTab(3)">🧭 盘前自检</button>
+    <button class="tab" onclick="switchTab(4)">📐 交易系统</button>
+    <button class="tab" onclick="switchTab(5)">📊 估值分析</button>
+    <button class="tab" onclick="switchTab(6)">🔴 产业链监控</button>
   </div>
 </nav>
 
@@ -1013,8 +1013,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div class="g4 mb16">
     <div class="card">
       <div class="klabel">Hyperscaler总Capex 2026E <span style="background:#dcfce7;color:#166534;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">季报指引</span></div>
-      <div class="kval tb" id="kCapex26">$6,900–7,200亿</div>
-      <div class="kchange up" id="kYoy26">中值同比 +97.8%</div>
+      <div class="kval tb" id="kCapex26">$7,100–7,400亿</div>
+      <div class="kchange up" id="kYoy26">中值同比 +103.4%</div>
       <div class="tx3 mt4">Alphabet/MSFT/Amazon/Meta 指引合计</div>
     </div>
     <div class="card">
@@ -1049,11 +1049,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
     <div class="card">
       <div class="ch">
-        <span class="ct">OpenAI & Anthropic ARR增长</span>
-        <span class="cbadge" style="background:#fee2e2;color:#991b1b">公司披露/媒体</span>
+        <span class="ct">OpenAI & Anthropic 年化收入里程碑</span>
+        <span class="cbadge" style="background:#ede9fe;color:#6d28d9">公开披露</span>
       </div>
       <div style="height:200px"><canvas id="cArr"></canvas></div>
-      <div class="tx3 mt4" style="font-size:10px">季度ARR里程碑 · 蓝=OpenAI 紫=Anthropic · 单位$亿 · 来源: 公司财报/Bloomberg/媒体报道</div>
+      <div id="arrSourceSummary" class="tx3 mt4" style="font-size:10px;line-height:1.55">仅连接已公开的年化收入运行率里程碑 · 蓝=OpenAI 紫=Anthropic · 单位$亿</div>
     </div>
   </div>
 
@@ -1062,9 +1062,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="card">
       <div class="ch"><span class="ct">Alphabet / Google</span><span class="cbadge tg">正式区间</span></div>
       <div class="fjb mb4"><span class="tx2">2025A 实际值</span><span class="tx2" id="kGoog25">$914亿</span></div>
-      <div class="fjb mb4"><span class="tx2">2026E 指引</span><span class="tb" style="font-weight:700" id="kGoog26">$1,750–1,850亿</span></div>
+      <div class="fjb mb4"><span class="tx2">2026E 指引</span><span class="tb" style="font-weight:700" id="kGoog26">$1,950–2,050亿</span></div>
       <div class="tx3 mt8" id="kGoogBasis">CY2026 · 官方区间</div>
-      <a id="kGoogSource" href="https://abc.xyz/investor/events/event-details/2026/2025-Q4-Earnings-Call-2026-Dr_C033hS6/default.aspx" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Alphabet FY2025业绩会 · 2026-02-04 ↗</a>
+      <a id="kGoogSource" href="https://abc.xyz/investor/events/event-details/2026/2026-Q2-Earnings-Call-2026-GgTAq7Is0z/default.aspx" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Alphabet 2026 Q2业绩会 · 2026-07-22 ↗</a>
     </div>
     <div class="card">
       <div class="ch"><span class="ct">Microsoft</span><span class="cbadge" style="background:#fef3c7;color:#92400e">点指引</span></div>
@@ -1447,10 +1447,10 @@ const BASE = {
   capex:{
     labels:['Alphabet','Microsoft','Amazon','Meta'],
     // 单位：亿美元。Microsoft 使用财年实际值；2026E 使用公司指引中值。
-    y2024:[525,444.8,776.6,392.3],y2025:[914,645.5,1283.2,722.2],y2026e:[1800,1900,2000,1350]
+    y2024:[525,444.8,776.6,392.3],y2025:[914,645.5,1283.2,722.2],y2026e:[2000,1900,2000,1350]
   },
   trendYears:['2024A','2025A','2026E中值'],
-  trendCapex:[2138.7,3564.9,7050],
+  trendCapex:[2138.7,3564.9,7250],
 
   // ── §2.2 六维风格画像矩阵 ──────────────────────────────────
   // 维度: [①盈利弹性, ②估值安全, ③产业动能, ④资金热度, ⑤上行确定, ⑥风险可控]
@@ -1657,10 +1657,10 @@ const BASE = {
   },
 
   aiArr:{
-    labels:['2023年','2024年','2025-Q2','2025-Q4','2026-Q1','2026-Q2'],
-    openai:   [20,  60,  130, 200, 220, 240],
-    anthropic:[null,null, 30,  90, 165, 220],
-    // 来源: OpenAI=$240亿(2026-Apr，公司确认) Anthropic=$300亿(2026-Apr,SaaStr报道，OpenAI CRO称高估$80亿，此处取调整值$220亿)
+    labels:['2024末','2025末','2026-02','2026-05'],
+    openai:   [60,214,250,null],
+    anthropic:[10,90,null,470],
+    // 只保留可追溯的公开里程碑；null 表示该月没有新披露，不用旧值伪造下降。
   },
 
   ashare:{
@@ -3880,14 +3880,14 @@ function mkArr(){
   const ctx=document.getElementById('cArr').getContext('2d');
   const d=BASE.aiArr;
   CH.arr=new Chart(ctx,{type:'line',data:{labels:d.labels,datasets:[
-    {label:'OpenAI ($亿)',data:d.openai,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',borderWidth:2.5,pointRadius:4,fill:true,tension:0.35},
-    {label:'Anthropic ($亿)',data:d.anthropic,borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.08)',borderWidth:2.5,pointRadius:4,fill:true,tension:0.35},
+    {label:'OpenAI ($亿)',data:d.openai,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',borderWidth:2.5,pointRadius:4,fill:true,tension:0.22,spanGaps:true},
+    {label:'Anthropic ($亿)',data:d.anthropic,borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.08)',borderWidth:2.5,pointRadius:4,fill:true,tension:0.22,spanGaps:true},
   ]},options:{responsive:true,maintainAspectRatio:false,
     plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
     scales:{
       x:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',font:{size:9}}},
       y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>'$'+v+'亿'},
-         title:{display:true,text:'ARR ($亿)',color:'#94a3b8',font:{size:9}}},
+         title:{display:true,text:'年化收入运行率 ($亿)',color:'#94a3b8',font:{size:9}}},
     }
   }});
 }
@@ -3981,17 +3981,32 @@ function _renderAiTrend(d){
   _updateCapexCharts(d);
   const sourceSummary=document.getElementById('capexSourceSummary');
   if(sourceSummary) sourceSummary.textContent='口径：亿美元；2026E 为公司指引，2025A 为各公司已披露财年口径'+(d.capex_as_of?' · 最新披露截至 '+d.capex_as_of:'');
-  // OpenAI / Anthropic ARR 图表
-  if(d.arr_labels && d.arr_openai && d.arr_anthropic){
+  // OpenAI / Anthropic 年化收入：仅接受等长、逐家公司不倒退的公开里程碑。
+  const _validArr=(series,labels)=>{
+    if(!Array.isArray(series)||series.length!==labels.length) return false;
+    let previous=-Infinity, hasValue=false;
+    for(const value of series){
+      if(value===null||value===undefined||value==='') continue;
+      const n=Number(value);
+      if(!Number.isFinite(n)||n<previous) return false;
+      previous=n; hasValue=true;
+    }
+    return hasValue;
+  };
+  if(Array.isArray(d.arr_labels) && _validArr(d.arr_openai,d.arr_labels) && _validArr(d.arr_anthropic,d.arr_labels)){
     if(typeof BASE!=='undefined' && BASE.aiArr){
-      BASE.aiArr.labels=d.arr_labels; BASE.aiArr.openai=d.arr_openai; BASE.aiArr.anthropic=d.arr_anthropic;
+      BASE.aiArr.labels=[...d.arr_labels]; BASE.aiArr.openai=[...d.arr_openai]; BASE.aiArr.anthropic=[...d.arr_anthropic];
     }
     if(CH.arr){
-      CH.arr.data.labels=d.arr_labels;
-      CH.arr.data.datasets[0].data=d.arr_openai;
-      CH.arr.data.datasets[1].data=d.arr_anthropic;
+      CH.arr.data.labels=[...d.arr_labels];
+      CH.arr.data.datasets[0].data=[...d.arr_openai];
+      CH.arr.data.datasets[1].data=[...d.arr_anthropic];
       CH.arr.update('none');
     }
+  }
+  const arrSummary=document.getElementById('arrSourceSummary');
+  if(arrSummary){
+    arrSummary.textContent=d.arr_note||'年化收入运行率公开里程碑（非传统合同 ARR）'+(d.arr_as_of?' · 最新披露截至 '+d.arr_as_of:'');
   }
   const tsEl=document.getElementById('capexTs');
   if(tsEl && d.updated) tsEl.textContent='上次手动更新：'+d.updated;
@@ -4850,7 +4865,7 @@ function renderValTable(){
 }
 
 // ── TAB ──────────────────────────────────────────────────────
-const TAB_ORDER=['tPort','tVal','t0','tStage','tHist','tPre','tTrade'];
+const TAB_ORDER=['tPort','t0','tHist','tPre','tTrade','tVal','tStage'];
 let _macroAutoFetched=false;
 const _TAB_TS={};  // 各标签页最近一次动态刷新的时间戳（用于节流）
 const _TAB_THROTTLE=30000; // 30秒内不重复刷新

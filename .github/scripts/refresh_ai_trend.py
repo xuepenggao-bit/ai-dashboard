@@ -91,6 +91,27 @@ def ddg_search(query, hosts, n=8):
         return []
 
 
+def latest_official_results(cfg):
+    """Search several recency-aware variants and de-duplicate official URLs."""
+    today = datetime.date.today()
+    quarter = (today.month - 1) // 3 + 1
+    host = cfg["hosts"][0]
+    queries = [
+        cfg["query"],
+        f"site:{host} {today.year} Q{quarter} earnings call full year {today.year} CapEx guidance",
+        f"site:{host} latest {today.year} earnings transcript capital expenditures guidance",
+    ]
+    merged = []
+    seen = set()
+    for query in queries:
+        for item in ddg_search(query, cfg["hosts"], n=10):
+            if item["url"] in seen:
+                continue
+            seen.add(item["url"])
+            merged.append(item)
+    return merged[:12]
+
+
 def _number(value):
     if value is None or value == "":
         return None
@@ -113,10 +134,7 @@ def main():
     except Exception:
         base = {}
 
-    search_results = {
-        key: ddg_search(cfg["query"], cfg["hosts"])
-        for key, cfg in COMPANIES.items()
-    }
+    search_results = {key: latest_official_results(cfg) for key, cfg in COMPANIES.items()}
     if not any(search_results.values()):
         print("No official search results; preserving the existing snapshot.")
         return
@@ -135,17 +153,23 @@ def main():
         context_parts.append("\n".join(lines))
     context = "\n\n".join(context_parts)
 
+    previous_dates = {
+        key: ((base.get("capex_companies") or {}).get(key) or {}).get("source_date", "")
+        for key in COMPANIES
+    }
     prompt = f"""
 You are structuring capital-expenditure disclosures from official company investor-relations search results.
 Today is {datetime.date.today().isoformat()}. Select the latest explicit full-year 2026 Capex guidance for each company.
 
 Rules:
 1. Use only a number explicitly stated in an official snippet and copy that snippet's official URL.
-2. Unit is USD 100 million: $175B = 1750.
-3. If management gives a range, output both endpoints and guidance_type "range".
-4. If management says "about", "roughly", or gives one point, set low=high and guidance_type "point". Never invent a range.
-5. actual_2025_yi is optional and must be an explicitly disclosed full-year actual Capex number.
-6. Omit a company or field that cannot be verified. Do not use analyst estimates or news-media figures.
+2. Compare publication/earnings dates and select the newest guidance, not the first search result.
+3. Never return a source_date older than the saved date for that company: {json.dumps(previous_dates, ensure_ascii=False)}.
+4. Unit is USD 100 million: $175B = 1750.
+5. If management gives a range, output both endpoints and guidance_type "range".
+6. If management says "about", "roughly", or gives one point, set low=high and guidance_type "point". Never invent a range.
+7. actual_2025_yi is optional and must be an explicitly disclosed full-year actual Capex number.
+8. Omit a company or field that cannot be verified. Do not use analyst estimates or news-media figures.
 
 Return JSON only:
 {{
@@ -191,14 +215,22 @@ OFFICIAL RESULTS:
         low = _number(candidate.get("guidance_low_yi"))
         high = _number(candidate.get("guidance_high_yi"))
         url = str(candidate.get("source_url") or "")
+        source_date = _valid_date(candidate.get("source_date"))
+        previous_date = _valid_date((current.get(key) or {}).get("source_date"))
         minimum, maximum = cfg["bounds"]
         if (
             low is None
             or high is None
             or not (minimum <= low <= high <= maximum)
             or not _host_allowed(url, cfg["hosts"])
+            or not source_date
+            or (previous_date and source_date < previous_date)
         ):
-            print(f"  [{key}] rejected or absent; keeping previous values")
+            print(
+                f"  [{key}] rejected/absent/stale "
+                f"(candidate={source_date or 'no-date'}, saved={previous_date or 'none'}); "
+                "keeping previous values"
+            )
             continue
 
         item = dict(current.get(key) or {})
@@ -215,7 +247,7 @@ OFFICIAL RESULTS:
                     else "CY2026 · 点指引，未披露上下限"
                 ),
                 "source_label": cfg["source_label"],
-                "source_date": _valid_date(candidate.get("source_date")),
+                "source_date": source_date,
                 "source_url": url,
             }
         )
