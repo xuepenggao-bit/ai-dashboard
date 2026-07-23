@@ -1069,114 +1069,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Stage 4 vs 5 -->
-  <div class="card">
-    <div class="ch"><span class="ct">阶段4 vs 阶段5 — 投资含义对比</span></div>
-    <div class="g2">
-      <div style="border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:14px;background:rgba(59,130,246,.04)">
-        <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:10px">📌 阶段4（当前核心仓位）</div>
-        <ul style="list-style:none;display:flex;flex-direction:column;gap:7px">
-          <li class="tx2">✅ Hyperscaler capex高增长确认 (+77%)</li>
-          <li class="tx2">✅ PCB/AI产业链业绩支撑，PE 20x合理</li>
-          <li class="tx2">✅ AI基础设施供需紧张，出货持续</li>
-          <li class="tx2">✅ 科技龙头维持买入/持有</li>
-          <li class="tx2">⚠️ 部分AI应用PE偏高，需个股甄别</li>
-        </ul>
-      </div>
-      <div style="border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:14px;background:rgba(245,158,11,.04)">
-        <div style="font-size:13px;font-weight:700;color:var(--yellow);margin-bottom:10px">⚠️ 阶段5（AI应用—开始减仓）</div>
-        <ul style="list-style:none;display:flex;flex-direction:column;gap:7px">
-          <li class="tx2">🔴 AI ETF PE 70~90x，PEG &gt; 95</li>
-          <li class="tx2">🔴 2021年科技泡沫形态高度类似</li>
-          <li class="tx2">🟡 AI应用/SaaS叙事大于业绩</li>
-          <li class="tx2">🟡 流动性依赖、估值泡沫风险上升</li>
-          <li class="tx2">✅ 核心AI基础设施仍可持有</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Neo Cloud Capex ── -->
-  <div class="divider mt16 mb16"></div>
-  <div style="font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-    🌐 Oracle & Neo Cloud 资本支出监控
-    <span class="stag">非传统Hyperscaler · AI算力云</span>
-  </div>
-
-  <!-- KPI row -->
-  <div class="g4 mb16">
-    <div class="card">
-      <div class="klabel">Oracle FY2025A Capex <span style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">季报累计</span></div>
-      <div class="kval tb">$165亿</div>
-      <div class="kchange up">↑ +139% 同比</div>
-      <div class="tx3 mt4">财年截至2025年5月，OCI AI需求驱动</div>
-    </div>
-    <div class="card">
-      <div class="klabel">Oracle FY2026E Capex <span style="background:#dcfce7;color:#166534;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">管理层指引</span></div>
-      <div class="kval tg">$320亿+</div>
-      <div class="kchange up">↑ +94% YoY 指引</div>
-      <div class="tx3 mt4">CEO承诺继续大幅提速，Stargate主力</div>
-    </div>
-    <div class="card">
-      <div class="klabel">CoreWeave 2024A Capex <span style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">IPO招股书</span></div>
-      <div class="kval tp">$71亿</div>
-      <div class="kchange up">↑ +209% 同比</div>
-      <div class="tx3 mt4">NVIDIA支持 GPU云，2025年3月上市</div>
-    </div>
-    <div class="card">
-      <div class="klabel">CoreWeave 2025E Capex <span style="background:#dcfce7;color:#166534;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">招股书指引</span></div>
-      <div class="kval ty">$200亿+</div>
-      <div class="kchange up">↑ +182% YoY</div>
-      <div class="tx3 mt4">重点扩建GB200 NVL72机架部署</div>
-    </div>
-  </div>
-
-  <!-- Chart + Table -->
-  <div class="g2 mb16">
-    <div class="card">
-      <div class="ch"><span class="ct">Oracle vs CoreWeave Capex趋势 (亿美元)</span></div>
-      <div style="height:250px"><canvas id="cNeoCapex"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="ch"><span class="ct">Neo Cloud 各公司详情</span><span class="cbadge">季报/招股书数据</span></div>
-      <div class="overflow">
-        <table class="mtable" id="neoTable">
-          <thead><tr>
-            <th>公司</th><th>代码</th><th>类型</th><th>最新Capex</th><th>前向指引</th><th>同比增速</th><th>数据来源</th>
-          </tr></thead>
-          <tbody id="neoBody"></tbody>
-        </table>
-      </div>
-      <div class="tx3 mt12" style="line-height:1.7">
-        <strong>背景：</strong>Neo Cloud与Hyperscaler的差异在于其以GPU算力出租为核心商业模式，重资本扩张依赖外部融资（CoreWeave：NVIDIA持股+债务融资）。Oracle通过OCI差异化定位，专攻企业AI训练推理，是Hyperscaler生态之外增速最快的公有云。
-      </div>
-    </div>
-  </div>
-
-  <!-- Stargate context -->
-  <div class="card">
-    <div class="ch"><span class="ct">Stargate计划参与方 · Capex承诺追踪</span><span class="cbadge pulse">2025-2029</span></div>
-    <div class="g3" style="gap:10px">
-      <div style="border:1px solid var(--border);border-radius:8px;padding:12px">
-        <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--blue)">SoftBank</div>
-        <div style="font-size:22px;font-weight:700">$1,000亿</div>
-        <div class="tx3 mt4">美国AI基础设施承诺，5年内</div>
-        <div class="tx3" style="margin-top:6px;padding:4px 8px;background:#f0fdf4;border-radius:4px;color:#166534">Stargate联合牵头</div>
-      </div>
-      <div style="border:1px solid var(--border);border-radius:8px;padding:12px">
-        <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--purple)">Oracle</div>
-        <div style="font-size:22px;font-weight:700">$500亿+</div>
-        <div class="tx3 mt4">美国数据中心承诺，FY2025-2026</div>
-        <div class="tx3" style="margin-top:6px;padding:4px 8px;background:#eff6ff;border-radius:4px;color:#1e40af">Stargate基础设施合作方</div>
-      </div>
-      <div style="border:1px solid var(--border);border-radius:8px;padding:12px">
-        <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--cyan)">xAI (私有)</div>
-        <div style="font-size:22px;font-weight:700">~$50亿</div>
-        <div class="tx3 mt4">Memphis Colossus 10万卡H200集群，媒体报道估算</div>
-        <div class="tx3" style="margin-top:6px;padding:4px 8px;background:#fef3c7;border-radius:4px;color:#78350f">私有公司，数据为估算</div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- ════════════════ TAB 估值分析 ════════════════ -->
@@ -1663,22 +1555,6 @@ const BASE = {
     {cond:'PCB均值PE(动态)',       s4:'< 50x',  curr:'--', s5:'> 80x',  ok:null, _live:false},
     {cond:'AI叙事集中度',          s4:'< +8%',  curr:'--', s5:'> +15%', ok:null, _live:false},
     {cond:'综合动量(20日均值)',     s4:'> 0',    curr:'--', s5:'< -5%',  ok:null, _live:false},
-  ],
-
-  // Neo Cloud Capex — 单位：亿美元($100M)，与Hyperscaler chart同比例
-  // 数据来源：Oracle季报累计 / CoreWeave IPO招股书 / xAI媒体报道估算
-  neoCapex:{
-    labels:['Oracle','CoreWeave'],
-    y2023:[69, 23],   // Oracle FY2023; CoreWeave 2023A
-    y2024:[69, 71],   // Oracle FY2024A($6.9B); CoreWeave 2024A($7.1B, IPO招股书)
-    y2025:[165,200],  // Oracle FY2025A季报累计估算($16.5B); CoreWeave 2025E指引($20B)
-    y2026e:[320,null],// Oracle FY2026E管理层指引($32B+); CoreWeave未披露
-  },
-  neo:[
-    {co:'Oracle',      tkr:'ORCL',  type:'企业AI公有云',  capex:'$165亿 (FY25A)',  fwd:'$320亿+ (FY26E)',  yoy:'+139%', src:'季报累计',     pub:true},
-    {co:'CoreWeave',   tkr:'CRWV',  type:'GPU算力云',     capex:'$71亿 (2024A)',   fwd:'$200亿+ (2025E)',  yoy:'+209%', src:'IPO招股书',   pub:true},
-    {co:'xAI',         tkr:'私有',  type:'AI训练算力',    capex:'~$50亿 (估算)',   fwd:'扩建中',          yoy:'N/A',   src:'媒体报道估算', pub:false},
-    {co:'SoftBank',    tkr:'9984.T',type:'AI基础设施LP',  capex:'$1,000亿承诺',   fwd:'5年滚动',         yoy:'N/A',   src:'Stargate公告', pub:true},
   ],
 
   // 存储监控 — 数据来源：东方财富(美股/A股)、Yahoo Finance(韩/日股实时)、静态参考价格(台)
@@ -2874,48 +2750,6 @@ function _updateStorePeCharts(){
     CH.domStorePe.data.datasets[0].backgroundColor =d.map(s=>s.pe>100?'rgba(220,38,38,.6)':s.pe>40?'rgba(245,158,11,.6)':'rgba(5,150,105,.6)');
     CH.domStorePe.update();
   }
-}
-
-function mkNeoCapex(){
-  const ctx = document.getElementById('cNeoCapex').getContext('2d');
-  const d = BASE.neoCapex;
-  CH.neoCapex = new Chart(ctx,{
-    type:'bar',
-    data:{
-      labels:d.labels,
-      datasets:[
-        {label:'2023A', data:d.y2023, backgroundColor:'rgba(99,102,241,.45)', borderRadius:4},
-        {label:'2024A', data:d.y2024, backgroundColor:'rgba(37,99,235,.55)',  borderRadius:4},
-        {label:'2025A/E',data:d.y2025,backgroundColor:'rgba(5,150,105,.55)',  borderRadius:4},
-        {label:'2026E', data:d.y2026e,backgroundColor:'rgba(245,158,11,.55)', borderRadius:4},
-      ]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{labels:{color:'#64748b',font:{size:11}}},
-        tooltip:{callbacks:{label:ctx=>ctx.parsed.y!=null?' $'+ctx.parsed.y+'亿':'  —'}}
-      },
-      scales:{
-        x:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b'}},
-        y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>'$'+v+'亿'}}
-      }
-    }
-  });
-}
-
-function renderNeo(){
-  document.getElementById('neoBody').innerHTML = BASE.neo.map(r=>`<tr>
-    <td><strong>${r.co}</strong></td>
-    <td class="tx3" style="font-family:monospace">${r.tkr}</td>
-    <td class="tx3">${r.type}</td>
-    <td style="font-weight:600">${r.capex}</td>
-    <td class="tg">${r.fwd}</td>
-    <td class="up">${r.yoy}</td>
-    <td>
-      <span style="font-size:10px;padding:2px 7px;border-radius:4px;${r.pub?'background:#dbeafe;color:#1e40af':'background:#fef3c7;color:#78350f'}">${r.src}</span>
-    </td>
-  </tr>`).join('');
 }
 
 // ── 光模块&PCB 实时行情 ───────────────────────────────────────
@@ -8143,9 +7977,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     // 其他标签页图表（宏观趋势/产业链监控等）
     _safe(mkCapex);_safe(mkTrend);_safe(mkSig);_safe(mkStageC);
     _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);
-    _safe(mkNeoCapex);_safe(mkArr);_safe(mkMargin);
+    _safe(mkArr);_safe(mkMargin);
     _safe(mkStageMatrix);
-    _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();renderNeo();});
+    _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();});
     // 非首屏数据抓取（错开首屏行情请求，避免抢东财/腾讯连接）
     fetchAiTrend();         // data/ai_trend.json → Capex/ARR/PE
     fetchVixChart();        // iVIX 历史数据
