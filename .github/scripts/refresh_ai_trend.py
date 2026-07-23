@@ -1,125 +1,268 @@
 #!/usr/bin/env python3
+"""Manually refresh four hyperscalers' latest official Capex guidance.
+
+The workflow is deliberately workflow_dispatch-only. Search is restricted to
+company investor-relations domains; GPT only structures the official snippets.
+Unverified fields are ignored and the last valid snapshot is preserved.
 """
-Refresh AI趋势数据：Hyperscaler Capex / OpenAI & Anthropic ARR / 美股7姐妹PE。
 
-后台 AI 联网抓取：DuckDuckGo 搜索最新公开信息 + GPT-4o-mini(GitHub Models) 提取
-结构化数字，写入 data/ai_trend.json。失败时保留现有数据，不破坏。
+import datetime
+import json
+import os
+import re
+from urllib.parse import urlparse
 
-注意：财务数字由 AI 从搜索摘要提取，可能有误，请以公司财报为准。
-依赖：requests, duckduckgo_search
-环境：GITHUB_TOKEN（GitHub Actions 自动注入，用于 GPT-4o-mini）
-"""
-import os, json, re, datetime, requests
+import requests
 
-GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '').strip()
-SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
-REPO_ROOT    = os.path.normpath(os.path.join(SCRIPT_DIR, '..', '..'))
-OUT          = os.path.join(REPO_ROOT, 'data', 'ai_trend.json')
+
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "").strip()
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.normpath(os.path.join(SCRIPT_DIR, "..", ".."))
+OUT = os.path.join(REPO_ROOT, "data", "ai_trend.json")
+
+COMPANIES = {
+    "alphabet": {
+        "name": "Alphabet / Google",
+        "query": "site:abc.xyz/investor latest earnings 2026 capital expenditures guidance range",
+        "hosts": ("abc.xyz",),
+        "bounds": (500, 3000),
+        "source_label": "Alphabet 官方业绩披露",
+    },
+    "microsoft": {
+        "name": "Microsoft",
+        "query": "site:microsoft.com/en-us/investor latest earnings 2026 capital expenditures guidance",
+        "hosts": ("microsoft.com",),
+        "bounds": (500, 3000),
+        "source_label": "Microsoft 官方业绩披露",
+    },
+    "amazon": {
+        "name": "Amazon",
+        "query": "site:ir.aboutamazon.com latest earnings 2026 capital expenditures guidance",
+        "hosts": ("ir.aboutamazon.com",),
+        "bounds": (500, 3000),
+        "source_label": "Amazon 官方业绩披露",
+    },
+    "meta": {
+        "name": "Meta",
+        "query": "site:investor.atmeta.com latest earnings 2026 capital expenditures guidance range",
+        "hosts": ("investor.atmeta.com",),
+        "bounds": (300, 2500),
+        "source_label": "Meta 官方业绩披露",
+    },
+}
+
 
 def now_ts():
     tz8 = datetime.timezone(datetime.timedelta(hours=8))
-    return datetime.datetime.now(tz8).strftime('%Y-%m-%d %H:%M')
+    return datetime.datetime.now(tz8).strftime("%Y-%m-%d %H:%M")
 
-def ddg_search(query, n=5):
-    """DuckDuckGo 文本搜索，返回标题+摘要拼接"""
+
+def _host_allowed(url, hosts):
+    try:
+        host = (urlparse(url).hostname or "").lower()
+        return any(host == h or host.endswith("." + h) for h in hosts)
+    except Exception:
+        return False
+
+
+def ddg_search(query, hosts, n=8):
+    """Return only official-domain DuckDuckGo results, including source URLs."""
     try:
         from duckduckgo_search import DDGS
+
         with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=n))
-        out = '\n'.join(f"- {r.get('title','')}: {r.get('body','')}" for r in results)
-        print(f'  [DDG] "{query[:50]}" -> {len(results)} 条')
-        return out
-    except Exception as e:
-        print(f'  [DDG] "{query[:50]}" 失败: {e}')
-        return ''
+            raw = list(ddgs.text(query, max_results=n))
+        results = []
+        for item in raw:
+            url = item.get("href") or item.get("url") or ""
+            if not _host_allowed(url, hosts):
+                continue
+            results.append(
+                {
+                    "title": str(item.get("title") or "")[:240],
+                    "body": str(item.get("body") or "")[:1200],
+                    "url": url,
+                }
+            )
+        print(f'  [DDG] "{query[:64]}" -> {len(results)} official results')
+        return results
+    except Exception as exc:
+        print(f'  [DDG] "{query[:64]}" failed: {exc}')
+        return []
+
+
+def _number(value):
+    if value is None or value == "":
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _valid_date(value):
+    value = str(value or "")
+    return value if re.fullmatch(r"20\d{2}-\d{2}-\d{2}", value) else ""
+
 
 def main():
-    print('=== refresh_ai_trend.py start ===')
-    # 读现有 JSON 作为基准（AI 失败时保留原值）
+    print("=== manual hyperscaler Capex refresh ===")
     try:
-        with open(OUT, encoding='utf-8') as f:
-            base = json.load(f)
+        with open(OUT, encoding="utf-8") as handle:
+            base = json.load(handle)
     except Exception:
         base = {}
 
-    # ① 联网搜索最新信息
-    queries = [
-        'Microsoft Google Amazon Meta capex 2026 guidance total billion hyperscaler',
-        'Anthropic ARR annualized revenue run rate 2026 latest billion',
-        'OpenAI ARR annualized revenue run rate 2026 billion',
-        'Magnificent 7 stocks median trailing PE ratio 2026',
-    ]
-    context = '\n\n'.join(f'【查询：{q}】\n{ddg_search(q)}' for q in queries)
-    if not context.strip():
-        print('搜索无结果，保留现有数据，结束'); return
-
+    search_results = {
+        key: ddg_search(cfg["query"], cfg["hosts"])
+        for key, cfg in COMPANIES.items()
+    }
+    if not any(search_results.values()):
+        print("No official search results; preserving the existing snapshot.")
+        return
     if not GITHUB_TOKEN:
-        print('无 GITHUB_TOKEN，无法 AI 提取，保留现有数据'); return
+        print("GITHUB_TOKEN missing; preserving the existing snapshot.")
+        return
 
-    # ② GPT-4o-mini 提取结构化数字
-    prompt = (
-        '以下是关于AI产业资本支出(Capex)、AI公司ARR、美股七姐妹PE的最新网络搜索结果：\n\n'
-        f'{context[:6500]}\n\n'
-        '请从中提取最新数据，输出JSON。单位统一为"$亿"（十亿美元×10，例：$715B=7150，$47B=470）：\n'
-        '{\n'
-        '  "hyperscaler_capex_2026e_yi": <微软+谷歌+亚马逊+Meta 2026年capex合计，$亿>,\n'
-        '  "hyperscaler_yoy_pct": <同比增速百分数>,\n'
-        '  "hyperscaler_detail": "<各公司明细，如 MSFT $190B · GOOGL $190B · AMZN $200B · META $135B>",\n'
-        '  "mag7_pe_median": <美股七姐妹PE中位数>,\n'
-        '  "arr_anthropic_latest_yi": <Anthropic最新ARR，$亿>,\n'
-        '  "arr_openai_latest_yi": <OpenAI最新ARR，$亿>\n'
-        '}\n'
-        '只返回JSON，数字用阿拉伯数字（不带$和单位符号）。无法从搜索结果确定的字段直接省略该键。'
-    )
+    context_parts = []
+    for key, results in search_results.items():
+        cfg = COMPANIES[key]
+        lines = [f"[{key} | {cfg['name']}]" ]
+        for result in results:
+            lines.append(
+                f"- {result['title']}\n  URL: {result['url']}\n  SNIPPET: {result['body']}"
+            )
+        context_parts.append("\n".join(lines))
+    context = "\n\n".join(context_parts)
+
+    prompt = f"""
+You are structuring capital-expenditure disclosures from official company investor-relations search results.
+Today is {datetime.date.today().isoformat()}. Select the latest explicit full-year 2026 Capex guidance for each company.
+
+Rules:
+1. Use only a number explicitly stated in an official snippet and copy that snippet's official URL.
+2. Unit is USD 100 million: $175B = 1750.
+3. If management gives a range, output both endpoints and guidance_type "range".
+4. If management says "about", "roughly", or gives one point, set low=high and guidance_type "point". Never invent a range.
+5. actual_2025_yi is optional and must be an explicitly disclosed full-year actual Capex number.
+6. Omit a company or field that cannot be verified. Do not use analyst estimates or news-media figures.
+
+Return JSON only:
+{{
+  "companies": {{
+    "alphabet": {{"guidance_low_yi": 0, "guidance_high_yi": 0, "guidance_type": "range|point", "actual_2025_yi": 0, "source_date": "YYYY-MM-DD", "source_url": "https://..."}},
+    "microsoft": {{...}},
+    "amazon": {{...}},
+    "meta": {{...}}
+  }}
+}}
+
+OFFICIAL RESULTS:
+{context[:14000]}
+""".strip()
+
     try:
-        r = requests.post(
-            'https://models.inference.ai.azure.com/chat/completions',
-            headers={'Authorization': f'Bearer {GITHUB_TOKEN}', 'Content-Type': 'application/json'},
-            json={'model': 'gpt-4o-mini',
-                  'messages': [{'role': 'user', 'content': prompt}],
-                  'max_tokens': 500, 'temperature': 0.1},
-            timeout=40)
-        r.raise_for_status()
-        raw = r.json()['choices'][0]['message']['content']
-        m = re.search(r'\{.*\}', raw, re.DOTALL)
-        ext = json.loads(m.group()) if m else {}
-        print('  [AI] 提取:', json.dumps(ext, ensure_ascii=False))
-    except Exception as e:
-        print(f'  [AI] 提取失败: {e}，保留现有数据'); return
+        response = requests.post(
+            "https://models.inference.ai.azure.com/chat/completions",
+            headers={
+                "Authorization": f"Bearer {GITHUB_TOKEN}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "gpt-4o-mini",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 1400,
+                "temperature": 0,
+            },
+            timeout=60,
+        )
+        response.raise_for_status()
+        raw = response.json()["choices"][0]["message"]["content"]
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        extracted = json.loads(match.group()) if match else {}
+    except Exception as exc:
+        print(f"AI extraction failed: {exc}; preserving the existing snapshot.")
+        return
 
-    # ③ 合并到基准 JSON（仅更新成功提取的字段，带合理性范围校验）
-    def _num(v):
-        try: return float(v)
-        except: return None
+    current = base.setdefault("capex_companies", {})
+    accepted = 0
+    for key, cfg in COMPANIES.items():
+        candidate = (extracted.get("companies") or {}).get(key) or {}
+        low = _number(candidate.get("guidance_low_yi"))
+        high = _number(candidate.get("guidance_high_yi"))
+        url = str(candidate.get("source_url") or "")
+        minimum, maximum = cfg["bounds"]
+        if (
+            low is None
+            or high is None
+            or not (minimum <= low <= high <= maximum)
+            or not _host_allowed(url, cfg["hosts"])
+        ):
+            print(f"  [{key}] rejected or absent; keeping previous values")
+            continue
 
-    v = _num(ext.get('hyperscaler_capex_2026e_yi'))
-    if v and 3000 <= v <= 15000: base['hyperscaler_capex_2026e_yi'] = int(v)
-    v = _num(ext.get('hyperscaler_yoy_pct'))
-    if v and 0 <= v <= 300: base['hyperscaler_yoy_pct'] = round(v, 1)
-    if ext.get('hyperscaler_detail'): base['hyperscaler_detail'] = str(ext['hyperscaler_detail'])[:120]
-    v = _num(ext.get('mag7_pe_median'))
-    if v and 10 <= v <= 100: base['mag7_pe_median'] = round(v, 1)
+        item = dict(current.get(key) or {})
+        item.update(
+            {
+                "display_name": cfg["name"],
+                "guidance_low_yi": round(low, 1),
+                "guidance_high_yi": round(high, 1),
+                "guidance_type": "range" if high != low else "point",
+                "period": "CY2026",
+                "basis_note": (
+                    "CY2026 · 公司正式指引区间"
+                    if high != low
+                    else "CY2026 · 点指引，未披露上下限"
+                ),
+                "source_label": cfg["source_label"],
+                "source_date": _valid_date(candidate.get("source_date")),
+                "source_url": url,
+            }
+        )
+        actual = _number(candidate.get("actual_2025_yi"))
+        if actual is not None and minimum / 2 <= actual <= maximum:
+            item["actual_2025_yi"] = round(actual, 1)
+        current[key] = item
+        accepted += 1
+        print(f"  [{key}] accepted {low}-{high} from {url}")
 
-    # ARR：把最新值追加/更新到时间线末尾（按月去重）
-    an = _num(ext.get('arr_anthropic_latest_yi'))
-    oa = _num(ext.get('arr_openai_latest_yi'))
-    if an and oa and 0 < an < 2000 and 0 < oa < 2000:
-        lbl = datetime.datetime.now().strftime('%Y-%m')
-        base.setdefault('arr_labels', []); base.setdefault('arr_anthropic', []); base.setdefault('arr_openai', [])
-        if base['arr_labels'] and base['arr_labels'][-1] == lbl:
-            base['arr_anthropic'][-1] = int(an); base['arr_openai'][-1] = int(oa)
-        else:
-            base['arr_labels'].append(lbl); base['arr_anthropic'].append(int(an)); base['arr_openai'].append(int(oa))
-            for k in ('arr_labels', 'arr_anthropic', 'arr_openai'):
-                base[k] = base[k][-10:]   # 最多保留10个点
+    if not accepted:
+        print("No company passed source and range validation; preserving snapshot.")
+        return
 
-    base['updated'] = now_ts()
-    base['note'] = 'AI联网抓取整理（DuckDuckGo + GPT-4o-mini），财务数字请以公司财报为准'
+    if not all(key in current for key in COMPANIES):
+        print("Incomplete company set after merge; preserving snapshot.")
+        return
 
-    with open(OUT, 'w', encoding='utf-8') as f:
-        json.dump(base, f, ensure_ascii=False, indent=2)
-    print('  写入:', OUT)
-    print('=== done ===')
+    lows = [float(current[key]["guidance_low_yi"]) for key in COMPANIES]
+    highs = [float(current[key]["guidance_high_yi"]) for key in COMPANIES]
+    actuals = [_number(current[key].get("actual_2025_yi")) for key in COMPANIES]
+    low_total = round(sum(lows), 1)
+    high_total = round(sum(highs), 1)
+    mid_total = round((low_total + high_total) / 2, 1)
+    base["hyperscaler_capex_2026e_low_yi"] = low_total
+    base["hyperscaler_capex_2026e_mid_yi"] = mid_total
+    base["hyperscaler_capex_2026e_high_yi"] = high_total
+    base["hyperscaler_capex_2026e_yi"] = mid_total
+    if all(value is not None for value in actuals):
+        actual_total = round(sum(actuals), 1)
+        base["hyperscaler_capex_2025a_yi"] = actual_total
+        base["hyperscaler_yoy_pct"] = round((mid_total / actual_total - 1) * 100, 1)
 
-if __name__ == '__main__':
+    source_dates = [
+        item.get("source_date", "") for item in current.values() if item.get("source_date")
+    ]
+    if source_dates:
+        base["capex_as_of"] = max(source_dates)
+    base["capex_unit"] = "USD 100 million"
+    base["updated"] = now_ts()
+    base["note"] = "手动触发更新；Capex仅采用四家公司官方投资者关系披露，点指引不扩写为区间"
+
+    with open(OUT, "w", encoding="utf-8") as handle:
+        json.dump(base, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+    print(f"Wrote {OUT}")
+
+
+if __name__ == "__main__":
     main()

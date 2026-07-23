@@ -917,10 +917,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <div class="tab-content" id="t0">
   <div class="stitle" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
     宏观趋势仪表板 <span class="stag">A股日频 · AI产业景气</span>
-    <span id="aiTrendTs" style="font-size:11px;color:#94a3b8;font-weight:500"></span>
-    <button onclick="triggerAiTrendRefresh()" id="aiTrendBtn" title="触发后台AI联网抓取最新Capex/ARR/PE（约1-2分钟）"
-      style="margin-left:auto;background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
-             padding:3px 11px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700">↻ 刷新数据</button>
   </div>
 
   <!-- KPI Row -->
@@ -995,19 +991,37 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
+  <!-- 四大云公司 Capex：页面载入只读取已保存快照，联网检索仅由按钮手动触发 -->
+  <div class="card mb12" style="padding:13px 16px;border-left:3px solid #2563eb;background:linear-gradient(135deg,#fff 0%,#f8fbff 100%)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#1e293b">四大云公司资本开支指引</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:3px">页面载入仅显示上次保存值；公司财报或重大调整后，手动联网核对官方披露</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;margin-left:auto">
+        <span id="capexTs" style="font-size:10.5px;color:#94a3b8;font-weight:500;white-space:nowrap">载入上次快照…</span>
+        <button onclick="triggerCapexRefresh()" id="capexBtn" title="触发 GitHub Actions 检索四家公司最新官方 Capex 指引（约1-2分钟）"
+          style="background:#2563eb;border:1px solid #1d4ed8;color:#fff;border-radius:7px;
+                 padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:750;
+                 box-shadow:0 1px 2px rgba(37,99,235,.18);white-space:nowrap">↻ 刷新 Capex</button>
+      </div>
+    </div>
+    <div id="capexSourceSummary" style="font-size:9.5px;color:#94a3b8;margin-top:8px">口径：亿美元；2026E 为公司指引，2025A 为各公司已披露财年口径</div>
+  </div>
+
   <!-- KPI Row -->
   <div class="g4 mb16">
     <div class="card">
       <div class="klabel">Hyperscaler总Capex 2026E <span style="background:#dcfce7;color:#166534;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">季报指引</span></div>
-      <div class="kval tb" id="kCapex26">¥7,250亿</div>
-      <div class="kchange up" id="kYoy26">↑ +77.0% 同比</div>
-      <div class="tx3 mt4">Alphabet/MSFT/Amazon/Meta合计</div>
+      <div class="kval tb" id="kCapex26">$6,900–7,200亿</div>
+      <div class="kchange up" id="kYoy26">中值同比 +97.8%</div>
+      <div class="tx3 mt4">Alphabet/MSFT/Amazon/Meta 指引合计</div>
     </div>
     <div class="card">
       <div class="klabel">Hyperscaler总Capex 2025A <span style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">历史实际值</span></div>
-      <div class="kval" id="kCapex25">¥4,100亿</div>
-      <div class="kchange up">↑ +45% 同比</div>
-      <div class="tx3 mt4">实际完成，季报确认</div>
+      <div class="kval" id="kCapex25">$3,565亿</div>
+      <div class="kchange neu">公司披露口径合计</div>
+      <div class="tx3 mt4">Microsoft 为 FY2025，其余为 CY2025</div>
     </div>
     <div class="card">
       <div class="klabel">美股7姐妹 中位数TTM PE <span style="background:#fee2e2;color:#991b1b;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2025A 参考</span></div>
@@ -1026,11 +1040,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- Charts -->
   <div class="g3 mb16">
     <div class="card">
-      <div class="ch"><span class="ct">四大Hyperscaler Capex对比 (亿元)</span></div>
+      <div class="ch"><span class="ct">四大Hyperscaler Capex对比 ($亿)</span></div>
       <div style="height:230px"><canvas id="cCapex"></canvas></div>
     </div>
     <div class="card">
-      <div class="ch"><span class="ct">AI Capex增长趋势 2023→2026E</span></div>
+      <div class="ch"><span class="ct">四大合计Capex趋势 2024→2026E</span><span class="cbadge">2026E取区间中值</span></div>
       <div style="height:230px"><canvas id="cTrend"></canvas></div>
     </div>
     <div class="card">
@@ -1043,29 +1057,35 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Amazon & Meta detail -->
-  <div class="g2 mb16">
+  <!-- 四家公司 Capex 指引明细 -->
+  <div class="g4 mb16">
     <div class="card">
-      <div class="ch"><span class="ct">Amazon Capex路线图</span><span class="cbadge tg">确认大幅上调</span></div>
-      <div class="fjb mb8"><span class="tx2">2025A 实际值</span><span class="tx2" id="kAmz25">¥1,310亿</span></div>
-      <div class="pbar"><div class="pfill" style="width:65%"></div></div>
-      <div class="fjb mb4 mt12"><span class="tx2">2026E 指引</span><span class="tg" style="font-weight:600" id="kAmz26">¥2,000亿</span></div>
-      <div class="pbar"><div class="pfill" style="width:100%;background:linear-gradient(90deg,#10b981,#06b6d4)"></div></div>
-      <div class="tx3 mt8">Financial Times确认，同比 +53%，云+AI双轮驱动</div>
+      <div class="ch"><span class="ct">Alphabet / Google</span><span class="cbadge tg">正式区间</span></div>
+      <div class="fjb mb4"><span class="tx2">2025A 实际值</span><span class="tx2" id="kGoog25">$914亿</span></div>
+      <div class="fjb mb4"><span class="tx2">2026E 指引</span><span class="tb" style="font-weight:700" id="kGoog26">$1,750–1,850亿</span></div>
+      <div class="tx3 mt8" id="kGoogBasis">CY2026 · 官方区间</div>
+      <a id="kGoogSource" href="https://abc.xyz/investor/events/event-details/2026/2025-Q4-Earnings-Call-2026-Dr_C033hS6/default.aspx" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Alphabet FY2025业绩会 · 2026-02-04 ↗</a>
     </div>
     <div class="card">
-      <div class="ch"><span class="ct">Meta Capex指引区间 2026E</span><span class="cbadge">上限目标</span></div>
-      <div class="fjb mb4"><span class="tx2">指引下限</span><span id="kMetaL">¥1,150亿</span></div>
-      <div class="fjb mb4"><span class="tx2">指引中值</span><span class="tb">¥1,250亿</span></div>
-      <div class="fjb mb8"><span class="tx2">指引上限</span><span class="tg" id="kMetaH">¥1,350亿</span></div>
-      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
-        <div id="metaFill" style="height:100%;width:65%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:3px;transition:width .6s"></div>
-      </div>
-      <div class="divider"></div>
-      <div class="alert a-info">
-        <span>ℹ</span>
-        <span>CPO渗透率 <strong id="kCpo">45%</strong>，AI Agent驱动OpenAI capex同比+45%，上行斜率维持</span>
-      </div>
+      <div class="ch"><span class="ct">Microsoft</span><span class="cbadge" style="background:#fef3c7;color:#92400e">点指引</span></div>
+      <div class="fjb mb4"><span class="tx2">FY2025 实际值</span><span class="tx2" id="kMsft25">$646亿</span></div>
+      <div class="fjb mb4"><span class="tx2">CY2026 指引</span><span class="tb" style="font-weight:700" id="kMsft26">约 $1,900亿</span></div>
+      <div class="tx3 mt8" id="kMsftBasis">未披露上下限，不扩写为区间</div>
+      <a id="kMsftSource" href="https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q3" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Microsoft FY26 Q3业绩会 · 2026-04-29 ↗</a>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Amazon</span><span class="cbadge" style="background:#fef3c7;color:#92400e">点指引</span></div>
+      <div class="fjb mb4"><span class="tx2">2025A 实际值</span><span class="tx2" id="kAmz25">$1,283亿</span></div>
+      <div class="fjb mb4"><span class="tx2">2026E 指引</span><span class="tg" style="font-weight:700" id="kAmz26">约 $2,000亿</span></div>
+      <div class="tx3 mt8" id="kAmzBasis">CY2026 · 未披露上下限</div>
+      <a id="kAmzSource" href="https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Fourth-Quarter-Results/default.aspx" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Amazon FY2025业绩 · 2026-02-05 ↗</a>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Meta</span><span class="cbadge tg">上调区间</span></div>
+      <div class="fjb mb4"><span class="tx2">2025A 实际值</span><span class="tx2" id="kMeta25">$722亿</span></div>
+      <div class="fjb mb4"><span class="tx2">2026E 指引</span><span class="tg" style="font-weight:700" id="kMeta26">$1,250–1,450亿</span></div>
+      <div class="tx3 mt8" id="kMetaBasis">CY2026 · Q1上调后的官方区间</div>
+      <a id="kMetaSource" href="https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-First-Quarter-2026-Results/" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Meta 2026 Q1业绩 · 2026-04-29 ↗</a>
     </div>
   </div>
 
@@ -1426,11 +1446,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 const BASE = {
   capex:{
     labels:['Alphabet','Microsoft','Amazon','Meta'],
-    y2024:[520,600,760,380],y2025:[750,800,1310,600],y2026e:[900,1000,2000,1250]
+    // 单位：亿美元。Microsoft 使用财年实际值；2026E 使用公司指引中值。
+    y2024:[525,444.8,776.6,392.3],y2025:[914,645.5,1283.2,722.2],y2026e:[1800,1900,2000,1350]
   },
-  trendYears:['2023','2024','2025A','2026E'],
-  trendCapex:[1800,2260,3460,5150],
-  trendPct:[25,40,60,77],
+  trendYears:['2024A','2025A','2026E中值'],
+  trendCapex:[2138.7,3564.9,7050],
 
   // ── §2.2 六维风格画像矩阵 ──────────────────────────────────
   // 维度: [①盈利弹性, ②估值安全, ③产业动能, ④资金热度, ⑤上行确定, ⑥风险可控]
@@ -1537,7 +1557,7 @@ const BASE = {
 
   steps:[
     {n:1,title:'确认AI投资阶段',      desc:'阶段4后期：AI基础设施强劲，AI应用局部已出现阶段5信号', st:'ok',  stxt:'✓ 阶段4确认'},
-    {n:2,title:'验证Hyperscaler Capex',desc:'2026E总Capex ¥7,250亿 (+77%)，Amazon/Meta均上调，上行周期持续', st:'ok',stxt:'✓ 已确认'},
+    {n:2,title:'验证Hyperscaler Capex',desc:'2026E公司指引合计 $6,900–7,200亿；以手动刷新后的四家公司官方披露为准', st:'ok',stxt:'✓ 已确认'},
     {n:3,title:'PE估值筛选 (核心<50x)',desc:'AI-PCB PE 20x符合；AI应用PE 78x超标，PEG>97，需分类', st:'warn',stxt:'⚠ 部分超标'},
     {n:4,title:'80%核心+20%卫星结构', desc:'80%配置PE<50x核心标的（科技龙头+AI基础设施）；20%高β卫星', st:'ok',stxt:'✓ 结构合规'},
     {n:5,title:'PCB/产业链仓位验证',  desc:'PCB 15% + GPU/ASIC 10% + 其他产业链 5%，合计产业链30%', st:'ok',  stxt:'✓ 30%达标'},
@@ -1733,7 +1753,7 @@ function mkCapex(){
       plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
       scales:{
         x:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b'}},
-        y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>'¥'+v+'亿'}}
+        y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>'$'+Number(v).toLocaleString()+'亿'}}
       }
     }
   });
@@ -1746,8 +1766,7 @@ function mkTrend(){
     data:{
       labels:BASE.trendYears,
       datasets:[
-        {label:'四大合计Capex(亿元)',data:[...BASE.trendCapex],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.08)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#3b82f6',yAxisID:'y'},
-        {label:'AI专项占比(%)',data:[...BASE.trendPct],borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.08)',fill:false,tension:.4,pointRadius:5,pointBackgroundColor:'#10b981',yAxisID:'y2'},
+        {label:'四大合计Capex($亿)',data:[...BASE.trendCapex],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.08)',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:'#3b82f6',yAxisID:'y'},
       ]
     },
     options:{
@@ -1755,8 +1774,7 @@ function mkTrend(){
       plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
       scales:{
         x:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b'}},
-        y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>'¥'+v+'亿'}},
-        y2:{position:'right',grid:{display:false},ticks:{color:'#059669',callback:v=>v+'%'}},
+        y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>'$'+Number(v).toLocaleString()+'亿'}},
       }
     }
   });
@@ -3874,24 +3892,95 @@ function mkArr(){
   }});
 }
 
-// ── AI趋势：Capex / ARR / 7姐妹PE（外置 data/ai_trend.json，可↻触发后台AI抓取）──
+// ── AI趋势快照：页面载入只读 data/ai_trend.json；Capex 联网检索仅由区块按钮手动触发 ──
 let _aiTrendCache = null;
+
+function _capexNum(v){
+  const n=Number(v);
+  return Number.isFinite(n) ? n.toLocaleString('zh-CN',{maximumFractionDigits:1}) : '—';
+}
+
+function _capexValue(v){
+  if(v===null||v===undefined||v==='') return NaN;
+  return Number(v);
+}
+
+function _capexGuideText(c){
+  if(!c) return '—';
+  const lo=_capexValue(c.guidance_low_yi), hi=_capexValue(c.guidance_high_yi);
+  if(!Number.isFinite(lo) && !Number.isFinite(hi)) return '—';
+  if(c.guidance_type==='range' && Number.isFinite(lo) && Number.isFinite(hi) && lo!==hi){
+    return '$'+_capexNum(lo)+'–'+_capexNum(hi)+'亿';
+  }
+  return '约 $'+_capexNum(Number.isFinite(hi)?hi:lo)+'亿';
+}
+
+function _setCapexSource(id,c){
+  const el=document.getElementById(id); if(!el||!c) return;
+  const allowed=['abc.xyz','www.abc.xyz','microsoft.com','www.microsoft.com','ir.aboutamazon.com','investor.atmeta.com'];
+  try{
+    const u=new URL(c.source_url||'');
+    if(u.protocol==='https:' && allowed.includes(u.hostname)) el.href=u.href;
+  }catch(_){ /* 保留页面内置官方链接 */ }
+  const label=c.source_label||'公司官方披露';
+  el.textContent=label+(c.source_date?' · '+c.source_date:'')+' ↗';
+}
+
+function _updateCapexCharts(d){
+  const cs=d&&d.capex_companies; if(!cs) return;
+  const keys=['alphabet','microsoft','amazon','meta'];
+  const y2024=keys.map(k=>_capexValue(cs[k]&&cs[k].actual_2024_yi));
+  const y2025=keys.map(k=>_capexValue(cs[k]&&cs[k].actual_2025_yi));
+  const y2026=keys.map(k=>{
+    const c=cs[k]||{}, lo=_capexValue(c.guidance_low_yi), hi=_capexValue(c.guidance_high_yi);
+    return Number.isFinite(lo)&&Number.isFinite(hi)?(lo+hi)/2:(Number.isFinite(hi)?hi:lo);
+  });
+  if(y2024.every(Number.isFinite)) BASE.capex.y2024=y2024;
+  if(y2025.every(Number.isFinite)) BASE.capex.y2025=y2025;
+  if(y2026.every(Number.isFinite)) BASE.capex.y2026e=y2026;
+  if(CH.capex){
+    CH.capex.data.datasets[0].data=[...BASE.capex.y2024];
+    CH.capex.data.datasets[1].data=[...BASE.capex.y2025];
+    CH.capex.data.datasets[2].data=[...BASE.capex.y2026e];
+    CH.capex.update('none');
+  }
+  const total24=BASE.capex.y2024.reduce((a,b)=>a+b,0);
+  const total25=Number(d.hyperscaler_capex_2025a_yi)||BASE.capex.y2025.reduce((a,b)=>a+b,0);
+  const total26=Number(d.hyperscaler_capex_2026e_mid_yi)||BASE.capex.y2026e.reduce((a,b)=>a+b,0);
+  BASE.trendYears=['2024A','2025A','2026E中值'];
+  BASE.trendCapex=[total24,total25,total26];
+  if(CH.trend){
+    CH.trend.data.labels=[...BASE.trendYears];
+    CH.trend.data.datasets[0].data=[...BASE.trendCapex];
+    CH.trend.update('none');
+  }
+}
 
 function _renderAiTrend(d){
   if(!d) return;
   const _set=(id,txt)=>{ const el=document.getElementById(id); if(el&&txt!=null) el.textContent=txt; };
   // Hyperscaler Capex
-  if(d.hyperscaler_capex_2026e_yi!=null) _set('kCapex26','$'+Number(d.hyperscaler_capex_2026e_yi).toLocaleString()+'亿');
-  if(d.hyperscaler_capex_2025a_yi!=null) _set('kCapex25','$'+Number(d.hyperscaler_capex_2025a_yi).toLocaleString()+'亿');
-  if(d.hyperscaler_yoy_pct!=null)        _set('kYoy26','↑ +'+d.hyperscaler_yoy_pct+'% 同比');
+  const low=_capexValue(d.hyperscaler_capex_2026e_low_yi), high=_capexValue(d.hyperscaler_capex_2026e_high_yi);
+  if(Number.isFinite(low)&&Number.isFinite(high)) _set('kCapex26','$'+_capexNum(low)+'–'+_capexNum(high)+'亿');
+  else if(d.hyperscaler_capex_2026e_yi!=null) _set('kCapex26','$'+_capexNum(d.hyperscaler_capex_2026e_yi)+'亿');
+  if(d.hyperscaler_capex_2025a_yi!=null) _set('kCapex25','$'+_capexNum(d.hyperscaler_capex_2025a_yi)+'亿');
+  if(d.hyperscaler_yoy_pct!=null) _set('kYoy26','中值同比 '+(Number(d.hyperscaler_yoy_pct)>=0?'+':'')+d.hyperscaler_yoy_pct+'%');
   // 美股7姐妹 PE
   if(d.mag7_pe_median!=null) _set('kMag7Pe', d.mag7_pe_median+'x');
   if(d.mag7_pe_avg!=null)    _set('kMag7Avg', d.mag7_pe_avg+'x');
-  // Amazon / Meta Capex 明细
-  if(d.amazon_capex_2025a_yi!=null) _set('kAmz25','¥'+Number(d.amazon_capex_2025a_yi).toLocaleString()+'亿');
-  if(d.amazon_capex_2026e_yi!=null) _set('kAmz26','¥'+Number(d.amazon_capex_2026e_yi).toLocaleString()+'亿');
-  if(d.meta_capex_low_yi!=null)     _set('kMetaL','¥'+Number(d.meta_capex_low_yi).toLocaleString()+'亿');
-  if(d.meta_capex_high_yi!=null)    _set('kMetaH','¥'+Number(d.meta_capex_high_yi).toLocaleString()+'亿');
+  // 四家公司 Capex 明细、图表和官方来源
+  const cs=d.capex_companies||{};
+  const ids={alphabet:'Goog',microsoft:'Msft',amazon:'Amz',meta:'Meta'};
+  Object.keys(ids).forEach(k=>{
+    const c=cs[k]; if(!c) return;
+    _set('k'+ids[k]+'25','$'+_capexNum(c.actual_2025_yi)+'亿');
+    _set('k'+ids[k]+'26',_capexGuideText(c));
+    _set('k'+ids[k]+'Basis',c.basis_note||((c.period||'2026')+' · '+(c.guidance_type==='range'?'官方区间':'未披露上下限')));
+    _setCapexSource('k'+ids[k]+'Source',c);
+  });
+  _updateCapexCharts(d);
+  const sourceSummary=document.getElementById('capexSourceSummary');
+  if(sourceSummary) sourceSummary.textContent='口径：亿美元；2026E 为公司指引，2025A 为各公司已披露财年口径'+(d.capex_as_of?' · 最新披露截至 '+d.capex_as_of:'');
   // OpenAI / Anthropic ARR 图表
   if(d.arr_labels && d.arr_openai && d.arr_anthropic){
     if(typeof BASE!=='undefined' && BASE.aiArr){
@@ -3904,30 +3993,35 @@ function _renderAiTrend(d){
       CH.arr.update('none');
     }
   }
-  const tsEl=document.getElementById('aiTrendTs');
-  if(tsEl && d.updated) tsEl.textContent=d.updated+' 更新';
+  const tsEl=document.getElementById('capexTs');
+  if(tsEl && d.updated) tsEl.textContent='上次手动更新：'+d.updated;
 }
 
-async function fetchAiTrend(){
+async function loadAiTrendSnapshot(){
   try{
     const r=await fetch('data/ai_trend.json?_='+Date.now(),{cache:'no-store'});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const d=await r.json();
     _aiTrendCache=d;
     _renderAiTrend(d);
-    console.log('[AiTrend] 加载成功，updated:', d.updated);
-  }catch(e){ console.warn('[AiTrend] 加载失败:', e.message); }
+    console.log('[AiTrend] 已载入保存快照，updated:', d.updated);
+  }catch(e){
+    console.warn('[AiTrend] 快照载入失败:', e.message);
+    const tsEl=document.getElementById('capexTs'); if(tsEl) tsEl.textContent='快照载入失败';
+  }
 }
 
-// ↻：触发后台 AI 抓取最新 Capex/ARR/PE（GitHub Actions），完成后自动呈现
-function triggerAiTrendRefresh(){
+// 仅点区块按钮时触发：后台检索四家公司最新官方 Capex 披露，完成后自动呈现。
+function triggerCapexRefresh(){
   _refreshViaWorkflow({
     file:     'refresh-aitrend.yml',
     dataUrl:  'data/ai_trend.json',
     tsField:  'updated',
-    statusEl: document.getElementById('aiTrendTs'),
-    btn:      document.getElementById('aiTrendBtn'),
-    render:   _renderAiTrend
+    statusEl: document.getElementById('capexTs'),
+    btn:      document.getElementById('capexBtn'),
+    idleText: '↻ 刷新 Capex',
+    render:   _renderAiTrend,
+    validate: d=>!!(d&&d.capex_companies&&d.hyperscaler_capex_2026e_low_yi)
   });
 }
 
@@ -4790,8 +4884,8 @@ function _tabRefresh(idx){
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tHist') renderHistTable();
   else if(tab==='tPre')  preLoad();
-  // A股宏观(tAM)、AI趋势(t0)、产业链监控(tStage)：切换标签不自动刷新数据，
-  // 由各标签右上角按钮手动刷新（refreshMacro / triggerAiTrendRefresh / mkStageMatrix）
+  // A股宏观(tAM)、AI趋势(t0)、产业链监控(tStage)：切换标签不触发后台刷新，
+  // Capex 只由区块内 triggerCapexRefresh 手动触发；页面仅载入已保存快照。
 }
 
 function switchTab(idx){
@@ -7143,6 +7237,7 @@ const _sleep = ms => new Promise(r => setTimeout(r, ms));
 // 无需 actions:read 权限，且天然覆盖 Pages 部署延迟。
 async function _refreshViaWorkflow(cfg){
   // cfg: {file, dataUrl, tsField, statusEl, btn, render, validate}
+  const idleText  = cfg.idleText || '↻';
   const setBtn    = (t,dis)=>{ if(cfg.btn){ cfg.btn.textContent=t; cfg.btn.disabled=!!dis; } };
   const setStatus = t=>{ if(cfg.statusEl) cfg.statusEl.textContent=t; };
   const pull = async ()=>{
@@ -7176,7 +7271,7 @@ async function _refreshViaWorkflow(cfg){
   }catch(e){
     console.warn('[workflow] 触发失败:', e.message);
     setStatus('✗ 触发失败（检查 PAT 的 Actions 权限）');
-    setBtn('↻', false);
+    setBtn(idleText, false);
     setTimeout(()=>setStatus(oldUpd ? oldUpd + ' 更新' : ''), 4000);
     return;
   }
@@ -7191,7 +7286,7 @@ async function _refreshViaWorkflow(cfg){
       const nu = j[cfg.tsField] || '';
       if(nu && nu !== oldUpd && (!cfg.validate || cfg.validate(j))){
         cfg.render(j);                       // 数据已更新，呈现
-        setBtn('↻', false);
+        setBtn(idleText, false);
         setStatus('✓ 已更新 ' + nu);
         setTimeout(()=>setStatus(nu + ' 更新'), 3000);
         return;
@@ -7199,7 +7294,7 @@ async function _refreshViaWorkflow(cfg){
     }catch(e){ /* 轮询期间偶发失败，继续等 */ }
   }
   // 超时：工作流可能仍在运行
-  setBtn('↻', false);
+  setBtn(idleText, false);
   setStatus('⏳ 仍在运行，请稍后再点 ↻ 查看');
 }
 
@@ -7981,7 +8076,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     _safe(mkStageMatrix);
     _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();});
     // 非首屏数据抓取（错开首屏行情请求，避免抢东财/腾讯连接）
-    fetchAiTrend();         // data/ai_trend.json → Capex/ARR/PE
+    loadAiTrendSnapshot();  // 只读 data/ai_trend.json；不会触发 Capex 后台检索
     fetchVixChart();        // iVIX 历史数据
     fetchMonLive();         // 产业链监控20日动量
     fetchMacroRates();      // 中美10年国债收益率

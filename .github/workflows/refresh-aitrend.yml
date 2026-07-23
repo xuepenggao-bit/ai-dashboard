@@ -1,14 +1,12 @@
-name: Refresh AI Trend Data (Hyperscaler Capex / ARR / Mag7 PE)
+name: Refresh Hyperscaler Capex (Manual)
 
 on:
-  schedule:
-    - cron: '0 1 * * *'
   workflow_dispatch:
     inputs:
       reason:
         description: '手动触发原因'
         required: false
-        default: 'Manual AI trend refresh'
+        default: 'Manual hyperscaler Capex refresh'
 
 jobs:
   refresh:
@@ -27,7 +25,7 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: pip install requests duckduckgo_search
-      - name: Run AI trend refresh script
+      - name: Search official disclosures and refresh Capex snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python .github/scripts/refresh_ai_trend.py
@@ -37,6 +35,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/ai_trend.json
           git diff --staged --quiet && echo "No changes." && exit 0
-          git commit -m "chore: refresh AI trend $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git commit -m "chore: refresh hyperscaler capex $(date -u '+%Y-%m-%d %H:%M UTC')"
           git pull --rebase origin main
           git push
