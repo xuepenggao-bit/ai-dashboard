@@ -7494,7 +7494,10 @@ function _fetchSinaRT(codes){
     var timer = setTimeout(finish, 3000);   // 3 秒超时（被 Referer 拒则空回退）
     sc.onload  = finish;
     sc.onerror = function(){ if(!done){ done = true; clearTimeout(timer); cleanup(); resolve({}); } };
-    sc.src = 'https://hq.sinajs.cn/list=' + codes.join(',') + '&_=' + Date.now();
+    // 这个接口的 `list=...` 是路径格式，不是普通 query string。此前追加 `&_=...`
+    // 会被新浪当成股票代码的一部分，实际返回空变量。响应本身带 Cache-Control:no-cache，
+    // 因此使用标准 URL 即可保证每次重新校验行情。
+    sc.src = 'https://hq.sinajs.cn/list=' + codes.join(',');
     document.head.appendChild(sc);
   });
 }
@@ -7533,7 +7536,11 @@ async function fetchPortPrices(){
     var aSids = aStocks.length  ? aStocks.map(function(s){ return (s.mkt==='SH'?'1.':'0.')+s.code; }).join(',') : null;
     var mcUrl = aSids           ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f12,f20,f11&secids='+aSids+'&_='+ts0 : null;
     var hkSids= hkStocks.length ? hkStocks.map(function(s){ return '116.'+s.code; }).join(',') : null;
-    var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields=f12,f14,f2,f3,f20,f50,f11&_='+ts0 : null;
+    var hkFields = 'f12,f14,f2,f3,f20,f50,f11,f124';
+    var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields='+hkFields+'&_='+ts0 : null;
+    // push2 主域名在部分网络/早盘时段会返回空响应；push2delay 在港股开市前竞价阶段
+    // 能返回带当日 f124 时间戳的 IEP 行情，因此并行请求作为同源实时冗余。
+    var emDelayUrl = hkSids     ? 'https://push2delay.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields='+hkFields+'&_='+ts0 : null;
 
     // 带超时的 fetch：超时即放弃该路（abort），避免东财偶发限流/502/TCP挂起拖住整页。
     // 5 秒（原 3 秒过紧）：东财 push2 是港股实时主源，值得多等一会儿，避免在较慢网络/Safari 下
@@ -7557,12 +7564,16 @@ async function fetchPortPrices(){
       // B档优化：港股新浪实时源并入并行（原先在 Promise.all 之后才 await，徒增一段串行等待）
       hkStocks.length ? _fetchSinaRT(hkStocks.map(function(s){ return 'rt_hk'+s.code; }))
                           .catch(function(e){ console.warn('[HK]新浪',e.message); return {}; })
-            : Promise.resolve({})
+            : Promise.resolve({}),
+      emDelayUrl ? _pfFetch(emDelayUrl).then(function(r){ return r.json(); })
+                          .catch(function(e){ console.warn('[HK东方财富冗余]',e.message); return null; })
+            : Promise.resolve(null)
     ]);
     var aTxt   = results[0];
     var mcJson = results[1];
     var emJson = results[2];
     var sinaRes= results[3];
+    var emDelayJson=results[4];
 
     // ��─ 处理 A股行情 ────────────────────────────────────────────────
     if(aStocks.length && aTxt){
@@ -7594,45 +7605,64 @@ async function fetchPortPrices(){
     // ── 处理港股：东财 push2 为「实时主源」（实测逐秒更新、零延迟）；新浪 rt_hk 不稳且偶返旧值，降为仅补位 ──
     if(hkStocks.length){
       var hkDone = {};   // code → true，记录已取到价格的港股
+      var _hkQuoteIsFresh = function(quoteTs){
+        // 盘中拒绝超过 20 分钟的旧响应；非交易时段允许显示最后收盘价。
+        // 20 分钟同时兼容最后兜底源可能存在的约 15 分钟延迟。
+        return !_isTradingNow() || !quoteTs || Date.now()-quoteTs <= 20*60*1000;
+      };
 
-      // ① 东财 push2 实时主源（复用 Promise.all 并行取的 emJson）——优先用东财，避免新浪旧值覆盖实时价
-      if(emJson){
-        var diff = emJson?.data?.diff || [];
+      var _applyEmHk = function(payload, source){
+        if(!payload) return 0;
+        var before=Object.keys(hkDone).length;
+        var diff = payload?.data?.diff || [];
         diff.forEach(function(d){
           var price = parseFloat(d.f2);
           var pct   = parseFloat(d.f3);
           if(!isFinite(price) || price <= 0 || !isFinite(pct)) return;
+          var quoteSec=parseFloat(d.f124);
+          var quoteTs=isFinite(quoteSec)&&quoteSec>0 ? quoteSec*1000 : 0;
+          // 冗余域名必须携带新鲜时间戳，避免误把真正的延迟快照当作实时值。
+          if((source==='emd' && _isTradingNow() && !quoteTs) || !_hkQuoteIsFresh(quoteTs)) return;
           var emCode  = String(d.f12 || '').padStart(5, '0');
           var matched = hkStocks.find(function(s){ return !hkDone[s.code] && (s.code === emCode || s.code === String(d.f12)); });
           if(matched){
             var mc = parseFloat(d.f20);
             var vr = parseFloat(d.f50);
             var sp = parseFloat(d.f11);
-            _PORT_PRICES[matched.code] = {price:price, pct:pct, name:matched.name, mkt:matched.mkt, w:matched.w, src:'em', _t:Date.now(),
+            _PORT_PRICES[matched.code] = {price:price, pct:pct, name:matched.name, mkt:matched.mkt, w:matched.w, src:source, _t:Date.now(),
+              quoteTs:  quoteTs,
               mktCap:   (isFinite(mc)&&mc>0) ? mc/100000000 : null,
               volRatio: isFinite(vr)&&vr>0   ? vr           : null,
               speedPct: isFinite(sp)          ? sp           : null};
             hkDone[matched.code] = true;
           }
         });
-        console.log('[HK] 东财实时', Object.keys(hkDone).length, '/', hkStocks.length, '只');
-      }
+        return Object.keys(hkDone).length-before;
+      };
 
-      // ⓪ 新浪 rt_hk 补位：仅填东财未取到的（新浪不稳，不再作主源覆盖东财实时价）
+      // ① 东财 push2 实时主源；主域名空响应时，立即使用并行返回的冗余域名。
+      var emMainN=_applyEmHk(emJson,'em');
+      var emBackupN=_applyEmHk(emDelayJson,'emd');
+      console.log('[HK] 东财主源/冗余', emMainN, '+', emBackupN, '/', hkStocks.length, '只');
+
+      // ② 新浪 rt_hk 补位：仅填东财未取到的；标准 URL 会返回当前交易日时间戳。
       hkStocks.forEach(function(s){
         if(hkDone[s.code]) return;
         var d = sinaRes && sinaRes['rt_hk'+s.code];
-        if(d){ _PORT_PRICES[s.code] = {price:d.price, pct:d.pct, name:s.name, mkt:s.mkt, w:s.w, src:'sina', _t:Date.now()}; hkDone[s.code]=true; }
+        if(d && _hkQuoteIsFresh(d.quoteTs||0)){
+          _PORT_PRICES[s.code] = {price:d.price, pct:d.pct, name:s.name, mkt:s.mkt, w:s.w, src:'sina', _t:Date.now(), quoteTs:d.quoteTs||0};
+          hkDone[s.code]=true;
+        }
       });
       console.log('[HK] 新浪补位后合计', Object.keys(hkDone).length, '/', hkStocks.length, '只');
 
-      // ② 东财 push2 重试 1 次（实时源，争取最新数据）
+      // ③ 东财 push2 主域名重试 1 次（实时源，争取最新数据）
       var hkMissed = hkStocks.filter(function(s){ return !hkDone[s.code]; });
       if(hkMissed.length){
         try{
           var hkSids2 = hkMissed.map(function(s){ return '116.'+s.code; }).join(',');
           var emUrl2  = 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids2
-                      + '&fltt=2&invt=2&fields=f12,f14,f2,f3,f20,f50,f11&_='+Date.now();
+                      + '&fltt=2&invt=2&fields='+hkFields+'&_='+Date.now();
           var j2    = await _pfFetch(emUrl2).then(function(r){ return r.json(); });   // 复用 5s 超时+no-store
           var diff2 = (j2 && j2.data && j2.data.diff) || [];
           diff2.forEach(function(d){
@@ -7642,7 +7672,9 @@ async function fetchPortPrices(){
             var matched = hkMissed.find(function(s){ return s.code === emCode || s.code === String(d.f12); });
             if(matched){
               var mc = parseFloat(d.f20), vr = parseFloat(d.f50), sp = parseFloat(d.f11);
+              var quoteSec=parseFloat(d.f124);
               _PORT_PRICES[matched.code] = {price:price, pct:pct, name:matched.name, mkt:matched.mkt, w:matched.w, src:'em', _t:Date.now(),
+                quoteTs:  isFinite(quoteSec)&&quoteSec>0 ? quoteSec*1000 : 0,
                 mktCap:   (isFinite(mc)&&mc>0) ? mc/100000000 : null,
                 volRatio: isFinite(vr)&&vr>0   ? vr           : null,
                 speedPct: isFinite(sp)          ? sp           : null};
@@ -7652,7 +7684,7 @@ async function fetchPortPrices(){
         }catch(e){ console.warn('[HK] 东财重试:', e.message); }
       }
 
-      // ③ 腾讯 qt.gtimg.cn 兜底（hk+代码；东财取不到时保证有数据，盘中约延迟15分）
+      // ④ 腾讯 qt.gtimg.cn 最后兜底（hk+代码；盘中可能延迟，且开市前常停留在昨收）
       //    注：组合内港股 tc 字段为空，此处用 'hk'+code 直接构造腾讯港股代码
       hkMissed = hkStocks.filter(function(s){ return !hkDone[s.code]; });
       if(hkMissed.length){
@@ -7666,19 +7698,22 @@ async function fetchPortPrices(){
             var p = m[1].split('~');
             var cur = parseFloat(p[3]), pct = parseFloat(p[32]);
             if(!(cur > 0 && isFinite(pct))) return;
+            var qm=String(p[30]||'').match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})\s+(\d{1,2}):(\d{2}):(\d{2})/);
+            var quoteTs=qm?Date.UTC(+qm[1],+qm[2]-1,+qm[3],+qm[4]-8,+qm[5],+qm[6]):0;
+            if(!_hkQuoteIsFresh(quoteTs)) return;
             // 腾讯为约 15 分钟延迟源：若已有近 3 分钟内的实时值(东财/新浪)，宁可沿用该实时旧值(标 stale)，
             // 也不用延迟价覆盖 → 避免「港股显示成十几分钟前的价」。仅在无近期实时值时才用腾讯延迟价。
             var pv = _prevPrices[s.code];
-            if(pv && (pv.src==='em' || pv.src==='sina') && pv._t && (Date.now()-pv._t) < 180000){
+            if(pv && (pv.src==='em' || pv.src==='emd' || pv.src==='sina') && pv._t && (Date.now()-pv._t) < 180000){
               pv.stale = true; _PORT_PRICES[s.code] = pv;
             } else {
-              _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w, src:'tc', _t:Date.now()};
+              _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w, src:'tc', _t:Date.now(), quoteTs:quoteTs};
             }
           });
         }catch(e){ console.warn('[HK] 腾讯兜底:', e.message); }
       }
       var _hkOk = hkStocks.filter(function(s){ return _PORT_PRICES[s.code]; }).length;
-      console.log('[HK] 港股获取', _hkOk, '/', hkStocks.length, '只（东财实时优先，腾讯兜底）');
+      console.log('[HK] 港股获取', _hkOk, '/', hkStocks.length, '只（东财双源→新浪→腾讯）');
     }
 
     // ── 粘性回填：本轮未取到新值的个股，沿用上一时刻成功值（标记 stale），绝不让其消失/清零 ──
