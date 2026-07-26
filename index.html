@@ -1107,11 +1107,14 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- 说明栏 + 更新时间 -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap">
     <div style="font-size:12px;color:var(--text2);line-height:1.6">
-      数据来源：东方财富 · 仅覆盖A股（港股利润数据暂不支持）&nbsp;|&nbsp;
+      数据来源：东方财富 · 覆盖A股及港股（利润、市值均按上市地本币计算）&nbsp;|&nbsp;
       <span style="color:#d97706;font-weight:600">年度利润增速预测</span> = (上年同比 + 上季同比 + 上季环比) / 3 &nbsp;|&nbsp;
       <span style="color:#059669;font-weight:600">年度利润预测</span> = 上年利润 × (1 + 预测增速)
     </div>
-    <div style="font-size:12px;color:var(--text2)" id="val-update-ts">—</div>
+    <div style="display:flex;align-items:center;gap:8px;white-space:nowrap">
+      <span style="font-size:12px;color:var(--text2)" id="val-update-ts">—</span>
+      <button class="val-subtab" id="val-refresh-btn" onclick="fetchValData(true)" title="立即重新读取A股及港股最新财务数据">↻ 刷新财务数据</button>
+    </div>
   </div>
 
   <!-- 估值表格容器（外层不限宽，内部按视图内容撑开） -->
@@ -4540,6 +4543,8 @@ let _VAL_SEC_SORT = {};             // { secIdx: {col, dir} } 按分类视图排
 let _VAL_IND_SORT = {};             // { industryName: {col, dir} } 按行业视图排序
 let _VAL_VIEW = 'sector';           // 'sector' | 'industry'
 const _VAL_THROTTLE = 300000; // 5分钟缓存
+let _VAL_INFLIGHT = null;
+let _VAL_STATUS = {loading:false,total:0,loaded:0,failed:0};
 
 /* 切换估值分析二级视图 */
 function switchValView(view){
@@ -4584,83 +4589,176 @@ function valSecSort(secIdx, col){
   renderValTable();
 }
 
-async function fetchValData(){
-  if(Date.now()-_VAL_TS < _VAL_THROTTLE) { renderValTable(); return; }
-  if(!PORT || !PORT.sectors) return;
+function _valFinite(v){
+  if(v===null||v===undefined||v==='') return null;
+  const n=Number(v);
+  return Number.isFinite(n)?n:null;
+}
 
-  // 收集所有A股代码（排除港股）
-  const codes=[];
-  PORT.sectors.forEach(sec=>sec.stocks.forEach(sk=>{ if(sk.mkt!=='HK') codes.push(sk.code); }));
-  if(!codes.length){ renderValTable(); return; }
+function _valByDateDesc(rows, field){
+  return [...(rows||[])].sort((a,b)=>String(b[field]||'').localeCompare(String(a[field]||'')));
+}
 
-  const codeList=codes.map(c=>`"${c}"`).join(',');
-  const url=`https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_LICO_FN_CPD`
-    +`&columns=SECURITY_CODE,REPORTDATE,PARENT_NETPROFIT,SJLTZ,SJLHZ,DATEMMDD,DATAYEAR,QDATE`
-    +`&filter=(SECURITY_CODE in (${codeList}))`
-    +`&pageSize=300&pageNumber=1&sortColumns=REPORTDATE&sortTypes=-1&source=WEB`;
+function _valFromA(rows){
+  const recs=_valByDateDesc(rows,'REPORTDATE');
+  const ann=recs.find(r=>r.DATEMMDD==='年报');
+  const qtr=recs.find(r=>r.DATEMMDD!=='年报');
+  if(!ann&&!qtr) return null;
+  return {
+    annualProfit : ann&&_valFinite(ann.PARENT_NETPROFIT)!=null ? _valFinite(ann.PARENT_NETPROFIT)/100000000 : null,
+    annualYoY    : ann ? _valFinite(ann.SJLTZ) : null,
+    annualPeriod : ann ? String(ann.DATAYEAR||String(ann.REPORTDATE||'').slice(0,4))+'年报' : null,
+    qtrProfit    : qtr&&_valFinite(qtr.PARENT_NETPROFIT)!=null ? _valFinite(qtr.PARENT_NETPROFIT)/100000000 : null,
+    qtrYoY       : qtr ? _valFinite(qtr.SJLTZ) : null,
+    qtrQoQ       : qtr ? _valFinite(qtr.SJLHZ) : null,
+    qtrPeriod    : qtr ? (qtr.QDATE||qtr.DATEMMDD||String(qtr.REPORTDATE||'').slice(0,10)) : null,
+    currency     : 'CNY',
+    source       : 'A'
+  };
+}
 
-  try {
-    const resp=await fetch(url);
+function _valHkPeriod(row){
+  const date=String(row?.REPORT_DATE||'').slice(0,10);
+  if(!date) return null;
+  const month=Number(date.slice(5,7));
+  const q=month===3?'Q1':month===6?'Q2':month===9?'Q3':month===12?'Q4':'';
+  return date.slice(0,4)+(q||('-'+String(month).padStart(2,'0')));
+}
+
+function _valFromHK(rows){
+  const recs=_valByDateDesc(rows,'REPORT_DATE');
+  const ann=recs.find(r=>String(r.DATE_TYPE_CODE)==='001');
+  const qtr=recs.find(r=>String(r.DATE_TYPE_CODE)!=='001');
+  if(!ann&&!qtr) return null;
+  return {
+    annualProfit : ann&&_valFinite(ann.HOLDER_PROFIT)!=null ? _valFinite(ann.HOLDER_PROFIT)/100000000 : null,
+    annualYoY    : ann ? _valFinite(ann.HOLDER_PROFIT_YOY) : null,
+    annualPeriod : ann ? String(ann.REPORT_DATE||'').slice(0,4)+'年报' : null,
+    qtrProfit    : qtr&&_valFinite(qtr.HOLDER_PROFIT)!=null ? _valFinite(qtr.HOLDER_PROFIT)/100000000 : null,
+    qtrYoY       : qtr ? _valFinite(qtr.HOLDER_PROFIT_YOY) : null,
+    qtrQoQ       : qtr ? _valFinite(qtr.HOLDER_PROFIT_QOQ) : null,
+    qtrPeriod    : qtr ? _valHkPeriod(qtr) : null,
+    currency     : (qtr||ann)?.CURRENCY||'HKD',
+    source       : 'HK'
+  };
+}
+
+async function _valFetchJson(url){
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),10000);
+  try{
+    const resp=await fetch(url,{signal:ctrl.signal,cache:'no-store'});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
     const json=await resp.json();
-    if(!json.success||!json.result) throw new Error('API返回空数据');
-
-    // 按代码分组（全局已按日期降序，分组后同样保持降序）
-    const byCode={};
-    json.result.data.forEach(r=>{
-      const c=r.SECURITY_CODE;
-      if(!byCode[c]) byCode[c]=[];
-      byCode[c].push(r);
-    });
-
-    _VAL_DATA={};
-    codes.forEach(code=>{
-      const recs=byCode[code]||[];
-      const ann  =recs.find(r=>r.DATEMMDD==='年报');
-      const qtr  =recs.find(r=>r.DATEMMDD!=='年报');
-      _VAL_DATA[code]={
-        annualProfit : ann ? ann.PARENT_NETPROFIT/100000000 : null,
-        annualYoY    : ann ? ann.SJLTZ : null,
-        annualPeriod : ann ? ann.DATAYEAR+'年报' : null,
-        qtrProfit    : qtr ? qtr.PARENT_NETPROFIT/100000000 : null,
-        qtrYoY       : qtr ? qtr.SJLTZ : null,
-        qtrQoQ       : qtr ? qtr.SJLHZ : null,
-        qtrPeriod    : qtr ? qtr.QDATE : null,
-      };
-    });
-    _VAL_TS=Date.now();
-  } catch(e){
-    console.warn('fetchValData error',e);
+    if(!json.success||!json.result) throw new Error(json.message||'API返回空数据');
+    return json;
+  }finally{
+    clearTimeout(timer);
   }
+}
 
-  // ── 港股：按名称查找对应A股，取利润数据 ──────────────────────
-  const hkStocks=[];
-  PORT.sectors.forEach(sec=>sec.stocks.forEach(sk=>{ if(sk.mkt==='HK') hkStocks.push(sk); }));
-  await Promise.all(hkStocks.map(async sk=>{
-    if(_VAL_DATA[sk.code]?.annualProfit!=null) return; // 已有数据则跳过
-    try{
-      const f=encodeURIComponent(`(SECURITY_NAME_ABBR="${sk.name}")`);
-      const u=`https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_LICO_FN_CPD`
-        +`&columns=SECURITY_CODE,SECURITY_NAME_ABBR,REPORTDATE,PARENT_NETPROFIT,SJLTZ,SJLHZ,DATEMMDD,DATAYEAR,QDATE`
-        +`&filter=${f}&pageSize=10&pageNumber=1&sortColumns=REPORTDATE&sortTypes=-1&source=WEB`;
-      const j=await (await fetch(u)).json();
-      if(!j.success||!j.result?.data?.length) return;
-      const recs=j.result.data;
-      const ann=recs.find(r=>r.DATEMMDD==='年报');
-      const qtr=recs.find(r=>r.DATEMMDD!=='年报');
-      _VAL_DATA[sk.code]={
-        annualProfit : ann ? ann.PARENT_NETPROFIT/100000000 : null,
-        annualYoY    : ann ? ann.SJLTZ : null,
-        annualPeriod : ann ? ann.DATAYEAR+'年报' : null,
-        qtrProfit    : qtr ? qtr.PARENT_NETPROFIT/100000000 : null,
-        qtrYoY       : qtr ? qtr.SJLTZ : null,
-        qtrQoQ       : qtr ? qtr.SJLHZ : null,
-        qtrPeriod    : qtr ? qtr.QDATE : null,
-        proxyACode   : recs[0].SECURITY_CODE,  // 记录A股代码，供调试
-      };
-    }catch(e){ console.warn('[HK代理]',sk.name,e); }
+function _valAUrl(codes,pageNumber=1){
+  const p=new URLSearchParams({
+    reportName:'RPT_LICO_FN_CPD',
+    columns:'SECURITY_CODE,REPORTDATE,PARENT_NETPROFIT,SJLTZ,SJLHZ,DATEMMDD,DATAYEAR,QDATE',
+    filter:`(SECURITY_CODE in (${codes.map(c=>`"${c}"`).join(',')}))`,
+    pageSize:'500',pageNumber:String(pageNumber),
+    sortColumns:'REPORTDATE',sortTypes:'-1',source:'WEB'
+  });
+  return 'https://datacenter-web.eastmoney.com/api/data/v1/get?'+p;
+}
+
+async function _valFetchA(codes){
+  const rows=[];
+  // 每组不超过8只；500行通常已覆盖完整历史，同时仍按返回页数补取，避免分页截断。
+  const chunks=[];
+  for(let i=0;i<codes.length;i+=8) chunks.push(codes.slice(i,i+8));
+  const results=await Promise.allSettled(chunks.map(async chunk=>{
+    const first=await _valFetchJson(_valAUrl(chunk,1));
+    const pages=Math.max(1,Number(first.result.pages)||1);
+    const out=[...(first.result.data||[])];
+    if(pages>1){
+      const rest=await Promise.all(Array.from({length:pages-1},(_,i)=>_valFetchJson(_valAUrl(chunk,i+2))));
+      rest.forEach(j=>out.push(...(j.result.data||[])));
+    }
+    return out;
   }));
+  results.forEach(r=>{ if(r.status==='fulfilled') rows.push(...r.value); else console.warn('[估值A股]',r.reason); });
+  return rows;
+}
 
+async function _valFetchHK(code){
+  const p=new URLSearchParams({
+    reportName:'RPT_HKF10_FN_MAININDICATOR',
+    columns:'HKF10_FN_MAININDICATOR',
+    quoteColumns:'',pageNumber:'1',pageSize:'9',
+    sortTypes:'-1',sortColumns:'STD_REPORT_DATE',
+    source:'F10',client:'PC',filter:`(SECUCODE="${code}.HK")`
+  });
+  const json=await _valFetchJson('https://datacenter.eastmoney.com/securities/api/data/v1/get?'+p);
+  return json.result.data||[];
+}
+
+async function fetchValData(force=false){
+  if(!force&&Date.now()-_VAL_TS<_VAL_THROTTLE){ renderValTable(); return; }
+  if(_VAL_INFLIGHT) return _VAL_INFLIGHT;
+  if(!PORT||!PORT.sectors) return;
+
+  const stocks=[];
+  const seen=new Set();
+  PORT.sectors.forEach(sec=>(sec.stocks||[]).forEach(sk=>{
+    const key=sk.mkt+':'+sk.code;
+    if(!seen.has(key)){ seen.add(key); stocks.push(sk); }
+  }));
+  const aCodes=stocks.filter(sk=>sk.mkt!=='HK').map(sk=>sk.code);
+  const hkStocks=stocks.filter(sk=>sk.mkt==='HK');
+  _VAL_STATUS={loading:true,total:stocks.length,loaded:0,failed:0};
   renderValTable();
+
+  _VAL_INFLIGHT=(async()=>{
+    const next={};
+    const old=_VAL_DATA;
+    const jobs=[];
+
+    if(aCodes.length){
+      jobs.push(_valFetchA(aCodes).then(rows=>{
+        const byCode={};
+        rows.forEach(r=>{
+          const code=String(r.SECURITY_CODE||'');
+          if(!byCode[code]) byCode[code]=[];
+          byCode[code].push(r);
+        });
+        aCodes.forEach(code=>{
+          const data=_valFromA(byCode[code]);
+          if(data) next[code]=data;
+          else if(old[code]) next[code]={...old[code],stale:true};
+        });
+      }).catch(e=>{ console.warn('[估值A股]',e); aCodes.forEach(code=>{ if(old[code]) next[code]={...old[code],stale:true}; }); }));
+    }
+
+    hkStocks.forEach(sk=>{
+      jobs.push(_valFetchHK(sk.code).then(rows=>{
+        const data=_valFromHK(rows);
+        if(data) next[sk.code]=data;
+        else if(old[sk.code]) next[sk.code]={...old[sk.code],stale:true};
+      }).catch(e=>{ console.warn('[估值港股]',sk.code,e); if(old[sk.code]) next[sk.code]={...old[sk.code],stale:true}; }));
+    });
+
+    await Promise.allSettled(jobs);
+    _VAL_DATA=next;
+    const loaded=stocks.filter(sk=>next[sk.code]&&!next[sk.code].stale&&(next[sk.code].annualProfit!=null||next[sk.code].qtrProfit!=null)).length;
+    _VAL_STATUS={loading:false,total:stocks.length,loaded,failed:stocks.length-loaded};
+    if(loaded>0) _VAL_TS=Date.now();
+    renderValTable();
+  })().finally(()=>{
+    _VAL_INFLIGHT=null;
+    const btn=document.getElementById('val-refresh-btn');
+    if(btn) btn.disabled=false;
+  });
+
+  const btn=document.getElementById('val-refresh-btn');
+  if(btn) btn.disabled=true;
+  return _VAL_INFLIGHT;
 }
 
 function _valFmt(v, decimals=2){
@@ -4685,7 +4783,15 @@ function renderValTable(){
   }
 
   const tsEl=document.getElementById('val-update-ts');
-  if(tsEl && _VAL_TS) tsEl.textContent='数据更新：'+new Date(_VAL_TS).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if(tsEl){
+    if(_VAL_STATUS.loading) tsEl.textContent='正在读取 A股及港股财报…';
+    else if(_VAL_TS) tsEl.textContent='财务数据 '+_VAL_STATUS.loaded+'/'+_VAL_STATUS.total+' 只 · '+new Date(_VAL_TS).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    else tsEl.textContent='尚未取得财务数据';
+  }
+  if(_VAL_STATUS.loading&&!Object.keys(_VAL_DATA).length){
+    wrap.innerHTML='<div style="padding:48px;text-align:center;color:var(--text2);font-size:14px">⏳ 正在并行读取 A股及港股最新财报…</div>';
+    return;
+  }
 
   const mktLabel={SH:'沪A',SZ:'深A',HK:'港股'};
   const mktColor={SH:'background:#dbeafe;color:#1e40af',SZ:'background:#ede9fe;color:#5b21b6',HK:'background:#fee2e2;color:#991b1b'};
@@ -4708,10 +4814,10 @@ function renderValTable(){
       ?(isHK?Number(pi.price).toFixed(3):Number(pi.price).toFixed(2))
       :'<span style="color:#94a3b8">—</span>';
     const pctStr=pi.pct!=null?_valPct(pi.pct):'';
-    const hkBadge=(isHK && d.annualProfit!=null)
-      ?`<span style="font-size:9px;background:#fef9c3;color:#92400e;border-radius:3px;padding:0 3px;font-weight:700;margin-left:3px;vertical-align:middle">A代</span>`:'';
-    const annProfitStr=noData?'<span style="color:#94a3b8;font-size:11px">无对应A股</span>'
-      :(d.annualProfit!=null?_valFmt(d.annualProfit,2)+hkBadge:'<span style="color:#94a3b8">—</span>');
+    const currencyBadge=(d.currency&&d.annualProfit!=null)
+      ?`<span style="font-size:9px;background:#f1f5f9;color:#64748b;border-radius:3px;padding:0 3px;font-weight:700;margin-left:3px;vertical-align:middle">${d.currency}</span>`:'';
+    const annProfitStr=noData?'<span style="color:#94a3b8;font-size:11px">暂未取得财报</span>'
+      :(d.annualProfit!=null?_valFmt(d.annualProfit,2)+currencyBadge:'<span style="color:#94a3b8">—</span>');
     const annPeriodStr=d.annualPeriod?`<br><span style="font-size:10px;color:var(--text2)">${d.annualPeriod}</span>`:'';
     const annYoY=noData?'<span style="color:#94a3b8">—</span>':_valPct(d.annualYoY);
     const qtrProfitStr=noData?'<span style="color:#94a3b8">—</span>'
@@ -4730,7 +4836,7 @@ function renderValTable(){
     const peStr=pe!=null?(()=>{
       const c=pe<30?'#059669':pe<50?'#d97706':'#dc2626';
       return `<span style="font-weight:700;color:${c}">${pe}x</span>`;
-    })():'<span style="color:#94a3b8">—</span>';
+    })():(predProfit!=null&&predProfit<=0?'<span style="color:#94a3b8;font-size:11px">亏损</span>':'<span style="color:#94a3b8">—</span>');
     return `<tr style="border-bottom:1px solid var(--border);transition:background .12s" onmouseover="this.style.background='rgba(37,99,235,.04)'" onmouseout="this.style.background=''">
       <td style="padding:9px 14px;font-weight:600;color:var(--text);white-space:nowrap">${sk.name}</td>
       <td style="padding:9px 10px;text-align:center">
@@ -4756,7 +4862,7 @@ function renderValTable(){
     const pi=_PORT_PRICES[sk.code]||{};
     const d=_VAL_DATA[sk.code]||{};
     const isHK=sk.mkt==='HK';
-    const noData=isHK&&d.annualProfit==null;
+    const noData=d.annualProfit==null&&d.qtrProfit==null;
     let predRate=null,predProfit=null;
     if(!noData){
       const vals=[d.annualYoY,d.qtrYoY,d.qtrQoQ].filter(v=>v!=null);
@@ -4799,9 +4905,9 @@ function renderValTable(){
             <th style="padding:9px 14px;text-align:left;font-weight:700;color:var(--text);white-space:nowrap">股票名称</th>
             <th style="padding:9px 10px;text-align:center;font-weight:700;color:var(--text);white-space:nowrap">市场</th>
             <th style="padding:9px 12px;text-align:right;font-weight:700;color:var(--text);white-space:nowrap">当前股价</th>
-            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap;border-left:2px solid #fde68a">上年利润</th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap;border-left:2px solid #fde68a">上年利润<br><span style="font-size:9px;font-weight:500">亿元·本币</span></th>
             <th style="padding:9px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap">上年同比</th>
-            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap;border-left:2px solid #bfdbfe">上季利润</th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap;border-left:2px solid #bfdbfe">上季利润<br><span style="font-size:9px;font-weight:500">亿元·本币</span></th>
             <th style="padding:9px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季同比</th>
             <th style="padding:9px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季环比</th>
             <th style="padding:9px 12px;text-align:right;font-weight:700;color:#7c3aed;white-space:nowrap;border-left:2px solid #ddd6fe">年度增速预测</th>
@@ -7581,10 +7687,12 @@ async function fetchPortPrices(){
         var m = aTxt.match(new RegExp('v_' + s.tc + '="([^"]+)"'));
         if(!m) return;
         var p = m[1].split('~');
-        var cur = parseFloat(p[3]), pct = parseFloat(p[32]), vr = parseFloat(p[49]);
+        var cur = parseFloat(p[3]), pct = parseFloat(p[32]), vr = parseFloat(p[49]), txMc = parseFloat(p[45]);
         if(cur > 0 && isFinite(pct))
           _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w,
-            volRatio: isFinite(vr)&&vr>0 ? vr : null};
+            volRatio: isFinite(vr)&&vr>0 ? vr : null,
+            // 腾讯行情 field[45] 已是亿元，可在东财市值接口超时/限流时直接兜底。
+            mktCap: isFinite(txMc)&&txMc>0 ? txMc : null};
       });
     }
 
@@ -7696,7 +7804,7 @@ async function fetchPortPrices(){
             var m = txt2.match(new RegExp('v_hk' + s.code + '="([^"]+)"'));
             if(!m) return;
             var p = m[1].split('~');
-            var cur = parseFloat(p[3]), pct = parseFloat(p[32]);
+            var cur = parseFloat(p[3]), pct = parseFloat(p[32]), txMc = parseFloat(p[45]);
             if(!(cur > 0 && isFinite(pct))) return;
             var qm=String(p[30]||'').match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})\s+(\d{1,2}):(\d{2}):(\d{2})/);
             var quoteTs=qm?Date.UTC(+qm[1],+qm[2]-1,+qm[3],+qm[4]-8,+qm[5],+qm[6]):0;
@@ -7707,7 +7815,8 @@ async function fetchPortPrices(){
             if(pv && (pv.src==='em' || pv.src==='emd' || pv.src==='sina') && pv._t && (Date.now()-pv._t) < 180000){
               pv.stale = true; _PORT_PRICES[s.code] = pv;
             } else {
-              _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w, src:'tc', _t:Date.now(), quoteTs:quoteTs};
+              _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w, src:'tc', _t:Date.now(), quoteTs:quoteTs,
+                mktCap:isFinite(txMc)&&txMc>0 ? txMc : null};
             }
           });
         }catch(e){ console.warn('[HK] 腾讯兜底:', e.message); }
@@ -7725,6 +7834,11 @@ async function fetchPortPrices(){
         var old = _prevPrices[code];
         old.stale = true;                 // 沿用上一时刻的值
         _PORT_PRICES[code] = old;
+      }
+      // 本轮价格成功但市值接口暂时失败时，只沿用旧市值，不把整行估值清空。
+      if(_curCodes[code] && _PORT_PRICES[code] && _prevPrices[code] &&
+         !(_PORT_PRICES[code].mktCap>0) && _prevPrices[code].mktCap>0){
+        _PORT_PRICES[code].mktCap=_prevPrices[code].mktCap;
       }
     });
 
