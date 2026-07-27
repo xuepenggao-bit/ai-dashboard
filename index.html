@@ -6748,8 +6748,9 @@ async function addHistRecord(){
   portSaveRemote();
   renderHistTable();
 
-  // 切换到历史持仓标签页
-  switchTab(4);
+  // 保持/切换到历史持仓标签页。不要写死序号，避免以后调整 TAB_ORDER 后跳到其他页面。
+  const histTabIdx=TAB_ORDER.indexOf('tHist');
+  if(histTabIdx>=0) switchTab(histTabIdx);
 }
 
 // 用投资组合「主要指数」里的中证全指涨跌幅（_csiPct），补正历史记录中缺失的 csiPct，并同步云端
