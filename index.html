@@ -787,31 +787,35 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .news-refresh{border:1px solid #bae6fd;background:#f0f9ff;color:#0369a1;border-radius:7px;padding:3px 8px;font-size:10.5px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}
   .news-refresh:hover{background:#e0f2fe}.news-refresh:disabled{opacity:.55;cursor:default}
   .news-refresh.loading .news-refresh-icon{display:inline-block;animation:spin 1s linear infinite}
-  .news-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
+  .news-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 24px;align-items:start}
   @media(max-width:680px){.news-grid{grid-template-columns:1fr}}
+  .news-col-l,.news-col-r{min-width:0}
   .news-col-r{position:relative}
   .news-col-r::before{content:"";position:absolute;left:-12px;top:2px;bottom:2px;width:1px;background:#e6ebf1}
   @media(max-width:680px){.news-col-r::before{display:none}.news-col-r{margin-top:12px;padding-top:12px;border-top:1px solid #eef2f7}}
-  .news-colhd{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+  .news-colhd{display:flex;align-items:center;gap:7px;height:22px;margin-bottom:6px}
   .news-colhd .dot{width:7px;height:7px;border-radius:50%}
   .news-colhd .lbl{font-size:11.5px;font-weight:800;letter-spacing:.05em}
   .news-colhd .cnt{font-size:10px;color:#9aa7b5;font-weight:700;margin-left:auto;letter-spacing:.04em}
+  /* 左右统一为 5 行 × 76px；长标题最多两行，确保每一行横向严格对齐。 */
+  #newsTop,#newsFlash{display:grid;grid-template-rows:repeat(5,76px);min-width:0}
+  #newsTop>.news-empty,#newsFlash>.news-empty{grid-row:1/-1;align-self:center}
   /* 要闻：排名榜（序号色块，Top1-3 红→橙→金，4-5 灰）*/
-  .nrow{display:flex;gap:11px;align-items:flex-start;padding:9px 8px;border-radius:9px;text-decoration:none;transition:background .15s}
+  .nrow{display:flex;gap:11px;align-items:flex-start;height:76px;box-sizing:border-box;overflow:hidden;padding:9px 8px;border-radius:9px;text-decoration:none;transition:background .15s}
   .nrow+.nrow{border-top:1px solid #f3f5f8}
   .nrow:hover{background:#f8fafc}
   .nrk{flex:0 0 auto;width:20px;height:20px;border-radius:6px;font-size:11px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:center;margin-top:1px}
   .nrk.r1{background:#dc2626}.nrk.r2{background:#ea580c}.nrk.r3{background:#f59e0b}.nrk.r4,.nrk.r5{background:#cbd5e1;color:#475569}
-  .nttl{font-size:13px;line-height:1.5;font-weight:600;color:#1e293b}
+  .nttl{font-size:13px;line-height:1.5;font-weight:600;color:#1e293b;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
   .nrow:hover .nttl{color:#0369a1}
-  .nmeta{font-size:10px;color:#9aa7b5;margin-top:3px;font-weight:500}
+  .nmeta{font-size:10px;color:#9aa7b5;margin-top:3px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* 快讯：时间线（蓝色时间胶囊，最新一条标红）*/
-  .frow{display:flex;gap:10px;align-items:flex-start;padding:9px 8px;border-radius:9px;text-decoration:none;transition:background .15s}
+  .frow{display:flex;gap:10px;align-items:flex-start;height:76px;box-sizing:border-box;overflow:hidden;padding:9px 8px;border-radius:9px;text-decoration:none;transition:background .15s}
   .frow+.frow{border-top:1px solid #f3f5f8}
   .frow:hover{background:#f0f9ff}
   .ftime{flex:0 0 auto;font-size:10.5px;font-weight:800;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:2px 7px;margin-top:1px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
   .frow.fresh .ftime{background:#fee2e2;color:#dc2626}
-  .fttl{font-size:12.5px;line-height:1.5;color:#334155;font-weight:500}
+  .fttl{font-size:12.5px;line-height:1.5;color:#334155;font-weight:500;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
   .frow:hover .fttl{color:#0369a1}
   .news-empty{color:#9aa7b5;font-size:11px;text-align:center;padding:20px 0}
   </style>
@@ -7542,7 +7546,7 @@ function _newsRenderTop(el,items){
   }).join('');
 }
 function _newsRenderFlash(el,items){
-  el.innerHTML=items.map(function(item,i){
+  el.innerHTML=items.slice(0,5).map(function(item,i){
     return _flashRow(item.url,item.title,_newsTime(item.ts,false),i===0);
   }).join('');
 }
@@ -7599,10 +7603,10 @@ async function _fetchNewsFlash(){
       {name:'华尔街见闻',load:_newsWscnLives},
       {name:'东方财富',load:function(){ return _newsEastmoneyLives('fast'); }},
       {name:'东方财富资讯',load:function(){ return _newsEastmoneyLives('column'); }},
-    ],8);
+    ],5);
     _newsRenderFlash(el,result.items);
     _newsSaveCache(_NEWS_FLASH_CACHE,result.items,result.source);
-    if(sourceEl) sourceEl.textContent=result.source+' · 8 条';
+    if(sourceEl) sourceEl.textContent=result.source+' · 5 条';
     return result.source;
   }catch(e){
     console.warn('[快讯] 全部实时源失败:',e.message);
