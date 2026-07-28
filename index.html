@@ -975,6 +975,25 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="tx3 mt4">来源: 东方财富 · 日频两融余额（沪深合计）· 柱=每日增量(余额环比，红增绿减) · <span id="marginKpiFooter">加载中…</span></div>
   </div>
 
+  <!-- 日频：沪深两市成交量趋势（近三个月） -->
+  <div class="card mb16">
+    <div class="ch">
+      <span class="ct">沪深 A 股成交量趋势（日频·亿手）</span>
+      <span class="cbadge" style="background:#dbeafe;color:#1d4ed8">近 3 个月 · 60 交易日</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
+      <div>
+        <span class="tx3">最新成交量&nbsp;</span>
+        <span id="volumeKpiVal" style="font-size:18px;font-weight:800;color:#2563eb">—</span>
+      </div>
+      <span id="volumeKpiDate" class="tx3" style="color:#94a3b8">加载中…</span>
+      <span id="volumeKpiCompare" class="tx3" style="color:#64748b">5 日均量 —</span>
+      <span id="volumeKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
+    </div>
+    <div style="height:220px"><canvas id="cVolume"></canvas></div>
+    <div class="tx3 mt4" id="volumeKpiFooter">来源: 东方财富 · 上证综指 + 深证综指成交量 · 柱=每日成交量 · 线=5日均量 · 加载中…</div>
+  </div>
+
   <!-- 第一行：X关注意见领袖 -->
   <div class="card mb16" style="border-top:3px solid #1d9bf0">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -1686,6 +1705,8 @@ const BASE = {
       labels:['03-10','03-11','03-12','03-13','03-14','03-17','03-18','03-19','03-20','03-21','03-24','03-25','03-26','03-27','03-28','03-31','04-01','04-02','04-03','04-07','04-08','04-09','04-10','04-11','04-14','04-15','04-16','04-17','04-18','04-21','04-22','04-23','04-24','04-25','04-28','04-29','05-06','05-07','05-08','05-09','05-12','05-13','05-14','05-15','05-16','05-19','05-20','05-21','05-22','05-23','05-26'],
       vals:  [25820,25890,25810,25960,26120,26050,26180,26140,26310,26270,26430,26350,26490,26600,26560,26680,26720,26640,26780,26850,26920,26780,26980,27100,27250,27180,27320,27420,27380,27510,27460,27620,27700,27580,27750,27830,27900,27980,28050,28120,28080,28180,28250,28320,28390,28350,28450,28520,28620,28700,28780],
     },
+    // ── 沪深 A 股成交量（日频·亿手）— 由 fetchDailyCharts 动态填充 ──
+    volume:{ labels:[], vals:[], dates:[] },
     // ── 北向资金净流入 (日频·亿元) 2026-03-10→2026-05-26 · 来源:沪深港通统计 ──
     north:{
       labels:['03-10','03-11','03-12','03-13','03-14','03-17','03-18','03-19','03-20','03-21','03-24','03-25','03-26','03-27','03-28','03-31','04-01','04-02','04-03','04-07','04-08','04-09','04-10','04-11','04-14','04-15','04-16','04-17','04-18','04-21','04-22','04-23','04-24','04-25','04-28','04-29','05-06','05-07','05-08','05-09','05-12','05-13','05-14','05-15','05-16','05-19','05-20','05-21','05-22','05-23','05-26'],
@@ -4105,6 +4126,43 @@ function mkMargin(){
   }});
 }
 
+function _movingAverage(vals, windowSize){
+  return vals.map((_,i)=>{
+    if(i<windowSize-1) return null;
+    const window=vals.slice(i-windowSize+1,i+1);
+    if(window.some(v=>v==null||!isFinite(v))) return null;
+    return +(window.reduce((sum,v)=>sum+v,0)/windowSize).toFixed(2);
+  });
+}
+
+function mkVolume(){
+  const canvas=document.getElementById('cVolume');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const d=BASE.ashare.volume;
+  CH.volume=new Chart(ctx,{data:{labels:d.labels,datasets:[
+    {
+      type:'bar',label:'沪深成交量(亿手)',data:d.vals,
+      backgroundColor:'rgba(37,99,235,.68)',borderColor:'rgba(37,99,235,.85)',
+      borderWidth:1,borderRadius:2,barPercentage:0.82,categoryPercentage:0.9,order:2,
+    },
+    {
+      type:'line',label:'5日均量(亿手)',data:_movingAverage(d.vals,5),
+      borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.08)',
+      borderWidth:2,pointRadius:0,pointHoverRadius:4,tension:0.3,spanGaps:false,order:1,
+    },
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{labels:{color:'#64748b',font:{size:11},usePointStyle:true}},
+      tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+(ctx.parsed.y==null?'—':ctx.parsed.y.toFixed(2)+' 亿手')}},
+    },
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:9},maxTicksLimit:10,maxRotation:0}},
+      y:{beginAtZero:true,grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v+'亿手'}},
+    }
+  }});
+}
+
 // mkNorth 已移除（北向资金净流入官方停止披露）
 
 function mkUpDown(){
@@ -5010,11 +5068,12 @@ function _tabRefresh(idx){
   _TAB_TS[idx]=now;
   // 按标签页类型调用对应的动态数据刷新函数
   if(tab==='tPort'){ refreshPortAll(true); }  // 切到组合页：强制全刷（A档优化：不再依赖 fetchPortPrices 的 finally 串行链）
+  else if(tab==='t0')    refreshMacro();
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tHist') renderHistTable();
   else if(tab==='tPre')  preLoad();
-  // A股宏观(tAM)、AI趋势(t0)、产业链监控(tStage)：切换标签不触发后台刷新，
-  // Capex 只由区块内 triggerCapexRefresh 手动触发；页面仅载入已保存快照。
+  // 宏观趋势(t0)只刷新市值/PE/两融/成交量等市场数据；
+  // Capex 仍只由区块内 triggerCapexRefresh 手动触发，页面仅载入已保存快照。
 }
 
 function switchTab(idx){
@@ -5345,6 +5404,68 @@ async function _fetchDailySeries(url, lf, vfs){
   };
 }
 
+async function _fetchIndexVolume(secid){
+  const params=new URLSearchParams({
+    secid, klt:'101', fqt:'0', lmt:'70', end:'20500101', iscca:'1',
+    fields1:'f1,f2,f3,f4,f5,f6',
+    fields2:'f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61',
+  });
+  let lastError=null;
+  for(let attempt=0;attempt<2;attempt++){
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),8000);
+    try{
+      const res=await fetch('https://push2his.eastmoney.com/api/qt/stock/kline/get?'+params.toString()+'&_='+Date.now(),{
+        cache:'no-store',signal:ctrl.signal,
+      });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const json=await res.json();
+      const rows=json?.data?.klines;
+      if(!rows?.length) throw new Error('空数据');
+      const result=new Map();
+      rows.forEach(row=>{
+        const p=String(row).split(',');
+        const date=p[0]?.slice(0,10);
+        const volume=parseFloat(p[5]);
+        if(/^\d{4}-\d{2}-\d{2}$/.test(date)&&isFinite(volume)&&volume>=0) result.set(date,volume);
+      });
+      if(result.size<20) throw new Error('有效交易日不足');
+      return result;
+    }catch(e){
+      lastError=e;
+    }finally{
+      clearTimeout(timer);
+    }
+  }
+  throw lastError||new Error('指数成交量数据不可用');
+}
+
+async function _fetchMarketVolumeSeries(){
+  // 上证综指覆盖沪市，深证综指覆盖深市；两者成交量相加得到沪深市场总成交量。
+  const [sh,sz]=await Promise.all([
+    _fetchIndexVolume('1.000001'),
+    _fetchIndexVolume('0.399106'),
+  ]);
+  const dates=[...sh.keys()].filter(date=>sz.has(date)).sort().slice(-60);
+  if(dates.length<20) throw new Error('沪深共同交易日不足');
+  const vals=dates.map(date=>+((sh.get(date)+sz.get(date))/1e8).toFixed(2));
+  return{
+    dates,
+    labels:dates.map(_fmtDayLabel),
+    vals,
+    latestDate:dates[dates.length-1],
+    latestVal:vals[vals.length-1],
+  };
+}
+
+function _isCurrentAVolumePartial(latestDate){
+  const bj=new Date(Date.now()+8*60*60*1000);
+  const today=bj.getUTCFullYear()+'-'+String(bj.getUTCMonth()+1).padStart(2,'0')+'-'+String(bj.getUTCDate()).padStart(2,'0');
+  const minute=bj.getUTCHours()*60+bj.getUTCMinutes();
+  const weekday=bj.getUTCDay();
+  return latestDate===today&&weekday>=1&&weekday<=5&&minute>=9*60+30&&minute<15*60;
+}
+
 async function fetchDailyCharts(){
   // ── 1. 融资融券余额 ──────────────────────────────────────────────
   try{
@@ -5389,9 +5510,61 @@ async function fetchDailyCharts(){
     const kf=document.getElementById('marginKpiFooter'); if(kf) kf.textContent='⚠️ 融资融券数据暂时取不到，请点「刷新宏观数据」重试';
   }
 
-  // ── 2. 北向资金已移除（沪深港通自 2024-08 起官方停止披露日度北向净流入）──
+  // ── 2. 沪深 A 股成交量（上证综指 + 深证综指，近 60 交易日）────────
+  try{
+    const d=await _fetchMarketVolumeSeries();
+    BASE.ashare.volume=d;
+    const ma5=_movingAverage(d.vals,5);
+    const partial=_isCurrentAVolumePartial(d.latestDate);
+    // 当日盘中成交量仍在累积，不把它纳入“5日均量”趋势，避免制造假性缩量。
+    if(partial) ma5[ma5.length-1]=null;
+    if(CH.volume){
+      CH.volume.data.labels=d.labels;
+      CH.volume.data.datasets[0].data=d.vals;
+      CH.volume.data.datasets[0].backgroundColor=d.vals.map((_,i)=>
+        partial&&i===d.vals.length-1?'rgba(96,165,250,.42)':'rgba(37,99,235,.68)'
+      );
+      CH.volume.data.datasets[1].data=ma5;
+      CH.volume.update('none');
+    }
+    const kv=document.getElementById('volumeKpiVal');
+    const kd=document.getElementById('volumeKpiDate');
+    const kc=document.getElementById('volumeKpiCnt');
+    const kcmp=document.getElementById('volumeKpiCompare');
+    const kf=document.getElementById('volumeKpiFooter');
+    if(kv) kv.textContent=d.latestVal.toFixed(2)+' 亿手';
+    if(kd) kd.textContent=d.latestDate+(partial?' · 盘中累计':'');
+    if(kc) kc.textContent=`${d.labels.length}交易日 · ${d.dates[0]} 至 ${d.latestDate}`;
+    if(kcmp){
+      if(partial){
+        kcmp.textContent='盘中累计 · 收盘后比较 5 日均量';
+        kcmp.style.color='#64748b';
+      }else{
+        const avg=ma5[ma5.length-1];
+        const pct=avg?((d.latestVal/avg-1)*100):null;
+        kcmp.textContent=pct==null?'5 日均量 —':`较 5 日均量 ${pct>=0?'+':''}${pct.toFixed(1)}%`;
+        kcmp.style.color=pct==null?'#64748b':pct>=0?'#dc2626':'#059669';
+      }
+    }
+    if(kf) kf.textContent=`来源: 东方财富 · 上证综指 + 深证综指成交量 · 柱=每日成交量 · 线=5日均量 · 数据截至 ${d.latestDate}${partial?'（盘中累计）':''}`;
+    console.log('[Daily] 沪深成交量 OK | 最新:',d.latestDate,d.latestVal+'亿手',partial?'盘中':'收盘');
+  }catch(e){
+    console.warn('[Daily] 沪深成交量失败:',e.message);
+    if(CH.volume){
+      CH.volume.data.labels=[];
+      CH.volume.data.datasets.forEach(ds=>ds.data=[]);
+      CH.volume.update('none');
+    }
+    const kv=document.getElementById('volumeKpiVal');     if(kv) kv.textContent='—';
+    const kd=document.getElementById('volumeKpiDate');    if(kd) kd.textContent='无法取得';
+    const kc=document.getElementById('volumeKpiCnt');     if(kc) kc.textContent='实时数据源暂不可用';
+    const kcmp=document.getElementById('volumeKpiCompare'); if(kcmp) kcmp.textContent='5 日均量 —';
+    const kf=document.getElementById('volumeKpiFooter');  if(kf) kf.textContent='⚠️ 成交量趋势暂时取不到，请稍后重新打开“宏观趋势”标签页';
+  }
 
-  // ── 3. 涨跌家数：EM DataCenter 历史数据（60交易日）+ 实时今日覆盖 ──
+  // ── 3. 北向资金已移除（沪深港通自 2024-08 起官方停止披露日度北向净流入）──
+
+  // ── 4. 涨跌家数：EM DataCenter 历史数据（60交易日）+ 实时今日覆盖 ──
   // DataCenter 候选 report/列名（依次尝试，取第一个有效的）
   try{
     const UD_CANDS = [
@@ -5767,19 +5940,21 @@ async function refreshMacro(){
   if(ts) ts.textContent='正在获取最新数据…';
   if(alertEl) alertEl.style.display='none';
 
-  // 日频 KPI 卡片（总市值、PE、两融）并行拉取，不阻塞图表更新
-  fetchMacroKpis();
-  // 日频图表（融资融券余额 / 北向资金 / 涨跌家数当日）
-  fetchDailyCharts();
+  // 日频 KPI 与图表并行拉取；等待完成后再显示“已刷新”，避免慢网络下状态提前结束。
+  const jobs=[
+    fetchMacroKpis(),
+    fetchDailyCharts(),
+    fetchVixChart(),
+  ];
+  await Promise.allSettled(jobs);
 
   // 月度宏观图表(CPI/社融/固投/社零/工业利润/电子利润/PE走势)已随"A股宏观"页删除，
-  // 对应的 8+ 个东财/统计局请求一并移除（性能优化：refreshMacro 现仅刷新 KPI+两融+iVIX）。
+  // 对应请求一并移除（refreshMacro 现仅刷新市场 KPI、两融、成交量、涨跌家数与 iVIX）。
   const timeStr=new Date().toLocaleString('zh-CN');
-  if(ts) ts.textContent=`已刷新 市值/PE/两融 · ${timeStr}`;
+  if(ts) ts.textContent=`已刷新 市值/PE/两融/成交量 · ${timeStr}`;
   if(btn){ btn.classList.remove('loading'); btn.disabled=false; }
-
-  // 同步刷新 iVIX
-  fetchVixChart();
+  const macroIdx=TAB_ORDER.indexOf('t0');
+  if(macroIdx>=0) _TAB_TS[macroIdx]=Date.now();
 }
 
 // ── 自动刷新周期控制 ─────────────────────────────────────────
@@ -8286,7 +8461,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     // 其他标签页图表（宏观趋势/产业链监控等）
     _safe(mkCapex);_safe(mkTrend);_safe(mkSig);_safe(mkStageC);
     _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);
-    _safe(mkArr);_safe(mkMargin);
+    _safe(mkArr);_safe(mkMargin);_safe(mkVolume);
     _safe(mkStageMatrix);
     _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();});
     // 非首屏数据抓取（错开首屏行情请求，避免抢东财/腾讯连接）
@@ -8295,7 +8470,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     fetchMonLive();         // 产业链监控20日动量
     fetchMacroRates();      // 中美10年国债收益率
     _macroAutoFetched = true;
-    setTimeout(refreshMacro, 600);  // 宏观KPI/两融（等首屏行情请求基本完成后再拉）
+    setTimeout(refreshMacro, 600);  // 宏观KPI/两融/成交量（等首屏行情请求基本完成后再拉）
   });
   const _tsEl=document.getElementById('tsEl'); if(_tsEl) _tsEl.textContent='最后更新: '+new Date().toLocaleString('zh-CN');
   // 页面加载时已主动拉取所有动态数据，为各标签页初始化节流时间戳，
