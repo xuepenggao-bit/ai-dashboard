@@ -663,7 +663,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 2: 持仓概览 + 仓位分配（按分类）+ 仓位分配（按行业）+ 主力净流入TOP20 -->
+  <!-- Row 2: 持仓概览 + 仓位分配明细 + 主力净流入TOP20 + 主力净流出TOP20 -->
   <div class="g4 mb16">
     <!-- 持仓概览 -->
     <div class="card" style="border-top:3px solid var(--blue);background:linear-gradient(135deg,#eff6ff 0%,#fff 60%)">
@@ -744,21 +744,25 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
     </div>
 
-    <!-- 仓位分配图表（按分类） -->
-    <div class="card">
-      <div class="ch"><span class="ct">仓位分配（按分类）</span><span class="cbadge" id="pTotalBadge">合计 —%</span></div>
-      <div style="height:200px"><canvas id="cPortAlloc"></canvas></div>
-      <div id="portAllocLegend" style="margin-top:10px"></div>
+    <!-- 仓位分配明细：分类与行业上下合并，不再显示饼图 -->
+    <div class="card" style="padding:0;overflow:hidden;border-top:3px solid #0ea5e9;background:#fff">
+      <section style="padding:14px 16px 12px">
+        <div class="ch" style="margin-bottom:7px">
+          <span class="ct">仓位分配（按分类）</span>
+          <span class="cbadge" id="pTotalBadge">合计 —%</span>
+        </div>
+        <div id="portAllocLegend" style="max-height:170px;overflow:auto;scrollbar-gutter:stable"></div>
+      </section>
+      <section style="padding:12px 16px 14px;border-top:1px solid #dbeafe;background:linear-gradient(180deg,#f8fbff 0%,#fff 100%)">
+        <div class="ch" style="margin-bottom:7px">
+          <span class="ct">仓位分配（按行业）</span>
+          <span class="cbadge" id="pIndustryBadge">—</span>
+        </div>
+        <div id="portIndustryLegend" style="max-height:170px;overflow:auto;scrollbar-gutter:stable"></div>
+      </section>
     </div>
 
-    <!-- 仓位分配图表（按行业） -->
-    <div class="card">
-      <div class="ch"><span class="ct">仓位分配（按行业）</span><span class="cbadge" id="pIndustryBadge">—</span></div>
-      <div style="height:200px"><canvas id="cPortIndustry"></canvas></div>
-      <div id="portIndustryLegend" style="margin-top:10px"></div>
-    </div>
-
-    <!-- 主力净流入 TOP 10 -->
+    <!-- 主力净流入 TOP 20 -->
     <div class="card" style="min-width:0;border-top:3px solid #7c3aed;background:linear-gradient(135deg,#faf5ff 0%,#fff 60%)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <span style="font-size:13px;font-weight:800;color:#6d28d9;letter-spacing:.02em">💹 主力净流入 TOP 20</span>
@@ -773,6 +777,25 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         <span></span><span>名称</span><span style="text-align:right">涨跌</span><span style="text-align:right">净流入</span>
       </div>
       <div id="mfList">
+        <div style="color:var(--text2);font-size:11px;text-align:center;padding:10px 0">点击「↻」加载</div>
+      </div>
+    </div>
+
+    <!-- 主力净流出 TOP 20 -->
+    <div class="card" style="min-width:0;border-top:3px solid #16a34a;background:linear-gradient(135deg,#f0fdf4 0%,#fff 60%)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px;font-weight:800;color:#15803d;letter-spacing:.02em">📉 主力净流出 TOP 20</span>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:10px;color:#16a34a;font-weight:600" id="mfOutTs"></span>
+          <button onclick="fetchMainFlow()" id="mfOutRefBtn"
+            style="background:#dcfce7;border:1px solid #bbf7d0;color:#15803d;border-radius:6px;
+                   padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:18px 1fr 44px 50px;gap:0 4px;font-size:9.5px;font-weight:700;color:#9ca3af;padding:0 0 4px;border-bottom:1px solid #dcfce7;margin-bottom:3px">
+        <span></span><span>名称</span><span style="text-align:right">涨跌</span><span style="text-align:right">净流出</span>
+      </div>
+      <div id="mfOutList">
         <div style="color:var(--text2);font-size:11px;text-align:center;padding:10px 0">点击「↻」加载</div>
       </div>
     </div>
@@ -3504,135 +3527,82 @@ function renderPortfolio(){
   document.getElementById('pKpiHk').textContent      = '含港股 '+hkCnt+' 只';
   document.getElementById('pTotalBadge').textContent = '合计 '+wSum.toFixed(1)+'%';
   _renderPortBreadth();  // 刷新涨跌分布热力图
-  // Alloc chart（不足100%的部分显示为"现金"）
+
+  // 仓位分配明细：分类与行业上下合并展示，不再依赖饼图 canvas。
+  // 兼容从旧页面热更新过来的 Chart 实例，确保不会残留动画或监听器。
   if(CH.portAlloc){ CH.portAlloc.destroy(); CH.portAlloc=null; }
-  const actx = document.getElementById('cPortAlloc');
-  if(actx){
-    const cash = Math.max(0, parseFloat((100 - wSum).toFixed(1)));
-    const chartLabels = PORT.sectors.map((s,i)=>s.name);
-    const chartData   = [...secWeights];
-    const chartColors = PORT.sectors.map(s=>s.color+'cc');
-    const allWeights  = [...secWeights];
-    const allColors   = [...chartColors];
-    const allNames    = [...chartLabels];
-    const allPcts     = [...secAvgPcts];
-    if(cash > 0.05){
-      chartLabels.push('现金');
-      chartData.push(cash);
-      chartColors.push('#cbd5e1cc');
-      allWeights.push(cash); allColors.push('#cbd5e1cc'); allNames.push('现金'); allPcts.push(null);
-    }
-    CH.portAlloc = new Chart(actx.getContext('2d'),{
-      type:'doughnut',
-      data:{labels:allNames, datasets:[{data:chartData, backgroundColor:chartColors, borderWidth:0}]},
-      options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
-               plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.label+' '+ctx.parsed.toFixed(1)+'%'}}}}
-    });
-    // 自定义图例：表头 + 一行一个分类（Grid对齐）
-    const legendEl = document.getElementById('portAllocLegend');
-    if(legendEl){
-      // 涨跌幅徽章：强涨跌加底色，普通仅变色
-      const _pctBadge = pct => {
-        if(pct==null) return `<span style="font-size:11px;color:#94a3b8">—</span>`;
-        const t = (pct>0?'+':'')+pct.toFixed(2)+'%';
-        if(pct >= 2)  return `<span style="font-size:11px;font-weight:800;color:#b91c1c;background:#fee2e2;border-radius:4px;padding:1px 6px">${t}</span>`;
-        if(pct > 0)   return `<span style="font-size:11px;font-weight:700;color:#dc2626">${t}</span>`;
-        if(pct === 0) return `<span style="font-size:11px;font-weight:600;color:#94a3b8">0.00%</span>`;
-        if(pct > -2)  return `<span style="font-size:11px;font-weight:700;color:#16a34a">${t}</span>`;
-        return `<span style="font-size:11px;font-weight:800;color:#15803d;background:#dcfce7;border-radius:4px;padding:1px 6px">${t}</span>`;
-      };
-      const COL = '10px 1fr 68px 46px';
-      const HDR = `<div style="display:grid;grid-template-columns:${COL};gap:0 6px;
-                        align-items:center;padding:0 2px 6px;border-bottom:2px solid #e2e8f0;margin-bottom:2px">
-        <span></span>
-        <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.05em">分类</span>
-        <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.05em;text-align:right">涨跌幅</span>
-        <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.05em;text-align:right">仓位</span>
-      </div>`;
-      const rows = allNames.map((name,i)=>`
-        <div style="display:grid;grid-template-columns:${COL};gap:0 6px;
-                    align-items:center;padding:5px 2px;border-bottom:1px solid #f1f5f9">
-          <span style="width:10px;height:10px;border-radius:3px;display:block;background:${allColors[i]}"></span>
-          <span style="font-size:12px;font-weight:600;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
-          <div style="text-align:right">${_pctBadge(allPcts[i])}</div>
-          <span style="font-size:12px;font-weight:800;color:#334155;text-align:right">${allWeights[i].toFixed(1)}%</span>
-        </div>`).join('');
-      legendEl.innerHTML = HDR + rows;
-    }
-  }
-  // ── 仓位分配（按行业）饼图 ──────────────────────────────────────
   if(CH.portIndustry){ CH.portIndustry.destroy(); CH.portIndustry=null; }
-  const ictx = document.getElementById('cPortIndustry');
-  if(ictx){
-    const industryMap = {}, indWpct = {}, indWsum = {};
-    PORT.sectors.forEach(sec=>{
-      sec.stocks.forEach(sk=>{
-        if(sk.w != null && sk.w > 0){
-          const key = (sk.industry && sk.industry.trim()) ? sk.industry.trim() : '其他';
-          industryMap[key] = (industryMap[key]||0) + sk.w;
-          const pi = _PORT_PRICES[sk.code];
-          if(pi && pi.pct != null){
-            indWpct[key] = (indWpct[key]||0) + sk.w * pi.pct;
-            indWsum[key] = (indWsum[key]||0) + sk.w;
-          }
-        }
-      });
-    });
-    const indNames   = Object.keys(industryMap).sort((a,b)=>industryMap[b]-industryMap[a]);
-    const indData    = indNames.map(k=>industryMap[k]);
-    const indAvgPcts = indNames.map(k=> indWsum[k]>0 ? indWpct[k]/indWsum[k] : null);
-    const IND_PALETTE = ['#6366f1cc','#f59e0bcc','#10b981cc','#3b82f6cc','#ec4899cc',
-                         '#8b5cf6cc','#ef4444cc','#06b6d4cc','#84cc16cc','#f97316cc',
-                         '#a78bfacc','#34d399cc','#fb923ccc','#38bdf8cc','#f472b6cc'];
-    const indColors = indNames.map((_,i)=>IND_PALETTE[i%IND_PALETTE.length]);
-    const indTotal  = indData.reduce((s,v)=>s+v,0);
-    const indBadge  = document.getElementById('pIndustryBadge');
-    if(indBadge) indBadge.textContent = indNames.length ? '已标注 '+indTotal.toFixed(1)+'%' : '尚无行业标注';
-    if(indNames.length){
-      CH.portIndustry = new Chart(ictx.getContext('2d'),{
-        type:'doughnut',
-        data:{labels:indNames,datasets:[{data:indData,backgroundColor:indColors,borderWidth:0}]},
-        options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
-                 plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.label+' '+ctx.parsed.toFixed(1)+'%'}}}}
-      });
-    } else {
-      // 显示空状态占位
-      const placeHolder = document.createElement('div');
-      placeHolder.style.cssText='height:100%;display:flex;align-items:center;justify-content:center';
-      placeHolder.innerHTML='<span style="font-size:12px;color:var(--text2)">在股票编辑中填写"行业"字段后显示</span>';
-      ictx.parentNode.replaceChild(placeHolder,ictx);
+
+  const _allocPctBadge = pct => {
+    if(pct==null) return `<span style="font-size:10.5px;color:#94a3b8">—</span>`;
+    const t = (pct>0?'+':'')+pct.toFixed(2)+'%';
+    if(pct >= 2)  return `<span style="font-size:10.5px;font-weight:800;color:#b91c1c;background:#fee2e2;border-radius:4px;padding:1px 5px">${t}</span>`;
+    if(pct > 0)   return `<span style="font-size:10.5px;font-weight:700;color:#dc2626">${t}</span>`;
+    if(pct === 0) return `<span style="font-size:10.5px;font-weight:600;color:#94a3b8">0.00%</span>`;
+    if(pct > -2)  return `<span style="font-size:10.5px;font-weight:700;color:#16a34a">${t}</span>`;
+    return `<span style="font-size:10.5px;font-weight:800;color:#15803d;background:#dcfce7;border-radius:4px;padding:1px 5px">${t}</span>`;
+  };
+  const _renderAllocRows = (el, label, names, weights, pcts, colors) => {
+    if(!el) return;
+    if(!names.length){
+      el.innerHTML='<div style="font-size:11px;color:var(--text2);text-align:center;padding:13px 4px">在股票编辑中填写“行业”字段后显示</div>';
+      return;
     }
-    const iLegend = document.getElementById('portIndustryLegend');
-    if(iLegend){
-      if(!indNames.length){ iLegend.innerHTML=''; return; }
-      const _pB = pct => {
-        if(pct==null) return `<span style="font-size:11px;color:#94a3b8">—</span>`;
-        const t = (pct>0?'+':'')+pct.toFixed(2)+'%';
-        if(pct >= 2)  return `<span style="font-size:11px;font-weight:800;color:#b91c1c;background:#fee2e2;border-radius:4px;padding:1px 6px">${t}</span>`;
-        if(pct > 0)   return `<span style="font-size:11px;font-weight:700;color:#dc2626">${t}</span>`;
-        if(pct === 0) return `<span style="font-size:11px;font-weight:600;color:#94a3b8">0.00%</span>`;
-        if(pct > -2)  return `<span style="font-size:11px;font-weight:700;color:#16a34a">${t}</span>`;
-        return `<span style="font-size:11px;font-weight:800;color:#15803d;background:#dcfce7;border-radius:4px;padding:1px 6px">${t}</span>`;
-      };
-      const ICOL = '10px 1fr 68px 46px';
-      const IHDR = `<div style="display:grid;grid-template-columns:${ICOL};gap:0 6px;
-                         align-items:center;padding:0 2px 6px;border-bottom:2px solid #e2e8f0;margin-bottom:2px">
-        <span></span>
-        <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.05em">行业</span>
-        <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.05em;text-align:right">涨跌幅</span>
-        <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.05em;text-align:right">仓位</span>
-      </div>`;
-      const iRows = indNames.map((name,i)=>`
-        <div style="display:grid;grid-template-columns:${ICOL};gap:0 6px;
-                    align-items:center;padding:5px 2px;border-bottom:1px solid #f1f5f9">
-          <span style="width:10px;height:10px;border-radius:3px;display:block;background:${indColors[i]}"></span>
-          <span style="font-size:12px;font-weight:600;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
-          <div style="text-align:right">${_pB(indAvgPcts[i])}</div>
-          <span style="font-size:12px;font-weight:800;color:#334155;text-align:right">${indData[i].toFixed(1)}%</span>
-        </div>`).join('');
-      iLegend.innerHTML = IHDR + iRows;
-    }
+    const COL = '9px minmax(0,1fr) 62px 43px';
+    const hdr = `<div style="position:sticky;top:0;z-index:1;display:grid;grid-template-columns:${COL};gap:0 5px;
+                       align-items:center;padding:0 2px 5px;border-bottom:2px solid #e2e8f0;background:#fff">
+      <span></span>
+      <span style="font-size:9.5px;font-weight:700;color:#94a3b8;letter-spacing:.05em">${label}</span>
+      <span style="font-size:9.5px;font-weight:700;color:#94a3b8;letter-spacing:.05em;text-align:right">涨跌幅</span>
+      <span style="font-size:9.5px;font-weight:700;color:#94a3b8;letter-spacing:.05em;text-align:right">仓位</span>
+    </div>`;
+    const rows = names.map((name,i)=>`
+      <div style="display:grid;grid-template-columns:${COL};gap:0 5px;align-items:center;padding:4px 2px;border-bottom:1px solid #f1f5f9">
+        <span style="width:9px;height:9px;border-radius:3px;display:block;background:${colors[i]}"></span>
+        <span style="font-size:11px;font-weight:650;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${_escH(name)}">${_escH(name)}</span>
+        <div style="text-align:right">${_allocPctBadge(pcts[i])}</div>
+        <span style="font-size:11px;font-weight:800;color:#334155;text-align:right">${weights[i].toFixed(1)}%</span>
+      </div>`).join('');
+    el.innerHTML = hdr + rows;
+  };
+
+  // 按分类；不足 100% 的部分作为现金列出。
+  const cash = Math.max(0, parseFloat((100 - wSum).toFixed(1)));
+  const allNames   = PORT.sectors.map(s=>s.name);
+  const allWeights = [...secWeights];
+  const allColors  = PORT.sectors.map(s=>s.color+'cc');
+  const allPcts    = [...secAvgPcts];
+  if(cash > 0.05){
+    allNames.push('现金'); allWeights.push(cash); allColors.push('#cbd5e1cc'); allPcts.push(null);
   }
+  _renderAllocRows(document.getElementById('portAllocLegend'),'分类',allNames,allWeights,allPcts,allColors);
+
+  // 按行业；涨跌幅按各股票仓位加权。
+  const industryMap = {}, indWpct = {}, indWsum = {};
+  PORT.sectors.forEach(sec=>{
+    sec.stocks.forEach(sk=>{
+      if(sk.w != null && sk.w > 0){
+        const key = (sk.industry && sk.industry.trim()) ? sk.industry.trim() : '其他';
+        industryMap[key] = (industryMap[key]||0) + sk.w;
+        const pi = _PORT_PRICES[sk.code];
+        if(pi && pi.pct != null){
+          indWpct[key] = (indWpct[key]||0) + sk.w * pi.pct;
+          indWsum[key] = (indWsum[key]||0) + sk.w;
+        }
+      }
+    });
+  });
+  const indNames   = Object.keys(industryMap).sort((a,b)=>industryMap[b]-industryMap[a]);
+  const indData    = indNames.map(k=>industryMap[k]);
+  const indAvgPcts = indNames.map(k=>indWsum[k]>0 ? indWpct[k]/indWsum[k] : null);
+  const IND_PALETTE = ['#6366f1cc','#f59e0bcc','#10b981cc','#3b82f6cc','#ec4899cc',
+                       '#8b5cf6cc','#ef4444cc','#06b6d4cc','#84cc16cc','#f97316cc',
+                       '#a78bfacc','#34d399cc','#fb923ccc','#38bdf8cc','#f472b6cc'];
+  const indColors = indNames.map((_,i)=>IND_PALETTE[i%IND_PALETTE.length]);
+  const indTotal  = indData.reduce((s,v)=>s+v,0);
+  const indBadge  = document.getElementById('pIndustryBadge');
+  if(indBadge) indBadge.textContent = indNames.length ? '已标注 '+indTotal.toFixed(1)+'%' : '尚无行业标注';
+  _renderAllocRows(document.getElementById('portIndustryLegend'),'行业',indNames,indData,indAvgPcts,indColors);
 
   // Sectors
   const mktStyle = {SH:'background:#dbeafe;color:#1e40af',SZ:'background:#ede9fe;color:#5b21b6',HK:'background:#fee2e2;color:#991b1b'};
@@ -7891,72 +7861,86 @@ function triggerSentimentRefresh(){
   });
 }
 
-// ── 主力净流入 TOP 20 ──────────────────────────────────────────
-let _mfCache = null;   // 上次成功渲染的列表 HTML（粘性缓存，失败时保留不消失）
+// ── 主力净流入 / 净流出 TOP 20 ─────────────────────────────────
+// 两侧使用同一股票池、字段和渲染逻辑；po=1 为净流入降序，po=0 为净流出升序。
+const _mfCache = {inflow:null, outflow:null}; // 两侧分别保留上次成功结果，单侧失败不清空另一侧
 
-async function fetchMainFlow(){
-  const listEl = document.getElementById('mfList');
-  const tsEl   = document.getElementById('mfTs');
-  const btn    = document.getElementById('mfRefBtn');
-  if(!listEl) return;
-  if(btn){ btn.disabled=true; btn.textContent='⏳'; }
-
+async function _fetchMainFlowList(po){
   const UT    = 'bd1d9ddb04089700cf9c27f6f7426281';
-  const path  = `/api/qt/clist/get?fid=f62&po=1&pz=20&pn=1&np=1&fltt=2&invt=2&ut=${UT}`
+  const path  = `/api/qt/clist/get?fid=f62&po=${po}&pz=20&pn=1&np=1&fltt=2&invt=2&ut=${UT}`
               + `&fields=f12,f14,f3,f62,f184&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23`;
   const hosts = ['https://push2.eastmoney.com','https://push2delay.eastmoney.com'];
+  let list = null;
+  for(const host of hosts){
+    try{
+      const data = await _idxFetch(host + path + '&_=' + Date.now(), {timeout:3000, retries:1});
+      if(data && (data.rc === 0 || data.rc == null)){
+        const d = data.data && data.data.diff;
+        if(d && d.length){ list = d; break; }
+      }
+    }catch(e){ /* 试下一个域名 */ }
+  }
+  if(!list || !list.length) throw new Error('empty');
+  return list;
+}
+
+function _renderMainFlowList(list, tone){
+  const outflow = tone === 'outflow';
+  const borderColor = outflow ? '#dcfce7' : '#f3e8ff';
+  const rankColor   = outflow ? '#4ade80' : '#a78bfa';
+  const _fmtFlow = v => {
+    if(!isFinite(v)) return '—';
+    const abs = Math.abs(v), s = v>=0?'+':'-';
+    return abs>=1e8 ? s+(abs/1e8).toFixed(1)+'亿' : s+(abs/1e4).toFixed(0)+'万';
+  };
+  return list.map((item,i)=>{
+    const pct  = parseFloat(item.f3);
+    const flow = parseFloat(item.f62);
+    const pctOk = isFinite(pct), flowOk = isFinite(flow);
+    const upCol  = '#dc2626', dnCol = '#16a34a', neuCol = '#64748b';
+    const pctCol  = !pctOk  ? neuCol : pct>0  ? upCol  : pct<0  ? dnCol  : neuCol;
+    const flowCol = !flowOk ? neuCol : flow>0 ? upCol  : flow<0 ? dnCol  : neuCol;
+    const name = _escH(item.f14 || item.f12 || '—');
+    return `<div style="display:grid;grid-template-columns:18px 1fr 44px 50px;gap:0 4px;`
+         + `align-items:center;padding:3px 0;border-bottom:1px solid ${borderColor}">`
+         + `<span style="font-size:10.5px;color:${rankColor};font-weight:700;text-align:right">${i+1}</span>`
+         + `<span style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${name}">${name}</span>`
+         + `<span style="font-size:10.5px;color:${pctCol};font-weight:700;text-align:right">${pctOk?(pct>0?'+':'')+pct.toFixed(2)+'%':'—'}</span>`
+         + `<span style="font-size:10.5px;color:${flowCol};font-weight:700;text-align:right">${_fmtFlow(flow)}</span>`
+         + `</div>`;
+  }).join('');
+}
+
+async function fetchMainFlow(){
+  const panels = [
+    {key:'inflow',  po:1, list:document.getElementById('mfList'),    ts:document.getElementById('mfTs')},
+    {key:'outflow', po:0, list:document.getElementById('mfOutList'), ts:document.getElementById('mfOutTs')}
+  ].filter(p=>p.list);
+  if(!panels.length) return;
+  const buttons = [document.getElementById('mfRefBtn'),document.getElementById('mfOutRefBtn')].filter(Boolean);
+  buttons.forEach(btn=>{ btn.disabled=true; btn.textContent='⏳'; });
 
   try{
-    // 多域名 + 重试（_idxFetch 带超时与退避重试）
-    let list = null;
-    for(const host of hosts){
+    await Promise.all(panels.map(async panel=>{
       try{
-        const data = await _idxFetch(host + path + '&_=' + Date.now(), {timeout:3000, retries:1});
-        if(data && (data.rc === 0 || data.rc == null)){
-          const d = data.data && data.data.diff;
-          if(d && d.length){ list = d; break; }   // 命中即停
+        const list = await _fetchMainFlowList(panel.po);
+        const html = _renderMainFlowList(list, panel.key);
+        panel.list.innerHTML = html;
+        _mfCache[panel.key] = html;
+        if(panel.ts) panel.ts.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+      }catch(err){
+        // 失败时保留对应榜单的上次成功结果，避免刷新时整块闪空。
+        if(_mfCache[panel.key]){
+          if(!panel.list.innerHTML || panel.list.textContent.includes('加载中') || panel.list.textContent.includes('获取失败'))
+            panel.list.innerHTML = _mfCache[panel.key];
+        }else{
+          panel.list.innerHTML=`<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">暂未取到数据<br><span style="font-size:10px">请点击↻重试</span></div>`;
         }
-      }catch(e){ /* 试下一个域名 */ }
-    }
-    if(!list || !list.length) throw new Error('empty');
-
-    // 格式化金额：亿 / 万
-    const _fmtFlow = v => {
-      if(!isFinite(v)) return '—';
-      const abs = Math.abs(v), s = v>=0?'+':'-';
-      return abs>=1e8 ? s+(abs/1e8).toFixed(1)+'亿' : s+(abs/1e4).toFixed(0)+'万';
-    };
-
-    const html = list.map((item,i)=>{
-      const pct  = parseFloat(item.f3);
-      const flow = parseFloat(item.f62);
-      const pctOk = isFinite(pct), flowOk = isFinite(flow);
-      const upCol  = '#dc2626', dnCol = '#16a34a', neuCol = '#64748b';
-      const pctCol  = !pctOk  ? neuCol : pct>0  ? upCol  : pct<0  ? dnCol  : neuCol;
-      const flowCol = !flowOk ? neuCol : flow>0 ? upCol  : flow<0 ? dnCol  : neuCol;
-      return `<div style="display:grid;grid-template-columns:18px 1fr 44px 50px;gap:0 4px;`
-           + `align-items:center;padding:3px 0;border-bottom:1px solid #f3e8ff">`
-           + `<span style="font-size:10.5px;color:#a78bfa;font-weight:700;text-align:right">${i+1}</span>`
-           + `<span style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.f14}">${item.f14}</span>`
-           + `<span style="font-size:10.5px;color:${pctCol};font-weight:700;text-align:right">${pctOk?(pct>0?'+':'')+pct.toFixed(2)+'%':'—'}</span>`
-           + `<span style="font-size:10.5px;color:${flowCol};font-weight:700;text-align:right">${_fmtFlow(flow)}</span>`
-           + `</div>`;
-    }).join('');
-
-    listEl.innerHTML = html;
-    _mfCache = html;   // 缓存本次成功结果
-    if(tsEl) tsEl.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
-  }catch(err){
-    // 失败时：有缓存则保留上次数据（不闪现消失），仅从未成功过时才显示重试提示
-    if(_mfCache){
-      if(!listEl.innerHTML || listEl.textContent.includes('加载中') || listEl.textContent.includes('获取失败'))
-        listEl.innerHTML = _mfCache;
-    }else{
-      listEl.innerHTML=`<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">暂未取到数据<br><span style="font-size:10px">请点击↻重试</span></div>`;
-    }
-    console.warn('fetchMainFlow:', err.message);
+        console.warn('fetchMainFlow '+panel.key+':', err.message);
+      }
+    }));
   }finally{
-    if(btn){ btn.disabled=false; btn.textContent='↻'; }
+    buttons.forEach(btn=>{ btn.disabled=false; btn.textContent='↻'; });
   }
 }
 
@@ -8612,7 +8596,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 默认开启 10 秒自动刷新：确保盘中价格(尤其港股实时源)持续更新，不再停留在加载时刻；
   // 仅交易时段实际轮询(见 setAutoRefresh)，用户可在右上角下拉改回「手动」。
   try{ _arPick(10, '10秒'); }catch(e){ console.warn('[default auto-refresh]', e); }
-  fetchMainFlow();      // 初始化时立即拉取主力净流入榜
+  fetchMainFlow();      // 初始化时同时拉取主力净流入榜与净流出榜
   fetchMarketBreadth(); // 市场涨跌统计（主要用腾讯 API，极少命中东方财富限流）
   fetchNews(true);    // 首次打开立即强制读取最新要闻与7×24快讯
   setInterval(function(){
@@ -8628,7 +8612,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 30s 后检查是否成功，若仍是占位文字则自动重试一次
   setTimeout(()=>{
     const mfEl = document.getElementById('mfList');
-    if(mfEl && mfEl.querySelector && mfEl.textContent.includes('加载中')) fetchMainFlow();
+    const mfOutEl = document.getElementById('mfOutList');
+    const mfWaiting = [mfEl,mfOutEl].some(el=>el && /加载中|暂未取到数据|点击「↻」加载/.test(el.textContent));
+    if(mfWaiting) fetchMainFlow();
     const bEl = document.getElementById('mktBreadthChart');
     if(bEl && bEl.textContent.includes('加载中')) fetchMarketStats();
   }, 30000);
