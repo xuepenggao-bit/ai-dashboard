@@ -3663,7 +3663,7 @@ function renderPortfolio(){
     const rows = sec.stocks.length ? disp.map((sk)=>{
       const ki=sec.stocks.indexOf(sk);
       const pi = _PORT_PRICES[sk.code];
-      const aPreOpen=_isAStockMarket(sk.mkt)&&_isAPreOpenZeroWindow(portRenderNow);
+      const aPreOpen=_isPortfolioAStockPreOpen(sk.mkt,sk.code,portRenderNow);
       const priceCell = aPreOpen
         ? `<span style="display:inline-block;color:#64748b;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:7px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap">未开盘</span>`
         : pi
@@ -6065,7 +6065,18 @@ function _isAPreOpenZeroWindow(nowMs){
 
 function _isAStockMarket(mkt){
   const market=String(mkt||'').toUpperCase();
-  return market==='SH' || market==='SZ' || market==='A';
+  return market==='SH' || market==='SZ' || market==='A'
+      || market==='SHA' || market==='SZA' || market==='SSE' || market==='SZSE'
+      || market==='沪A' || market==='深A' || market==='A股';
+}
+
+// 分类持仓可能来自不同设备或旧版 JSON，市场字段有时缺失或使用别名。
+// 港股代码为 5 位；非港股的 6 位纯数字代码按 A 股识别，避免漏显示“未开盘”。
+function _isPortfolioAStockPreOpen(mkt,code,nowMs){
+  const market=String(mkt||'').toUpperCase();
+  const isExplicitHK=market==='HK' || market==='HKEX' || market==='港股';
+  const isAByCode=!isExplicitHK && /^\d{6}$/.test(String(code||'').trim());
+  return (_isAStockMarket(market)||isAByCode) && _isAPreOpenZeroWindow(nowMs);
 }
 
 // 仅供三个 TOP7 榜单展示和排序使用，不改写 _PORT_PRICES 中的原始行情。
@@ -8316,7 +8327,7 @@ function renderPortTop3(){
     var bgBadge= posn ? '#fee2e2' : negn ? '#d1fae5' : '#f1f5f9';
     var bgRow  = rank===1 ? (posn?'#fff5f5':negn?'#f0fdf4':'#f8fafc') : '#fff';
     var sign   = item.pct > 0 ? '+' : '';
-    var priceStr = _isAStockMarket(item.mkt)&&_isAPreOpenZeroWindow(topNow)
+    var priceStr = _isPortfolioAStockPreOpen(item.mkt,item.code,topNow)
       ? '未开盘'
       : item.mkt==='HK' ? Number(item.price).toFixed(3) : Number(item.price).toFixed(2);
     var wStr = (item.w != null && item.w > 0)
@@ -8493,6 +8504,7 @@ function _renderPortTopW(){
           var market = pi.mkt || sk.mkt;
           wEntries.push({
             name:  pi.name || sk.name,
+            code:  sk.code,
             mkt:   market,
             w:     codeW[sk.code],   // null 表示未设置
             pct:   _portTopDisplayPct(market, pi.pct, topNow),
@@ -8521,7 +8533,7 @@ function _renderPortTopW(){
     var pctColor = item.pct > 0 ? 'var(--red)' : item.pct < 0 ? 'var(--green)' : 'var(--text2)';
     var bgRow    = item.pct > 0 ? (rank===1?'#fff5f5':'#fff') : item.pct < 0 ? (rank===1?'#f0fdf4':'#fff') : '#fff';
     var sign     = item.pct > 0 ? '+' : '';
-    var priceStr = _isAStockMarket(item.mkt)&&_isAPreOpenZeroWindow(topNow)
+    var priceStr = _isPortfolioAStockPreOpen(item.mkt,item.code,topNow)
       ? '未开盘'
       : item.mkt==='HK' ? Number(item.price).toFixed(3) : Number(item.price).toFixed(2);
     var wLine    = item.w != null
