@@ -154,6 +154,42 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .ct{font-size:13px;color:var(--text2);font-weight:600;letter-spacing:.01em}
 .cbadge{font-size:11px;padding:3px 9px;border-radius:5px;background:rgba(37,99,235,.08);color:var(--blue);font-weight:500}
 
+/* ── Portfolio allocation stack ── */
+.alloc-stack{padding:0;overflow:hidden;border:1px solid #cbd5e1;border-top:0;background:#fff;box-shadow:0 7px 22px rgba(15,23,42,.08)}
+.alloc-panel{position:relative;padding:15px 16px 14px}
+.alloc-panel::before{content:"";position:absolute;left:0;right:0;top:0;height:4px}
+.alloc-panel-category{background:linear-gradient(145deg,#eff6ff 0%,#fff 72%)}
+.alloc-panel-category::before{background:linear-gradient(90deg,#2563eb,#38bdf8)}
+.alloc-panel-industry{border-top:1px solid #ddd6fe;background:linear-gradient(145deg,#f5f3ff 0%,#fff 72%)}
+.alloc-panel-industry::before{background:linear-gradient(90deg,#7c3aed,#c084fc)}
+.alloc-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}
+.alloc-heading{min-width:0}
+.alloc-title{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:900;color:#0f172a;letter-spacing:.01em}
+.alloc-title-icon{display:inline-flex;width:21px;height:21px;align-items:center;justify-content:center;border-radius:7px;color:#fff;font-size:11px;box-shadow:0 3px 8px rgba(15,23,42,.14)}
+.alloc-panel-category .alloc-title-icon{background:linear-gradient(135deg,#2563eb,#0ea5e9)}
+.alloc-panel-industry .alloc-title-icon{background:linear-gradient(135deg,#7c3aed,#a855f7)}
+.alloc-subtitle{margin-top:3px;font-size:9.5px;line-height:1.35;color:#64748b;font-weight:600;white-space:nowrap}
+.alloc-badge{flex-shrink:0;margin-top:1px;padding:3px 7px;border-radius:999px;font-size:9.5px;font-weight:800;white-space:nowrap}
+.alloc-panel-category .alloc-badge{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
+.alloc-panel-industry .alloc-badge{background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe}
+.alloc-list{max-height:174px;overflow:auto;scrollbar-gutter:stable;border:1px solid rgba(203,213,225,.72);border-radius:9px;background:rgba(255,255,255,.9)}
+.alloc-grid-head,.alloc-row{display:grid;grid-template-columns:minmax(0,1fr) 65px 48px;column-gap:6px;align-items:center}
+.alloc-grid-head{position:sticky;top:0;z-index:2;padding:5px 7px;border-bottom:1px solid #cbd5e1;background:rgba(248,250,252,.97);font-size:9px;font-weight:800;color:#94a3b8;letter-spacing:.04em}
+.alloc-grid-head span:nth-child(n+2){text-align:right}
+.alloc-row{position:relative;padding:6px 7px 7px;border-bottom:1px solid #eef2f7;transition:background .15s}
+.alloc-row:last-child{border-bottom:0}
+.alloc-row:hover{background:#f8fafc}
+.alloc-name{display:flex;align-items:center;gap:7px;min-width:0}
+.alloc-swatch{width:9px;height:22px;border-radius:4px;flex-shrink:0;background:var(--row-accent);box-shadow:0 1px 4px color-mix(in srgb,var(--row-accent) 36%,transparent)}
+.alloc-name-copy{min-width:0}
+.alloc-name-main{font-size:11px;font-weight:800;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alloc-name-meta{font-size:8.5px;color:#94a3b8;font-weight:650;margin-top:1px}
+.alloc-pct{text-align:right}
+.alloc-weight{text-align:right;font-size:11px;font-weight:900;color:#0f172a}
+.alloc-track{grid-column:1/-1;height:3px;margin:5px 0 0 16px;border-radius:3px;background:#e2e8f0;overflow:hidden}
+.alloc-track>span{display:block;height:100%;border-radius:3px;background:var(--row-accent);min-width:2px}
+.alloc-empty{padding:17px 8px;text-align:center;font-size:10.5px;color:#94a3b8;font-weight:600}
+
 /* ── KPI ── */
 .kval{font-size:28px;font-weight:800;line-height:1.15;margin-bottom:4px;letter-spacing:-.01em}
 .klabel{font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:500;letter-spacing:.02em}
@@ -745,20 +781,26 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
 
     <!-- 仓位分配明细：分类与行业上下合并，不再显示饼图 -->
-    <div class="card" style="padding:0;overflow:hidden;border-top:3px solid #0ea5e9;background:#fff">
-      <section style="padding:14px 16px 12px">
-        <div class="ch" style="margin-bottom:7px">
-          <span class="ct">仓位分配（按分类）</span>
-          <span class="cbadge" id="pTotalBadge">合计 —%</span>
+    <div class="card alloc-stack">
+      <section class="alloc-panel alloc-panel-category">
+        <div class="alloc-panel-head">
+          <div class="alloc-heading">
+            <div class="alloc-title"><span class="alloc-title-icon">类</span>仓位分配（按分类）</div>
+            <div class="alloc-subtitle">逐只汇总下方分类内的个股仓位</div>
+          </div>
+          <span class="alloc-badge" id="pTotalBadge">— 分类 · —%</span>
         </div>
-        <div id="portAllocLegend" style="max-height:170px;overflow:auto;scrollbar-gutter:stable"></div>
+        <div id="portAllocLegend" class="alloc-list"></div>
       </section>
-      <section style="padding:12px 16px 14px;border-top:1px solid #dbeafe;background:linear-gradient(180deg,#f8fbff 0%,#fff 100%)">
-        <div class="ch" style="margin-bottom:7px">
-          <span class="ct">仓位分配（按行业）</span>
-          <span class="cbadge" id="pIndustryBadge">—</span>
+      <section class="alloc-panel alloc-panel-industry">
+        <div class="alloc-panel-head">
+          <div class="alloc-heading">
+            <div class="alloc-title"><span class="alloc-title-icon">行</span>仓位分配（按行业）</div>
+            <div class="alloc-subtitle">读取每只个股行业 · 按仓位加权涨跌幅</div>
+          </div>
+          <span class="alloc-badge" id="pIndustryBadge">— 行业 · —%</span>
         </div>
-        <div id="portIndustryLegend" style="max-height:170px;overflow:auto;scrollbar-gutter:stable"></div>
+        <div id="portIndustryLegend" class="alloc-list"></div>
       </section>
     </div>
 
@@ -3508,24 +3550,103 @@ async function portForcePush(){
   await portSaveRemote(snapshot, revision);
 }
 
+/* 从下方分类持仓列表生成唯一的仓位聚合模型。
+   分类与行业共用同一批个股行、同一数字标准化和同一加权公式，避免两套结果发生偏差。 */
+function _buildPortfolioAllocationModel(port, prices){
+  const sectors = port && Array.isArray(port.sectors) ? port.sectors : [];
+  const industryBuckets = new Map();
+  let totalStocks = 0, hkStocks = 0;
+
+  const cleanWeight = value => {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  };
+  const cleanIndustry = value => {
+    const name = String(value || '').replace(/[\s\u3000]+/g,' ').trim();
+    return name || '未标注';
+  };
+  const summarize = (name, color, rows) => {
+    const weight = rows.reduce((sum,row)=>sum+row.weight,0);
+    const quoted = rows.filter(row=>row.weight>0 && row.pct!=null);
+    const quotedWeight = quoted.reduce((sum,row)=>sum+row.weight,0);
+    const pct = quotedWeight>0
+      ? quoted.reduce((sum,row)=>sum+row.weight*row.pct,0)/quotedWeight
+      : null;
+    return {
+      name,
+      color,
+      weight,
+      pct,
+      stockCount: rows.length,
+      activeCount: rows.filter(row=>row.weight>0).length,
+      pricedCount: quoted.length,
+      pricedWeight: quotedWeight
+    };
+  };
+
+  const categories = sectors.map((sector,index)=>{
+    const stocks = Array.isArray(sector.stocks) ? sector.stocks : [];
+    const rows = stocks.map(stock=>{
+      totalStocks++;
+      if(stock.mkt==='HK') hkStocks++;
+      const weight = cleanWeight(stock.w);
+      const quote = prices && prices[stock.code];
+      // 代码相同但市场不同的极端情况，不允许错配另一市场的行情。
+      const quoteMatches = quote && (!quote.mkt || !stock.mkt || quote.mkt===stock.mkt);
+      const pctNumber = quoteMatches ? Number(quote.pct) : NaN;
+      const row = {
+        stock,
+        weight,
+        pct: Number.isFinite(pctNumber) ? pctNumber : null,
+        industry: cleanIndustry(stock.industry)
+      };
+      if(weight>0){
+        if(!industryBuckets.has(row.industry)) industryBuckets.set(row.industry,[]);
+        industryBuckets.get(row.industry).push(row);
+      }
+      return row;
+    });
+    return summarize(sector.name || `分类 ${index+1}`, sector.color || '#3b82f6', rows);
+  });
+
+  const industryPalette = ['#7c3aed','#ea580c','#059669','#2563eb','#db2777',
+                           '#9333ea','#dc2626','#0891b2','#65a30d','#d97706',
+                           '#8b5cf6','#10b981','#f97316','#0284c7','#e11d48'];
+  const industries = Array.from(industryBuckets.entries())
+    .map(([name,rows])=>summarize(name,'',rows))
+    .sort((a,b)=>b.weight-a.weight || a.name.localeCompare(b.name,'zh-CN'));
+  industries.forEach((entry,index)=>{
+    entry.color = entry.name==='未标注' ? '#94a3b8' : industryPalette[index%industryPalette.length];
+  });
+
+  const totalWeight = categories.reduce((sum,entry)=>sum+entry.weight,0);
+  const industryWeight = industries.reduce((sum,entry)=>sum+entry.weight,0);
+  const unlabeled = industries.find(entry=>entry.name==='未标注');
+  return {
+    categories,
+    industries,
+    totalStocks,
+    hkStocks,
+    totalWeight,
+    industryWeight,
+    unlabeledWeight: unlabeled ? unlabeled.weight : 0
+  };
+}
+
 function renderPortfolio(){
   portLoad();
-  // KPI — sector weight derived from individual stock weights
-  const total = PORT.sectors.reduce((a,s)=>a+s.stocks.length,0);
-  const secWeights = PORT.sectors.map(s=>s.stocks.reduce((a,sk)=>a+(sk.w||0),0));
-  const wSum  = secWeights.reduce((a,w)=>a+w,0);
-  // 各分类仓位加权涨跌幅：Σ(w_i × pct_i) / Σw_i（仅纳入有实时价格且w>0的标的）
-  const secAvgPcts = PORT.sectors.map(sec=>{
-    let ws=0, wps=0;
-    sec.stocks.forEach(sk=>{ const pi=_PORT_PRICES[sk.code]; if(pi&&(sk.w||0)>0&&pi.pct!=null){ws+=sk.w;wps+=sk.w*pi.pct;} });
-    return ws>0 ? wps/ws : null;
-  });
-  const hkCnt = PORT.sectors.reduce((a,s)=>a+s.stocks.filter(sk=>sk.mkt==='HK').length,0);
+  // KPI、分类仓位和行业仓位全部来自下方同一批个股明细。
+  const allocModel = _buildPortfolioAllocationModel(PORT,_PORT_PRICES);
+  const total = allocModel.totalStocks;
+  const secWeights = allocModel.categories.map(entry=>entry.weight);
+  const secAvgPcts = allocModel.categories.map(entry=>entry.pct);
+  const wSum = allocModel.totalWeight;
+  const hkCnt = allocModel.hkStocks;
   document.getElementById('pKpiStocks').textContent  = total;
   document.getElementById('pKpiSectors').textContent = PORT.sectors.length;
   document.getElementById('pKpiWeight').textContent  = wSum.toFixed(1)+'%';
   document.getElementById('pKpiHk').textContent      = '含港股 '+hkCnt+' 只';
-  document.getElementById('pTotalBadge').textContent = '合计 '+wSum.toFixed(1)+'%';
+  document.getElementById('pTotalBadge').textContent = allocModel.categories.length+' 分类 · '+wSum.toFixed(1)+'%';
   _renderPortBreadth();  // 刷新涨跌分布热力图
 
   // 仓位分配明细：分类与行业上下合并展示，不再依赖饼图 canvas。
@@ -3534,75 +3655,66 @@ function renderPortfolio(){
   if(CH.portIndustry){ CH.portIndustry.destroy(); CH.portIndustry=null; }
 
   const _allocPctBadge = pct => {
-    if(pct==null) return `<span style="font-size:10.5px;color:#94a3b8">—</span>`;
+    if(pct==null) return `<span style="font-size:10px;color:#94a3b8;font-weight:700">待行情</span>`;
     const t = (pct>0?'+':'')+pct.toFixed(2)+'%';
-    if(pct >= 2)  return `<span style="font-size:10.5px;font-weight:800;color:#b91c1c;background:#fee2e2;border-radius:4px;padding:1px 5px">${t}</span>`;
-    if(pct > 0)   return `<span style="font-size:10.5px;font-weight:700;color:#dc2626">${t}</span>`;
-    if(pct === 0) return `<span style="font-size:10.5px;font-weight:600;color:#94a3b8">0.00%</span>`;
-    if(pct > -2)  return `<span style="font-size:10.5px;font-weight:700;color:#16a34a">${t}</span>`;
-    return `<span style="font-size:10.5px;font-weight:800;color:#15803d;background:#dcfce7;border-radius:4px;padding:1px 5px">${t}</span>`;
+    if(pct >= 2)  return `<span style="font-size:10.5px;font-weight:900;color:#991b1b;background:#fee2e2;border:1px solid #fecaca;border-radius:5px;padding:2px 4px">${t}</span>`;
+    if(pct > 0)   return `<span style="font-size:10.5px;font-weight:800;color:#dc2626">${t}</span>`;
+    if(pct === 0) return `<span style="font-size:10.5px;font-weight:700;color:#64748b">0.00%</span>`;
+    if(pct > -2)  return `<span style="font-size:10.5px;font-weight:800;color:#16a34a">${t}</span>`;
+    return `<span style="font-size:10.5px;font-weight:900;color:#166534;background:#dcfce7;border:1px solid #bbf7d0;border-radius:5px;padding:2px 4px">${t}</span>`;
   };
-  const _renderAllocRows = (el, label, names, weights, pcts, colors) => {
+  const _renderAllocRows = (el, label, entries, totalBase) => {
     if(!el) return;
-    if(!names.length){
-      el.innerHTML='<div style="font-size:11px;color:var(--text2);text-align:center;padding:13px 4px">在股票编辑中填写“行业”字段后显示</div>';
+    if(!entries.length){
+      el.innerHTML='<div class="alloc-empty">暂无可统计的持仓</div>';
       return;
     }
-    const COL = '9px minmax(0,1fr) 62px 43px';
-    const hdr = `<div style="position:sticky;top:0;z-index:1;display:grid;grid-template-columns:${COL};gap:0 5px;
-                       align-items:center;padding:0 2px 5px;border-bottom:2px solid #e2e8f0;background:#fff">
-      <span></span>
-      <span style="font-size:9.5px;font-weight:700;color:#94a3b8;letter-spacing:.05em">${label}</span>
-      <span style="font-size:9.5px;font-weight:700;color:#94a3b8;letter-spacing:.05em;text-align:right">涨跌幅</span>
-      <span style="font-size:9.5px;font-weight:700;color:#94a3b8;letter-spacing:.05em;text-align:right">仓位</span>
+    const hdr = `<div class="alloc-grid-head">
+      <span>${label}</span>
+      <span>加权涨跌</span>
+      <span>仓位</span>
     </div>`;
-    const rows = names.map((name,i)=>`
-      <div style="display:grid;grid-template-columns:${COL};gap:0 5px;align-items:center;padding:4px 2px;border-bottom:1px solid #f1f5f9">
-        <span style="width:9px;height:9px;border-radius:3px;display:block;background:${colors[i]}"></span>
-        <span style="font-size:11px;font-weight:650;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${_escH(name)}">${_escH(name)}</span>
-        <div style="text-align:right">${_allocPctBadge(pcts[i])}</div>
-        <span style="font-size:11px;font-weight:800;color:#334155;text-align:right">${weights[i].toFixed(1)}%</span>
-      </div>`).join('');
+    const rows = entries.map(entry=>{
+      const color = /^#[0-9a-f]{3,8}$/i.test(entry.color||'') ? entry.color : '#64748b';
+      const share = totalBase>0 ? Math.max(0,Math.min(100,entry.weight/totalBase*100)) : 0;
+      const meta = entry.isCash ? '未投资仓位' : entry.stockCount+' 只个股';
+      return `<div class="alloc-row" style="--row-accent:${color}">
+        <div class="alloc-name">
+          <span class="alloc-swatch"></span>
+          <div class="alloc-name-copy">
+            <div class="alloc-name-main" title="${_escH(entry.name)}">${_escH(entry.name)}</div>
+            <div class="alloc-name-meta">${meta}</div>
+          </div>
+        </div>
+        <div class="alloc-pct">${entry.isCash?'<span style="font-size:11px;color:#94a3b8;font-weight:700">—</span>':_allocPctBadge(entry.pct)}</div>
+        <div class="alloc-weight">${entry.weight.toFixed(1)}%</div>
+        <div class="alloc-track"><span style="width:${share.toFixed(1)}%"></span></div>
+      </div>`;
+    }).join('');
     el.innerHTML = hdr + rows;
   };
 
   // 按分类；不足 100% 的部分作为现金列出。
   const cash = Math.max(0, parseFloat((100 - wSum).toFixed(1)));
-  const allNames   = PORT.sectors.map(s=>s.name);
-  const allWeights = [...secWeights];
-  const allColors  = PORT.sectors.map(s=>s.color+'cc');
-  const allPcts    = [...secAvgPcts];
+  const categoryEntries = allocModel.categories.map(entry=>({...entry}));
   if(cash > 0.05){
-    allNames.push('现金'); allWeights.push(cash); allColors.push('#cbd5e1cc'); allPcts.push(null);
+    categoryEntries.push({name:'现金',weight:cash,pct:null,color:'#94a3b8',stockCount:0,isCash:true});
   }
-  _renderAllocRows(document.getElementById('portAllocLegend'),'分类',allNames,allWeights,allPcts,allColors);
+  _renderAllocRows(document.getElementById('portAllocLegend'),'分类',categoryEntries,100);
 
-  // 按行业；涨跌幅按各股票仓位加权。
-  const industryMap = {}, indWpct = {}, indWsum = {};
-  PORT.sectors.forEach(sec=>{
-    sec.stocks.forEach(sk=>{
-      if(sk.w != null && sk.w > 0){
-        const key = (sk.industry && sk.industry.trim()) ? sk.industry.trim() : '其他';
-        industryMap[key] = (industryMap[key]||0) + sk.w;
-        const pi = _PORT_PRICES[sk.code];
-        if(pi && pi.pct != null){
-          indWpct[key] = (indWpct[key]||0) + sk.w * pi.pct;
-          indWsum[key] = (indWsum[key]||0) + sk.w;
-        }
-      }
-    });
-  });
-  const indNames   = Object.keys(industryMap).sort((a,b)=>industryMap[b]-industryMap[a]);
-  const indData    = indNames.map(k=>industryMap[k]);
-  const indAvgPcts = indNames.map(k=>indWsum[k]>0 ? indWpct[k]/indWsum[k] : null);
-  const IND_PALETTE = ['#6366f1cc','#f59e0bcc','#10b981cc','#3b82f6cc','#ec4899cc',
-                       '#8b5cf6cc','#ef4444cc','#06b6d4cc','#84cc16cc','#f97316cc',
-                       '#a78bfacc','#34d399cc','#fb923ccc','#38bdf8cc','#f472b6cc'];
-  const indColors = indNames.map((_,i)=>IND_PALETTE[i%IND_PALETTE.length]);
-  const indTotal  = indData.reduce((s,v)=>s+v,0);
+  // 按行业；逐只读取下方分类列表中的行业字段，并使用与分类完全相同的加权公式。
+  const indTotal = allocModel.industryWeight;
   const indBadge  = document.getElementById('pIndustryBadge');
-  if(indBadge) indBadge.textContent = indNames.length ? '已标注 '+indTotal.toFixed(1)+'%' : '尚无行业标注';
-  _renderAllocRows(document.getElementById('portIndustryLegend'),'行业',indNames,indData,indAvgPcts,indColors);
+  if(indBadge){
+    indBadge.textContent = allocModel.industries.length+' 行业 · '+indTotal.toFixed(1)+'%';
+    indBadge.title = allocModel.unlabeledWeight>0
+      ? '其中未标注行业 '+allocModel.unlabeledWeight.toFixed(1)+'%'
+      : '全部持仓均已标注行业';
+  }
+  if(Math.abs(indTotal-wSum)>0.0001){
+    console.error('[仓位分配] 行业合计与分类合计不一致',indTotal,wSum);
+  }
+  _renderAllocRows(document.getElementById('portIndustryLegend'),'行业',allocModel.industries,Math.max(indTotal,1));
 
   // Sectors
   const mktStyle = {SH:'background:#dbeafe;color:#1e40af',SZ:'background:#ede9fe;color:#5b21b6',HK:'background:#fee2e2;color:#991b1b'};
