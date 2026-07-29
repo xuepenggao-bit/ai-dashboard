@@ -153,6 +153,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .ct{font-size:13px;color:var(--text2);font-weight:600;letter-spacing:.01em}
 .cbadge{font-size:11px;padding:3px 9px;border-radius:5px;background:rgba(37,99,235,.08);color:var(--blue);font-weight:500}
+.port-stock-name-line{display:flex;align-items:center;gap:5px;min-width:0}
+.port-stock-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--text)}
+.port-hk-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;width:18px;height:18px;border-radius:6px;background:linear-gradient(145deg,#ef4444,#b91c1c);color:#fff;font-size:10px;font-weight:900;line-height:1;box-shadow:0 2px 5px rgba(185,28,28,.22)}
 
 /* ── Portfolio allocation stack ── */
 .alloc-stack{padding:0;overflow:hidden;border:1px solid #cbd5e1;border-top:0;background:#fff;box-shadow:0 7px 22px rgba(15,23,42,.08)}
@@ -6167,6 +6170,18 @@ function _portTopDisplayPct(mkt, pct, nowMs){
   return _isAStockMarket(mkt) && _isAPreOpenZeroWindow(nowMs) ? 0 : value;
 }
 
+function _isPortfolioHKStock(mkt,code){
+  const market=String(mkt||'').trim().toUpperCase();
+  return market==='HK' || market==='HKEX' || market==='港股'
+      || (!market && /^\d{5}$/.test(String(code||'').trim()));
+}
+
+function _portTopMarketIcon(mkt,code){
+  return _isPortfolioHKStock(mkt,code)
+    ? '<span class="port-hk-icon" title="港股" aria-label="港股">港</span>'
+    : '';
+}
+
 // 判断当前是否为交易刷新时段（北京时间，工作日）。按页面业务口径，港股从 09:00 开始刷新；
 // 下午仍覆盖港股独有的 15:00—16:00，避免自动刷新在港股盘中停摆。
 function _isTradingNow(nowMs){
@@ -8428,14 +8443,15 @@ function renderPortTop3(){
     var wStr = (item.w != null && item.w > 0)
       ? '<div style="font-size:11px;color:var(--text2);margin-top:2px">仓位 '+Number(item.w).toFixed(1)+'%</div>'
       : '';
+    var marketIcon = _portTopMarketIcon(item.mkt,item.code);
     return '<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;'
          + 'border-radius:8px;background:'+bgRow+';margin-bottom:5px">'
       + '<span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:'+bgBadge
       + ';color:'+color+';font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center">'
       + rank+'</span>'
       + '<div style="flex:1;min-width:0">'
-      + '<div style="font-size:14px;font-weight:700;color:var(--text);overflow:hidden;'
-      + 'text-overflow:ellipsis;white-space:nowrap" title="'+item.name+'">'+item.name+'</div>'
+      + '<div class="port-stock-name-line" title="'+item.name+'">'
+      + '<span class="port-stock-name-text">'+item.name+'</span>'+marketIcon+'</div>'
       + wStr
       + '</div>'
       + '<div style="text-align:right;flex-shrink:0">'
@@ -8634,14 +8650,15 @@ function _renderPortTopW(){
     var wLine    = item.w != null
       ? '<div style="font-size:11px;color:var(--blue);font-weight:700;margin-top:2px">仓位 '+Number(item.w).toFixed(1)+'%</div>'
       : '<div style="font-size:11px;color:var(--text2);margin-top:2px">仓位未设置</div>';
+    var marketIcon = _portTopMarketIcon(item.mkt,item.code);
     return '<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;'
          + 'border-radius:8px;background:'+bgRow+';margin-bottom:5px">'
       + '<span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:#dbeafe;'
       + 'color:var(--blue);font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center">'
       + rank+'</span>'
       + '<div style="flex:1;min-width:0">'
-      + '<div style="font-size:14px;font-weight:700;color:var(--text);overflow:hidden;'
-      + 'text-overflow:ellipsis;white-space:nowrap" title="'+item.name+'">'+item.name+'</div>'
+      + '<div class="port-stock-name-line" title="'+item.name+'">'
+      + '<span class="port-stock-name-text">'+item.name+'</span>'+marketIcon+'</div>'
       + wLine
       + '</div>'
       + '<div style="text-align:right;flex-shrink:0">'
