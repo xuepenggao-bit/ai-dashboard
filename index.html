@@ -153,9 +153,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .ct{font-size:13px;color:var(--text2);font-weight:600;letter-spacing:.01em}
 .cbadge{font-size:11px;padding:3px 9px;border-radius:5px;background:rgba(37,99,235,.08);color:var(--blue);font-weight:500}
-.port-stock-name-line{display:flex;align-items:center;gap:5px;min-width:0}
+.port-stock-name-line{display:flex;align-items:center;gap:6px;min-width:0}
 .port-stock-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--text)}
-.port-hk-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;width:18px;height:18px;border-radius:6px;background:linear-gradient(145deg,#ef4444,#b91c1c);color:#fff;font-size:10px;font-weight:900;line-height:1;box-shadow:0 2px 5px rgba(185,28,28,.22)}
+.port-hk-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:25px;height:17px;padding:0 5px;border:1px solid rgba(0,113,227,.24);border-radius:5px;background:linear-gradient(180deg,#f2f8ff 0%,#e4f1ff 100%);color:#0667c9;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;font-size:9px;font-weight:800;letter-spacing:.06em;line-height:1;box-shadow:0 1px 2px rgba(0,102,204,.08),inset 0 1px 0 rgba(255,255,255,.9)}
 
 /* ── Portfolio allocation stack ── */
 .alloc-stack{padding:0;overflow:hidden;border:1px solid #cbd5e1;border-top:0;background:#fff;box-shadow:0 7px 22px rgba(15,23,42,.08)}
@@ -6178,7 +6178,7 @@ function _isPortfolioHKStock(mkt,code){
 
 function _portTopMarketIcon(mkt,code){
   return _isPortfolioHKStock(mkt,code)
-    ? '<span class="port-hk-icon" title="港股" aria-label="港股">港</span>'
+    ? '<span class="port-hk-icon" title="港股" aria-label="港股">HK</span>'
     : '';
 }
 
