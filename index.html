@@ -162,17 +162,16 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .alloc-panel-category::before{background:linear-gradient(90deg,#2563eb,#38bdf8)}
 .alloc-panel-industry{border-top:1px solid #ddd6fe;background:linear-gradient(145deg,#f5f3ff 0%,#fff 72%)}
 .alloc-panel-industry::before{background:linear-gradient(90deg,#7c3aed,#c084fc)}
-.alloc-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}
+.alloc-panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
 .alloc-heading{min-width:0}
 .alloc-title{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:900;color:#0f172a;letter-spacing:.01em}
 .alloc-title-icon{display:inline-flex;width:21px;height:21px;align-items:center;justify-content:center;border-radius:7px;color:#fff;font-size:11px;box-shadow:0 3px 8px rgba(15,23,42,.14)}
 .alloc-panel-category .alloc-title-icon{background:linear-gradient(135deg,#2563eb,#0ea5e9)}
 .alloc-panel-industry .alloc-title-icon{background:linear-gradient(135deg,#7c3aed,#a855f7)}
-.alloc-subtitle{margin-top:3px;font-size:9.5px;line-height:1.35;color:#64748b;font-weight:600;white-space:nowrap}
 .alloc-badge{flex-shrink:0;margin-top:1px;padding:3px 7px;border-radius:999px;font-size:9.5px;font-weight:800;white-space:nowrap}
 .alloc-panel-category .alloc-badge{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
 .alloc-panel-industry .alloc-badge{background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe}
-.alloc-list{max-height:174px;overflow:auto;scrollbar-gutter:stable;border:1px solid rgba(203,213,225,.72);border-radius:9px;background:rgba(255,255,255,.9)}
+.alloc-list{height:202px;max-height:202px;overflow:auto;scrollbar-gutter:stable;border:1px solid rgba(203,213,225,.72);border-radius:9px;background:rgba(255,255,255,.9)}
 .alloc-grid-head,.alloc-row{display:grid;grid-template-columns:minmax(0,1fr) 65px 48px;column-gap:6px;align-items:center}
 .alloc-grid-head{position:sticky;top:0;z-index:2;padding:5px 7px;border-bottom:1px solid #cbd5e1;background:rgba(248,250,252,.97);font-size:9px;font-weight:800;color:#94a3b8;letter-spacing:.04em}
 .alloc-grid-head span:nth-child(n+2){text-align:right}
@@ -786,7 +785,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         <div class="alloc-panel-head">
           <div class="alloc-heading">
             <div class="alloc-title"><span class="alloc-title-icon">类</span>仓位分配（按分类）</div>
-            <div class="alloc-subtitle">逐只汇总下方分类内的个股仓位</div>
           </div>
           <span class="alloc-badge" id="pTotalBadge">— 分类 · —%</span>
         </div>
@@ -796,7 +794,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         <div class="alloc-panel-head">
           <div class="alloc-heading">
             <div class="alloc-title"><span class="alloc-title-icon">行</span>仓位分配（按行业）</div>
-            <div class="alloc-subtitle">读取每只个股行业 · 按仓位加权涨跌幅</div>
           </div>
           <span class="alloc-badge" id="pIndustryBadge">— 行业 · —%</span>
         </div>
@@ -3696,7 +3693,9 @@ function renderPortfolio(){
 
   // 按分类；不足 100% 的部分作为现金列出。
   const cash = Math.max(0, parseFloat((100 - wSum).toFixed(1)));
-  const categoryEntries = allocModel.categories.map(entry=>({...entry}));
+  const categoryEntries = allocModel.categories
+    .map(entry=>({...entry}))
+    .sort((a,b)=>b.weight-a.weight || a.name.localeCompare(b.name,'zh-CN'));
   if(cash > 0.05){
     categoryEntries.push({name:'现金',weight:cash,pct:null,color:'#94a3b8',stockCount:0,isCash:true});
   }
