@@ -216,10 +216,26 @@ def fetch_page_result(url, hosts):
             r"(?i)capital expenditures?|capex|capital spending|annualized recurring revenue|revenue run[- ]rate",
             text,
         ):
-            windows.append(text[max(0, match.start() - 420) : match.end() + 1050])
-            if sum(len(part) for part in windows) >= 2200:
-                break
-        body = " … ".join(windows)[:2400] if windows else text[:1400]
+            window = text[max(0, match.start() - 420) : match.end() + 1100]
+            lower = window.lower()
+            score = sum(
+                weight
+                for pattern, weight in (
+                    (r"full[- ]year|calendar year|cy ?2026", 6),
+                    (r"guidance|outlook|expect|forecast|approximately|range", 5),
+                    (r"2026", 3),
+                    (r"quarter|q[1-4]|three months", -4),
+                    (r"cash paid|actual", -2),
+                )
+                if re.search(pattern, lower)
+            )
+            windows.append((score, window))
+        windows.sort(key=lambda item: item[0], reverse=True)
+        body = (
+            " … ".join(window for _, window in windows[:4])[:3200]
+            if windows
+            else text[:1400]
+        )
         return {"title": title, "body": body, "url": final_url, "date": ""}
     except Exception as exc:
         print(f"  [Direct] {url[:88]} failed: {exc}")
@@ -341,7 +357,7 @@ def _model_json(prompt, max_tokens):
             "X-GitHub-Api-Version": "2026-03-10",
         },
         json={
-            "model": "openai/gpt-4o-mini",
+            "model": "openai/gpt-4.1",
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tokens,
             "temperature": 0,
@@ -422,7 +438,7 @@ def main():
             for result in results:
                 lines.append(
                     f"- {result['title']}\n  PUBLISHED: {result['date']}\n"
-                    f"  URL: {result['url']}\n  SNIPPET: {result['body'][:450]}"
+                    f"  URL: {result['url']}\n  SNIPPET: {result['body'][:700]}"
                 )
             context_parts.append("\n".join(lines))
         context = "\n\n".join(context_parts)
@@ -447,6 +463,9 @@ Rules:
 7. actual_2025_yi is optional and must be an explicitly disclosed full-year actual Capex number.
 8. Omit a company or field that cannot be verified. Do not use analyst estimates or news-media figures.
 9. basis_note may briefly preserve a material accounting/classification explanation, but do not infer one.
+10. Reject quarterly Capex actuals such as "Q4 Capex was $41B". The target is only a
+    full-year or calendar-year 2026 guidance/expectation; if no such number is explicit,
+    omit the company instead of returning a quarterly number.
 
 Return JSON only:
 {{
