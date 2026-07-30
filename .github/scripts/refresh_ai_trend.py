@@ -10,10 +10,12 @@ invented number, and the last valid numeric snapshot is preserved.
 """
 
 import datetime
+import html
 import json
 import os
 import re
-from urllib.parse import urlparse
+import xml.etree.ElementTree as ET
+from urllib.parse import parse_qs, unquote, urlencode, urljoin, urlparse
 
 import requests
 
@@ -28,6 +30,7 @@ COMPANIES = {
         "name": "Alphabet / Google",
         "query": "site:abc.xyz/investor latest earnings 2026 capital expenditures guidance range",
         "hosts": ("abc.xyz",),
+        "landing_urls": ("https://abc.xyz/investor/",),
         "bounds": (500, 3000),
         "source_label": "Alphabet 官方业绩披露",
     },
@@ -35,6 +38,7 @@ COMPANIES = {
         "name": "Microsoft",
         "query": "site:microsoft.com/en-us/investor latest earnings 2026 capital expenditures guidance",
         "hosts": ("microsoft.com",),
+        "landing_urls": ("https://www.microsoft.com/en-us/investor/events",),
         "bounds": (500, 3000),
         "source_label": "Microsoft 官方业绩披露",
     },
@@ -42,6 +46,7 @@ COMPANIES = {
         "name": "Amazon",
         "query": "site:ir.aboutamazon.com latest earnings 2026 capital expenditures guidance",
         "hosts": ("ir.aboutamazon.com",),
+        "landing_urls": ("https://ir.aboutamazon.com/quarterly-results/default.aspx",),
         "bounds": (500, 3000),
         "source_label": "Amazon 官方业绩披露",
     },
@@ -49,6 +54,7 @@ COMPANIES = {
         "name": "Meta",
         "query": "site:investor.atmeta.com latest earnings 2026 capital expenditures guidance range",
         "hosts": ("investor.atmeta.com",),
+        "landing_urls": ("https://investor.atmeta.com/financials/default.aspx",),
         "bounds": (300, 2500),
         "source_label": "Meta 官方业绩披露",
     },
@@ -102,7 +108,11 @@ def _host_allowed(url, hosts):
 def ddg_search(query, hosts, n=8):
     """Return only official-domain DuckDuckGo results, including source URLs."""
     try:
-        from duckduckgo_search import DDGS
+        try:
+            from ddgs import DDGS
+        except ImportError:
+            # Backward compatible with the package name already used by the workflow.
+            from duckduckgo_search import DDGS
 
         with DDGS() as ddgs:
             raw = list(ddgs.text(query, max_results=n))
@@ -126,8 +136,140 @@ def ddg_search(query, hosts, n=8):
         return []
 
 
-def latest_official_results(cfg):
-    """Search several recency-aware variants and de-duplicate official URLs."""
+def _clean_text(value):
+    value = re.sub(r"(?is)<(script|style|noscript).*?</\1>", " ", value or "")
+    value = re.sub(r"(?s)<[^>]+>", " ", value)
+    return re.sub(r"\s+", " ", html.unescape(value)).strip()
+
+
+def _direct_url(value):
+    """Extract a direct destination from a search-engine redirect when present."""
+    try:
+        parsed = urlparse(value)
+        query = parse_qs(parsed.query)
+        for key in ("url", "u", "target"):
+            if query.get(key):
+                return unquote(query[key][0])
+    except Exception:
+        pass
+    return value
+
+
+def bing_rss_search(query, hosts, n=8):
+    """Use Bing's RSS endpoint as an independent search fallback."""
+    url = "https://www.bing.com/search?" + urlencode(
+        {"q": query, "format": "rss", "setlang": "en-US"}
+    )
+    try:
+        response = requests.get(
+            url,
+            headers={"User-Agent": "Mozilla/5.0 AITrendMonitor/1.0"},
+            timeout=25,
+        )
+        response.raise_for_status()
+        root = ET.fromstring(response.content)
+        results = []
+        for item in root.findall(".//item"):
+            link = _direct_url(item.findtext("link") or "")
+            if not _host_allowed(link, hosts):
+                continue
+            results.append(
+                {
+                    "title": _clean_text(item.findtext("title") or "")[:240],
+                    "body": _clean_text(item.findtext("description") or "")[:1200],
+                    "url": link,
+                    "date": str(item.findtext("pubDate") or "")[:40],
+                }
+            )
+            if len(results) >= n:
+                break
+        print(f'  [Bing RSS] "{query[:58]}" -> {len(results)} allowlisted results')
+        return results
+    except Exception as exc:
+        print(f'  [Bing RSS] "{query[:58]}" failed: {exc}')
+        return []
+
+
+def fetch_page_result(url, hosts):
+    """Fetch one allowlisted page and keep text around Capex/ARR evidence."""
+    if not _host_allowed(url, hosts):
+        return None
+    try:
+        response = requests.get(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 AITrendMonitor/1.0",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.5",
+            },
+            timeout=25,
+        )
+        response.raise_for_status()
+        final_url = response.url
+        if not _host_allowed(final_url, hosts):
+            return None
+        raw = response.text
+        title_match = re.search(r"(?is)<title[^>]*>(.*?)</title>", raw)
+        title = _clean_text(title_match.group(1) if title_match else final_url)[:240]
+        text = _clean_text(raw)
+        windows = []
+        for match in re.finditer(
+            r"(?i)capital expenditures?|capex|capital spending|annualized recurring revenue|revenue run[- ]rate",
+            text,
+        ):
+            windows.append(text[max(0, match.start() - 420) : match.end() + 1050])
+            if sum(len(part) for part in windows) >= 2200:
+                break
+        body = " … ".join(windows)[:2400] if windows else text[:1400]
+        return {"title": title, "body": body, "url": final_url, "date": ""}
+    except Exception as exc:
+        print(f"  [Direct] {url[:88]} failed: {exc}")
+        return None
+
+
+def discover_official_urls(cfg):
+    """Discover recent earnings links directly from each company's IR landing page."""
+    discovered = []
+    current_year = str(datetime.date.today().year)
+    for landing in cfg.get("landing_urls", ()):
+        if not _host_allowed(landing, cfg["hosts"]):
+            continue
+        try:
+            response = requests.get(
+                landing,
+                headers={"User-Agent": "Mozilla/5.0 AITrendMonitor/1.0"},
+                timeout=25,
+            )
+            response.raise_for_status()
+            for href in re.findall(r"""(?i)href\s*=\s*["']([^"'#]+)""", response.text):
+                candidate = urljoin(response.url, html.unescape(href))
+                if not _host_allowed(candidate, cfg["hosts"]):
+                    continue
+                if not re.search(
+                    r"(?i)earnings|quarter|results|financial|event|press-release|news-release",
+                    candidate,
+                ):
+                    continue
+                discovered.append(candidate)
+        except Exception as exc:
+            print(f"  [Landing] {landing} failed: {exc}")
+    # New-year links first, then preserve landing-page order.
+    return sorted(
+        dict.fromkeys(discovered),
+        key=lambda value: (current_year not in value, value),
+    )[:4]
+
+
+def _merge_results(target, seen, items):
+    for item in items:
+        url = item.get("url") or ""
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        target.append(item)
+
+
+def latest_official_results(cfg, saved_source_url=""):
+    """Combine direct IR discovery with two independent web-search paths."""
     today = datetime.date.today()
     quarter = (today.month - 1) // 3 + 1
     host = cfg["hosts"][0]
@@ -138,14 +280,20 @@ def latest_official_results(cfg):
     ]
     merged = []
     seen = set()
+    direct_urls = [saved_source_url, *cfg.get("landing_urls", ())]
+    direct_urls.extend(discover_official_urls(cfg))
+    for url in direct_urls:
+        if not url or url in seen:
+            continue
+        result = fetch_page_result(url, cfg["hosts"])
+        if result:
+            _merge_results(merged, seen, [result])
     for query in queries:
-        for item in ddg_search(query, cfg["hosts"], n=10):
-            if item["url"] in seen:
-                continue
-            seen.add(item["url"])
-            merged.append(item)
+        _merge_results(merged, seen, bing_rss_search(query, cfg["hosts"], n=8))
+        _merge_results(merged, seen, ddg_search(query, cfg["hosts"], n=8))
+    print(f"  [Capex] {cfg['name']} -> {len(merged)} verified candidates")
     # Keep the prompt balanced: every company must fit in the extraction context.
-    return merged[:4]
+    return merged[:5]
 
 
 def latest_arr_results(key, cfg):
@@ -161,11 +309,8 @@ def latest_arr_results(key, cfg):
     merged = []
     seen = set()
     for query in queries:
-        for item in ddg_search(query, cfg["hosts"], n=10):
-            if item["url"] in seen:
-                continue
-            seen.add(item["url"])
-            merged.append(item)
+        _merge_results(merged, seen, bing_rss_search(query, cfg["hosts"], n=8))
+        _merge_results(merged, seen, ddg_search(query, cfg["hosts"], n=8))
     print(f"  [ARR] {key} -> {len(merged)} allowlisted results")
     return merged[:5]
 
@@ -246,7 +391,13 @@ def main():
     except Exception:
         base = {}
 
-    capex_results = {key: latest_official_results(cfg) for key, cfg in COMPANIES.items()}
+    saved_capex = base.get("capex_companies") or {}
+    capex_results = {
+        key: latest_official_results(
+            cfg, str((saved_capex.get(key) or {}).get("source_url") or "")
+        )
+        for key, cfg in COMPANIES.items()
+    }
     arr_results = {
         key: latest_arr_results(key, cfg) for key, cfg in ARR_COMPANIES.items()
     }
