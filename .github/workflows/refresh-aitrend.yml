@@ -1,16 +1,24 @@
-name: Refresh Hyperscaler Capex (Manual)
+name: Refresh AI Trend Data
 
 on:
+  schedule:
+    # 每 3 小时扫描一次；避开整点，降低 GitHub Actions 定时任务拥堵。
+    - cron: '17 */3 * * *'
   workflow_dispatch:
     inputs:
       reason:
-        description: '手动触发原因'
+        description: '立即扫描原因'
         required: false
-        default: 'Manual hyperscaler Capex refresh'
+        default: 'Manual AI trend refresh'
+
+concurrency:
+  group: refresh-ai-trend
+  cancel-in-progress: false
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     permissions:
@@ -25,7 +33,7 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: pip install requests duckduckgo_search
-      - name: Search official disclosures and refresh Capex snapshot
+      - name: Scan Capex disclosures and ARR milestones
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python .github/scripts/refresh_ai_trend.py
@@ -35,6 +43,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/ai_trend.json
           git diff --staged --quiet && echo "No changes." && exit 0
-          git commit -m "chore: refresh hyperscaler capex $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git commit -m "chore: refresh AI trend data $(date -u '+%Y-%m-%d %H:%M UTC')"
           git pull --rebase origin main
           git push
