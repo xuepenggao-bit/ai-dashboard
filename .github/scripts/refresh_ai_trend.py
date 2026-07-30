@@ -244,6 +244,8 @@ def discover_official_urls(cfg):
                 candidate = urljoin(response.url, html.unescape(href))
                 if not _host_allowed(candidate, cfg["hosts"]):
                     continue
+                if "{" in candidate or "%7b" in candidate.lower():
+                    continue
                 if not re.search(
                     r"(?i)earnings|quarter|results|financial|event|press-release|news-release",
                     candidate,
@@ -476,18 +478,35 @@ OFFICIAL RESULTS:
             previous = dict(current.get(key) or {})
             previous_date = _valid_date(previous.get("source_date"))
             minimum, maximum = cfg["bounds"]
+            # Models sometimes preserve the disclosure's $B unit despite the prompt.
+            # Normalize only when both endpoints fit a plausible hyperscaler range.
             if (
-                low is None
-                or high is None
-                or not (minimum <= low <= high <= maximum)
-                or not _host_allowed(url, cfg["hosts"])
-                or not source_date
-                or (previous_date and source_date < previous_date)
+                low is not None
+                and high is not None
+                and 30 <= low <= high <= 300
+                and low < minimum
             ):
+                low *= 10
+                high *= 10
+            rejection_reasons = []
+            if low is None or high is None:
+                rejection_reasons.append("missing guidance")
+            elif not (minimum <= low <= high <= maximum):
+                rejection_reasons.append(f"out of bounds {low}-{high}")
+            if not _host_allowed(url, cfg["hosts"]):
+                rejection_reasons.append(
+                    f"source domain {(urlparse(url).hostname or 'missing')}"
+                )
+            if not source_date:
+                rejection_reasons.append("missing source date")
+            elif previous_date and source_date < previous_date:
+                rejection_reasons.append("older source date")
+            if rejection_reasons:
                 print(
-                    f"  [{key}] rejected/absent/stale "
+                    f"  [{key}] rejected "
                     f"(candidate={source_date or 'no-date'}, "
-                    f"saved={previous_date or 'none'}); keeping previous values"
+                    f"saved={previous_date or 'none'}; "
+                    f"reason={'; '.join(rejection_reasons)}); keeping previous values"
                 )
                 continue
 
@@ -495,7 +514,6 @@ OFFICIAL RESULTS:
                 _number(previous.get("guidance_low_yi")) == low
                 and _number(previous.get("guidance_high_yi")) == high
                 and previous_date == source_date
-                and str(previous.get("source_url") or "") == url
             )
             if core_unchanged:
                 print(f"  [{key}] latest guidance verified unchanged")
@@ -595,7 +613,7 @@ Rules:
 Return JSON only:
 {{
   "companies": {{
-    "openai": {{"arr_yi": 0, "summary": "", "source_label": "", "source_date": "YYYY-MM-DD", "source_url": "https://..."}},
+    "openai": {{"summary": "", "source_label": "", "source_date": "YYYY-MM-DD", "source_url": "https://..."}},
     "anthropic": {{...}}
   }}
 }}
@@ -620,18 +638,28 @@ ALLOWLISTED RESULTS:
             previous_event = dict(events.get(key) or {})
             previous_date = _valid_date(previous_event.get("source_date"))
             value = _number(candidate.get("arr_yi"))
+            if value is not None and value <= 0:
+                value = None
             minimum, maximum = cfg["bounds"]
-            if (
-                not summary
-                or not source_date
-                or not _host_allowed(url, cfg["hosts"])
-                or (previous_date and source_date < previous_date)
-                or (value is not None and not (minimum <= value <= maximum))
-            ):
+            rejection_reasons = []
+            if not summary:
+                rejection_reasons.append("missing summary")
+            if not source_date:
+                rejection_reasons.append("missing source date")
+            elif previous_date and source_date < previous_date:
+                rejection_reasons.append("older source date")
+            if not _host_allowed(url, cfg["hosts"]):
+                rejection_reasons.append(
+                    f"source domain {(urlparse(url).hostname or 'missing')}"
+                )
+            if value is not None and not (minimum <= value <= maximum):
+                rejection_reasons.append(f"out of bounds {value}")
+            if rejection_reasons:
                 print(
-                    f"  [ARR:{key}] rejected/absent/stale "
+                    f"  [ARR:{key}] rejected "
                     f"(candidate={source_date or 'no-date'}, "
-                    f"saved={previous_date or 'none'})"
+                    f"saved={previous_date or 'none'}; "
+                    f"reason={'; '.join(rejection_reasons)})"
                 )
                 continue
 
