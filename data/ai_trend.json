@@ -1,15 +1,17 @@
 {
-  "updated": "2026-07-23 11:10",
-  "capex_as_of": "2026-07-22",
+  "updated": "2026-07-30 12:02",
+  "last_checked": "2026-07-30 12:02",
+  "scan_interval_hours": 3,
+  "capex_as_of": "2026-07-29",
   "capex_unit": "USD 100 million",
-  "note": "手动触发更新；Capex仅采用四家公司官方投资者关系或监管披露，点指引不扩写为区间",
-  "hyperscaler_capex_2026e_low_yi": 7100,
-  "hyperscaler_capex_2026e_mid_yi": 7250,
-  "hyperscaler_capex_2026e_high_yi": 7400,
-  "hyperscaler_capex_2026e_yi": 7250,
+  "note": "GitHub Actions每3小时自动扫描；Capex仅采用四家公司官方投资者关系或监管披露，点指引不扩写为区间",
+  "hyperscaler_capex_2026e_low_yi": 7000,
+  "hyperscaler_capex_2026e_mid_yi": 7125,
+  "hyperscaler_capex_2026e_high_yi": 7250,
+  "hyperscaler_capex_2026e_yi": 7125,
   "hyperscaler_capex_2025a_yi": 3564.9,
-  "hyperscaler_yoy_pct": 103.4,
-  "hyperscaler_detail": "GOOGL $195–205B · MSFT ~$190B · AMZN ~$200B · META $125–145B",
+  "hyperscaler_yoy_pct": 99.9,
+  "hyperscaler_detail": "GOOGL $195–205B · MSFT ~$175B · AMZN ~$200B · META $130–145B",
   "capex_companies": {
     "alphabet": {
       "display_name": "Alphabet / Google",
@@ -28,14 +30,14 @@
       "display_name": "Microsoft",
       "actual_2024_yi": 444.8,
       "actual_2025_yi": 645.5,
-      "guidance_low_yi": 1900,
-      "guidance_high_yi": 1900,
+      "guidance_low_yi": 1750,
+      "guidance_high_yi": 1750,
       "guidance_type": "point",
       "period": "CY2026",
-      "basis_note": "CY2026 · 约$190B，未披露上下限",
-      "source_label": "Microsoft FY26 Q3业绩会",
-      "source_date": "2026-04-29",
-      "source_url": "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q3"
+      "basis_note": "CY2026 · 约$175B；租赁分类调整，底层投资预期不变",
+      "source_label": "Microsoft FY26 Q4业绩会",
+      "source_date": "2026-07-29",
+      "source_url": "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q4"
     },
     "amazon": {
       "display_name": "Amazon",
@@ -54,14 +56,14 @@
       "display_name": "Meta",
       "actual_2024_yi": 392.3,
       "actual_2025_yi": 722.2,
-      "guidance_low_yi": 1250,
+      "guidance_low_yi": 1300,
       "guidance_high_yi": 1450,
       "guidance_type": "range",
       "period": "CY2026",
-      "basis_note": "CY2026 · Q1上调后的公司正式区间",
-      "source_label": "Meta 2026 Q1业绩",
-      "source_date": "2026-04-29",
-      "source_url": "https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-First-Quarter-2026-Results/"
+      "basis_note": "CY2026 · Q2收窄后的公司正式区间",
+      "source_label": "Meta 2026 Q2业绩",
+      "source_date": "2026-07-29",
+      "source_url": "https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Second-Quarter-2026-Results/default.aspx"
     }
   },
   "mag7_pe_median": 25.0,
@@ -88,8 +90,18 @@
     null,
     470
   ],
-  "arr_as_of": "2026-05-28",
-  "arr_note": "年化收入运行率公开里程碑（非传统合同ARR） · 空值表示当月无新披露，不用旧数据补成下降趋势",
+  "arr_as_of": "2026-07-29",
+  "arr_note": "年化收入运行率公开里程碑（非传统合同ARR） · 无明确金额的消息只记录事件，不反推数值 · 空值不补成下降趋势",
+  "arr_latest_events": {
+    "openai": {
+      "company": "OpenAI",
+      "summary": "CFO称7月年化经常性收入高于整个第二季度；报道未给出可验证的绝对金额，图表数值暂不变",
+      "numeric": false,
+      "source_label": "CNBC",
+      "source_date": "2026-07-29",
+      "source_url": "https://www.cnbc.com/2026/07/29/openai-cfo-sarah-friar-tells-employees-arr-in-july-topped-all-of-q2.html"
+    }
+  },
   "arr_sources": {
     "openai": {
       "source_label": "Reuters / The Information",
