@@ -105,6 +105,23 @@ def _host_allowed(url, hosts):
         return False
 
 
+def _normalized_source_url(url):
+    try:
+        parsed = urlparse(url)
+        return (
+            parsed.scheme.lower(),
+            (parsed.hostname or "").lower(),
+            re.sub(r"/+$", "", parsed.path or ""),
+        )
+    except Exception:
+        return ("", "", "")
+
+
+def _specific_article_url(url):
+    scheme, host, path = _normalized_source_url(url)
+    return scheme == "https" and bool(host) and path not in ("", "/index.html")
+
+
 def ddg_search(query, hosts, n=8):
     """Return only official-domain DuckDuckGo results, including source URLs."""
     try:
@@ -628,6 +645,10 @@ Rules:
 6. Ignore forecasts, social posts, Reddit commentary, and numbers attributed only to
    anonymous speculation. News reporting of a company executive statement is allowed.
 7. Omit a company when no newer relevant milestone is present.
+8. Never use a company homepage or a generic research/about page as the source. The
+   source must be the specific allowlisted article/result that contains the milestone.
+9. Omit items that merely say no ARR or revenue number was disclosed; that is not a
+   new milestone.
 
 Return JSON only:
 {{
@@ -660,9 +681,18 @@ ALLOWLISTED RESULTS:
             if value is not None and value <= 0:
                 value = None
             minimum, maximum = cfg["bounds"]
+            scanned_urls = {
+                _normalized_source_url(item.get("url") or "")
+                for item in arr_results.get(key, [])
+            }
             rejection_reasons = []
             if not summary:
                 rejection_reasons.append("missing summary")
+            elif re.search(
+                r"(?i)未披露.{0,18}(arr|收入|营收|金额)|没有披露|no (?:new )?.{0,12}(arr|revenue).{0,12}disclos|not disclos",
+                summary,
+            ):
+                rejection_reasons.append("no new milestone")
             if not source_date:
                 rejection_reasons.append("missing source date")
             elif previous_date and source_date < previous_date:
@@ -671,6 +701,19 @@ ALLOWLISTED RESULTS:
                 rejection_reasons.append(
                     f"source domain {(urlparse(url).hostname or 'missing')}"
                 )
+            elif not _specific_article_url(url):
+                rejection_reasons.append("generic source page")
+            elif _normalized_source_url(url) not in scanned_urls:
+                rejection_reasons.append("source not present in scan results")
+            if (
+                previous_event
+                and previous_date
+                and source_date == previous_date
+                and _normalized_source_url(url)
+                != _normalized_source_url(previous_event.get("source_url") or "")
+                and value is None
+            ):
+                rejection_reasons.append("same-date event already preserved")
             if value is not None and not (minimum <= value <= maximum):
                 rejection_reasons.append(f"out of bounds {value}")
             if rejection_reasons:
