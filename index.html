@@ -1072,7 +1072,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
                      padding:1px 7px;border-radius:10px;font-weight:600">82人关注</span>
         <span id="kolTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
       </div>
-      <button onclick="triggerKolRefresh()" id="kolBtn" title="触发后台抓取最新推文并归纳（约1-2分钟）"
+      <button onclick="triggerKolRefresh()" id="kolBtn" title="触发后台抓取最新动态并生成自动摘要（约1-2分钟）"
         style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
                padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
     </div>
@@ -7825,7 +7825,7 @@ function _renderKolGrid(data) {
                  padding:1px 6px;border-radius:4px;text-decoration:none;white-space:nowrap">@${_escH(a.handle)}</a>`
     ).join('');
 
-    // 摘要正文（做成超链接，点击打开二级页面：本次抓取的帖子流水）
+    // 自动摘要正文（点击打开二级页面：本次抓取的帖子流水）
     const hasSum = cat.summary && cat.summary.trim();
     const detailUrl = `kol_detail.html?cat=${encodeURIComponent(cat.name)}`;
     const bodyH  = hasSum
@@ -7834,7 +7834,7 @@ function _renderKolGrid(data) {
            <p style="margin:0;font-size:11.5px;color:#334155;line-height:1.8">${_escH(cat.summary)}<span style="color:${color};font-weight:700;white-space:nowrap"> 查看流水 ›</span></p>
          </a>`
       : (cat.tweet_count
-          ? `<a href="${detailUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;cursor:pointer"><p style="margin:0;font-size:11px;color:#94a3b8">本次摘要未生成，<span style="color:${color};font-weight:700;white-space:nowrap">点击查看 ${cat.tweet_count} 条流水 ›</span></p></a>`
+          ? `<a href="${detailUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;cursor:pointer"><p style="margin:0;font-size:11px;color:#94a3b8">本次自动摘要未生成，<span style="color:${color};font-weight:700;white-space:nowrap">点击查看 ${cat.tweet_count} 条流水 ›</span></p></a>`
           : `<p style="margin:0;font-size:11px;color:#94a3b8;font-style:italic">等待下次刷新生成摘要…</p>`);
 
     // 数据来源注脚
