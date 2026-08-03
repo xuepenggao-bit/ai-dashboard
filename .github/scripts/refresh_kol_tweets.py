@@ -10,17 +10,18 @@ Pipeline:
   1. Load accounts from data/twitter_following.json
   2. For each category, search Bing News for top accounts in that category
   3. Collect news snippets mentioning each person
-  4. Per category: summarise with GPT-4o-mini (GitHub Models)
+  4. Per category: build a deterministic Chinese digest from themes and entities
   5. Write data/twitter_kol_summary.json
 
-Env vars:
-  GITHUB_TOKEN  — auto-injected (for GPT-4o-mini)
+The summariser intentionally has no external AI dependency. GitHub Models was
+retired on 2026-07-30; a local fallback guarantees that non-empty news batches
+cannot silently produce empty summaries again.
 """
-import os, json, re, datetime, time, urllib.parse, requests
+import os, json, re, datetime, time, urllib.parse, requests, html
 import xml.etree.ElementTree as ET
+from collections import Counter
 from email.utils import parsedate_to_datetime
 
-GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '').strip()
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT    = os.path.normpath(os.path.join(SCRIPT_DIR, '..', '..'))
 
@@ -198,83 +199,102 @@ def fetch_news_for_category(cat_name, accounts):
     posts.sort(key=lambda p: p.get('pub_iso', ''), reverse=True)   # 新→旧
     return posts
 
-# ── AI summarisation ─────────────────────────────────────────────────
+# ── Local summarisation (no model/API dependency) ───────────────────
 
-def ai_summarise_category(cat_name, posts):
-    """Use GPT-4o-mini to summarise the past-24h posts for a category."""
-    if not GITHUB_TOKEN or not posts:
+THEME_RULES = [
+    ('大模型与智能体', r'\b(openai|anthropic|claude|chatgpt|gemini|deepmind|llm|large language model|agentic|ai agent)\b'),
+    ('算力、芯片与数据中心', r'\b(nvidia|gpu|tpu|semiconductor|chip|memory|hbm|rubin|blackwell|amd|tsmc|data ?cent(?:er|re)|compute)\b'),
+    ('AI安全、监管与人才', r'\b(ai safety|regulat|policy|government|copyright|security|risk|employment|job loss|talent|researcher)\b'),
+    ('科技公司与产品应用', r'\b(microsoft|google|meta|amazon|aws|apple|tesla|tiktok|software|enterprise|cloud|advertising)\b'),
+    ('美股与科技股交易', r'\b(stock|shares|equity|etf|valuation|earnings|buy|sell|outflow|inflow|investor|market)\b'),
+    ('利率、债券与宏观政策', r'\b(bond|yield|interest rate|inflation|federal reserve|\bfed\b|econom|tariff|treasury|dollar|trade war)\b'),
+    ('加密资产与数字金融', r'\b(bitcoin|ethereum|crypto|blockchain|stablecoin)\b'),
+]
+
+ENTITY_RULES = [
+    ('OpenAI', r'\bopenai\b|\bchatgpt\b'),
+    ('Anthropic', r'\banthropic\b|\bclaude\b'),
+    ('NVIDIA', r'\bnvidia\b|\brubin\b|\bblackwell\b'),
+    ('Google / DeepMind', r'\bgoogle\b|\bdeepmind\b|\bgemini\b'),
+    ('Microsoft', r'\bmicrosoft\b|\bazure\b'),
+    ('Meta', r'\bmeta\b|\bllama\b'),
+    ('Amazon / AWS', r'\bamazon\b|\baws\b'),
+    ('Apple', r'\bapple\b'),
+    ('Tesla / xAI', r'\btesla\b|\bxai\b|\belon musk\b'),
+    ('DeepSeek', r'\bdeepseek\b'),
+    ('阿里巴巴', r'\balibaba\b|\bqwen\b'),
+    ('AMD', r'\bamd\b'),
+    ('台积电', r'\btsmc\b'),
+]
+
+CATEGORY_TAKEAWAY = {
+    'AI技术研究': '整体主线是模型能力竞争、研究人才流动与安全治理。',
+    'AI应用与科技': '整体主线是AI产品落地、算力迭代与科技公司商业化。',
+    '投资策略': '整体主线是风险收益权衡、科技资产交易与组合调整。',
+    '宏观与市场': '整体主线是宏观政策、市场风险偏好与AI主题交易。',
+}
+
+def _clean_news_text(value):
+    value = html.unescape(str(value or '')).replace('\xa0', ' ')
+    return re.sub(r'\s+', ' ', value).strip()
+
+def _zh_join(items):
+    items = list(items)
+    if not items:
         return ''
-    lines = [f"[@{p['handle']}] {p['title']} — {p['desc'][:150]}" for p in posts[:50]]
+    if len(items) == 1:
+        return items[0]
+    return '、'.join(items[:-1]) + '和' + items[-1]
 
-    sample = '\n'.join(lines)
-    prompt = (
-        f'以下是"{cat_name}"分类下多位意见领袖过去24小时的相关新闻报道'
-        f'（共{len(posts)}条，来源：Google/Bing新闻）：\n\n'
-        f'{sample}\n\n'
-        f'请用3-5句中文总结这批意见领袖近期关注的核心主题与主要观点，要求：\n'
-        f'① 聚焦共同关注点，如有具体观点可点名说明\n'
-        f'② 涉及AI技术、市场、投资趋势等主要议题要提及\n'
-        f'③ 客观中性，不超过180字\n\n'
-        f'输出（仅返回JSON，不要任何解释）：\n'
-        f'{{"summary":"3-5句中文观点概括"}}'
-    )
-    try:
-        r = requests.post(
-            'https://models.inference.ai.azure.com/chat/completions',
-            headers={'Authorization': f'Bearer {GITHUB_TOKEN}',
-                     'Content-Type':  'application/json'},
-            json={'model':       'gpt-4o-mini',
-                  'messages':    [{'role': 'user', 'content': prompt}],
-                  'max_tokens':  500,
-                  'temperature': 0.3},
-            timeout=30)
-        r.raise_for_status()
-        raw = r.json()['choices'][0]['message']['content'].strip()
-        m   = re.search(r'\{.*\}', raw, re.DOTALL)
-        if m:
-            return json.loads(m.group()).get('summary', '').strip()
-    except Exception as e:
-        print(f'  [AI] {cat_name}: {e}')
-    return ''
+def build_local_summary(cat_name, posts):
+    """Create a stable Chinese digest from the retrieved evidence.
 
-# ── 帖子流水翻译（英文 → 简体中文）────────────────────────────────────
+    This is deliberately extractive: it reports recurring themes, named entities
+    and the accounts with the most related coverage, without inventing opinions.
+    """
+    if not posts:
+        return '过去24小时暂无足够的新动态。'
 
-def translate_posts(posts, batch=15):
-    """批量把每条 post 的 title/desc 翻译成中文，写入 title_zh / desc_zh。
-    失败的批次保留英文原文（前端会回退显示原文）。"""
-    if not GITHUB_TOKEN or not posts:
-        return
-    done = 0
-    for i in range(0, len(posts), batch):
-        chunk = posts[i:i+batch]
-        items = [{'t': p.get('title', ''), 'd': p.get('desc', '')} for p in chunk]
-        prompt = (
-            '把下列新闻条目的标题 t 和摘要 d 翻译成简体中文，公司名/人名/产品名等专有名词'
-            '按习惯翻译或保留英文，不要增删信息、不要解释。\n'
-            '仅返回 JSON 数组，每项 {"t":"中文标题","d":"中文摘要"}，数量与顺序必须与输入完全一致：\n\n'
-            + json.dumps(items, ensure_ascii=False)
-        )
-        try:
-            r = requests.post(
-                'https://models.inference.ai.azure.com/chat/completions',
-                headers={'Authorization': f'Bearer {GITHUB_TOKEN}', 'Content-Type': 'application/json'},
-                json={'model': 'gpt-4o-mini',
-                      'messages': [{'role': 'user', 'content': prompt}],
-                      'max_tokens': 2200, 'temperature': 0.2},
-                timeout=45)
-            r.raise_for_status()
-            raw = r.json()['choices'][0]['message']['content'].strip()
-            m   = re.search(r'\[.*\]', raw, re.DOTALL)
-            arr = json.loads(m.group()) if m else []
-            for p, tr in zip(chunk, arr):
-                if isinstance(tr, dict):
-                    if tr.get('t'): p['title_zh'] = str(tr['t']).strip()
-                    if tr.get('d'): p['desc_zh']  = str(tr['d']).strip()
-            done += len(chunk)
-            print(f'    译 {done}/{len(posts)}')
-        except Exception as e:
-            print(f'    翻译批次 {i} 失败（保留英文）: {e}')
-        time.sleep(3)   # 控制速率，避免 GitHub Models 限流
+    unique = {}
+    account_counts = Counter()
+    account_names = {}
+    for post in posts:
+        post['title'] = _clean_news_text(post.get('title'))
+        post['desc'] = _clean_news_text(post.get('desc'))
+        title_key = re.sub(r'\W+', '', post['title'].lower())[:180]
+        unique.setdefault(title_key or str(len(unique)), post)
+        handle = str(post.get('handle') or '').strip()
+        if handle:
+            account_counts[handle] += 1
+            account_names[handle] = str(post.get('display_name') or handle).strip()
+
+    texts = [f"{p.get('title', '')} {p.get('desc', '')}".lower() for p in unique.values()]
+    theme_counts = Counter()
+    entity_counts = Counter()
+    for text in texts:
+        for label, pattern in THEME_RULES:
+            if re.search(pattern, text, re.I):
+                theme_counts[label] += 1
+        for label, pattern in ENTITY_RULES:
+            if re.search(pattern, text, re.I):
+                entity_counts[label] += 1
+
+    themes = [label for label, count in theme_counts.most_common(3) if count >= 2]
+    entities = [label for label, count in entity_counts.most_common(3) if count >= 2]
+    active = [account_names[h] for h, _ in account_counts.most_common(2)]
+
+    parts = [f'过去24小时共收录{len(posts)}条相关动态。']
+    if themes:
+        parts.append(f'讨论主要集中在{_zh_join(themes)}。')
+    else:
+        parts.append(f'内容围绕{cat_name}的最新行业与市场变化展开。')
+    if entities:
+        parts.append(f'高频对象包括{_zh_join(entities)}。')
+    if active:
+        parts.append(f'{_zh_join(active)}相关报道较多。')
+    parts.append(CATEGORY_TAKEAWAY.get(cat_name, '整体反映行业关注点仍在快速变化。'))
+    summary = ''.join(parts)
+    return summary if len(summary) <= 180 else summary[:179].rstrip('，；。') + '。'
 
 # ── main ─────────────────────────────────────────────────────────────
 
@@ -302,17 +322,18 @@ def main():
 
         summary = ''
         if posts:
-            print(f'  翻译 {cat_name} 流水（{n_snip} 条）…')
-            translate_posts(posts)
-            print(f'  Summarising {cat_name} ({n_snip} posts)…')
-            summary = ai_summarise_category(cat_name, posts)
+            print(f'  Building local digest for {cat_name} ({n_snip} posts)…')
+            summary = build_local_summary(cat_name, posts)
             if summary:
                 print(f'  Summary: {summary[:80]}…')
+            else:
+                raise RuntimeError(f'{cat_name}: posts exist but summary is empty')
 
         output_cats.append({
             'name':        cat_name,
             'color':       mc['color'],
             'summary':     summary,
+            'summary_method': 'local-theme-entity-v1',
             'tweet_count': n_snip,
             'accounts':    [{'handle': a['handle'],
                              'display_name': a.get('display_name', a['handle'])}
@@ -324,6 +345,7 @@ def main():
         'last_updated':   now_ts(),
         'has_tweets':     total_snippets > 0,
         'data_source':    'Google/Bing News RSS (24h)',
+        'summary_method': 'local-theme-entity-v1',
         'total_accounts': all_count,
         'categories':     output_cats,
     }
