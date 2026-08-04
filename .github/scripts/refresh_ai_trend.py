@@ -519,6 +519,7 @@ def _capex_candidate(key, cfg, results):
             window_start = max(0, capex_match.start() - 260)
             window_end = min(len(text), capex_match.end() + 300)
             window = text[window_start:window_end]
+            relative_capex = capex_match.start() - window_start
             # Call reports commonly say "this year" instead of repeating the
             # calendar year. The source date has already been verified above,
             # so that wording safely binds the guidance to its publication year.
@@ -535,7 +536,6 @@ def _capex_candidate(key, cfg, results):
             ):
                 continue
             if not is_official:
-                relative_capex = capex_match.start() - window_start
                 entities = []
                 for entity_key, pattern in (
                     ("alphabet", r"\balphabet\b|\bgoogle\b"),
@@ -578,7 +578,6 @@ def _capex_candidate(key, cfg, results):
                 # The closest monetary value to the Capex phrase is normally
                 # the current point guidance; this avoids selecting a prior
                 # estimate mentioned later in the same quote.
-                relative_capex = capex_match.start() - window_start
                 nearest = min(
                     money,
                     key=lambda item: min(
