@@ -49,6 +49,10 @@ COMPANIES = {
         "query": "site:ir.aboutamazon.com latest earnings 2026 capital expenditures guidance",
         "hosts": ("ir.aboutamazon.com",),
         "landing_urls": ("https://ir.aboutamazon.com/quarterly-results/default.aspx",),
+        # Amazon sometimes gives the full-year Capex total only on the call.
+        # AP's company hub exposes those call reports without relying on a
+        # search engine having indexed the article yet.
+        "trusted_landing_urls": ("https://apnews.com/hub/amazon-com-inc",),
         "bounds": (500, 3000),
         "source_label": "Amazon 官方业绩披露",
     },
@@ -354,6 +358,44 @@ def discover_official_urls(cfg):
     )[:4]
 
 
+def discover_trusted_results(cfg):
+    """Crawl configured trusted company hubs for fresh call-report articles."""
+    results = []
+    seen = set()
+    for landing in cfg.get("trusted_landing_urls", ()):
+        if not _host_allowed(landing, TRUSTED_CAPEX_HOSTS):
+            continue
+        try:
+            response = requests.get(
+                landing,
+                headers={"User-Agent": "Mozilla/5.0 AITrendMonitor/1.0"},
+                timeout=25,
+            )
+            response.raise_for_status()
+            candidates = []
+            for href in re.findall(r'''(?i)href\s*=\s*["']([^"'#]+)''', response.text):
+                candidate = urljoin(response.url, html.unescape(href))
+                if candidate in seen or not _host_allowed(
+                    candidate, TRUSTED_CAPEX_HOSTS
+                ):
+                    continue
+                # Trusted hub pages contain hundreds of navigation links. Only
+                # fetch article-shaped links; company binding and Capex guards
+                # still decide whether any number is accepted.
+                if "/article/" not in (urlparse(candidate).path or ""):
+                    continue
+                seen.add(candidate)
+                candidates.append(candidate)
+            for candidate in candidates[:12]:
+                result = fetch_page_result(candidate, TRUSTED_CAPEX_HOSTS)
+                if result:
+                    results.append(result)
+        except Exception as exc:
+            print(f"  [Trusted landing] {landing} failed: {exc}")
+    print(f"  [Trusted landing] {cfg['name']} -> {len(results)} article results")
+    return results
+
+
 def _merge_results(target, seen, items):
     for item in items:
         url = item.get("url") or ""
@@ -404,6 +446,7 @@ def latest_capex_results(key, cfg, saved_source_url=""):
         f'"{name}" raises {year} capital expenditures guidance',
     ]
     media = []
+    _merge_results(media, seen, discover_trusted_results(cfg))
     for query in queries:
         _merge_results(media, seen, bing_rss_search(query, media_hosts, n=8))
         _merge_results(media, seen, ddg_search(query, media_hosts, n=8))
@@ -462,7 +505,15 @@ def _capex_candidate(key, cfg, results):
             window_start = max(0, capex_match.start() - 260)
             window_end = min(len(text), capex_match.end() + 300)
             window = text[window_start:window_end]
-            if "2026" not in window:
+            # Call reports commonly say "this year" instead of repeating the
+            # calendar year. The source date has already been verified above,
+            # so that wording safely binds the guidance to its publication year.
+            source_year = source_date[:4]
+            if source_year not in window and not re.search(
+                r"\b(?:this|current|full)[- ]year(?:'s)?\b|\bfor the year\b",
+                window,
+                re.I,
+            ):
                 continue
             if not is_official:
                 relative_capex = capex_match.start() - window_start
