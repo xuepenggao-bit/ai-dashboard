@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Refresh hyperscaler Capex guidance and frontier-AI ARR milestones.
+"""Refresh hyperscaler cloud revenue, Capex guidance and frontier-AI ARR milestones.
 
 GitHub Actions runs this scanner every three hours and also exposes a manual trigger.
 Capex prefers company investor-relations domains; when a number is disclosed
@@ -294,7 +294,7 @@ def fetch_page_result(url, hosts):
                 break
         windows = []
         for match in re.finditer(
-            r"(?i)capital expenditures?|capex|capital spending|annualized recurring revenue|revenue run[- ]rate",
+            r"(?i)capital expenditures?|capex|capital spending|annualized recurring revenue|revenue run[- ]rate|google cloud.{0,50}revenue|aws.{0,35}(?:net )?sales|microsoft cloud revenue",
             text,
         ):
             window = text[max(0, match.start() - 420) : match.end() + 1100]
@@ -312,9 +312,19 @@ def fetch_page_result(url, hosts):
             )
             windows.append((score, window))
         windows.sort(key=lambda item: item[0], reverse=True)
+        cloud_windows = []
+        for match in re.finditer(
+            r"(?i)google cloud.{0,50}revenue|aws.{0,35}(?:net )?sales|microsoft cloud revenue",
+            text,
+        ):
+            cloud_windows.append(
+                text[max(0, match.start() - 260) : match.end() + 900]
+            )
+        selected_windows = cloud_windows[:3]
+        selected_windows.extend(window for _, window in windows[:4])
         body = (
-            " … ".join(window for _, window in windows[:4])[:3200]
-            if windows
+            " … ".join(selected_windows)[:6400]
+            if selected_windows
             else text[:1400]
         )
         return {
@@ -660,6 +670,119 @@ def _capex_candidate(key, cfg, results):
     return chosen
 
 
+CLOUD_REVENUE_KEYS = ("alphabet", "amazon", "microsoft")
+_CLOUD_REVENUE_PATTERNS = {
+    "alphabet": (
+        re.compile(
+            r"Google Cloud.{0,260}?revenues?.{0,100}?\bto\s+\$?([0-9]{1,3}(?:\.[0-9]+)?)\s*billion",
+            re.I,
+        ),
+        re.compile(
+            r"Google Cloud.{0,120}?revenue(?:s)?\s+(?:was|of)\s+\$?([0-9]{1,3}(?:\.[0-9]+)?)\s*billion",
+            re.I,
+        ),
+    ),
+    "amazon": (
+        re.compile(
+            r"AWS(?:\s+segment)?\s+(?:net\s+)?sales.{0,180}?\bto\s+\$?([0-9]{1,3}(?:\.[0-9]+)?)\s*billion",
+            re.I,
+        ),
+        re.compile(
+            r"AWS.{0,100}?annualized revenue run rate.{0,40}?\$?([0-9]{1,3}(?:\.[0-9]+)?)\s*billion",
+            re.I,
+        ),
+    ),
+    "microsoft": (
+        re.compile(
+            r"Microsoft Cloud revenue(?:\s+(?:was|of))?\s+\$?([0-9]{1,3}(?:\.[0-9]+)?)\s*billion",
+            re.I,
+        ),
+    ),
+}
+
+
+def _calendar_quarter(text, source_date):
+    """Return the calendar quarter represented by an earnings release."""
+    match = re.search(
+        r"(?:quarter|three months) ended\s+(March|June|September|December)\s+\d{1,2},\s*(20\d{2})",
+        text or "",
+        re.I,
+    )
+    month_to_quarter = {"march": 1, "june": 2, "september": 3, "december": 4}
+    if match:
+        return f"{match.group(2)} Q{month_to_quarter[match.group(1).lower()]}"
+    try:
+        published = datetime.date.fromisoformat(source_date)
+    except (TypeError, ValueError):
+        return ""
+    # Large U.S. cloud vendors normally publish calendar-quarter results in
+    # January, April, July and October. This fallback is used only when the
+    # page/snippet omitted the explicit quarter-end date.
+    if published.month in (1, 2):
+        return f"{published.year - 1} Q4"
+    if published.month in (4, 5):
+        return f"{published.year} Q1"
+    if published.month in (7, 8):
+        return f"{published.year} Q2"
+    if published.month in (10, 11):
+        return f"{published.year} Q3"
+    return ""
+
+
+def _cloud_revenue_candidate(key, cfg, results):
+    """Extract the newest explicit quarterly cloud-revenue disclosure."""
+    candidates = []
+    for result in results:
+        url = str(result.get("url") or "")
+        if not _host_allowed(url, cfg["hosts"]):
+            continue
+        source_date = _extract_date(
+            result.get("date"), result.get("title"), result.get("body"), url
+        )
+        if not source_date:
+            continue
+        text = _clean_text(f"{result.get('title', '')}. {result.get('body', '')}")
+        for pattern in _CLOUD_REVENUE_PATTERNS[key]:
+            match = pattern.search(text)
+            if not match:
+                continue
+            value_b = float(match.group(1))
+            # Cloud quarterly revenue is currently between $5B and $100B.
+            if not 5 <= value_b <= 100:
+                continue
+            quarter = _calendar_quarter(text, source_date)
+            if not quarter:
+                continue
+            local = text[max(0, match.start() - 140) : match.end() + 140]
+            yoy_match = re.search(
+                r"(?:increased|grew|growth(?:\s+of)?)\s+(?:by\s+)?([0-9]{1,3}(?:\.[0-9]+)?)%",
+                local,
+                re.I,
+            )
+            candidates.append(
+                {
+                    "quarter": quarter,
+                    "revenue_b": round(value_b, 3),
+                    "latest_yoy_pct": (
+                        round(float(yoy_match.group(1)), 1) if yoy_match else None
+                    ),
+                    "source_label": cfg["source_label"].replace("业绩披露", "财报"),
+                    "source_date": source_date,
+                    "source_url": url,
+                }
+            )
+            break
+    if not candidates:
+        return {}
+    candidates.sort(key=lambda item: item["source_date"], reverse=True)
+    return candidates[0]
+
+
+def _quarter_sort_key(label):
+    match = re.fullmatch(r"(20\d{2}) Q([1-4])", str(label or ""))
+    return (int(match.group(1)), int(match.group(2))) if match else (0, 0)
+
+
 def latest_arr_results(key, cfg):
     """Search recent company and reliable-media ARR disclosures."""
     today = datetime.date.today()
@@ -816,10 +939,26 @@ def main():
         )
         for key, cfg in COMPANIES.items()
     }
+    saved_cloud = (base.get("cloud_revenue") or {}).get("companies") or {}
+    cloud_results = {}
+    for key in CLOUD_REVENUE_KEYS:
+        cfg = COMPANIES[key]
+        merged = list(capex_results.get(key) or [])
+        seen = {item.get("url") for item in merged}
+        saved_url = str((saved_cloud.get(key) or {}).get("source_url") or "")
+        if saved_url:
+            direct = fetch_page_result(saved_url, cfg["hosts"])
+            if direct:
+                _merge_results(merged, seen, [direct])
+        cloud_results[key] = merged
     arr_results = {
         key: latest_arr_results(key, cfg) for key, cfg in ARR_COMPANIES.items()
     }
-    scan_succeeded = any(capex_results.values()) or any(arr_results.values())
+    scan_succeeded = (
+        any(capex_results.values())
+        or any(cloud_results.values())
+        or any(arr_results.values())
+    )
     if not scan_succeeded:
         print("No allowlisted search results; preserving snapshot and last-checked time.")
         return
@@ -941,6 +1080,115 @@ def main():
             base["meta_capex_low_yi"] = meta.get("guidance_low_yi")
             base["meta_capex_high_yi"] = meta.get("guidance_high_yi")
 
+    if any(cloud_results.values()):
+        cloud_extracted = {
+            key: _cloud_revenue_candidate(key, COMPANIES[key], cloud_results.get(key, []))
+            for key in CLOUD_REVENUE_KEYS
+        }
+        cloud = base.setdefault("cloud_revenue", {})
+        cloud.setdefault("unit", "USD billion")
+        quarters = cloud.setdefault("quarters", [])
+        companies = cloud.setdefault("companies", {})
+        pending = cloud.get("pending_quarters") or {}
+        display_names = {
+            "alphabet": "Google Cloud",
+            "amazon": "Amazon Web Services",
+            "microsoft": "Microsoft Cloud",
+        }
+        metrics = {
+            "alphabet": "Google Cloud segment revenue",
+            "amazon": "AWS segment net sales",
+            "microsoft": "Microsoft Cloud revenue",
+        }
+        for key in CLOUD_REVENUE_KEYS:
+            candidate = cloud_extracted.get(key) or {}
+            quarter = str(candidate.get("quarter") or "")
+            source_date = _valid_date(candidate.get("source_date"))
+            source_url = str(candidate.get("source_url") or "")
+            value_b = _number(candidate.get("revenue_b"))
+            if (
+                not quarter
+                or value_b is None
+                or not source_date
+                or not _host_allowed(source_url, COMPANIES[key]["hosts"])
+            ):
+                print(f"  [Cloud:{key}] no valid new quarterly disclosure")
+                continue
+            item = companies.setdefault(
+                key,
+                {
+                    "display_name": display_names[key],
+                    "metric": metrics[key],
+                    "revenue_b": [],
+                },
+            )
+            previous_date = _valid_date(item.get("source_date"))
+            if previous_date and source_date < previous_date:
+                print(f"  [Cloud:{key}] older disclosure {source_date}; preserving {previous_date}")
+                continue
+            if quarter in quarters:
+                # Preserve the more precise saved table value for an existing
+                # quarter; rounded headlines (for example $24.8B) must not
+                # overwrite exact supplemental-table data ($24.768B).
+                if candidate.get("latest_yoy_pct") is not None and item.get("latest_yoy_pct") is None:
+                    item["latest_yoy_pct"] = candidate["latest_yoy_pct"]
+                    changed = True
+                print(f"  [Cloud:{key}] {quarter} verified; precise snapshot preserved")
+                continue
+            record = {
+                "revenue_b": round(value_b, 3),
+                "latest_yoy_pct": candidate.get("latest_yoy_pct"),
+                "source_label": candidate.get("source_label"),
+                "source_date": source_date,
+                "source_url": source_url,
+            }
+            if pending.setdefault(quarter, {}).get(key) != record:
+                pending[quarter][key] = record
+                changed = True
+                print(f"  [Cloud:{key}] staged {quarter} revenue ${value_b:g}B")
+
+        for quarter in sorted(list(pending), key=_quarter_sort_key):
+            staged = pending.get(quarter) or {}
+            if not all(key in staged for key in CLOUD_REVENUE_KEYS):
+                continue
+            if quarters and _quarter_sort_key(quarter) <= _quarter_sort_key(quarters[-1]):
+                del pending[quarter]
+                changed = True
+                continue
+            quarters.append(quarter)
+            for key in CLOUD_REVENUE_KEYS:
+                item = companies[key]
+                item.setdefault("revenue_b", []).append(staged[key]["revenue_b"])
+                item.update(
+                    {
+                        "display_name": display_names[key],
+                        "metric": metrics[key],
+                        "latest_yoy_pct": staged[key].get("latest_yoy_pct"),
+                        "source_label": staged[key].get("source_label"),
+                        "source_date": staged[key]["source_date"],
+                        "source_url": staged[key]["source_url"],
+                    }
+                )
+            while len(quarters) > 4:
+                quarters.pop(0)
+                for key in CLOUD_REVENUE_KEYS:
+                    companies[key]["revenue_b"].pop(0)
+            del pending[quarter]
+            changed = True
+            print(f"  [Cloud] finalized complete {quarter} three-company comparison")
+
+        if pending:
+            cloud["pending_quarters"] = pending
+        else:
+            cloud.pop("pending_quarters", None)
+        source_dates = [
+            _valid_date((companies.get(key) or {}).get("source_date"))
+            for key in CLOUD_REVENUE_KEYS
+        ]
+        source_dates = [value for value in source_dates if value]
+        if source_dates:
+            cloud["as_of"] = max(source_dates)
+
     if any(arr_results.values()):
         arr_extracted = {
             key: _arr_candidate(key, cfg, arr_results.get(key, []))
@@ -1058,10 +1306,11 @@ def main():
     # to decide whether opening the macro tab should dispatch an immediate scan.
     base["last_checked"] = timestamp
     base["scan_interval_hours"] = 3
-    base["scanner_method"] = "local-evidence-v1"
+    base["scanner_method"] = "local-evidence-v2"
     base["note"] = (
-        "GitHub Actions每3小时自动扫描；优先采用四家公司官方投资者关系披露，"
-        "业绩会仅在官方文字稿不可得时采用AP/Reuters/CNBC直接报道"
+        "GitHub Actions每3小时自动扫描三大云业务季度收入和四家公司Capex；"
+        "优先采用公司官方投资者关系披露，业绩会仅在官方文字稿不可得时采用"
+        "AP/Reuters/CNBC直接报道"
     )
     base["arr_note"] = (
         "年化收入运行率公开里程碑（非传统合同ARR） · "
