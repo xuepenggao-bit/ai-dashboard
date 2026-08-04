@@ -1,17 +1,18 @@
 {
-  "updated": "2026-07-30 12:02",
-  "last_checked": "2026-08-04 04:02",
+  "updated": "2026-08-04 09:33:00",
+  "last_checked": "2026-08-04 09:33:00",
   "scan_interval_hours": 3,
-  "capex_as_of": "2026-07-29",
+  "scanner_method": "local-evidence-v1",
+  "capex_as_of": "2026-07-30",
   "capex_unit": "USD 100 million",
-  "note": "GitHub Actions每3小时自动扫描；Capex仅采用四家公司官方投资者关系披露，ARR无明确金额时只记录事件、不反推数值",
-  "hyperscaler_capex_2026e_low_yi": 7000,
-  "hyperscaler_capex_2026e_mid_yi": 7125,
-  "hyperscaler_capex_2026e_high_yi": 7250,
-  "hyperscaler_capex_2026e_yi": 7125,
+  "note": "GitHub Actions每3小时自动扫描；优先采用四家公司官方投资者关系披露，业绩会仅在官方文字稿不可得时采用AP/Reuters/CNBC直接报道",
+  "hyperscaler_capex_2026e_low_yi": 7200,
+  "hyperscaler_capex_2026e_mid_yi": 7325,
+  "hyperscaler_capex_2026e_high_yi": 7450,
+  "hyperscaler_capex_2026e_yi": 7325,
   "hyperscaler_capex_2025a_yi": 3564.9,
-  "hyperscaler_yoy_pct": 99.9,
-  "hyperscaler_detail": "GOOGL $195–205B · MSFT ~$175B · AMZN ~$200B · META $130–145B",
+  "hyperscaler_yoy_pct": 105.5,
+  "hyperscaler_detail": "GOOGL $195–205B · MSFT ~$175B · AMZN ~$220B · META $130–145B",
   "capex_companies": {
     "alphabet": {
       "display_name": "Alphabet / Google",
@@ -43,14 +44,14 @@
       "display_name": "Amazon",
       "actual_2024_yi": 776.6,
       "actual_2025_yi": 1283.2,
-      "guidance_low_yi": 2000,
-      "guidance_high_yi": 2000,
+      "guidance_low_yi": 2200,
+      "guidance_high_yi": 2200,
       "guidance_type": "point",
       "period": "CY2026",
-      "basis_note": "CY2026 · 约$200B，未披露上下限",
-      "source_label": "Amazon FY2025业绩",
-      "source_date": "2026-02-05",
-      "source_url": "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Fourth-Quarter-Results/default.aspx"
+      "basis_note": "CY2026 · 现金Capex约$220B；内存成本上升推动较此前$200B指引上调",
+      "source_label": "AP · Amazon 2026 Q2业绩会",
+      "source_date": "2026-07-30",
+      "source_url": "https://apnews.com/article/b4ce02b4666a35b8975823c5c22072ee"
     },
     "meta": {
       "display_name": "Meta",
@@ -69,7 +70,7 @@
   "mag7_pe_median": 25.0,
   "mag7_pe_avg": 41,
   "amazon_capex_2025a_yi": 1283.2,
-  "amazon_capex_2026e_yi": 2000,
+  "amazon_capex_2026e_yi": 2200,
   "meta_capex_low_yi": 1250,
   "meta_capex_high_yi": 1450,
   "arr_labels": [
@@ -91,7 +92,7 @@
     470
   ],
   "arr_as_of": "2026-07-29",
-  "arr_note": "年化收入运行率公开里程碑（非传统合同ARR） · 无明确金额的消息只记录事件，不反推数值 · 空值不补成下降趋势",
+  "arr_note": "年化收入运行率公开里程碑（非传统合同ARR） · 仅提取来源明确给出的金额，不从增速或定性表述反推数值",
   "arr_latest_events": {
     "openai": {
       "company": "OpenAI",
