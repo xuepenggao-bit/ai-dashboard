@@ -153,6 +153,31 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .ct{font-size:13px;color:var(--text2);font-weight:600;letter-spacing:.01em}
 .cbadge{font-size:11px;padding:3px 9px;border-radius:5px;background:rgba(37,99,235,.08);color:var(--blue);font-weight:500}
+.cloud-compare-card{padding:18px;border:1px solid #dbeafe;background:linear-gradient(145deg,#f8fbff 0%,#fff 55%,#f8fafc 100%);overflow:hidden}
+.cloud-compare-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.cloud-compare-title{font-size:15px;font-weight:850;color:#0f172a;letter-spacing:-.01em}
+.cloud-compare-subtitle{font-size:10.5px;color:#64748b;line-height:1.6;margin-top:4px}
+.cloud-compare-stamp{flex:0 0 auto;padding:4px 9px;border:1px solid #bfdbfe;border-radius:999px;background:rgba(239,246,255,.9);color:#1d4ed8;font-size:9.5px;font-weight:750;white-space:nowrap}
+.cloud-chart-panel{min-width:0;padding:13px 14px 10px;border:1px solid rgba(203,213,225,.8);border-radius:11px;background:rgba(255,255,255,.88);box-shadow:0 3px 12px rgba(15,23,42,.035)}
+.cloud-chart-panel canvas{width:100%!important;max-width:100%!important}
+.cloud-chart-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:12px;font-weight:800;color:#334155}
+.cloud-chart-unit{font-size:9px;font-weight:650;color:#94a3b8}
+.cloud-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.cloud-summary{position:relative;min-width:0;padding:11px 12px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;overflow:hidden}
+.cloud-summary::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--cloud-accent)}
+.cloud-summary-google{--cloud-accent:#4285f4}.cloud-summary-amazon{--cloud-accent:#ff9900}.cloud-summary-microsoft{--cloud-accent:#00a4ef}
+.cloud-summary-name{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:850;color:#1e293b}
+.cloud-summary-dot{width:7px;height:7px;border-radius:50%;background:var(--cloud-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--cloud-accent) 14%,transparent)}
+.cloud-summary-main{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:8px}
+.cloud-summary-value{font-size:19px;font-weight:850;color:#0f172a;letter-spacing:-.025em}
+.cloud-summary-growth{font-size:10px;font-weight:800;color:#059669;white-space:nowrap}
+.cloud-summary-metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px;padding-top:8px;border-top:1px solid #eef2f7}
+.cloud-summary-metric span{display:block;font-size:8.5px;color:#94a3b8;margin-bottom:2px}
+.cloud-summary-metric strong{display:block;font-size:10.5px;color:#475569;font-weight:800}
+.cloud-summary-source{display:inline-block;margin-top:7px;font-size:9px;color:#2563eb;text-decoration:none;font-weight:650;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.cloud-compare-note{margin-top:10px;padding-top:9px;border-top:1px dashed #cbd5e1;font-size:9.5px;line-height:1.6;color:#64748b}
+@media(max-width:900px){.cloud-summary-grid{grid-template-columns:1fr}.cloud-compare-head{align-items:flex-start}}
+@media(max-width:600px){.cloud-compare-stamp{display:none}.cloud-compare-card{padding:14px}.cloud-summary-main{align-items:flex-end}}
 .port-stock-name-line{display:flex;align-items:center;gap:6px;min-width:0}
 .port-stock-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--text)}
 .port-hk-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:25px;height:17px;padding:0 5px;border:1px solid rgba(0,113,227,.24);border-radius:5px;background:linear-gradient(180deg,#f2f8ff 0%,#e4f1ff 100%);color:#0667c9;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;font-size:9px;font-weight:800;letter-spacing:.06em;line-height:1;box-shadow:0 1px 2px rgba(0,102,204,.08),inset 0 1px 0 rgba(255,255,255,.9)}
@@ -1083,16 +1108,16 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- 四大云公司 Capex 与前沿 AI ARR：GitHub Actions 每3小时自动扫描；进入本页时自动补触发一次 -->
+  <!-- 云收入、四大云公司 Capex 与前沿 AI ARR：GitHub Actions 每3小时自动扫描；进入本页时自动补触发一次 -->
   <div class="card mb12" style="padding:13px 16px;border-left:3px solid #2563eb;background:linear-gradient(135deg,#fff 0%,#f8fbff 100%)">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
       <div>
         <div style="font-size:13px;font-weight:800;color:#1e293b">四大云公司资本开支指引</div>
-        <div style="font-size:10.5px;color:#64748b;margin-top:3px">后台每3小时扫描公司财报、官方披露与可靠媒体；进入本页时自动补刷一次</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:3px">后台每3小时扫描云收入、公司财报、官方披露与可靠媒体；进入本页时自动补刷一次</div>
       </div>
       <div style="display:flex;align-items:center;gap:9px;margin-left:auto">
         <span id="capexTs" style="font-size:10.5px;color:#94a3b8;font-weight:500;white-space:nowrap">载入上次快照…</span>
-        <button onclick="triggerCapexRefresh()" id="capexBtn" title="立即触发 GitHub Actions 扫描最新 Capex 指引及 OpenAI / Anthropic ARR 里程碑（约1-2分钟）"
+        <button onclick="triggerCapexRefresh()" id="capexBtn" title="立即触发 GitHub Actions 扫描最新云收入、Capex 指引及 OpenAI / Anthropic ARR 里程碑（约1-2分钟）"
           style="background:#2563eb;border:1px solid #1d4ed8;color:#fff;border-radius:7px;
                  padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:750;
                  box-shadow:0 1px 2px rgba(37,99,235,.18);white-space:nowrap">↻ 立即扫描</button>
@@ -1148,6 +1173,57 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div id="arrSourceSummary" class="tx3 mt4" style="font-size:10px;line-height:1.55">仅连接已公开的年化收入运行率里程碑 · 蓝=OpenAI 紫=Anthropic · 单位$亿</div>
       <div id="arrLatestEvent" style="display:none;margin-top:7px;padding:7px 8px;border-radius:7px;background:#eff6ff;border:1px solid #dbeafe;font-size:10px;line-height:1.5;color:#334155"></div>
     </div>
+  </div>
+
+  <!-- 三大云业务收入与资本开支：季度收入统一按自然季度，年度 Capex 延用上方公司指引口径 -->
+  <div class="card cloud-compare-card mb16">
+    <div class="cloud-compare-head">
+      <div>
+        <div class="cloud-compare-title">云业务收入增长 vs 年度资本开支扩张</div>
+        <div class="cloud-compare-subtitle">最近四个自然季度云业务收入，配对 2024A、2025A 与最新 2026E Capex；用“Capex ÷ 最新季度收入年化值”观察投资强度</div>
+      </div>
+      <span class="cloud-compare-stamp" id="cloudRevenueTs">载入最新财报快照…</span>
+    </div>
+    <div class="g2">
+      <div class="cloud-chart-panel">
+        <div class="cloud-chart-title"><span>最近四季度云业务收入</span><span class="cloud-chart-unit">USD 十亿美元</span></div>
+        <div style="height:240px"><canvas id="cCloudRevenue"></canvas></div>
+      </div>
+      <div class="cloud-chart-panel">
+        <div class="cloud-chart-title"><span>年度 Capex 变化趋势</span><span class="cloud-chart-unit">USD 十亿美元 · 2026E 为指引中值</span></div>
+        <div style="height:240px"><canvas id="cCloudCapex"></canvas></div>
+      </div>
+    </div>
+    <div class="cloud-summary-grid">
+      <div class="cloud-summary cloud-summary-google">
+        <div class="cloud-summary-name"><span class="cloud-summary-dot"></span>Google Cloud</div>
+        <div class="cloud-summary-main"><strong class="cloud-summary-value" id="cloudAlphabetLatest">$24.77B</strong><span class="cloud-summary-growth" id="cloudAlphabetGrowth">QoQ +23.7% · YoY +81.8%</span></div>
+        <div class="cloud-summary-metrics">
+          <div class="cloud-summary-metric"><span>2026E Capex</span><strong id="cloudAlphabetCapex">$200B</strong></div>
+          <div class="cloud-summary-metric"><span>投资强度</span><strong id="cloudAlphabetIntensity">2.02×</strong></div>
+        </div>
+        <a class="cloud-summary-source" id="cloudAlphabetSource" href="https://abc.xyz/investor/news/news-details/2026/Alphabet-Announces-Second-Quarter-2026-Results-2026-Y3uQ6H4ZJa/default.aspx" target="_blank" rel="noopener">Alphabet 2026 Q2 财报 ↗</a>
+      </div>
+      <div class="cloud-summary cloud-summary-amazon">
+        <div class="cloud-summary-name"><span class="cloud-summary-dot"></span>Amazon Web Services</div>
+        <div class="cloud-summary-main"><strong class="cloud-summary-value" id="cloudAmazonLatest">$42.23B</strong><span class="cloud-summary-growth" id="cloudAmazonGrowth">QoQ +12.4% · YoY +36.8%</span></div>
+        <div class="cloud-summary-metrics">
+          <div class="cloud-summary-metric"><span>2026E Capex</span><strong id="cloudAmazonCapex">$220B</strong></div>
+          <div class="cloud-summary-metric"><span>投资强度</span><strong id="cloudAmazonIntensity">1.30×</strong></div>
+        </div>
+        <a class="cloud-summary-source" id="cloudAmazonSource" href="https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Second-Quarter-Results/default.aspx" target="_blank" rel="noopener">Amazon 2026 Q2 财报 ↗</a>
+      </div>
+      <div class="cloud-summary cloud-summary-microsoft">
+        <div class="cloud-summary-name"><span class="cloud-summary-dot"></span>Microsoft Cloud</div>
+        <div class="cloud-summary-main"><strong class="cloud-summary-value" id="cloudMicrosoftLatest">$59.30B</strong><span class="cloud-summary-growth" id="cloudMicrosoftGrowth">QoQ +8.8% · YoY +27.0%</span></div>
+        <div class="cloud-summary-metrics">
+          <div class="cloud-summary-metric"><span>2026E Capex</span><strong id="cloudMicrosoftCapex">$175B</strong></div>
+          <div class="cloud-summary-metric"><span>投资强度</span><strong id="cloudMicrosoftIntensity">0.74×</strong></div>
+        </div>
+        <a class="cloud-summary-source" id="cloudMicrosoftSource" href="https://www.microsoft.com/en-us/Investor/earnings/FY-2026-Q4/press-release-webcast" target="_blank" rel="noopener">Microsoft FY26 Q4 财报 ↗</a>
+      </div>
+    </div>
+    <div class="cloud-compare-note" id="cloudMethodNote">口径说明：Google Cloud 与 AWS 为公司分部收入；Microsoft Cloud 包含 Microsoft 365 Commercial cloud、Azure、LinkedIn 商业部分及 Dynamics 365，并非 Azure 单项收入，因此三家公司绝对收入不宜直接视作同口径市场份额。投资强度仅作方向性比较。</div>
   </div>
 
   <!-- 四家公司 Capex 指引明细 -->
@@ -1547,6 +1623,18 @@ const BASE = {
   },
   trendYears:['2024A','2025A','2026E中值'],
   trendCapex:[2138.7,3564.9,7325],
+  cloudRevenue:{
+    quarters:['2025 Q3','2025 Q4','2026 Q1','2026 Q2'],
+    alphabet:[15.157,17.664,20.028,24.768],
+    amazon:[33.006,35.579,37.587,42.232],
+    microsoft:[49.1,51.5,54.5,59.3],
+  },
+  cloudCapex:{
+    years:['2024A','2025A','2026E'],
+    alphabet:[52.5,91.4,200],
+    amazon:[77.66,128.32,220],
+    microsoft:[44.48,64.55,175],
+  },
 
   // ── §2.2 六维风格画像矩阵 ──────────────────────────────────
   // 维度: [①盈利弹性, ②估值安全, ③产业动能, ④资金热度, ⑤上行确定, ⑥风险可控]
@@ -1873,6 +1961,50 @@ function mkTrend(){
       scales:{
         x:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b'}},
         y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>'$'+Number(v).toLocaleString()+'亿'}},
+      }
+    }
+  });
+}
+
+function mkCloudCompare(){
+  const revenueEl=document.getElementById('cCloudRevenue');
+  const capexEl=document.getElementById('cCloudCapex');
+  if(!revenueEl||!capexEl) return;
+  const revenue=BASE.cloudRevenue, capex=BASE.cloudCapex;
+  const line=(label,data,color)=>({
+    label,data:[...data],borderColor:color,backgroundColor:color,
+    borderWidth:2.4,pointRadius:3.5,pointHoverRadius:5,pointBackgroundColor:'#fff',
+    pointBorderColor:color,pointBorderWidth:2,tension:.28,fill:false
+  });
+  CH.cloudRevenue=new Chart(revenueEl.getContext('2d'),{
+    type:'line',
+    data:{labels:[...revenue.quarters],datasets:[
+      line('Google Cloud',revenue.alphabet,'#4285f4'),
+      line('AWS',revenue.amazon,'#ff9900'),
+      line('Microsoft Cloud',revenue.microsoft,'#00a4ef'),
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#64748b',font:{size:10},boxWidth:12,usePointStyle:true}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': $'+Number(c.parsed.y).toFixed(2)+'B'}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#64748b',font:{size:9.5}}},
+        y:{beginAtZero:false,grid:{color:'rgba(226,232,240,.85)'},ticks:{color:'#64748b',callback:v=>'$'+v+'B'}}
+      }
+    }
+  });
+  CH.cloudCapex=new Chart(capexEl.getContext('2d'),{
+    type:'line',
+    data:{labels:[...capex.years],datasets:[
+      line('Alphabet',capex.alphabet,'#4285f4'),
+      line('Amazon',capex.amazon,'#ff9900'),
+      line('Microsoft',capex.microsoft,'#00a4ef'),
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#64748b',font:{size:10},boxWidth:12,usePointStyle:true}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': $'+Number(c.parsed.y).toFixed(1)+'B'}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#64748b',font:{size:9.5}}},
+        y:{beginAtZero:true,grid:{color:'rgba(226,232,240,.85)'},ticks:{color:'#64748b',callback:v=>'$'+v+'B'}}
       }
     }
   });
@@ -4077,6 +4209,82 @@ function _renderArrLatestEvent(d){
   el.style.display='block';
 }
 
+function _setCloudSource(id,item){
+  const el=document.getElementById(id); if(!el||!item) return;
+  const allowed=['abc.xyz','sec.gov','ir.aboutamazon.com','microsoft.com'];
+  try{
+    const u=new URL(item.source_url||'');
+    if(u.protocol!=='https:'||!allowed.some(host=>u.hostname===host||u.hostname.endsWith('.'+host))) return;
+    el.href=u.href;
+    el.textContent=(item.source_label||'最新官方财报')+' ↗';
+  }catch(_){ /* 来源异常时保留页面内置的官方链接 */ }
+}
+
+function _renderCloudCompare(d){
+  const cloud=d&&d.cloud_revenue, companies=cloud&&cloud.companies;
+  if(!cloud||!companies||!Array.isArray(cloud.quarters)||cloud.quarters.length<2) return;
+  const keys=['alphabet','amazon','microsoft'];
+  const series={};
+  for(const key of keys){
+    const values=(companies[key]&&companies[key].revenue_b)||[];
+    if(!Array.isArray(values)||values.length!==cloud.quarters.length||values.some(v=>!Number.isFinite(Number(v)))) return;
+    series[key]=values.map(Number);
+  }
+  BASE.cloudRevenue={
+    quarters:[...cloud.quarters],
+    alphabet:[...series.alphabet],amazon:[...series.amazon],microsoft:[...series.microsoft]
+  };
+  if(CH.cloudRevenue){
+    CH.cloudRevenue.data.labels=[...cloud.quarters];
+    CH.cloudRevenue.data.datasets[0].data=[...series.alphabet];
+    CH.cloudRevenue.data.datasets[1].data=[...series.amazon];
+    CH.cloudRevenue.data.datasets[2].data=[...series.microsoft];
+    CH.cloudRevenue.update('none');
+  }
+  const capexCompanies=d.capex_companies||{};
+  const capexSeries={};
+  keys.forEach(key=>{
+    const c=capexCompanies[key]||{};
+    const mid=(_capexValue(c.guidance_low_yi)+_capexValue(c.guidance_high_yi))/2;
+    capexSeries[key]=[
+      _capexValue(c.actual_2024_yi)/10,
+      _capexValue(c.actual_2025_yi)/10,
+      mid/10,
+    ];
+  });
+  if(keys.every(key=>capexSeries[key].every(Number.isFinite))){
+    BASE.cloudCapex={years:['2024A','2025A','2026E'],...capexSeries};
+    if(CH.cloudCapex){
+      CH.cloudCapex.data.labels=[...BASE.cloudCapex.years];
+      CH.cloudCapex.data.datasets[0].data=[...capexSeries.alphabet];
+      CH.cloudCapex.data.datasets[1].data=[...capexSeries.amazon];
+      CH.cloudCapex.data.datasets[2].data=[...capexSeries.microsoft];
+      CH.cloudCapex.update('none');
+    }
+  }
+  const ids={alphabet:'Alphabet',amazon:'Amazon',microsoft:'Microsoft'};
+  const signed=n=>(n>=0?'+':'')+n.toFixed(1)+'%';
+  keys.forEach(key=>{
+    const values=series[key], item=companies[key]||{};
+    const latest=values[values.length-1], prior=values[values.length-2];
+    const qoq=(latest/prior-1)*100;
+    const yoy=Number(item.latest_yoy_pct);
+    const capex=capexSeries[key]&&capexSeries[key][2];
+    const intensity=Number.isFinite(capex)&&latest>0?capex/(latest*4):NaN;
+    const prefix='cloud'+ids[key];
+    const set=(suffix,text)=>{const el=document.getElementById(prefix+suffix);if(el)el.textContent=text;};
+    set('Latest','$'+latest.toFixed(2)+'B');
+    set('Growth','QoQ '+signed(qoq)+(Number.isFinite(yoy)?' · YoY '+signed(yoy):''));
+    set('Capex',Number.isFinite(capex)?'$'+capex.toLocaleString('en-US',{maximumFractionDigits:1})+'B':'—');
+    set('Intensity',Number.isFinite(intensity)?intensity.toFixed(2)+'×':'—');
+    _setCloudSource(prefix+'Source',item);
+  });
+  const stamp=document.getElementById('cloudRevenueTs');
+  if(stamp) stamp.textContent='最新财报截至 '+(cloud.as_of||d.capex_as_of||'—');
+  const note=document.getElementById('cloudMethodNote');
+  if(note&&cloud.method_note) note.textContent=cloud.method_note;
+}
+
 function _updateCapexCharts(d){
   const cs=d&&d.capex_companies; if(!cs) return;
   const keys=['alphabet','microsoft','amazon','meta'];
@@ -4130,6 +4338,7 @@ function _renderAiTrend(d){
     _setCapexSource('k'+ids[k]+'Source',c);
   });
   _updateCapexCharts(d);
+  _renderCloudCompare(d);
   const sourceSummary=document.getElementById('capexSourceSummary');
   if(sourceSummary) sourceSummary.textContent='口径：亿美元；2026E 为公司指引，2025A 为各公司已披露财年口径'+(d.capex_as_of?' · 最新披露截至 '+d.capex_as_of:'');
   // OpenAI / Anthropic 年化收入：仅接受等长、逐家公司不倒退的公开里程碑。
@@ -4211,7 +4420,7 @@ async function refreshAiTrendOnTabAccess(){
   triggerCapexRefresh();
 }
 
-// 手动兜底：定时扫描之外，也允许立即检查 Capex 与 ARR 新披露。
+// 手动兜底：定时扫描之外，也允许立即检查云收入、Capex 与 ARR 新披露。
 function triggerCapexRefresh(){
   _refreshViaWorkflow({
     file:     'refresh-aitrend.yml',
@@ -8820,7 +9029,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const _deferInit = window.requestIdleCallback ? (fn)=>requestIdleCallback(fn,{timeout:1500}) : (fn)=>setTimeout(fn,300);
   _deferInit(()=>{
     // 其他标签页图表（宏观趋势/产业链监控等）
-    _safe(mkCapex);_safe(mkTrend);_safe(mkSig);_safe(mkStageC);
+    _safe(mkCapex);_safe(mkTrend);_safe(mkCloudCompare);_safe(mkSig);_safe(mkStageC);
     _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);
     _safe(mkArr);_safe(mkMargin);_safe(mkVolume);
     _safe(mkStageMatrix);
