@@ -1083,12 +1083,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- 四大云公司 Capex 与前沿 AI ARR：GitHub Actions 每 3 小时自动扫描，按钮可立即触发 -->
+  <!-- 四大云公司 Capex 与前沿 AI ARR：GitHub Actions 每3小时自动扫描；进入本页时自动补触发一次 -->
   <div class="card mb12" style="padding:13px 16px;border-left:3px solid #2563eb;background:linear-gradient(135deg,#fff 0%,#f8fbff 100%)">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
       <div>
         <div style="font-size:13px;font-weight:800;color:#1e293b">四大云公司资本开支指引</div>
-        <div style="font-size:10.5px;color:#64748b;margin-top:3px">后台每 3 小时扫描公司财报、官方披露与可靠媒体；无明确数值的消息只记录事件，不反推金额</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:3px">后台每3小时扫描公司财报、官方披露与可靠媒体；进入本页时自动补刷一次</div>
       </div>
       <div style="display:flex;align-items:center;gap:9px;margin-left:auto">
         <span id="capexTs" style="font-size:10.5px;color:#94a3b8;font-weight:500;white-space:nowrap">载入上次快照…</span>
@@ -1105,8 +1105,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div class="g4 mb16">
     <div class="card">
       <div class="klabel">Hyperscaler总Capex 2026E <span style="background:#dcfce7;color:#166534;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">季报指引</span></div>
-      <div class="kval tb" id="kCapex26">$7,000–7,250亿</div>
-      <div class="kchange up" id="kYoy26">中值同比 +99.9%</div>
+      <div class="kval tb" id="kCapex26">$7,200–7,450亿</div>
+      <div class="kchange up" id="kYoy26">中值同比 +105.5%</div>
       <div class="tx3 mt4">Alphabet/MSFT/Amazon/Meta 指引合计</div>
     </div>
     <div class="card">
@@ -1169,9 +1169,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="card">
       <div class="ch"><span class="ct">Amazon</span><span class="cbadge" style="background:#fef3c7;color:#92400e">点指引</span></div>
       <div class="fjb mb4"><span class="tx2">2025A 实际值</span><span class="tx2" id="kAmz25">$1,283亿</span></div>
-      <div class="fjb mb4"><span class="tx2">2026E 指引</span><span class="tg" style="font-weight:700" id="kAmz26">约 $2,000亿</span></div>
-      <div class="tx3 mt8" id="kAmzBasis">CY2026 · 未披露上下限</div>
-      <a id="kAmzSource" href="https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Fourth-Quarter-Results/default.aspx" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Amazon FY2025业绩 · 2026-02-05 ↗</a>
+      <div class="fjb mb4"><span class="tx2">2026E 指引</span><span class="tg" style="font-weight:700" id="kAmz26">约 $2,200亿</span></div>
+      <div class="tx3 mt8" id="kAmzBasis">CY2026 · 现金Capex约$220B；较此前指引上调</div>
+      <a id="kAmzSource" href="https://apnews.com/article/b4ce02b4666a35b8975823c5c22072ee" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">AP · Amazon 2026 Q2业绩会 · 2026-07-30 ↗</a>
     </div>
     <div class="card">
       <div class="ch"><span class="ct">Meta</span><span class="cbadge tg">收窄区间</span></div>
@@ -1543,10 +1543,10 @@ const BASE = {
   capex:{
     labels:['Alphabet','Microsoft','Amazon','Meta'],
     // 单位：亿美元。Microsoft 使用财年实际值；2026E 使用公司指引中值。
-    y2024:[525,444.8,776.6,392.3],y2025:[914,645.5,1283.2,722.2],y2026e:[2000,1750,2000,1375]
+    y2024:[525,444.8,776.6,392.3],y2025:[914,645.5,1283.2,722.2],y2026e:[2000,1750,2200,1375]
   },
   trendYears:['2024A','2025A','2026E中值'],
-  trendCapex:[2138.7,3564.9,7125],
+  trendCapex:[2138.7,3564.9,7325],
 
   // ── §2.2 六维风格画像矩阵 ──────────────────────────────────
   // 维度: [①盈利弹性, ②估值安全, ③产业动能, ④资金热度, ⑤上行确定, ⑥风险可控]
@@ -4013,8 +4013,9 @@ function mkArr(){
   }});
 }
 
-// ── AI趋势快照：GitHub Actions 每 3 小时扫描；页面读取已验证并保存的快照 ──
+// ── AI趋势快照：GitHub Actions 每3小时扫描；进入宏观页时自动补触发 ──
 let _aiTrendCache = null;
+let _aiTrendAutoRefreshStarted = false;
 
 function _capexNum(v){
   const n=Number(v);
@@ -4038,7 +4039,7 @@ function _capexGuideText(c){
 
 function _setCapexSource(id,c){
   const el=document.getElementById(id); if(!el||!c) return;
-  const allowed=['abc.xyz','www.abc.xyz','microsoft.com','www.microsoft.com','ir.aboutamazon.com','investor.atmeta.com'];
+  const allowed=['abc.xyz','www.abc.xyz','microsoft.com','www.microsoft.com','ir.aboutamazon.com','investor.atmeta.com','apnews.com','www.apnews.com','reuters.com','www.reuters.com','cnbc.com','www.cnbc.com'];
   try{
     const u=new URL(c.source_url||'');
     if(u.protocol==='https:' && allowed.includes(u.hostname)) el.href=u.href;
@@ -4165,10 +4166,11 @@ function _renderAiTrend(d){
     if(checked){
       const parsed=Date.parse(String(checked).replace(' ','T')+'+08:00');
       const ageHours=Number.isFinite(parsed)?(Date.now()-parsed)/3600000:NaN;
-      const stale=Number.isFinite(ageHours)&&ageHours>30;
+      const scanHours=Math.max(1,Number(d.scan_interval_hours)||1);
+      const stale=Number.isFinite(ageHours)&&ageHours>Math.max(2.5,scanHours*2.5);
       tsEl.textContent=(stale?'⚠ 自动扫描可能延迟 · ':'自动扫描已启用 · ')+checked;
       tsEl.style.color=stale?'#d97706':'#059669';
-      tsEl.title='GitHub Actions 每 3 小时自动核对；按钮可立即触发';
+      tsEl.title='GitHub Actions 每3小时自动核对；进入宏观趋势页时会立即补触发一次';
     }
   }
 }
@@ -4181,10 +4183,32 @@ async function loadAiTrendSnapshot(){
     _aiTrendCache=d;
     _renderAiTrend(d);
     console.log('[AiTrend] 已载入保存快照，updated:', d.updated);
+    return d;
   }catch(e){
     console.warn('[AiTrend] 快照载入失败:', e.message);
     const tsEl=document.getElementById('capexTs'); if(tsEl) tsEl.textContent='快照载入失败';
+    return null;
   }
+}
+
+// 进入宏观趋势页时先重新读取快照；当前浏览器已保存PAT时，
+// 本次页面会话自动触发一次后台扫描。没有PAT时仍由每3小时定时任务兜底，
+// 且绝不在切换标签页时弹出令牌输入框。
+async function refreshAiTrendOnTabAccess(){
+  const data=await loadAiTrendSnapshot();
+  if(_aiTrendAutoRefreshStarted) return;
+  if(!_getGithubToken()){
+    const tsEl=document.getElementById('capexTs');
+    if(tsEl){
+      tsEl.textContent=(data&&(data.last_checked||data.updated)
+        ? '每3小时自动扫描 · 上次 '+(data.last_checked||data.updated)
+        : '等待每3小时自动扫描');
+      tsEl.title='当前浏览器未保存GitHub PAT，因此本次访问不额外触发；后台仍每3小时自动扫描';
+    }
+    return;
+  }
+  _aiTrendAutoRefreshStarted=true;
+  triggerCapexRefresh();
 }
 
 // 手动兜底：定时扫描之外，也允许立即检查 Capex 与 ARR 新披露。
@@ -4192,7 +4216,7 @@ function triggerCapexRefresh(){
   _refreshViaWorkflow({
     file:     'refresh-aitrend.yml',
     dataUrl:  'data/ai_trend.json',
-    tsField:  'updated',
+    tsField:  'last_checked',
     statusEl: document.getElementById('capexTs'),
     btn:      document.getElementById('capexBtn'),
     idleText: '↻ 立即扫描',
@@ -5197,11 +5221,11 @@ function _tabRefresh(idx){
   _TAB_TS[idx]=now;
   // 按标签页类型调用对应的动态数据刷新函数
   if(tab==='tPort'){ refreshPortAll(true); }  // 切到组合页：强制全刷（A档优化：不再依赖 fetchPortPrices 的 finally 串行链）
-  else if(tab==='t0')    refreshMacro();
+  else if(tab==='t0')    { refreshMacro(); refreshAiTrendOnTabAccess(); }
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tHist') renderHistTable();
   else if(tab==='tPre')  preLoad();
-  // Capex / ARR 由 GitHub Actions 每 3 小时自动扫描；这里仅刷新浏览器可直连的市场数据。
+  // Capex / ARR：进入宏观趋势页时重新读取快照，并在过期且已有PAT时自动触发后台扫描。
 }
 
 function switchTab(idx){
@@ -8802,7 +8826,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     _safe(mkStageMatrix);
     _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();});
     // 非首屏数据抓取（错开首屏行情请求，避免抢东财/腾讯连接）
-    loadAiTrendSnapshot();  // 读取每 3 小时自动扫描后保存的 AI 趋势快照
+    loadAiTrendSnapshot();  // 读取每3小时自动扫描后保存的 AI 趋势快照
     fetchVixChart();        // iVIX 历史数据
     fetchMonLive();         // 产业链监控20日动量
     fetchMacroRates();      // 中美10年国债收益率
