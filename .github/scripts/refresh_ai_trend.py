@@ -117,7 +117,12 @@ def now_ts():
 def _extract_date(*values):
     """Return YYYY-MM-DD from RSS, metadata, page text or a dated URL."""
     joined = " ".join(str(value or "") for value in values)
-    match = re.search(r"\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b", joined)
+    # ISO timestamps continue with "T", so a trailing word boundary would miss
+    # values such as 2026-07-30T20:26:37Z.
+    match = re.search(
+        r"(?<!\d)(20\d{2})[-/](\d{1,2})[-/](\d{1,2})(?=$|[T\s])",
+        joined,
+    )
     if match:
         year, month, day = (int(part) for part in match.groups())
         try:
@@ -358,10 +363,16 @@ def discover_official_urls(cfg):
     )[:4]
 
 
-def discover_trusted_results(cfg):
+def discover_trusted_results(key, cfg):
     """Crawl configured trusted company hubs for fresh call-report articles."""
     results = []
     seen = set()
+    company_path_terms = {
+        "alphabet": ("alphabet", "google"),
+        "microsoft": ("microsoft",),
+        "amazon": ("amazon", "aws"),
+        "meta": ("meta",),
+    }.get(key, (key,))
     for landing in cfg.get("trusted_landing_urls", ()):
         if not _host_allowed(landing, TRUSTED_CAPEX_HOSTS):
             continue
@@ -382,7 +393,10 @@ def discover_trusted_results(cfg):
                 # Trusted hub pages contain hundreds of navigation links. Only
                 # fetch article-shaped links; company binding and Capex guards
                 # still decide whether any number is accepted.
-                if "/article/" not in (urlparse(candidate).path or ""):
+                path = (urlparse(candidate).path or "").lower()
+                if "/article/" not in path or not any(
+                    term in path for term in company_path_terms
+                ):
                     continue
                 seen.add(candidate)
                 candidates.append(candidate)
@@ -446,7 +460,7 @@ def latest_capex_results(key, cfg, saved_source_url=""):
         f'"{name}" raises {year} capital expenditures guidance',
     ]
     media = []
-    _merge_results(media, seen, discover_trusted_results(cfg))
+    _merge_results(media, seen, discover_trusted_results(key, cfg))
     for query in queries:
         _merge_results(media, seen, bing_rss_search(query, media_hosts, n=8))
         _merge_results(media, seen, ddg_search(query, media_hosts, n=8))
@@ -509,9 +523,14 @@ def _capex_candidate(key, cfg, results):
             # calendar year. The source date has already been verified above,
             # so that wording safely binds the guidance to its publication year.
             source_year = source_date[:4]
-            if source_year not in window and not re.search(
-                r"\b(?:this|current|full)[- ]year(?:'s)?\b|\bfor the year\b",
-                window,
+            period_window = text[
+                max(0, capex_match.start() - 650) : min(
+                    len(text), capex_match.end() + 650
+                )
+            ]
+            if source_year not in period_window and not re.search(
+                r"\b(?:this|current|full)[- ]year(?:['’]s)?\b|\bfor the year\b",
+                period_window,
                 re.I,
             ):
                 continue
@@ -554,6 +573,7 @@ def _capex_candidate(key, cfg, results):
             if range_values:
                 low, high = range_values
                 guidance_type = "range"
+                selected_start, selected_end = left.start(), right.end()
             else:
                 # The closest monetary value to the Capex phrase is normally
                 # the current point guidance; this avoids selecting a prior
@@ -570,6 +590,28 @@ def _capex_candidate(key, cfg, results):
                 guidance_type = "point"
                 if not (minimum <= low <= maximum):
                     continue
+                selected_start, selected_end = nearest.start(), nearest.end()
+            # A report often contrasts the new plan with last year's actual or
+            # a previous plan in the same paragraph. Bind the monetary value to
+            # its nearest Capex phrase and reject locally historical wording.
+            relative_capex_end = capex_match.end() - window_start
+            focus_start = max(0, min(relative_capex, selected_start) - 40)
+            focus_end = min(
+                len(window), max(relative_capex_end, selected_end) + 80
+            )
+            focus = window[focus_start:focus_end].lower()
+            local_forward = bool(
+                re.search(
+                    r"\bexpect|\bplan|\bguidance|\bwill\s+(?:spend|invest)|"
+                    r"\bapproximately|\babout|\broughly|\bthis year",
+                    focus,
+                )
+            )
+            if re.search(
+                r"\blast year|\bprior year|\bprevious year|\ball of last year|\bactual",
+                focus,
+            ) and not local_forward:
+                continue
             evidence = window.lower()
             forward_score = sum(
                 bool(re.search(pattern, evidence))
@@ -606,7 +648,7 @@ def _capex_candidate(key, cfg, results):
                         if is_official
                         else TRUSTED_CAPEX_LABELS.get(host, host)
                     ),
-                    "_score": forward_score + (3 if is_official else 0),
+                    "_score": forward_score + (4 if local_forward else 0) + (3 if is_official else 0),
                 }
             )
     if not candidates:
