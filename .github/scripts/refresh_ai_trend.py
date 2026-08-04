@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Refresh hyperscaler Capex guidance and frontier-AI ARR milestones.
 
-GitHub Actions runs this scanner every three hours and also exposes a manual
-trigger. Capex is restricted to company investor-relations domains. ARR may use
-company disclosures or a small allowlist of reliable news sources because the
-private companies often disclose milestones through interviews or reporting.
+GitHub Actions runs this scanner every three hours and also exposes a manual trigger.
+Capex prefers company investor-relations domains; when a number is disclosed
+only on an earnings call, a narrow allowlist of direct call reporting is used.
+ARR may use company disclosures or a small allowlist of reliable news sources
+because private companies often disclose milestones through reporting.
 Unverified fields are ignored, qualitative ARR news is never converted into an
-invented number, and the last valid numeric snapshot is preserved.
+invented number, and the last valid numeric snapshot is preserved. Extraction
+is deterministic and local because GitHub Models was retired on 2026-07-30.
 """
 
 import datetime
@@ -15,12 +17,12 @@ import json
 import os
 import re
 import xml.etree.ElementTree as ET
+from email.utils import parsedate_to_datetime
 from urllib.parse import parse_qs, unquote, urlencode, urljoin, urlparse
 
 import requests
 
 
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "").strip()
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.normpath(os.path.join(SCRIPT_DIR, "..", ".."))
 OUT = os.path.join(REPO_ROOT, "data", "ai_trend.json")
@@ -91,10 +93,53 @@ ARR_COMPANIES = {
     },
 }
 
+# Some companies publish a written Capex number in the release; others disclose
+# it only on the earnings call. In the latter case, accept a narrow set of
+# reputable outlets that directly quote/report the call, while keeping official
+# investor-relations pages as the preferred source.
+TRUSTED_CAPEX_HOSTS = ("apnews.com", "reuters.com", "cnbc.com")
+TRUSTED_CAPEX_LABELS = {
+    "apnews.com": "AP · Amazon业绩会",
+    "reuters.com": "Reuters · 公司业绩会",
+    "cnbc.com": "CNBC · 公司业绩会",
+}
+
 
 def now_ts():
     tz8 = datetime.timezone(datetime.timedelta(hours=8))
-    return datetime.datetime.now(tz8).strftime("%Y-%m-%d %H:%M")
+    return datetime.datetime.now(tz8).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _extract_date(*values):
+    """Return YYYY-MM-DD from RSS, metadata, page text or a dated URL."""
+    joined = " ".join(str(value or "") for value in values)
+    match = re.search(r"\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b", joined)
+    if match:
+        year, month, day = (int(part) for part in match.groups())
+        try:
+            return datetime.date(year, month, day).isoformat()
+        except ValueError:
+            pass
+    for pattern in (
+        r"\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),\s*(20\d{2})\b",
+        r"\b(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(20\d{2})\b",
+    ):
+        match = re.search(pattern, joined, re.I)
+        if not match:
+            continue
+        for fmt in ("%B %d, %Y", "%d %B %Y"):
+            try:
+                return datetime.datetime.strptime(match.group(0), fmt).date().isoformat()
+            except ValueError:
+                continue
+    for value in values:
+        try:
+            parsed = parsedate_to_datetime(str(value or ""))
+            if parsed:
+                return parsed.date().isoformat()
+        except (TypeError, ValueError, OverflowError):
+            continue
+    return ""
 
 
 def _host_allowed(url, hosts):
@@ -228,6 +273,16 @@ def fetch_page_result(url, hosts):
         title_match = re.search(r"(?is)<title[^>]*>(.*?)</title>", raw)
         title = _clean_text(title_match.group(1) if title_match else final_url)[:240]
         text = _clean_text(raw)
+        date_meta = ""
+        for pattern in (
+            r'(?is)"datePublished"\s*:\s*"([^"]+)"',
+            r"(?is)(?:article:published_time|datePublished)[^>]{0,160}?content=[\"']([^\"']+)",
+            r"(?is)<time[^>]+datetime=[\"']([^\"']+)",
+        ):
+            date_match = re.search(pattern, raw)
+            if date_match:
+                date_meta = date_match.group(1)
+                break
         windows = []
         for match in re.finditer(
             r"(?i)capital expenditures?|capex|capital spending|annualized recurring revenue|revenue run[- ]rate",
@@ -253,7 +308,12 @@ def fetch_page_result(url, hosts):
             if windows
             else text[:1400]
         )
-        return {"title": title, "body": body, "url": final_url, "date": ""}
+        return {
+            "title": title,
+            "body": body,
+            "url": final_url,
+            "date": _extract_date(date_meta, final_url, text[:500]),
+        }
     except Exception as exc:
         print(f"  [Direct] {url[:88]} failed: {exc}")
         return None
@@ -331,6 +391,183 @@ def latest_official_results(cfg, saved_source_url=""):
     return merged[:5]
 
 
+def latest_capex_results(key, cfg, saved_source_url=""):
+    """Combine official evidence with tightly allowlisted earnings-call reports."""
+    merged = latest_official_results(cfg, saved_source_url)
+    seen = {item.get("url") for item in merged}
+    name = cfg["name"].split("/")[0].strip()
+    year = datetime.date.today().year
+    media_hosts = cfg["hosts"] + TRUSTED_CAPEX_HOSTS
+    queries = [
+        f'"{name}" {year} "cash CapEx" guidance earnings call',
+        f'"{name}" {year} capital spending total latest earnings',
+        f'"{name}" raises {year} capital expenditures guidance',
+    ]
+    media = []
+    for query in queries:
+        _merge_results(media, seen, bing_rss_search(query, media_hosts, n=8))
+        _merge_results(media, seen, ddg_search(query, media_hosts, n=8))
+    # Expand the freshest snippets into page evidence where the site permits it.
+    for item in media[:6]:
+        expanded = fetch_page_result(item.get("url") or "", media_hosts)
+        if expanded:
+            if not expanded.get("date"):
+                expanded["date"] = _extract_date(
+                    item.get("date"), item.get("body"), item.get("url")
+                )
+            merged.append(expanded)
+        else:
+            item["date"] = _extract_date(
+                item.get("date"), item.get("body"), item.get("url")
+            )
+            merged.append(item)
+    print(f"  [Capex evidence] {key} -> {len(merged)} candidates")
+    return merged[:11]
+
+
+_MONEY_RE = re.compile(
+    r"\$?\s*([0-9]{1,3}(?:\.[0-9]+)?)\s*(billion|bn|million|mn)\b", re.I
+)
+_CAPEX_RE = re.compile(
+    r"\b(?:cash\s+)?(?:capital expenditures?|capex|capital spending)\b", re.I
+)
+
+
+def _money_yi(match):
+    value = float(match.group(1))
+    unit = match.group(2).lower()
+    return value * 10 if unit in ("billion", "bn") else value / 100
+
+
+def _capex_candidate(key, cfg, results):
+    """Extract the newest explicit full-year Capex guidance without an LLM."""
+    minimum, maximum = cfg["bounds"]
+    candidates = []
+    allowed_hosts = cfg["hosts"] + TRUSTED_CAPEX_HOSTS
+    for result in results:
+        url = str(result.get("url") or "")
+        if not _host_allowed(url, allowed_hosts):
+            continue
+        is_official = _host_allowed(url, cfg["hosts"])
+        source_date = _extract_date(
+            result.get("date"), result.get("title"), result.get("body"), url
+        )
+        if not source_date:
+            continue
+        text = _clean_text(
+            f"{result.get('title', '')}. {result.get('body', '')}"
+        )
+        lower = text.lower()
+        for capex_match in _CAPEX_RE.finditer(lower):
+            window_start = max(0, capex_match.start() - 260)
+            window_end = min(len(text), capex_match.end() + 300)
+            window = text[window_start:window_end]
+            if "2026" not in window:
+                continue
+            if not is_official:
+                relative_capex = capex_match.start() - window_start
+                entities = []
+                for entity_key, pattern in (
+                    ("alphabet", r"\balphabet\b|\bgoogle\b"),
+                    ("microsoft", r"\bmicrosoft\b"),
+                    ("amazon", r"\bamazon\b|\baws\b"),
+                    ("meta", r"\bmeta\b"),
+                ):
+                    for entity_match in re.finditer(pattern, window, re.I):
+                        entities.append(
+                            (
+                                min(
+                                    abs(entity_match.start() - relative_capex),
+                                    abs(entity_match.end() - relative_capex),
+                                ),
+                                entity_key,
+                            )
+                        )
+                if not entities or min(entities)[1] != key:
+                    continue
+            money = list(_MONEY_RE.finditer(window))
+            if not money:
+                continue
+            # Prefer a genuine written range when two adjacent monetary values
+            # are joined by "to", "through", a dash, or "between ... and".
+            range_values = None
+            for left, right in zip(money, money[1:]):
+                between = window[left.end():right.start()].lower()
+                if len(between) <= 55 and re.search(
+                    r"\b(?:to|through|and)\b|[-–—]", between
+                ):
+                    lo, hi = _money_yi(left), _money_yi(right)
+                    if minimum <= lo <= hi <= maximum:
+                        range_values = (lo, hi)
+                        break
+            if range_values:
+                low, high = range_values
+                guidance_type = "range"
+            else:
+                # The closest monetary value to the Capex phrase is normally
+                # the current point guidance; this avoids selecting a prior
+                # estimate mentioned later in the same quote.
+                relative_capex = capex_match.start() - window_start
+                nearest = min(
+                    money,
+                    key=lambda item: min(
+                        abs(item.start() - relative_capex),
+                        abs(item.end() - relative_capex),
+                    ),
+                )
+                low = high = _money_yi(nearest)
+                guidance_type = "point"
+                if not (minimum <= low <= maximum):
+                    continue
+            evidence = window.lower()
+            forward_score = sum(
+                bool(re.search(pattern, evidence))
+                for pattern in (
+                    r"\bexpect",
+                    r"\bbelieve",
+                    r"\bplan",
+                    r"\bguidance",
+                    r"\bapproximately|\babout|\broughly",
+                    r"\bwill\s+(?:spend|invest)",
+                    r"\bfull[- ]year|\bcalendar year",
+                )
+            )
+            if not forward_score:
+                continue
+            host = (urlparse(url).hostname or "").lower().removeprefix("www.")
+            basis = (
+                "CY2026 · 公司正式Capex指引"
+                if is_official
+                else "CY2026 · 公司业绩会指引（可信媒体转述）"
+            )
+            if key == "amazon" and high >= 2200 and "memory" in evidence:
+                basis = "CY2026 · 现金Capex约$220B；内存成本上升推动较此前指引上调"
+            candidates.append(
+                {
+                    "guidance_low_yi": round(low, 1),
+                    "guidance_high_yi": round(high, 1),
+                    "guidance_type": guidance_type,
+                    "basis_note": basis,
+                    "source_date": source_date,
+                    "source_url": url,
+                    "source_label": (
+                        cfg["source_label"]
+                        if is_official
+                        else TRUSTED_CAPEX_LABELS.get(host, host)
+                    ),
+                    "_score": forward_score + (3 if is_official else 0),
+                }
+            )
+    if not candidates:
+        return {}
+    candidates.sort(
+        key=lambda item: (item["source_date"], item["_score"]), reverse=True
+    )
+    chosen = dict(candidates[0])
+    chosen.pop("_score", None)
+    return chosen
+
+
 def latest_arr_results(key, cfg):
     """Search recent company and reliable-media ARR disclosures."""
     today = datetime.date.today()
@@ -350,6 +587,82 @@ def latest_arr_results(key, cfg):
     return merged[:5]
 
 
+def _arr_candidate(key, cfg, results):
+    """Extract only explicit ARR/annualized-revenue numbers from source snippets."""
+    candidates = []
+    for result in results:
+        url = str(result.get("url") or "")
+        if not _host_allowed(url, cfg["hosts"]) or not _specific_article_url(url):
+            continue
+        source_date = _extract_date(
+            result.get("date"), result.get("title"), result.get("body"), url
+        )
+        if not source_date:
+            continue
+        text = _clean_text(
+            f"{result.get('title', '')}. {result.get('body', '')}"
+        )
+        lower = text.lower()
+        terms = list(
+            re.finditer(
+                r"\barr\b|annualized recurring revenue|annualized revenue|revenue run[- ]rate",
+                lower,
+            )
+        )
+        for term in terms:
+            window_start = max(0, term.start() - 190)
+            window = text[window_start:term.end() + 190]
+            window_lower = window.lower()
+            target = cfg["name"].lower()
+            entities = []
+            for entity in ("openai", "anthropic", "aws", "amazon", "microsoft", "google", "meta"):
+                for match in re.finditer(rf"\b{re.escape(entity)}\b", window_lower):
+                    entities.append(
+                        (
+                            min(
+                                abs(match.start() - (term.start() - window_start)),
+                                abs(match.end() - (term.start() - window_start)),
+                            ),
+                            entity,
+                        )
+                    )
+            # Bind the number to the company nearest the ARR phrase. This avoids
+            # assigning AWS's run rate to OpenAI merely because both appear in
+            # the same article snippet.
+            if not entities or min(entities)[1] != target:
+                continue
+            money = list(_MONEY_RE.finditer(window))
+            if not money:
+                continue
+            relative = term.start() - window_start
+            nearest = min(
+                money,
+                key=lambda item: min(
+                    abs(item.start() - relative), abs(item.end() - relative)
+                ),
+            )
+            value = _money_yi(nearest)
+            minimum, maximum = cfg["bounds"]
+            if not (minimum <= value <= maximum):
+                continue
+            host = (urlparse(url).hostname or "").lower().removeprefix("www.")
+            candidates.append(
+                {
+                    "company": cfg["name"],
+                    "summary": f"最新公开披露的年化收入运行率约为${value / 10:g}B。",
+                    "numeric": True,
+                    "arr_yi": round(value, 1),
+                    "source_label": host,
+                    "source_date": source_date,
+                    "source_url": url,
+                }
+            )
+    if not candidates:
+        return {}
+    candidates.sort(key=lambda item: item["source_date"], reverse=True)
+    return candidates[0]
+
+
 def _number(value):
     if value is None or value == "":
         return None
@@ -362,30 +675,6 @@ def _number(value):
 def _valid_date(value):
     value = str(value or "")
     return value if re.fullmatch(r"20\d{2}-\d{2}-\d{2}", value) else ""
-
-
-def _model_json(prompt, max_tokens):
-    response = requests.post(
-        "https://models.github.ai/inference/chat/completions",
-        headers={
-            "Authorization": f"Bearer {GITHUB_TOKEN}",
-            "Content-Type": "application/json",
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2026-03-10",
-        },
-        json={
-            "model": "openai/gpt-4.1",
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": max_tokens,
-            "temperature": 0,
-            "response_format": {"type": "json_object"},
-        },
-        timeout=60,
-    )
-    response.raise_for_status()
-    raw = response.json()["choices"][0]["message"]["content"]
-    match = re.search(r"\{.*\}", raw, re.DOTALL)
-    return json.loads(match.group()) if match else {}
 
 
 def _last_numeric(values):
@@ -428,8 +717,10 @@ def main():
 
     saved_capex = base.get("capex_companies") or {}
     capex_results = {
-        key: latest_official_results(
-            cfg, str((saved_capex.get(key) or {}).get("source_url") or "")
+        key: latest_capex_results(
+            key,
+            cfg,
+            str((saved_capex.get(key) or {}).get("source_url") or ""),
         )
         for key, cfg in COMPANIES.items()
     }
@@ -440,73 +731,19 @@ def main():
     if not scan_succeeded:
         print("No allowlisted search results; preserving snapshot and last-checked time.")
         return
-    if not GITHUB_TOKEN:
-        print("GITHUB_TOKEN missing; preserving the existing snapshot.")
-        return
 
     changed = False
     capex_changed = False
 
     if any(capex_results.values()):
-        context_parts = []
-        for key, results in capex_results.items():
-            cfg = COMPANIES[key]
-            lines = [f"[{key} | {cfg['name']}]"]
-            for result in results:
-                lines.append(
-                    f"- {result['title']}\n  PUBLISHED: {result['date']}\n"
-                    f"  URL: {result['url']}\n  SNIPPET: {result['body'][:700]}"
-                )
-            context_parts.append("\n".join(lines))
-        context = "\n\n".join(context_parts)
-
-        previous_dates = {
-            key: ((base.get("capex_companies") or {}).get(key) or {}).get(
-                "source_date", ""
-            )
-            for key in COMPANIES
+        extracted = {
+            key: _capex_candidate(key, cfg, capex_results.get(key, []))
+            for key, cfg in COMPANIES.items()
         }
-        prompt = f"""
-You are structuring capital-expenditure disclosures from official company investor-relations search results.
-Today is {datetime.date.today().isoformat()}. Select the latest explicit full-year 2026 Capex guidance for each company.
-
-Rules:
-1. Use only a number explicitly stated in an official snippet and copy that snippet's official URL.
-2. Compare publication/earnings dates and select the newest guidance, not the first search result.
-3. Never return a source_date older than the saved date for that company: {json.dumps(previous_dates, ensure_ascii=False)}.
-4. Unit is USD 100 million: $175B = 1750.
-5. If management gives a range, output both endpoints and guidance_type "range".
-6. If management says "about", "roughly", or gives one point, set low=high and guidance_type "point". Never invent a range.
-7. actual_2025_yi is optional and must be an explicitly disclosed full-year actual Capex number.
-8. Omit a company or field that cannot be verified. Do not use analyst estimates or news-media figures.
-9. basis_note may briefly preserve a material accounting/classification explanation, but do not infer one.
-10. Reject quarterly Capex actuals such as "Q4 Capex was $41B". The target is only a
-    full-year or calendar-year 2026 guidance/expectation; if no such number is explicit,
-    omit the company instead of returning a quarterly number.
-
-Return JSON only:
-{{
-  "companies": {{
-    "alphabet": {{"guidance_low_yi": 0, "guidance_high_yi": 0, "guidance_type": "range|point", "actual_2025_yi": 0, "basis_note": "", "source_date": "YYYY-MM-DD", "source_url": "https://..."}},
-    "microsoft": {{...}},
-    "amazon": {{...}},
-    "meta": {{...}}
-  }}
-}}
-
-OFFICIAL RESULTS:
-{context[:14000]}
-""".strip()
-
-        try:
-            extracted = _model_json(prompt, 1500)
-        except Exception as exc:
-            print(f"Capex extraction failed: {exc}; preserving Capex snapshot.")
-            extracted = {}
 
         current = base.setdefault("capex_companies", {})
         for key, cfg in COMPANIES.items():
-            candidate = (extracted.get("companies") or {}).get(key) or {}
+            candidate = extracted.get(key) or {}
             low = _number(candidate.get("guidance_low_yi"))
             high = _number(candidate.get("guidance_high_yi"))
             url = str(candidate.get("source_url") or "")
@@ -514,22 +751,12 @@ OFFICIAL RESULTS:
             previous = dict(current.get(key) or {})
             previous_date = _valid_date(previous.get("source_date"))
             minimum, maximum = cfg["bounds"]
-            # Models sometimes preserve the disclosure's $B unit despite the prompt.
-            # Normalize only when both endpoints fit a plausible hyperscaler range.
-            if (
-                low is not None
-                and high is not None
-                and 30 <= low <= high <= 300
-                and low < minimum
-            ):
-                low *= 10
-                high *= 10
             rejection_reasons = []
             if low is None or high is None:
                 rejection_reasons.append("missing guidance")
             elif not (minimum <= low <= high <= maximum):
                 rejection_reasons.append(f"out of bounds {low}-{high}")
-            if not _host_allowed(url, cfg["hosts"]):
+            if not _host_allowed(url, cfg["hosts"] + TRUSTED_CAPEX_HOSTS):
                 rejection_reasons.append(
                     f"source domain {(urlparse(url).hostname or 'missing')}"
                 )
@@ -570,14 +797,11 @@ OFFICIAL RESULTS:
                     "guidance_type": "range" if high != low else "point",
                     "period": "CY2026",
                     "basis_note": basis_note or default_basis,
-                    "source_label": cfg["source_label"],
+                    "source_label": candidate.get("source_label") or cfg["source_label"],
                     "source_date": source_date,
                     "source_url": url,
                 }
             )
-            actual = _number(candidate.get("actual_2025_yi"))
-            if actual is not None and minimum / 2 <= actual <= maximum:
-                item["actual_2025_yi"] = round(actual, 1)
             current[key] = item
             changed = capex_changed = True
             print(f"  [{key}] updated to {low}-{high} from {url}")
@@ -609,68 +833,32 @@ OFFICIAL RESULTS:
             if source_dates:
                 base["capex_as_of"] = max(source_dates)
             base["capex_unit"] = "USD 100 million"
+            base["hyperscaler_detail"] = " · ".join(
+                f"{key.upper()} "
+                + (
+                    f"${item['guidance_low_yi'] / 10:g}–{item['guidance_high_yi'] / 10:g}B"
+                    if item["guidance_low_yi"] != item["guidance_high_yi"]
+                    else f"~${item['guidance_high_yi'] / 10:g}B"
+                )
+                for key, item in current.items()
+                if key in COMPANIES
+            )
+            amazon = current.get("amazon") or {}
+            meta = current.get("meta") or {}
+            base["amazon_capex_2026e_yi"] = amazon.get("guidance_high_yi")
+            base["meta_capex_low_yi"] = meta.get("guidance_low_yi")
+            base["meta_capex_high_yi"] = meta.get("guidance_high_yi")
 
     if any(arr_results.values()):
-        arr_context_parts = []
-        for key, results in arr_results.items():
-            cfg = ARR_COMPANIES[key]
-            lines = [f"[{key} | {cfg['name']}]"]
-            for result in results:
-                lines.append(
-                    f"- {result['title']}\n  PUBLISHED: {result['date']}\n"
-                    f"  URL: {result['url']}\n  SNIPPET: {result['body'][:600]}"
-                )
-            arr_context_parts.append("\n".join(lines))
-        arr_context = "\n\n".join(arr_context_parts)
-        previous_event_dates = {
-            key: ((base.get("arr_latest_events") or {}).get(key) or {}).get(
-                "source_date", ""
-            )
-            for key in ARR_COMPANIES
+        arr_extracted = {
+            key: _arr_candidate(key, cfg, arr_results.get(key, []))
+            for key, cfg in ARR_COMPANIES.items()
         }
-        arr_prompt = f"""
-You are structuring the latest ARR or annualized-revenue milestones for OpenAI and Anthropic.
-Today is {datetime.date.today().isoformat()}.
-
-Rules:
-1. Select the newest reliable disclosure for each company and copy its source URL.
-2. Do not return a source_date older than the saved event date:
-   {json.dumps(previous_event_dates, ensure_ascii=False)}.
-3. arr_yi is USD 100 million: $25B = 250. Include it only when the source explicitly
-   states a numeric ARR, annualized revenue, or revenue run-rate for the company.
-4. Never derive a number from a growth rate, monthly revenue, quarterly revenue,
-   "higher than Q2", or another qualitative comparison.
-5. A new qualitative ARR milestone is still useful: omit arr_yi and summarize the
-   exact disclosed direction in <=120 Chinese characters without adding an inference.
-6. Ignore forecasts, social posts, Reddit commentary, and numbers attributed only to
-   anonymous speculation. News reporting of a company executive statement is allowed.
-7. Omit a company when no newer relevant milestone is present.
-8. Never use a company homepage or a generic research/about page as the source. The
-   source must be the specific allowlisted article/result that contains the milestone.
-9. Omit items that merely say no ARR or revenue number was disclosed; that is not a
-   new milestone.
-
-Return JSON only:
-{{
-  "companies": {{
-    "openai": {{"summary": "", "source_label": "", "source_date": "YYYY-MM-DD", "source_url": "https://..."}},
-    "anthropic": {{...}}
-  }}
-}}
-
-ALLOWLISTED RESULTS:
-{arr_context[:14000]}
-""".strip()
-        try:
-            arr_extracted = _model_json(arr_prompt, 1200)
-        except Exception as exc:
-            print(f"ARR extraction failed: {exc}; preserving ARR snapshot.")
-            arr_extracted = {}
 
         events = base.setdefault("arr_latest_events", {})
         sources = base.setdefault("arr_sources", {})
         for key, cfg in ARR_COMPANIES.items():
-            candidate = (arr_extracted.get("companies") or {}).get(key) or {}
+            candidate = arr_extracted.get(key) or {}
             summary = re.sub(r"\s+", " ", str(candidate.get("summary") or "")).strip()
             summary = summary[:240]
             url = str(candidate.get("source_url") or "")
@@ -772,26 +960,25 @@ ALLOWLISTED RESULTS:
                 base["arr_as_of"] = max(valid_event_dates)
 
     timestamp = now_ts()
-    heartbeat_due = str(base.get("last_checked") or "")[:10] != timestamp[:10]
     if changed:
         base["updated"] = timestamp
-    if changed or heartbeat_due:
-        base["last_checked"] = timestamp
-        base["scan_interval_hours"] = 3
-        base["note"] = (
-            "GitHub Actions每3小时自动扫描；Capex仅采用四家公司官方投资者关系"
-            "披露，ARR无明确金额时只记录事件、不反推数值"
-        )
-        base["arr_note"] = (
-            "年化收入运行率公开里程碑（非传统合同ARR） · "
-            "无明确金额的消息只记录事件，不反推数值 · 空值不补成下降趋势"
-        )
-        with open(OUT, "w", encoding="utf-8") as handle:
-            json.dump(base, handle, ensure_ascii=False, indent=2)
-            handle.write("\n")
-        print(f"Wrote {OUT} (changed={changed}, heartbeat={heartbeat_due})")
-    else:
-        print("No new data and today's successful-scan heartbeat already exists.")
+    # Every successful scan advances last_checked. The browser uses this field
+    # to decide whether opening the macro tab should dispatch an immediate scan.
+    base["last_checked"] = timestamp
+    base["scan_interval_hours"] = 3
+    base["scanner_method"] = "local-evidence-v1"
+    base["note"] = (
+        "GitHub Actions每3小时自动扫描；优先采用四家公司官方投资者关系披露，"
+        "业绩会仅在官方文字稿不可得时采用AP/Reuters/CNBC直接报道"
+    )
+    base["arr_note"] = (
+        "年化收入运行率公开里程碑（非传统合同ARR） · "
+        "仅提取来源明确给出的金额，不从增速或定性表述反推数值"
+    )
+    with open(OUT, "w", encoding="utf-8") as handle:
+        json.dump(base, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+    print(f"Wrote {OUT} (changed={changed}; scan heartbeat advanced)")
 
 
 if __name__ == "__main__":
