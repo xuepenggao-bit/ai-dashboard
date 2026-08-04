@@ -1,11 +1,11 @@
 {
-  "updated": "2026-08-04 09:33:00",
+  "updated": "2026-08-04 16:59:13",
   "last_checked": "2026-08-04 18:21:23",
   "scan_interval_hours": 3,
-  "scanner_method": "local-evidence-v1",
+  "scanner_method": "local-evidence-v2",
   "capex_as_of": "2026-07-30",
   "capex_unit": "USD 100 million",
-  "note": "GitHub Actions每3小时自动扫描；优先采用四家公司官方投资者关系披露，业绩会仅在官方文字稿不可得时采用AP/Reuters/CNBC直接报道",
+  "note": "GitHub Actions每3小时自动扫描三大云业务季度收入和四家公司Capex；优先采用公司官方投资者关系披露，业绩会仅在官方文字稿不可得时采用AP/Reuters/CNBC直接报道",
   "hyperscaler_capex_2026e_low_yi": 7200,
   "hyperscaler_capex_2026e_mid_yi": 7325,
   "hyperscaler_capex_2026e_high_yi": 7450,
@@ -113,6 +113,74 @@
       "source_label": "Anthropic Series H公告",
       "source_date": "2026-05-28",
       "source_url": "https://www.anthropic.com/news/series-h"
+    }
+  },
+  "cloud_revenue": {
+    "as_of": "2026-07-30",
+    "unit": "USD billion",
+    "quarters": [
+      "2025 Q3",
+      "2025 Q4",
+      "2026 Q1",
+      "2026 Q2"
+    ],
+    "method_note": "口径说明：Google Cloud 与 AWS 为公司分部收入；Microsoft Cloud 包含 Microsoft 365 Commercial cloud、Azure、LinkedIn 商业部分及 Dynamics 365，并非 Azure 单项收入，因此三家公司绝对收入不宜直接视作同口径市场份额。投资强度=最新年度 Capex 指引中值÷最新季度云收入年化值，仅作方向性比较。",
+    "companies": {
+      "alphabet": {
+        "display_name": "Google Cloud",
+        "metric": "Google Cloud segment revenue",
+        "revenue_b": [
+          15.157,
+          17.664,
+          20.028,
+          24.768
+        ],
+        "latest_yoy_pct": 82.0,
+        "source_label": "Alphabet 2026 Q2 财报",
+        "source_date": "2026-07-22",
+        "source_url": "https://abc.xyz/investor/news/news-details/2026/Alphabet-Announces-Second-Quarter-2026-Results-2026-Y3uQ6H4ZJa/default.aspx",
+        "quarter_sources": [
+          "https://www.sec.gov/Archives/edgar/data/1652044/000165204425000087/googexhibit991q32025.htm",
+          "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000012/googexhibit991q42025.htm",
+          "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000043/googexhibit991q12026.htm",
+          "https://abc.xyz/investor/news/news-details/2026/Alphabet-Announces-Second-Quarter-2026-Results-2026-Y3uQ6H4ZJa/default.aspx"
+        ]
+      },
+      "amazon": {
+        "display_name": "Amazon Web Services",
+        "metric": "AWS segment net sales",
+        "revenue_b": [
+          33.006,
+          35.579,
+          37.587,
+          42.232
+        ],
+        "latest_yoy_pct": 36.8,
+        "source_label": "Amazon 2026 Q2 财报",
+        "source_date": "2026-07-30",
+        "source_url": "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Second-Quarter-Results/default.aspx",
+        "quarter_sources": [
+          "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Second-Quarter-Results/default.aspx"
+        ]
+      },
+      "microsoft": {
+        "display_name": "Microsoft Cloud",
+        "metric": "Microsoft Cloud revenue",
+        "revenue_b": [
+          49.1,
+          51.5,
+          54.5,
+          59.3
+        ],
+        "latest_yoy_pct": 27.0,
+        "scope_note": "包含 Microsoft 365 Commercial cloud、Azure and other cloud services、LinkedIn 商业部分与 Dynamics 365；不是 Azure 单独收入。",
+        "source_label": "Microsoft FY26 Q4 财报",
+        "source_date": "2026-07-29",
+        "source_url": "https://www.microsoft.com/en-us/Investor/earnings/FY-2026-Q4/press-release-webcast",
+        "quarter_sources": [
+          "https://www.microsoft.com/en-us/Investor/earnings/FY-2026-Q4/metrics"
+        ]
+      }
     }
   }
 }
