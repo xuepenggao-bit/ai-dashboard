@@ -181,6 +181,22 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-stock-name-line{display:flex;align-items:center;gap:6px;min-width:0}
 .port-stock-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--text)}
 .port-hk-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:25px;height:17px;padding:0 5px;border:1px solid rgba(0,113,227,.24);border-radius:5px;background:linear-gradient(180deg,#f2f8ff 0%,#e4f1ff 100%);color:#0667c9;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;font-size:9px;font-weight:800;letter-spacing:.06em;line-height:1;box-shadow:0 1px 2px rgba(0,102,204,.08),inset 0 1px 0 rgba(255,255,255,.9)}
+.port-market-breadth{margin-top:10px;padding-top:10px;border-top:1px solid #bfdbfe}
+.port-market-breadth-title{font-size:10px;color:#3b82f6;font-weight:800;letter-spacing:.05em;margin-bottom:7px}
+.port-market-breadth-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.port-market-card{min-width:0;border:1px solid #cbd5e1;border-radius:10px;padding:8px 9px;background:linear-gradient(145deg,#f8fafc,#fff);box-shadow:0 2px 7px rgba(15,23,42,.04)}
+.port-market-card-hk{border-color:#bfdbfe;background:linear-gradient(145deg,#eff6ff,#fff)}
+.port-market-head{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:5px}
+.port-market-name{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:900;color:#0f172a;white-space:nowrap}
+.port-market-dot{width:7px;height:7px;border-radius:50%;background:#dc2626;box-shadow:0 0 0 3px #fee2e2}
+.port-market-card-hk .port-market-dot{background:#2563eb;box-shadow:0 0 0 3px #dbeafe}
+.port-market-count{font-size:9px;color:#64748b;font-weight:700;white-space:nowrap}
+.port-market-avg{font-size:18px;font-weight:900;line-height:1.1;letter-spacing:-.025em;color:#64748b;margin-bottom:6px}
+.port-market-avg-label{font-size:8px;color:#94a3b8;font-weight:700;margin-left:2px;white-space:nowrap}
+.port-market-lines{padding-top:5px;border-top:1px solid #e2e8f0;display:grid;gap:3px}
+.port-market-line{display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:9px;font-weight:800;white-space:nowrap}
+.port-market-up{color:#dc2626}.port-market-down{color:#16a34a}.port-market-flat{color:#64748b}
+@media(max-width:360px){.port-market-breadth-grid{grid-template-columns:1fr}.port-market-card{padding:9px 10px}}
 
 /* ── Portfolio allocation stack ── */
 .alloc-stack{padding:0;overflow:hidden;border:1px solid #cbd5e1;border-top:0;background:#fff;box-shadow:0 7px 22px rgba(15,23,42,.08)}
@@ -782,6 +798,28 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           </div>
         </div>
         <div id="pFlatInfo" style="display:none;font-size:10px;color:#94a3b8;text-align:center;margin-top:7px;font-weight:500"></div>
+        <!-- A股 / 港股分市场统计：整体及上涨/下跌组均按仓位加权 -->
+        <div id="portMarketBreadth" class="port-market-breadth">
+          <div class="port-market-breadth-title">分市场涨跌 · 仓位加权</div>
+          <div class="port-market-breadth-grid">
+            <div class="port-market-card">
+              <div class="port-market-head">
+                <span class="port-market-name"><i class="port-market-dot"></i>A股</span>
+                <span class="port-market-count" id="pABreadthCount">—</span>
+              </div>
+              <div><span class="port-market-avg" id="pABreadthAvg">—</span><span class="port-market-avg-label">整体加权</span></div>
+              <div class="port-market-lines" id="pABreadthLines"><span class="port-market-flat">等待行情</span></div>
+            </div>
+            <div class="port-market-card port-market-card-hk">
+              <div class="port-market-head">
+                <span class="port-market-name"><i class="port-market-dot"></i>港股</span>
+                <span class="port-market-count" id="pHKBreadthCount">—</span>
+              </div>
+              <div><span class="port-market-avg" id="pHKBreadthAvg">—</span><span class="port-market-avg-label">整体加权</span></div>
+              <div class="port-market-lines" id="pHKBreadthLines"><span class="port-market-flat">等待行情</span></div>
+            </div>
+          </div>
+        </div>
         <!-- 领涨/领跌行业（红涨绿跌） -->
         <div id="portIndLeader" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #bfdbfe">
           <div style="font-size:10px;color:#3b82f6;font-weight:700;letter-spacing:.04em;margin-bottom:6px">行业表现</div>
@@ -8743,34 +8781,47 @@ function renderPortTop3(){
 function _renderPortBreadth(){
   var el = document.getElementById('portBreadth');
   if(!el) return;
+  var breadthNow = Date.now();
 
-  // 收集所有有价格的股票
+  // 收集所有涨跌幅有效的股票；09:00—09:15 的 A 股尚未开盘，不混入当日分布。
   var allStocks = [];
   if(typeof PORT !== 'undefined' && PORT && PORT.sectors){
     PORT.sectors.forEach(function(sec){
       sec.stocks.forEach(function(sk){ allStocks.push(sk); });
     });
   }
-  var withPrice = allStocks.filter(function(sk){ return _PORT_PRICES[sk.code]; });
-  if(!withPrice.length){ el.style.display='none'; return; }
+  var quotedStocks = allStocks.filter(function(sk){
+    var pi = _PORT_PRICES[sk.code];
+    return pi && isFinite(Number(pi.pct));
+  });
+  var withPrice = quotedStocks.filter(function(sk){
+    return !_isPortfolioAStockPreOpen(sk.mkt,sk.code,breadthNow);
+  });
+  if(!quotedStocks.length){ el.style.display='none'; return; }
 
-  var up   = withPrice.filter(function(sk){ return _PORT_PRICES[sk.code].pct > 0; });
-  var down = withPrice.filter(function(sk){ return _PORT_PRICES[sk.code].pct < 0; });
-  var flat = withPrice.filter(function(sk){ return _PORT_PRICES[sk.code].pct === 0; });
+  var up   = withPrice.filter(function(sk){ return Number(_PORT_PRICES[sk.code].pct) > 0; });
+  var down = withPrice.filter(function(sk){ return Number(_PORT_PRICES[sk.code].pct) < 0; });
+  var flat = withPrice.filter(function(sk){ return Number(_PORT_PRICES[sk.code].pct) === 0; });
 
-  // 加权平均涨幅：Σ(pct × w) / Σ(w)，若无仓位数据则退化为等权平均
-  var avgUp = (function(){
-    if(!up.length) return 0;
-    var wSum = up.reduce(function(s,sk){ return s+(sk.w||0); },0);
-    if(wSum > 0) return up.reduce(function(s,sk){ return s+_PORT_PRICES[sk.code].pct*(sk.w||0); },0)/wSum;
-    return up.reduce(function(s,sk){ return s+_PORT_PRICES[sk.code].pct; },0)/up.length;
-  })();
-  var avgDown = (function(){
-    if(!down.length) return 0;
-    var wSum = down.reduce(function(s,sk){ return s+(sk.w||0); },0);
-    if(wSum > 0) return down.reduce(function(s,sk){ return s+_PORT_PRICES[sk.code].pct*(sk.w||0); },0)/wSum;
-    return down.reduce(function(s,sk){ return s+_PORT_PRICES[sk.code].pct; },0)/down.length;
-  })();
+  // Σ(pct × w) / Σ(w)；若分组内没有有效仓位则退化为等权平均。
+  function _weightedBreadthAvg(stocks){
+    if(!stocks.length) return null;
+    var wSum = stocks.reduce(function(s,sk){
+      var pi=_PORT_PRICES[sk.code];
+      var w=Number(pi && pi.w != null ? pi.w : sk.w);
+      return s+(isFinite(w)&&w>0?w:0);
+    },0);
+    if(wSum>0){
+      return stocks.reduce(function(s,sk){
+        var pi=_PORT_PRICES[sk.code];
+        var w=Number(pi && pi.w != null ? pi.w : sk.w);
+        return s+Number(pi.pct)*(isFinite(w)&&w>0?w:0);
+      },0)/wSum;
+    }
+    return stocks.reduce(function(s,sk){ return s+Number(_PORT_PRICES[sk.code].pct); },0)/stocks.length;
+  }
+  var avgUp = _weightedBreadthAvg(up);
+  var avgDown = _weightedBreadthAvg(down);
   var upRatio = withPrice.length > 0 ? up.length/withPrice.length : 0;
 
   // 热力点阵：按涨幅从高到低排序，大小代表仓位，颜色深浅代表幅度
@@ -8816,6 +8867,49 @@ function _renderPortBreadth(){
   var flatEl = document.getElementById('pFlatInfo');
   if(flat.length){ flatEl.textContent='平盘 '+flat.length+' 只'; flatEl.style.display='block'; }
   else { flatEl.style.display='none'; }
+
+  // ── A股 / 港股分市场统计 ────────────────────────────────────────
+  // 整体平均、上涨组和下跌组全部复用同一仓位加权函数，确保口径一致。
+  function _renderMarketBreadth(prefix, stocks, isPreOpen){
+    var countEl=document.getElementById('p'+prefix+'BreadthCount');
+    var avgEl=document.getElementById('p'+prefix+'BreadthAvg');
+    var linesEl=document.getElementById('p'+prefix+'BreadthLines');
+    if(!countEl||!avgEl||!linesEl) return;
+    if(isPreOpen){
+      countEl.textContent=stocks.length+'只持仓';
+      avgEl.textContent='未开盘';
+      avgEl.style.color='#64748b';
+      linesEl.innerHTML='<span class="port-market-flat">09:15 后开始统计</span>';
+      return;
+    }
+    if(!stocks.length){
+      countEl.textContent='0只行情';
+      avgEl.textContent='—';
+      avgEl.style.color='#64748b';
+      linesEl.innerHTML='<span class="port-market-flat">暂无有效行情</span>';
+      return;
+    }
+    var marketUp=stocks.filter(function(sk){ return Number(_PORT_PRICES[sk.code].pct)>0; });
+    var marketDown=stocks.filter(function(sk){ return Number(_PORT_PRICES[sk.code].pct)<0; });
+    var marketFlat=stocks.length-marketUp.length-marketDown.length;
+    var marketAvg=_weightedBreadthAvg(stocks);
+    var marketUpAvg=_weightedBreadthAvg(marketUp);
+    var marketDownAvg=_weightedBreadthAvg(marketDown);
+    countEl.textContent=stocks.length+'只行情';
+    avgEl.textContent=(marketAvg>0?'+':'')+marketAvg.toFixed(2)+'%';
+    avgEl.style.color=marketAvg>0?'#dc2626':marketAvg<0?'#16a34a':'#64748b';
+    var rows=[];
+    if(marketUp.length) rows.push('<span class="port-market-line port-market-up"><span>▲ 涨 '+marketUp.length+'只</span><b>+'+marketUpAvg.toFixed(2)+'%</b></span>');
+    if(marketDown.length) rows.push('<span class="port-market-line port-market-down"><span>▼ 跌 '+marketDown.length+'只</span><b>'+marketDownAvg.toFixed(2)+'%</b></span>');
+    if(marketFlat) rows.push('<span class="port-market-line port-market-flat"><span>— 平 '+marketFlat+'只</span><b>0.00%</b></span>');
+    linesEl.innerHTML=rows.join('')||'<span class="port-market-flat">暂无涨跌</span>';
+  }
+  var aHoldings=allStocks.filter(function(sk){ return !_isPortfolioHKStock(sk.mkt,sk.code); });
+  var aQuoted=quotedStocks.filter(function(sk){ return !_isPortfolioHKStock(sk.mkt,sk.code); });
+  var hkQuoted=quotedStocks.filter(function(sk){ return _isPortfolioHKStock(sk.mkt,sk.code); });
+  var aPreOpen=_isAPreOpenZeroWindow(breadthNow)&&aHoldings.length>0;
+  _renderMarketBreadth('A',aPreOpen?aHoldings:aQuoted,aPreOpen);
+  _renderMarketBreadth('HK',hkQuoted,false);
 
   // ── 领涨/领跌行业（按"涨跌幅 × 仓位"加权平均）──────────────────────
   //    行业涨跌幅 = Σ(成员股涨跌幅 × 仓位) / Σ仓位；若该行业成员仓位全为 0/未设置，则回退为简单算术均值
