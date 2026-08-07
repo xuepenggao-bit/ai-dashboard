@@ -344,6 +344,14 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .color-swatch.sel{border-color:#1e293b!important}
 .sec-header{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .mkt-badge{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600}
+.port-sector-name-wrap{display:flex;align-items:center;gap:6px;min-width:0}
+.port-sector-name{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.port-sector-rename{width:27px;height:27px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;border:1px solid #cbd5e1;border-radius:8px;background:linear-gradient(180deg,#fff,#f1f5f9);color:#475569;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.06);transition:background .15s,border-color .15s,color .15s,transform .12s}
+.port-sector-rename:hover{background:#eff6ff;border-color:#93c5fd;color:#2563eb}
+.port-sector-rename:active{transform:scale(.94)}
+.port-sector-rename svg{width:13px;height:13px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.port-sector-edit-box{width:420px}
+.port-sector-edit-note{margin:-4px 0 15px;padding:9px 11px;border:1px solid #dbeafe;border-radius:8px;background:#eff6ff;color:#475569;font-size:11px;line-height:1.55}
 
 /* ── 投资组合 专属排版优化 ─────────────────────────────── */
 #tPort .klabel{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;letter-spacing:.01em}
@@ -412,6 +420,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   /* 操作按钮缩短 */
   #tPort .btn-edit{font-size:11px;padding:4px 8px}
   #tPort .btn-del {font-size:11px;padding:4px 8px;margin-left:3px}
+  .port-sector-name{max-width:170px;font-size:15px}
+  .port-sector-rename{width:29px;height:29px}
 }
 </style>
 </head>
@@ -1044,6 +1054,27 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="form-actions">
         <button type="button" class="btn-ghost" onclick="closePortModal()">取消</button>
         <button type="submit" class="btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Rename Portfolio Sector Modal ── -->
+<div id="portSectorEditModal" class="modal-overlay" onclick="if(event.target===this)closePortSectorEdit()">
+  <div class="modal-box port-sector-edit-box" role="dialog" aria-modal="true" aria-labelledby="portSectorEditTitle">
+    <div class="modal-title">
+      <span id="portSectorEditTitle">修改分类名称</span>
+      <button type="button" onclick="closePortSectorEdit()" aria-label="关闭" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);line-height:1">×</button>
+    </div>
+    <div class="port-sector-edit-note">仅修改分类名称；分类内的股票、仓位、行业信息和历史持仓不会改变。</div>
+    <form id="portSectorEditForm" onsubmit="event.preventDefault();submitPortSectorEdit()">
+      <div class="form-row">
+        <label class="form-label" for="portSectorEditName">分类名称</label>
+        <input id="portSectorEditName" class="form-input" type="text" maxlength="30" autocomplete="off" required />
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-ghost" onclick="closePortSectorEdit()">取消</button>
+        <button type="submit" class="btn-primary">保存名称</button>
       </div>
     </form>
   </div>
@@ -3904,6 +3935,7 @@ function renderPortfolio(){
 
   document.getElementById('portSectors').innerHTML = PORT.sectors.map((sec,si)=>{
     const secW = secWeights[si];
+    const secNameHtml = _escH(sec.name);
     // sort display copy; keep original index for edit/delete
     const disp=[...sec.stocks];
     if(_portSort.col==='pct'){
@@ -3968,7 +4000,12 @@ function renderPortfolio(){
     return `<div class="card mb16" style="overflow:hidden">
       <div class="sec-header">
         <span style="width:20px;height:20px;border-radius:6px;background:${sec.color};display:inline-block;flex-shrink:0;box-shadow:0 2px 6px ${sec.color}55"></span>
-        <span style="font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.01em">${sec.name}</span>
+        <span class="port-sector-name-wrap">
+          <span class="port-sector-name">${secNameHtml}</span>
+          <button type="button" class="port-sector-rename" onclick="openPortSectorEdit(${si})" title="修改分类名称" aria-label="修改 ${secNameHtml} 分类名称">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+          </button>
+        </span>
         <span style="font-size:12px;color:var(--text2);background:#e2e8f0;padding:2px 9px;border-radius:10px;font-weight:600">${sec.stocks.length} 只</span>
         <div style="margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="text-align:right">
@@ -4091,6 +4128,40 @@ function delPortSector(si){
   PORT.sectors.splice(si,1); portSave(); renderPortfolio();
 }
 
+// 修改分类名称：保留分类 id 及全部股票数据，确保跨设备合并仍能识别同一分类。
+let _portSectorEditSi=-1;
+function openPortSectorEdit(si){
+  if(!PORT || !PORT.sectors || !PORT.sectors[si]) return;
+  _portSectorEditSi=si;
+  const input=document.getElementById('portSectorEditName');
+  input.value=PORT.sectors[si].name || '';
+  document.getElementById('portSectorEditModal').style.display='flex';
+  requestAnimationFrame(()=>{ input.focus(); input.select(); });
+}
+function closePortSectorEdit(){
+  document.getElementById('portSectorEditModal').style.display='none';
+  _portSectorEditSi=-1;
+}
+function submitPortSectorEdit(){
+  const si=_portSectorEditSi;
+  if(si<0 || !PORT || !PORT.sectors || !PORT.sectors[si]){
+    closePortSectorEdit();
+    return;
+  }
+  const input=document.getElementById('portSectorEditName');
+  const name=input.value.trim();
+  if(!name){ alert('请输入分类名称'); input.focus(); return; }
+  const duplicate=PORT.sectors.some((sec,index)=>index!==si && String(sec.name||'').trim().toLocaleLowerCase()===name.toLocaleLowerCase());
+  if(duplicate){ alert('已存在同名分类，请使用其他名称'); input.focus(); input.select(); return; }
+  if(name===PORT.sectors[si].name){ closePortSectorEdit(); return; }
+  PORT.sectors[si].name=name;
+  portSave();
+  closePortSectorEdit();
+  renderPortfolio();
+  // 有 GitHub 授权时立即同步；无授权时 portSaveRemote 会保留“待同步”状态。
+  portSaveRemote();
+}
+
 // 根据股票代码首位自动识别交易市场
 function autoDetectMkt(code){
   code = code.trim();
@@ -4110,7 +4181,7 @@ function openPortModal(mode,si,ki){
   _portModalMode=mode; _portModalSi=si; _portModalKi=ki;
   document.getElementById('portModalTitle').textContent = mode==='add'?'添加股票':'编辑股票';
   const sel=document.getElementById('pSecSel');
-  sel.innerHTML=PORT.sectors.map((s,i)=>`<option value="${i}"${i===si?' selected':''}>${s.name}</option>`).join('');
+  sel.innerHTML=PORT.sectors.map((s,i)=>`<option value="${i}"${i===si?' selected':''}>${_escH(s.name)}</option>`).join('');
   if(mode==='edit'&&ki>=0){
     const sk=PORT.sectors[si].stocks[ki];
     document.getElementById('pStkName').value  = sk.name;
