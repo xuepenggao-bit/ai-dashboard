@@ -386,6 +386,47 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 /* 行业列宽度约束 */
 #tPort .mtable td.col-industry{max-width:100px;overflow:hidden;text-overflow:ellipsis}
 
+/* ── 持仓概览重点卡片 ─────────────────────────────────────── */
+.port-overview-card{
+  position:relative;overflow:hidden;
+  border:1px solid rgba(37,99,235,.24)!important;border-top:none!important;
+  background:linear-gradient(145deg,#eef5ff 0%,#fff 54%,#f5f3ff 100%)!important;
+  box-shadow:0 12px 30px rgba(37,99,235,.14),0 2px 8px rgba(15,23,42,.06)!important;
+}
+.port-overview-card::before{
+  content:'';position:absolute;inset:0 0 auto;height:5px;
+  background:linear-gradient(90deg,#2563eb 0%,#7c3aed 58%,#06b6d4 100%);
+}
+.port-overview-card::after{
+  content:'';position:absolute;width:190px;height:190px;right:-72px;top:-92px;border-radius:50%;
+  background:radial-gradient(circle,rgba(96,165,250,.20) 0%,rgba(124,58,237,.06) 52%,transparent 72%);
+  pointer-events:none;
+}
+.port-overview-card>*{position:relative;z-index:1}
+.port-overview-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.port-overview-title{font-size:15px;font-weight:900;color:#1e40af;letter-spacing:.02em}
+.port-overview-badge{font-size:10px;font-weight:800;color:#1d4ed8;background:rgba(255,255,255,.82);border:1px solid #bfdbfe;padding:4px 8px;border-radius:999px;box-shadow:0 2px 7px rgba(37,99,235,.08);white-space:nowrap}
+.port-overview-total{display:flex;align-items:baseline;gap:9px;margin:11px 0 13px;padding-bottom:12px;border-bottom:1px solid rgba(147,197,253,.55)}
+.port-overview-total .kval{font-size:44px!important;letter-spacing:-.04em!important;color:#1d4ed8!important;text-shadow:0 2px 12px rgba(37,99,235,.10)}
+.port-overview-total-label{font-size:14px;color:#3b82f6;font-weight:800}
+.port-overview-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.port-overview-stat{min-width:0;border-radius:10px;padding:9px 10px;text-align:center;border:1px solid rgba(147,197,253,.35);background:rgba(255,255,255,.76)}
+.port-overview-stat-value{font-size:21px;font-weight:900;line-height:1.1;color:#1d4ed8;letter-spacing:-.02em}
+.port-overview-stat-label{font-size:10px;color:#3b82f6;font-weight:700;margin-top:4px;white-space:nowrap}
+.port-overview-change{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;text-align:left;padding:11px 13px;transition:background .25s,border-color .25s,box-shadow .25s}
+.port-overview-change .port-overview-stat-label{grid-column:1;grid-row:1;margin:0;font-size:11px;letter-spacing:.03em}
+.port-overview-change .port-overview-stat-value{grid-column:2;grid-row:1;font-size:30px;line-height:1;text-align:right;font-variant-numeric:tabular-nums}
+.port-overview-change-meta{grid-column:1/-1;grid-row:2;font-size:9.5px;color:#64748b;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.port-overview-change.is-up{background:linear-gradient(135deg,#fff1f2,#fff);border-color:#fda4af;box-shadow:0 5px 14px rgba(220,38,38,.11)}
+.port-overview-change.is-up .port-overview-stat-value,.port-overview-change.is-up .port-overview-stat-label{color:#be123c}
+.port-overview-change.is-down{background:linear-gradient(135deg,#f0fdf4,#fff);border-color:#86efac;box-shadow:0 5px 14px rgba(5,150,105,.12)}
+.port-overview-change.is-down .port-overview-stat-value,.port-overview-change.is-down .port-overview-stat-label{color:#047857}
+.port-overview-change.is-flat{background:linear-gradient(135deg,#f8fafc,#fff);border-color:#cbd5e1}
+.port-overview-change.is-flat .port-overview-stat-value,.port-overview-change.is-flat .port-overview-stat-label{color:#475569}
+.port-overview-change.is-empty .port-overview-stat-value{font-size:17px;color:#64748b}
+.port-overview-foot{font-size:11px;color:#64748b;margin-top:9px;font-weight:600;display:flex;align-items:center;gap:6px}
+.port-overview-foot::before{content:'●';font-size:8px;color:#60a5fa}
+
 /* ── 分类饼图面板 ─────────────────────────────────────────── */
 .sec-pie-panel{transition:opacity .3s}
 @media(max-width:640px){.sec-pie-panel{display:none!important}}
@@ -422,6 +463,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   #tPort .btn-del {font-size:11px;padding:4px 8px;margin-left:3px}
   .port-sector-name{max-width:170px;font-size:15px}
   .port-sector-rename{width:29px;height:29px}
+  .port-overview-total .kval{font-size:38px!important}
+  .port-overview-change .port-overview-stat-value{font-size:27px}
 }
 </style>
 </head>
@@ -755,23 +798,31 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- Row 2: 持仓概览 + 仓位分配明细 + 主力净流入TOP20 + 主力净流出TOP20 -->
   <div class="g4 mb16">
     <!-- 持仓概览 -->
-    <div class="card" style="border-top:3px solid var(--blue);background:linear-gradient(135deg,#eff6ff 0%,#fff 60%)">
-      <div class="klabel" style="font-size:14px;font-weight:800;color:var(--blue);letter-spacing:.02em">📂 持仓概览</div>
-      <div style="display:flex;align-items:baseline;gap:10px;margin:8px 0 10px">
-        <span class="kval tb" id="pKpiWeight" style="font-size:42px;letter-spacing:-.03em;color:#1d4ed8">—</span>
-        <span style="font-size:15px;color:#3b82f6;font-weight:700">总仓位</span>
+    <div class="card port-overview-card">
+      <div class="port-overview-head">
+        <div class="port-overview-title">📂 持仓概览</div>
+        <span class="port-overview-badge">组合实时快照</span>
       </div>
-      <div style="display:flex;gap:16px;flex-wrap:wrap">
-        <div style="background:#dbeafe;border-radius:8px;padding:6px 12px;text-align:center">
-          <div style="font-size:20px;font-weight:900;color:#1d4ed8;line-height:1.1" id="pKpiStocks">—</div>
-          <div style="font-size:11px;color:#3b82f6;font-weight:600;margin-top:2px">持仓只数</div>
+      <div class="port-overview-total">
+        <span class="kval tb" id="pKpiWeight">—</span>
+        <span class="port-overview-total-label">总仓位</span>
+      </div>
+      <div class="port-overview-stats">
+        <div class="port-overview-stat">
+          <div class="port-overview-stat-value" id="pKpiStocks">—</div>
+          <div class="port-overview-stat-label">持仓只数</div>
         </div>
-        <div style="background:#e0f2fe;border-radius:8px;padding:6px 12px;text-align:center">
-          <div style="font-size:20px;font-weight:900;color:#0369a1;line-height:1.1" id="pKpiSectors">—</div>
-          <div style="font-size:11px;color:#0284c7;font-weight:600;margin-top:2px">分类数</div>
+        <div class="port-overview-stat">
+          <div class="port-overview-stat-value" id="pKpiSectors">—</div>
+          <div class="port-overview-stat-label">分类数</div>
+        </div>
+        <div class="port-overview-stat port-overview-change is-empty" id="pKpiChangeCard" title="计算公式：Σ（股票涨跌幅 × 仓位）÷ 已取得行情股票的仓位合计">
+          <div class="port-overview-stat-value" id="pKpiChange">待刷新</div>
+          <div class="port-overview-stat-label">今日加权涨跌幅</div>
+          <div class="port-overview-change-meta" id="pKpiChangeMeta">按持仓权重计算</div>
         </div>
       </div>
-      <div style="font-size:12px;color:#64748b;margin-top:10px;font-weight:500" id="pKpiHk">—</div>
+      <div class="port-overview-foot" id="pKpiHk">—</div>
 
       <!-- 涨跌分布 —— 由 _renderPortBreadth() 填充 -->
       <div id="portBreadth" style="display:none;margin-top:13px;padding-top:12px;border-top:1px solid #bfdbfe">
@@ -3849,6 +3900,33 @@ function renderPortfolio(){
   document.getElementById('pKpiWeight').textContent  = wSum.toFixed(1)+'%';
   document.getElementById('pKpiHk').textContent      = '含港股 '+hkCnt+' 只';
   document.getElementById('pTotalBadge').textContent = allocModel.categories.length+' 分类 · '+wSum.toFixed(1)+'%';
+
+  // 今日组合涨跌幅：按已取得有效行情的个股仓位归一化加权。
+  // 分类聚合模型已校验市场代码匹配，直接复用可避免与下方分类加权结果出现口径差异。
+  const pricedWeight = allocModel.categories.reduce((sum,entry)=>sum+entry.pricedWeight,0);
+  const pricedStocks = allocModel.categories.reduce((sum,entry)=>sum+entry.pricedCount,0);
+  const activeStocks = allocModel.categories.reduce((sum,entry)=>sum+entry.activeCount,0);
+  const weightedPct = pricedWeight>0
+    ? allocModel.categories.reduce((sum,entry)=>sum+(entry.pct==null?0:entry.pct*entry.pricedWeight),0)/pricedWeight
+    : null;
+  const changeEl = document.getElementById('pKpiChange');
+  const changeCard = document.getElementById('pKpiChangeCard');
+  const changeMeta = document.getElementById('pKpiChangeMeta');
+  if(changeEl && changeCard && changeMeta){
+    changeCard.classList.remove('is-up','is-down','is-flat','is-empty');
+    if(weightedPct!=null){
+      const fullCoverage = pricedStocks===activeStocks && Math.abs(pricedWeight-wSum)<0.05;
+      const direction = weightedPct>0.005 ? '▲ ' : weightedPct<-0.005 ? '▼ ' : '';
+      const sign = weightedPct>0 ? '+' : '';
+      changeEl.textContent = (fullCoverage?'':'≈')+direction+sign+weightedPct.toFixed(2)+'%';
+      changeMeta.textContent = '覆盖 '+pricedStocks+'/'+activeStocks+'只 · 仓位 '+pricedWeight.toFixed(1)+'%';
+      changeCard.classList.add(weightedPct>0.005?'is-up':weightedPct<-0.005?'is-down':'is-flat');
+    }else{
+      changeEl.textContent = '待刷新';
+      changeMeta.textContent = '刷新行情后自动计算';
+      changeCard.classList.add('is-empty');
+    }
+  }
   _renderPortBreadth();  // 刷新涨跌分布热力图
 
   // 仓位分配明细：分类与行业上下合并展示，不再依赖饼图 canvas。
