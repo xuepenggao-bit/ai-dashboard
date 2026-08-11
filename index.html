@@ -409,14 +409,14 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-overview-total{display:flex;align-items:baseline;gap:9px;margin:11px 0 13px;padding-bottom:12px;border-bottom:1px solid rgba(147,197,253,.55)}
 .port-overview-total .kval{font-size:44px!important;letter-spacing:-.04em!important;color:#1d4ed8!important;text-shadow:0 2px 12px rgba(37,99,235,.10)}
 .port-overview-total-label{font-size:14px;color:#3b82f6;font-weight:800}
-.port-overview-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.port-overview-stat{min-width:0;border-radius:10px;padding:9px 10px;text-align:center;border:1px solid rgba(147,197,253,.35);background:rgba(255,255,255,.76)}
+.port-overview-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.port-overview-stat{min-width:0;border-radius:10px;padding:9px 6px;text-align:center;border:1px solid rgba(147,197,253,.35);background:rgba(255,255,255,.76)}
 .port-overview-stat-value{font-size:21px;font-weight:900;line-height:1.1;color:#1d4ed8;letter-spacing:-.02em}
 .port-overview-stat-label{font-size:10px;color:#3b82f6;font-weight:700;margin-top:4px;white-space:nowrap}
-.port-overview-change{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;text-align:left;padding:11px 13px;transition:background .25s,border-color .25s,box-shadow .25s}
-.port-overview-change .port-overview-stat-label{grid-column:1;grid-row:1;margin:0;font-size:11px;letter-spacing:.03em}
-.port-overview-change .port-overview-stat-value{grid-column:2;grid-row:1;font-size:30px;line-height:1;text-align:right;font-variant-numeric:tabular-nums}
-.port-overview-change-meta{grid-column:1/-1;grid-row:2;font-size:9.5px;color:#64748b;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.port-overview-change{transition:background .25s,border-color .25s,box-shadow .25s}
+.port-overview-change .port-overview-stat-label{font-size:9px;letter-spacing:0}
+.port-overview-change .port-overview-stat-value{font-size:20px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.port-overview-change-meta{display:none}
 .port-overview-change.is-up{background:linear-gradient(135deg,#fff1f2,#fff);border-color:#fda4af;box-shadow:0 5px 14px rgba(220,38,38,.11)}
 .port-overview-change.is-up .port-overview-stat-value,.port-overview-change.is-up .port-overview-stat-label{color:#be123c}
 .port-overview-change.is-down{background:linear-gradient(135deg,#f0fdf4,#fff);border-color:#86efac;box-shadow:0 5px 14px rgba(5,150,105,.12)}
@@ -424,8 +424,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-overview-change.is-flat{background:linear-gradient(135deg,#f8fafc,#fff);border-color:#cbd5e1}
 .port-overview-change.is-flat .port-overview-stat-value,.port-overview-change.is-flat .port-overview-stat-label{color:#475569}
 .port-overview-change.is-empty .port-overview-stat-value{font-size:17px;color:#64748b}
-.port-overview-foot{font-size:11px;color:#64748b;margin-top:9px;font-weight:600;display:flex;align-items:center;gap:6px}
-.port-overview-foot::before{content:'●';font-size:8px;color:#60a5fa}
 
 /* ── 分类饼图面板 ─────────────────────────────────────────── */
 .sec-pie-panel{transition:opacity .3s}
@@ -464,7 +462,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .port-sector-name{max-width:170px;font-size:15px}
   .port-sector-rename{width:29px;height:29px}
   .port-overview-total .kval{font-size:38px!important}
-  .port-overview-change .port-overview-stat-value{font-size:27px}
+  .port-overview-change .port-overview-stat-value{font-size:19px}
 }
 </style>
 </head>
@@ -822,8 +820,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           <div class="port-overview-change-meta" id="pKpiChangeMeta">按持仓权重计算</div>
         </div>
       </div>
-      <div class="port-overview-foot" id="pKpiHk">—</div>
-
       <!-- 涨跌分布 —— 由 _renderPortBreadth() 填充 -->
       <div id="portBreadth" style="display:none;margin-top:13px;padding-top:12px;border-top:1px solid #bfdbfe">
         <!-- 小标题 + 计数 -->
@@ -3894,11 +3890,9 @@ function renderPortfolio(){
   const secWeights = allocModel.categories.map(entry=>entry.weight);
   const secAvgPcts = allocModel.categories.map(entry=>entry.pct);
   const wSum = allocModel.totalWeight;
-  const hkCnt = allocModel.hkStocks;
   document.getElementById('pKpiStocks').textContent  = total;
   document.getElementById('pKpiSectors').textContent = PORT.sectors.length;
   document.getElementById('pKpiWeight').textContent  = wSum.toFixed(1)+'%';
-  document.getElementById('pKpiHk').textContent      = '含港股 '+hkCnt+' 只';
   document.getElementById('pTotalBadge').textContent = allocModel.categories.length+' 分类 · '+wSum.toFixed(1)+'%';
 
   // 今日组合涨跌幅：按已取得有效行情的个股仓位归一化加权。
@@ -3916,9 +3910,8 @@ function renderPortfolio(){
     changeCard.classList.remove('is-up','is-down','is-flat','is-empty');
     if(weightedPct!=null){
       const fullCoverage = pricedStocks===activeStocks && Math.abs(pricedWeight-wSum)<0.05;
-      const direction = weightedPct>0.005 ? '▲ ' : weightedPct<-0.005 ? '▼ ' : '';
       const sign = weightedPct>0 ? '+' : '';
-      changeEl.textContent = (fullCoverage?'':'≈')+direction+sign+weightedPct.toFixed(2)+'%';
+      changeEl.textContent = (fullCoverage?'':'≈')+sign+weightedPct.toFixed(2)+'%';
       changeMeta.textContent = '覆盖 '+pricedStocks+'/'+activeStocks+'只 · 仓位 '+pricedWeight.toFixed(1)+'%';
       changeCard.classList.add(weightedPct>0.005?'is-up':weightedPct<-0.005?'is-down':'is-flat');
     }else{
