@@ -224,7 +224,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .alloc-panel-category .alloc-badge{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
 .alloc-panel-industry .alloc-badge{background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe}
 .alloc-list{height:202px;max-height:202px;overflow:auto;scrollbar-gutter:stable;border:1px solid rgba(203,213,225,.72);border-radius:9px;background:rgba(255,255,255,.92);scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
-.alloc-panel-industry .alloc-list{height:252px;max-height:252px}
+.alloc-panel-industry .alloc-list{height:336px;max-height:336px}
 .alloc-grid-head,.alloc-row{display:grid;grid-template-columns:minmax(0,1fr) 65px 48px;column-gap:6px;align-items:center}
 .alloc-grid-head{position:sticky;top:0;z-index:2;padding:6px 7px;border-bottom:1px solid #cbd5e1;background:rgba(248,250,252,.98);font-size:9.5px;font-weight:800;color:#7c899b;letter-spacing:.035em}
 .alloc-grid-head span:nth-child(n+2){text-align:right}
@@ -1014,51 +1014,66 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   <!-- Row 4.5: 财经要闻 + 7×24 快讯 -->
   <style>
-  .news-card{border-top:3px solid #0ea5e9}
-  .news-hd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:13px;padding-bottom:10px;border-bottom:1px solid #eef2f7}
-  .news-hd .t{font-size:14.5px;font-weight:900;color:#0f172a;letter-spacing:.02em}
-  .news-hd .bdg{font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;padding:1px 8px;border-radius:10px;font-weight:700}
-  .news-refresh{border:1px solid #bae6fd;background:#f0f9ff;color:#0369a1;border-radius:7px;padding:3px 8px;font-size:10.5px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}
-  .news-refresh:hover{background:#e0f2fe}.news-refresh:disabled{opacity:.55;cursor:default}
+  .news-card{position:relative;padding:0;overflow:hidden;border:1px solid #d8e0eb;border-radius:14px;background:#fff;box-shadow:0 8px 24px rgba(15,23,42,.07),0 1px 3px rgba(15,23,42,.04)}
+  .news-card::before{content:"";position:absolute;z-index:2;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,#dc2626 0%,#f97316 34%,#0ea5e9 68%,#2563eb 100%)}
+  .news-hd{display:flex;align-items:center;gap:10px;min-height:65px;padding:13px 16px 11px;border-bottom:1px solid #dfe7f1;background:linear-gradient(135deg,#f8fafc 0%,#f0f9ff 58%,#fff 100%)}
+  .news-heading{display:flex;align-items:center;gap:9px;min-width:0}
+  .news-title-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#0f172a,#334155);color:#fff;font-size:13px;font-weight:900;box-shadow:0 4px 10px rgba(15,23,42,.17)}
+  .news-title-copy{min-width:0}
+  .news-hd .t{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.2;font-weight:800;color:#0f172a;letter-spacing:.01em}
+  .news-subtitle{margin-top:3px;color:#8491a4;font-size:9.5px;line-height:1.2;font-weight:650;white-space:nowrap}
+  .news-hd .bdg{flex:0 0 auto;padding:3px 8px;border:1px solid #bae6fd;border-radius:999px;background:#e0f2fe;color:#0369a1;font-size:9.5px;font-weight:800;letter-spacing:.02em}
+  .news-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .news-timestamp{font-size:9.5px;color:#8491a4;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .news-refresh{display:inline-flex;align-items:center;gap:4px;border:1px solid #bae6fd;background:#fff;color:#0369a1;border-radius:8px;padding:5px 9px;font-size:10px;font-weight:800;font-family:inherit;cursor:pointer;white-space:nowrap;box-shadow:0 1px 3px rgba(14,165,233,.08);transition:background .15s,transform .15s}
+  .news-refresh:hover{background:#e0f2fe;transform:translateY(-1px)}.news-refresh:disabled{opacity:.55;cursor:default;transform:none}
   .news-refresh.loading .news-refresh-icon{display:inline-block;animation:spin 1s linear infinite}
-  .news-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 24px;align-items:start}
-  @media(max-width:680px){.news-grid{grid-template-columns:1fr}}
-  .news-col-l,.news-col-r{min-width:0}
-  .news-col-r{position:relative}
-  .news-col-r::before{content:"";position:absolute;left:-12px;top:2px;bottom:2px;width:1px;background:#e6ebf1}
-  @media(max-width:680px){.news-col-r::before{display:none}.news-col-r{margin-top:12px;padding-top:12px;border-top:1px solid #eef2f7}}
-  .news-colhd{display:flex;align-items:center;gap:7px;height:22px;margin-bottom:6px}
-  .news-colhd .dot{width:7px;height:7px;border-radius:50%}
-  .news-colhd .lbl{font-size:11.5px;font-weight:800;letter-spacing:.05em}
-  .news-colhd .cnt{font-size:10px;color:#9aa7b5;font-weight:700;margin-left:auto;letter-spacing:.04em}
-  /* 左右统一为 5 行 × 76px；长标题最多两行，确保每一行横向严格对齐。 */
-  #newsTop,#newsFlash{display:grid;grid-template-rows:repeat(5,76px);min-width:0}
+  .news-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding:12px 14px 14px;align-items:stretch;background:#f8fafc}
+  .news-col-l,.news-col-r{min-width:0;overflow:hidden;border:1px solid #dfe6ef;border-radius:11px;background:#fff;box-shadow:0 2px 7px rgba(15,23,42,.035)}
+  .news-colhd{display:flex;align-items:center;gap:7px;height:38px;padding:0 11px;border-bottom:1px solid #e7edf4}
+  .news-col-l .news-colhd{background:linear-gradient(90deg,#fff7ed,#fff)}
+  .news-col-r .news-colhd{background:linear-gradient(90deg,#eff6ff,#fff)}
+  .news-colhd .dot{width:7px;height:7px;border-radius:50%;box-shadow:0 0 0 3px rgba(148,163,184,.12)}
+  .news-colhd .lbl{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;font-size:11.5px;font-weight:800;letter-spacing:.035em}
+  .news-colhd .cnt{font-size:9.5px;color:#8491a4;font-weight:700;margin-left:auto;letter-spacing:.02em;white-space:nowrap}
+  /* 桌面端统一为 5 行 × 58px，紧凑呈现并保持横向严格对齐。 */
+  #newsTop,#newsFlash{display:grid;grid-template-rows:repeat(5,58px);min-width:0;padding:4px 7px 6px}
   #newsTop>.news-empty,#newsFlash>.news-empty{grid-row:1/-1;align-self:center}
   /* 要闻：排名榜（序号色块，Top1-3 红→橙→金，4-5 灰）*/
-  .nrow{display:flex;gap:11px;align-items:flex-start;height:76px;box-sizing:border-box;overflow:hidden;padding:9px 8px;border-radius:9px;text-decoration:none;transition:background .15s}
-  .nrow+.nrow{border-top:1px solid #f3f5f8}
+  .nrow{display:flex;gap:9px;align-items:flex-start;height:58px;box-sizing:border-box;overflow:hidden;padding:6px;border-radius:8px;text-decoration:none;transition:background .15s}
+  .nrow+.nrow{border-top:1px solid #edf1f5}
   .nrow:hover{background:#f8fafc}
-  .nrk{flex:0 0 auto;width:20px;height:20px;border-radius:6px;font-size:11px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .nrk{flex:0 0 auto;width:20px;height:20px;border-radius:6px;font-size:10.5px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:center;margin-top:1px;box-shadow:0 2px 5px rgba(15,23,42,.10)}
   .nrk.r1{background:#dc2626}.nrk.r2{background:#ea580c}.nrk.r3{background:#f59e0b}.nrk.r4,.nrk.r5{background:#cbd5e1;color:#475569}
-  .nttl{font-size:13px;line-height:1.5;font-weight:600;color:#1e293b;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  .nttl{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;font-size:12.5px;line-height:1.38;font-weight:700;color:#172033;letter-spacing:.005em;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
   .nrow:hover .nttl{color:#0369a1}
-  .nmeta{font-size:10px;color:#9aa7b5;margin-top:3px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nmeta{font-size:9.5px;color:#8b98a9;margin-top:2px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* 快讯：时间线（蓝色时间胶囊，最新一条标红）*/
-  .frow{display:flex;gap:10px;align-items:flex-start;height:76px;box-sizing:border-box;overflow:hidden;padding:9px 8px;border-radius:9px;text-decoration:none;transition:background .15s}
-  .frow+.frow{border-top:1px solid #f3f5f8}
+  .frow{display:flex;gap:9px;align-items:flex-start;height:58px;box-sizing:border-box;overflow:hidden;padding:6px;border-radius:8px;text-decoration:none;transition:background .15s}
+  .frow+.frow{border-top:1px solid #edf1f5}
   .frow:hover{background:#f0f9ff}
-  .ftime{flex:0 0 auto;font-size:10.5px;font-weight:800;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:2px 7px;margin-top:1px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .ftime{flex:0 0 auto;font-size:10px;font-weight:800;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:3px 6px;margin-top:1px;font-variant-numeric:tabular-nums;letter-spacing:.015em}
   .frow.fresh .ftime{background:#fee2e2;color:#dc2626}
-  .fttl{font-size:12.5px;line-height:1.5;color:#334155;font-weight:500;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  .fttl{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;font-size:12.5px;line-height:1.38;color:#273449;font-weight:650;letter-spacing:.005em;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
   .frow:hover .fttl{color:#0369a1}
   .news-empty{color:#9aa7b5;font-size:11px;text-align:center;padding:20px 0}
+  @media(max-width:820px){
+    .news-hd{flex-wrap:wrap;padding:13px 13px 11px}.news-hd .bdg{margin-left:auto}.news-actions{width:100%;justify-content:flex-end;margin-left:0;padding-top:1px}
+    .news-grid{grid-template-columns:1fr;gap:10px;padding:10px}.news-subtitle{white-space:normal}
+    #newsTop,#newsFlash{grid-template-rows:repeat(5,64px)}.nrow,.frow{height:64px;padding:7px 6px}
+  }
   </style>
   <div class="card mb16 news-card">
     <div class="news-hd">
-      <span class="t">📰 财经要闻</span>
+      <div class="news-heading">
+        <span class="news-title-icon">闻</span>
+        <div class="news-title-copy"><div class="t">财经要闻</div><div class="news-subtitle">实时精选与 7×24 市场快讯</div></div>
+      </div>
       <span class="bdg">多源实时</span>
-      <span id="newsTs" style="font-size:10px;color:#9aa7b5;font-weight:600;margin-left:auto"></span>
-      <button id="newsRefreshBtn" class="news-refresh" onclick="fetchNews(true)" title="立即读取最新财经要闻和7×24快讯"><span class="news-refresh-icon">↻</span> 刷新</button>
+      <div class="news-actions">
+        <span id="newsTs" class="news-timestamp"></span>
+        <button id="newsRefreshBtn" class="news-refresh" onclick="fetchNews(true)" title="立即读取最新财经要闻和7×24快讯"><span class="news-refresh-icon">↻</span> 刷新</button>
+      </div>
     </div>
     <div class="news-grid">
       <div class="news-col-l">
