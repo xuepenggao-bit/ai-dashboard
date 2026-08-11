@@ -198,8 +198,16 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-market-up{color:#dc2626}.port-market-down{color:#16a34a}.port-market-flat{color:#64748b}
 @media(max-width:360px){.port-market-breadth-grid{grid-template-columns:1fr}.port-market-card{padding:9px 10px}}
 
+/* ── Portfolio summary row: overview / allocation / fund flow ── */
+.portfolio-summary-row{gap:14px;align-items:stretch}
+.portfolio-summary-row>.portfolio-row-card{
+  min-width:0;border:1px solid #d8e0eb!important;border-radius:14px!important;
+  box-shadow:0 8px 24px rgba(15,23,42,.075),0 1px 3px rgba(15,23,42,.045)!important;
+}
+.portfolio-summary-row>.portfolio-row-card:hover{box-shadow:0 11px 28px rgba(15,23,42,.10),0 2px 5px rgba(15,23,42,.05)!important}
+
 /* ── Portfolio allocation stack ── */
-.alloc-stack{padding:0;overflow:hidden;border:1px solid #cbd5e1;border-top:0;background:#fff;box-shadow:0 7px 22px rgba(15,23,42,.08)}
+.alloc-stack{padding:0;overflow:hidden;background:#fff}
 .alloc-panel{position:relative;padding:15px 16px 14px}
 .alloc-panel::before{content:"";position:absolute;left:0;right:0;top:0;height:4px}
 .alloc-panel-category{background:linear-gradient(145deg,#eff6ff 0%,#fff 72%)}
@@ -215,9 +223,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .alloc-badge{flex-shrink:0;margin-top:1px;padding:3px 7px;border-radius:999px;font-size:9.5px;font-weight:800;white-space:nowrap}
 .alloc-panel-category .alloc-badge{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
 .alloc-panel-industry .alloc-badge{background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe}
-.alloc-list{height:202px;max-height:202px;overflow:auto;scrollbar-gutter:stable;border:1px solid rgba(203,213,225,.72);border-radius:9px;background:rgba(255,255,255,.9)}
+.alloc-list{height:202px;max-height:202px;overflow:auto;scrollbar-gutter:stable;border:1px solid rgba(203,213,225,.72);border-radius:9px;background:rgba(255,255,255,.92);scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
+.alloc-panel-industry .alloc-list{height:252px;max-height:252px}
 .alloc-grid-head,.alloc-row{display:grid;grid-template-columns:minmax(0,1fr) 65px 48px;column-gap:6px;align-items:center}
-.alloc-grid-head{position:sticky;top:0;z-index:2;padding:5px 7px;border-bottom:1px solid #cbd5e1;background:rgba(248,250,252,.97);font-size:9px;font-weight:800;color:#94a3b8;letter-spacing:.04em}
+.alloc-grid-head{position:sticky;top:0;z-index:2;padding:6px 7px;border-bottom:1px solid #cbd5e1;background:rgba(248,250,252,.98);font-size:9.5px;font-weight:800;color:#7c899b;letter-spacing:.035em}
 .alloc-grid-head span:nth-child(n+2){text-align:right}
 .alloc-row{position:relative;padding:6px 7px 7px;border-bottom:1px solid #eef2f7;transition:background .15s}
 .alloc-row:last-child{border-bottom:0}
@@ -225,13 +234,45 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .alloc-name{display:flex;align-items:center;gap:7px;min-width:0}
 .alloc-swatch{width:9px;height:22px;border-radius:4px;flex-shrink:0;background:var(--row-accent);box-shadow:0 1px 4px color-mix(in srgb,var(--row-accent) 36%,transparent)}
 .alloc-name-copy{min-width:0}
-.alloc-name-main{font-size:11px;font-weight:800;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alloc-name-main{font-size:11.5px;font-weight:800;color:#172033;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .alloc-name-meta{font-size:8.5px;color:#94a3b8;font-weight:650;margin-top:1px}
 .alloc-pct{text-align:right}
 .alloc-weight{text-align:right;font-size:11px;font-weight:900;color:#0f172a}
 .alloc-track{grid-column:1/-1;height:3px;margin:5px 0 0 16px;border-radius:3px;background:#e2e8f0;overflow:hidden}
 .alloc-track>span{display:block;height:100%;border-radius:3px;background:var(--row-accent);min-width:2px}
 .alloc-empty{padding:17px 8px;text-align:center;font-size:10.5px;color:#94a3b8;font-weight:600}
+
+/* ── 主力资金双榜 ── */
+.portfolio-flow-card{position:relative;padding:0!important;overflow:hidden;background:#fff!important}
+.portfolio-flow-card::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;z-index:2}
+.portfolio-flow-in::before{background:linear-gradient(90deg,#7c3aed,#c084fc)}
+.portfolio-flow-out::before{background:linear-gradient(90deg,#059669,#4ade80)}
+.portfolio-flow-head{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:57px;padding:12px 14px 10px;border-bottom:1px solid #e9eef5}
+.portfolio-flow-heading{display:flex;align-items:center;gap:8px;min-width:0}
+.portfolio-flow-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:25px;height:25px;border-radius:8px;color:#fff;font-size:11px;font-weight:900;box-shadow:0 3px 9px rgba(15,23,42,.14)}
+.portfolio-flow-in .portfolio-flow-icon{background:linear-gradient(135deg,#7c3aed,#a855f7)}
+.portfolio-flow-out .portfolio-flow-icon{background:linear-gradient(135deg,#059669,#22c55e)}
+.portfolio-flow-copy{min-width:0}
+.portfolio-flow-title{font-size:13.5px;font-weight:900;color:#172033;letter-spacing:.005em;white-space:nowrap}
+.portfolio-flow-subtitle{font-size:9px;font-weight:700;color:#94a3b8;margin-top:2px;white-space:nowrap}
+.portfolio-flow-actions{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+.portfolio-flow-time{font-size:9px;color:#8491a4;font-weight:700;font-variant-numeric:tabular-nums}
+.portfolio-flow-refresh{display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;border-radius:8px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:900;transition:transform .15s,background .15s}
+.portfolio-flow-refresh:hover{transform:rotate(18deg)}
+.portfolio-flow-in .portfolio-flow-refresh{background:#f3e8ff;border:1px solid #ddd6fe;color:#6d28d9}
+.portfolio-flow-out .portfolio-flow-refresh{background:#dcfce7;border:1px solid #bbf7d0;color:#15803d}
+.portfolio-flow-columns,.portfolio-flow-row{display:grid;grid-template-columns:20px minmax(0,1fr) 48px 55px;gap:0 5px;align-items:center}
+.portfolio-flow-columns{margin:0 13px;padding:7px 0 6px;border-bottom:1px solid #dfe6ef;font-size:9.5px;font-weight:800;color:#8491a4;letter-spacing:.025em}
+.portfolio-flow-columns span:nth-child(n+3){text-align:right}
+.portfolio-flow-list{padding:2px 13px 11px}
+.portfolio-flow-row{min-height:27px;padding:4px 0;border-bottom:1px solid #edf1f6;transition:background .12s}
+.portfolio-flow-row:last-child{border-bottom:0}
+.portfolio-flow-row:hover{background:#f8fafc}
+.portfolio-flow-rank{font-size:10.5px;font-weight:800;text-align:right}
+.portfolio-flow-name{font-size:12.5px;font-weight:750;color:#172033;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.portfolio-flow-number{font-size:10.5px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.portfolio-flow-in .portfolio-flow-rank{color:#8b5cf6}
+.portfolio-flow-out .portfolio-flow-rank{color:#16a34a}
 
 /* ── KPI ── */
 .kval{font-size:28px;font-weight:800;line-height:1.15;margin-bottom:4px;letter-spacing:-.01em}
@@ -794,9 +835,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   </div>
 
   <!-- Row 2: 持仓概览 + 仓位分配明细 + 主力净流入TOP20 + 主力净流出TOP20 -->
-  <div class="g4 mb16">
+  <div class="g4 mb16 portfolio-summary-row">
     <!-- 持仓概览 -->
-    <div class="card port-overview-card">
+    <div class="card portfolio-row-card port-overview-card">
       <div class="port-overview-head">
         <div class="port-overview-title">📂 持仓概览</div>
         <span class="port-overview-badge">组合实时快照</span>
@@ -903,7 +944,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
 
     <!-- 仓位分配明细：分类与行业上下合并，不再显示饼图 -->
-    <div class="card alloc-stack">
+    <div class="card portfolio-row-card alloc-stack">
       <section class="alloc-panel alloc-panel-category">
         <div class="alloc-panel-head">
           <div class="alloc-heading">
@@ -925,39 +966,47 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
 
     <!-- 主力净流入 TOP 20 -->
-    <div class="card" style="min-width:0;border-top:3px solid #7c3aed;background:linear-gradient(135deg,#faf5ff 0%,#fff 60%)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <span style="font-size:13px;font-weight:800;color:#6d28d9;letter-spacing:.02em">💹 主力净流入 TOP 20</span>
-        <div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:10px;color:#7c3aed;font-weight:600" id="mfTs"></span>
-          <button onclick="fetchMainFlow()" id="mfRefBtn"
-            style="background:#ede9fe;border:1px solid #ddd6fe;color:#6d28d9;border-radius:6px;
-                   padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+    <div class="card portfolio-row-card portfolio-flow-card portfolio-flow-in">
+      <div class="portfolio-flow-head">
+        <div class="portfolio-flow-heading">
+          <span class="portfolio-flow-icon">入</span>
+          <div class="portfolio-flow-copy">
+            <div class="portfolio-flow-title">主力净流入</div>
+            <div class="portfolio-flow-subtitle">全市场资金榜 · TOP 20</div>
+          </div>
+        </div>
+        <div class="portfolio-flow-actions">
+          <span class="portfolio-flow-time" id="mfTs"></span>
+          <button class="portfolio-flow-refresh" onclick="fetchMainFlow()" id="mfRefBtn" title="刷新主力资金榜">↻</button>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:18px 1fr 44px 50px;gap:0 4px;font-size:9.5px;font-weight:700;color:#9ca3af;padding:0 0 4px;border-bottom:1px solid #ede9fe;margin-bottom:3px">
+      <div class="portfolio-flow-columns">
         <span></span><span>名称</span><span style="text-align:right">涨跌</span><span style="text-align:right">净流入</span>
       </div>
-      <div id="mfList">
+      <div class="portfolio-flow-list" id="mfList">
         <div style="color:var(--text2);font-size:11px;text-align:center;padding:10px 0">点击「↻」加载</div>
       </div>
     </div>
 
     <!-- 主力净流出 TOP 20 -->
-    <div class="card" style="min-width:0;border-top:3px solid #16a34a;background:linear-gradient(135deg,#f0fdf4 0%,#fff 60%)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <span style="font-size:13px;font-weight:800;color:#15803d;letter-spacing:.02em">📉 主力净流出 TOP 20</span>
-        <div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:10px;color:#16a34a;font-weight:600" id="mfOutTs"></span>
-          <button onclick="fetchMainFlow()" id="mfOutRefBtn"
-            style="background:#dcfce7;border:1px solid #bbf7d0;color:#15803d;border-radius:6px;
-                   padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+    <div class="card portfolio-row-card portfolio-flow-card portfolio-flow-out">
+      <div class="portfolio-flow-head">
+        <div class="portfolio-flow-heading">
+          <span class="portfolio-flow-icon">出</span>
+          <div class="portfolio-flow-copy">
+            <div class="portfolio-flow-title">主力净流出</div>
+            <div class="portfolio-flow-subtitle">全市场资金榜 · TOP 20</div>
+          </div>
+        </div>
+        <div class="portfolio-flow-actions">
+          <span class="portfolio-flow-time" id="mfOutTs"></span>
+          <button class="portfolio-flow-refresh" onclick="fetchMainFlow()" id="mfOutRefBtn" title="刷新主力资金榜">↻</button>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:18px 1fr 44px 50px;gap:0 4px;font-size:9.5px;font-weight:700;color:#9ca3af;padding:0 0 4px;border-bottom:1px solid #dcfce7;margin-bottom:3px">
+      <div class="portfolio-flow-columns">
         <span></span><span>名称</span><span style="text-align:right">涨跌</span><span style="text-align:right">净流出</span>
       </div>
-      <div id="mfOutList">
+      <div class="portfolio-flow-list" id="mfOutList">
         <div style="color:var(--text2);font-size:11px;text-align:center;padding:10px 0">点击「↻」加载</div>
       </div>
     </div>
@@ -8483,8 +8532,6 @@ async function _fetchMainFlowList(po){
 
 function _renderMainFlowList(list, tone){
   const outflow = tone === 'outflow';
-  const borderColor = outflow ? '#dcfce7' : '#f3e8ff';
-  const rankColor   = outflow ? '#4ade80' : '#a78bfa';
   const _fmtFlow = v => {
     if(!isFinite(v)) return '—';
     const abs = Math.abs(v), s = v>=0?'+':'-';
@@ -8498,12 +8545,11 @@ function _renderMainFlowList(list, tone){
     const pctCol  = !pctOk  ? neuCol : pct>0  ? upCol  : pct<0  ? dnCol  : neuCol;
     const flowCol = !flowOk ? neuCol : flow>0 ? upCol  : flow<0 ? dnCol  : neuCol;
     const name = _escH(item.f14 || item.f12 || '—');
-    return `<div style="display:grid;grid-template-columns:18px 1fr 44px 50px;gap:0 4px;`
-         + `align-items:center;padding:3px 0;border-bottom:1px solid ${borderColor}">`
-         + `<span style="font-size:10.5px;color:${rankColor};font-weight:700;text-align:right">${i+1}</span>`
-         + `<span style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${name}">${name}</span>`
-         + `<span style="font-size:10.5px;color:${pctCol};font-weight:700;text-align:right">${pctOk?(pct>0?'+':'')+pct.toFixed(2)+'%':'—'}</span>`
-         + `<span style="font-size:10.5px;color:${flowCol};font-weight:700;text-align:right">${_fmtFlow(flow)}</span>`
+    return `<div class="portfolio-flow-row">`
+         + `<span class="portfolio-flow-rank">${i+1}</span>`
+         + `<span class="portfolio-flow-name" title="${name}">${name}</span>`
+         + `<span class="portfolio-flow-number" style="color:${pctCol}">${pctOk?(pct>0?'+':'')+pct.toFixed(2)+'%':'—'}</span>`
+         + `<span class="portfolio-flow-number" style="color:${flowCol}">${_fmtFlow(flow)}</span>`
          + `</div>`;
   }).join('');
 }
