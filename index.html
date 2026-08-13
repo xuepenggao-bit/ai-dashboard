@@ -7702,6 +7702,15 @@ async function _emClistGet(qs){
 
 let _breadthCache = null;   // 上次成功的渲染结果（粘性缓存，失败时保留不消失）
 
+// 全市场总数包含停牌、暂无成交或行情源暂未给出 f3 的股票。
+// 这些股票没有上涨或下跌，统一归入“平盘”，确保三项家数与总数严格一致。
+function _reconcileMarketBreadth(total, counts){
+  const totalUp   = counts[0]+counts[1]+counts[2]+counts[3];
+  const totalDown = counts[5]+counts[6]+counts[7]+counts[8];
+  const flat      = Math.max(0, Number(total)-totalUp-totalDown);
+  return {totalUp,totalDown,flat};
+}
+
 async function _doFetchBreadth(){
   const bTs    = document.getElementById('mktBreadthTs');
   const chartEl= document.getElementById('mktBreadthChart');
@@ -7754,7 +7763,8 @@ async function _doFetchBreadth(){
       for(let p=s; p<Math.min(s+BATCH, pages+1); p++) grp.push(_fetchPage(p));
       await Promise.all(grp);
     }
-    if(okPages < pages*0.6) throw new Error(`分页拉取多数失败(${okPages}/${pages})`);
+    // 任一页缺失都会让上涨+下跌+平盘小于总数；此时沿用上次完整缓存，绝不展示残缺统计。
+    if(okPages !== pages) throw new Error(`分页拉取不完整(${okPages}/${pages})`);
 
     // ③ 前端按 BKTS 区间精确分 9 档
     const counts = BKTS.map(()=>0);
@@ -7762,7 +7772,8 @@ async function _doFetchBreadth(){
       for(let k=0;k<BKTS.length;k++){ if(v>=BKTS[k].lo && v<=BKTS[k].hi){ counts[k]++; break; } }
     });
     const sumCounts  = counts.reduce((a,c)=>a+c, 0);
-    const activeStks = sumCounts - counts[4];   // 非平盘（有涨跌）家数
+    const reconciled = _reconcileMarketBreadth(total,counts);
+    const activeStks = reconciled.totalUp+reconciled.totalDown;
     console.log('[涨跌统计] total:', total, 'pages:', pages, 'ok:', okPages, 'sum:', sumCounts, 'buckets:', counts);
 
     // ③ 非交易时段检测：有效涨跌家数 < 50 且总家数正常
@@ -7782,12 +7793,12 @@ async function _doFetchBreadth(){
     // ④ 区间过滤完全无效保护（sumCounts 极小且非交易检测未触发）
     if(sumCounts < 50) throw new Error(`区间统计异常(sum=${sumCounts},total=${total})`);
 
-    // ⑤ 平盘：若 b:f3:0:0 返回 0（退化区间），用差值补算
-    const bFlat   = counts[4] > 0 ? counts[4] : Math.max(0, total - sumCounts + counts[4]);
+    // ⑤ 按总数对账：精确 0、停牌、暂无成交或缺少 f3 的股票均归入平盘。
+    const bFlat   = reconciled.flat;
     const b_lu    = counts[0];
     const b_ld    = counts[8];
-    const totalUp   = counts[0]+counts[1]+counts[2]+counts[3];
-    const totalDown = counts[5]+counts[6]+counts[7]+counts[8];
+    const totalUp   = reconciled.totalUp;
+    const totalDown = reconciled.totalDown;
     console.log('[涨跌统计] ↑',totalUp,'平',bFlat,'↓',totalDown,'涨停',b_lu,'跌停',b_ld);
 
     if(elUp)   elUp.textContent   = totalUp;
