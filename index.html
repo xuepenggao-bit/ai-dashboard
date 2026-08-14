@@ -7028,13 +7028,14 @@ const _IDX_EM = [
   // A股平均股价（东财代码 800005）：47 段最可能，逐个候选单独请求，命中即用
   {secids:['47.800005','90.800005','1.800005','100.800005'], code:'800005', altCodes:[], label:'A股平均股价', region:'a'},
   {secids:['100.HSAHP'], code:'HSAHP', altCodes:['HSCAHPI'], label:'A/H溢价', region:'ah'},
+  {secids:['171.US10Y'], code:'US10Y', altCodes:[], label:'美国10年期', region:'rate'},
   {secids:['104.CN00Y'], code:'CN00Y', altCodes:['CN00'],    label:'A50期指', region:'fut'},  // SGX A50期指当月连续
   {secids:['103.NQ00Y'], code:'NQ00Y', altCodes:['NQ00'],    label:'纳指期指', region:'fut'},  // CME 小型纳指当月连续
   {secids:['100.KOSPI200'], code:'KOSPI200', altCodes:[], label:'韩国KOSPI200', region:'intl'},  // 韩国 KOSPI 200
   {secids:['100.TWII'],     code:'TWII',     altCodes:[], label:'台湾加权',     region:'intl'},  // 台湾加权指数 TAIEX
 ];
 // 渲染顺序固定（A股平均股价紧随中证全指；港股在 A/H溢价前，期指置底）
-const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股平均股价','恒生指数','恒生科技','A/H溢价','韩国KOSPI200','台湾加权','A50期指','纳指期指'];
+const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股平均股价','恒生指数','恒生科技','A/H溢价','美国10年期','韩国KOSPI200','台湾加权','A50期指','纳指期指'];
 
 // 粘性缓存：每个指数上次成功获取的值。某数据源偶发失败时回填，保证不闪现消失
 let _IDX_CACHE = {};   // label → {label, price, pct, region, ts}
@@ -7064,8 +7065,9 @@ async function _idxFetch(url, opt){
 // 东方财富指数行情。港股字段 f124 为行情时间戳，用于防止偶发缓存响应覆盖更新的新浪值。
 async function _fetchEmIndexRow(idx){
   const allCodes = [idx.code, ...(idx.altCodes||[])].map(c=>c.toUpperCase());
-  // 港股只能使用 push2 实时服务器；push2delay 明确不参与港股取价。
-  const hosts = idx.region==='hk'
+  // 港股与美债利率只使用 push2 实时服务器；push2delay 不参与这两类数据取值。
+  const realtimeOnly = idx.region==='hk' || idx.region==='rate';
+  const hosts = realtimeOnly
     ? ['https://push2.eastmoney.com']
     : ['https://push2.eastmoney.com','https://push2delay.eastmoney.com'];
   const tries=[];
@@ -7073,8 +7075,8 @@ async function _fetchEmIndexRow(idx){
     for(const host of hosts){
       tries.push((async()=>{
         const url=host+'/api/qt/ulist.np/get?secids='+secid
-          +'&fltt=2&invt=2&fields=f12,f14,f2,f3,f124&_='+Date.now();
-        const j=await _idxFetch(url,{timeout:3500,retries:idx.region==='hk'?1:0});
+          +'&fltt=2&invt=2&fields=f12,f14,f2,f3,f4,f124&_='+Date.now();
+        const j=await _idxFetch(url,{timeout:3500,retries:realtimeOnly?1:0});
         const diff=(j&&j.data&&j.data.diff)||[];
         const hit=diff.find(d=>{
           const c=String(d.f12).toUpperCase();
@@ -7086,6 +7088,7 @@ async function _fetchEmIndexRow(idx){
           label:idx.label,
           price:parseFloat(hit.f2),
           pct:parseFloat(hit.f3)||0,
+          delta:parseFloat(hit.f4)||0,
           region:idx.region||'a',
           src:'em',
           quoteTs:isFinite(quoteSec)&&quoteSec>0?quoteSec*1000:0
@@ -7205,8 +7208,10 @@ async function fetchIndexPrices(){
   } else {
     listEl.innerHTML = rows.map(r=>{
       const displayPct = _portfolioIndexDisplayPct(r.region,r.pct,_now) ?? 0;
-      const up    = displayPct > 0;
-      const dn    = displayPct < 0;
+      // 利率用基点表示当日绝对变动：东财 f4 为百分点，×100 后即 bp。
+      const displayMove = r.region === 'rate' ? (Number(r.delta)||0)*100 : displayPct;
+      const up    = displayMove > 0;
+      const dn    = displayMove < 0;
       const color = up ? '#dc2626' : dn ? '#16a34a' : 'var(--text2)';
       const arrow = up ? '▲' : dn ? '▼' : '─';
       const sign  = up ? '+' : '';
@@ -7223,16 +7228,23 @@ async function fetchIndexPrices(){
       } else if(r.region === 'intl'){
         accent = '#0369a1'; bg = '#f0f9ff';
         badge = ' <span style="font-size:9px;background:#e0f2fe;color:#075985;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">外盘</span>';
+      } else if(r.region === 'rate'){
+        accent = '#0f766e'; bg = '#f0fdfa';
+        badge = ' <span style="font-size:9px;background:#ccfbf1;color:#115e59;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">美债</span>';
       }
       const priceStr = (r.region === 'hk') ? r.price.toFixed(0)
                      : (r.region === 'fut') ? r.price.toFixed(2)
+                     : (r.region === 'rate') ? r.price.toFixed(3)+'%'
                      : r.price.toFixed(2);
+      const moveStr = r.region === 'rate'
+        ? `${arrow} ${sign}${displayMove.toFixed(1)}bp`
+        : `${arrow} ${sign}${displayPct.toFixed(2)}%`;
       return `<div style="display:flex;align-items:center;flex-wrap:nowrap;padding:5px 8px;border-radius:8px;
                            background:${bg};margin-bottom:4px;border-left:3px solid ${accent}">
         <span style="flex:0 0 auto;font-size:12px;font-weight:700;color:var(--text);letter-spacing:.01em;white-space:nowrap;margin-right:6px">${r.label}${badge}</span>
         <span style="flex:1;font-size:12px;font-weight:600;color:#475569;text-align:right;white-space:nowrap;margin-right:8px">${priceStr}</span>
         <span style="font-size:13px;font-weight:900;color:${color};flex:0 0 auto;white-space:nowrap;
-                     letter-spacing:-.01em">${arrow} ${sign}${displayPct.toFixed(2)}%</span>
+                     letter-spacing:-.01em">${moveStr}</span>
       </div>`;
     }).join('');
     if(tsEl) tsEl.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) + ' 更新';
