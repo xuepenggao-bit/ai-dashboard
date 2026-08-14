@@ -244,6 +244,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-top-weighted-label{font-size:10.5px;font-weight:850;color:#334155;letter-spacing:.025em;white-space:nowrap}
 .port-top-weighted-meta{margin-top:2px;font-size:9.5px;font-weight:650;color:#8491a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .port-top-weighted-value{flex:0 0 auto;font-size:19px;font-weight:900;line-height:1;color:var(--ptw-color);font-variant-numeric:tabular-nums;letter-spacing:-.025em;white-space:nowrap}
+.port-index-card{display:flex;flex-direction:column;min-height:0}
+.port-index-list{display:flex;flex:1;min-height:0;flex-direction:column;justify-content:space-between}
+.port-index-row{margin-bottom:0!important}
+.port-index-row.port-index-group-end{margin-bottom:10px!important}
 .port-market-breadth{margin-top:10px;padding-top:10px;border-top:1px solid #bfdbfe}
 .port-market-breadth-title{font-size:10px;color:#3b82f6;font-weight:800;letter-spacing:.05em;margin-bottom:7px}
 .port-market-breadth-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
@@ -794,11 +798,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- Row 1: 主要指数 + TOP5涨跌 + 重仓TOP5 -->
   <div class="g4 mb16">
     <!-- 主要指数 -->
-    <div class="card" style="min-width:0;border-top:3px solid #f59e0b;background:linear-gradient(135deg,#fffbeb 0%,#fff 60%)">
+    <div class="card port-index-card" style="min-width:0;border-top:3px solid #f59e0b;background:linear-gradient(135deg,#fffbeb 0%,#fff 60%)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <span style="font-size:14px;font-weight:800;color:#92400e;letter-spacing:.02em">📊 主要指数</span>
       </div>
-      <div id="portIndexList">
+      <div id="portIndexList" class="port-index-list">
         <div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0">加载中…</div>
       </div>
     </div>
@@ -6801,7 +6805,7 @@ function _portTopMarketIcon(mkt,code){
 
 // TOP7 榜内仓位加权平均：Σ（涨跌幅 × 仓位）÷ Σ榜内仓位。
 // 同时显示榜内仓位合计，避免把归一化加权结果误解为整个组合的单日贡献。
-function _renderPortTopWeightedSummary(items){
+function _renderPortTopWeightedSummary(items, theme){
   var valid=(Array.isArray(items)?items:[]).filter(function(item){
     return isFinite(Number(item.pct)) && isFinite(Number(item.w)) && Number(item.w)>0;
   });
@@ -6810,10 +6814,11 @@ function _renderPortTopWeightedSummary(items){
     ? valid.reduce(function(sum,item){ return sum+Number(item.pct)*Number(item.w); },0)/weightSum
     : null;
   var up=avg!=null&&avg>0, down=avg!=null&&avg<0;
-  var color=up?'#c81e1e':down?'#078447':'#64748b';
-  var bg=up?'#fff4f4':down?'#effcf5':'#f7f9fc';
-  var border=up?'#fecaca':down?'#bbf7d0':'#dce3ec';
-  var markBg=up?'#fee2e2':down?'#dcfce7':'#eef2f7';
+  var orange=theme==='orange';
+  var color=orange?'#c2410c':up?'#c81e1e':down?'#078447':'#64748b';
+  var bg=orange?'#fff7ed':up?'#fff4f4':down?'#effcf5':'#f7f9fc';
+  var border=orange?'#fed7aa':up?'#fecaca':down?'#bbf7d0':'#dce3ec';
+  var markBg=orange?'#ffedd5':up?'#fee2e2':down?'#dcfce7':'#eef2f7';
   var value=avg==null?'—':(avg>0?'+':'')+avg.toFixed(2)+'%';
   var meta=avg==null?'暂无有效仓位':valid.length+'只 · 榜内仓位 '+weightSum.toFixed(1)+'%';
   return '<div class="port-top-weighted" title="Σ（榜内股票涨跌幅 × 仓位）÷ Σ榜内仓位"'
@@ -7072,9 +7077,14 @@ const _IDX_EM = [
 const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股平均股价','恒生指数','恒生科技','A/H溢价','韩国KOSPI200','台湾加权','A50期指','纳指期指','美国10年期'];
 
 // 粘性缓存：每个指数上次成功获取的值。某数据源偶发失败时回填，保证不闪现消失
-let _IDX_CACHE = {};   // label → {label, price, pct, region, ts}
+let _IDX_CACHE = {};   // label → {label, price, pct, delta, region, ts}
 let _IDX_REQ_SEQ = 0;  // 只允许最新一轮请求更新 DOM，避免慢响应覆盖新行情
 let _IDX_LAST_RENDER = 0;
+const _IDX_RATE_CACHE_KEY = 'aiDashboard.us10y.quote.v1';
+try{
+  const savedRate=JSON.parse(localStorage.getItem(_IDX_RATE_CACHE_KEY)||'null');
+  if(savedRate && Number(savedRate.price)>0) _IDX_CACHE['美国10年期']=savedRate;
+}catch(e){ /* Safari 隐私模式可能禁用 localStorage；不影响实时请求 */ }
 
 // 带超时 + 重试的 fetch（gbk=true 时按 GBK 解码返回文本，否则返回 JSON）
 async function _idxFetch(url, opt){
@@ -7099,8 +7109,8 @@ async function _idxFetch(url, opt){
 // 东方财富指数行情。港股字段 f124 为行情时间戳，用于防止偶发缓存响应覆盖更新的新浪值。
 async function _fetchEmIndexRow(idx){
   const allCodes = [idx.code, ...(idx.altCodes||[])].map(c=>c.toUpperCase());
-  // 港股与美债利率只使用 push2 实时服务器；push2delay 不参与这两类数据取值。
-  const realtimeOnly = idx.region==='hk' || idx.region==='rate';
+  // 港股只使用 push2 实时服务器；美债主端点偶发空响应，增加 delay 域名作备用。
+  const realtimeOnly = idx.region==='hk';
   const hosts = realtimeOnly
     ? ['https://push2.eastmoney.com']
     : ['https://push2.eastmoney.com','https://push2delay.eastmoney.com'];
@@ -7110,7 +7120,7 @@ async function _fetchEmIndexRow(idx){
       tries.push((async()=>{
         const url=host+'/api/qt/ulist.np/get?secids='+secid
           +'&fltt=2&invt=2&fields=f12,f14,f2,f3,f4,f124&_='+Date.now();
-        const j=await _idxFetch(url,{timeout:3500,retries:realtimeOnly?1:0});
+        const j=await _idxFetch(url,{timeout:3500,retries:(realtimeOnly||idx.region==='rate')?1:0});
         const diff=(j&&j.data&&j.data.diff)||[];
         const hit=diff.find(d=>{
           const c=String(d.f12).toUpperCase();
@@ -7128,18 +7138,19 @@ async function _fetchEmIndexRow(idx){
           quoteTs:isFinite(quoteSec)&&quoteSec>0?quoteSec*1000:0
         };
       })());
-      // 港股指数的 ulist 端点偶发空响应；并行请求 stock/get 作为同源实时冗余。
-      if(idx.region==='hk'){
+      // 港股指数和美债的 ulist 端点均可能空响应；并行请求 stock/get 作为同源冗余。
+      if(idx.region==='hk' || idx.region==='rate'){
         tries.push((async()=>{
           const url=host+'/api/qt/stock/get?secid='+secid
-            +'&fltt=2&invt=2&fields=f43,f57,f58,f124,f170&_='+Date.now();
+            +'&fltt=2&invt=2&fields=f43,f57,f58,f124,f169,f170&_='+Date.now();
           const j=await _idxFetch(url,{timeout:3500,retries:0});
           const d=j&&j.data;
           const price=parseFloat(d&&d.f43), pct=parseFloat(d&&d.f170);
           if(!d || !(price>0) || !isFinite(pct)) throw new Error('no stock/get hit');
           const quoteSec=parseFloat(d.f124);
           return {
-            label:idx.label, price, pct, region:'hk', src:'em',
+            label:idx.label, price, pct, delta:idx.region==='rate'?(parseFloat(d.f169)||0):0,
+            region:idx.region, src:'em',
             quoteTs:isFinite(quoteSec)&&quoteSec>0?quoteSec*1000:0
           };
         })());
@@ -7230,10 +7241,18 @@ async function fetchIndexPrices(){
 
   // ── ③ 粘性缓存合并：本次成功的写入缓存，本次缺失的用上次成功值回填 ──
   const _now = Date.now();
-  Object.keys(rowMap).forEach(lbl=>{ rowMap[lbl].ts = _now; _IDX_CACHE[lbl] = rowMap[lbl]; });
+  Object.keys(rowMap).forEach(lbl=>{
+    rowMap[lbl].ts = _now;
+    _IDX_CACHE[lbl] = rowMap[lbl];
+    if(lbl==='美国10年期'){
+      try{ localStorage.setItem(_IDX_RATE_CACHE_KEY,JSON.stringify(rowMap[lbl])); }catch(e){}
+    }
+  });
   _IDX_ORDER.forEach(lbl=>{
     if(!rowMap[lbl] && _IDX_CACHE[lbl]) rowMap[lbl] = _IDX_CACHE[lbl];  // 回填旧值，避免闪现消失
   });
+  // 新设备首次访问且所有行情端点同时失败时仍保留指标位置，后续自动刷新成功即替换。
+  if(!rowMap['美国10年期']) rowMap['美国10年期']={label:'美国10年期',price:null,pct:0,delta:0,region:'rate',unavailable:true};
 
   // ── 按固定顺序渲染 ────────────────────────────────────────
   const rows = _IDX_ORDER.map(lbl => rowMap[lbl]).filter(Boolean);
@@ -7241,6 +7260,7 @@ async function fetchIndexPrices(){
     listEl.innerHTML = '<div style="color:var(--text2);font-size:12px;text-align:center;padding:8px">暂无数据</div>';
   } else {
     listEl.innerHTML = rows.map(r=>{
+      const unavailable=!(Number(r.price)>0);
       const displayPct = _portfolioIndexDisplayPct(r.region,r.pct,_now) ?? 0;
       // 利率用基点表示当日绝对变动：东财 f4 为百分点，×100 后即 bp。
       const displayMove = r.region === 'rate' ? (Number(r.delta)||0)*100 : displayPct;
@@ -7266,15 +7286,18 @@ async function fetchIndexPrices(){
         accent = '#0f766e'; bg = '#f0fdfa';
         badge = ' <span style="font-size:9px;background:#ccfbf1;color:#115e59;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">美债</span>';
       }
-      const priceStr = (r.region === 'hk') ? r.price.toFixed(0)
+      const priceStr = unavailable ? '暂缺'
+                     : (r.region === 'hk') ? r.price.toFixed(0)
                      : (r.region === 'fut') ? r.price.toFixed(2)
                      : (r.region === 'rate') ? r.price.toFixed(3)+'%'
                      : r.price.toFixed(2);
-      const moveStr = r.region === 'rate'
+      const moveStr = unavailable ? '自动重试'
+        : r.region === 'rate'
         ? `${arrow} ${sign}${displayMove.toFixed(1)}bp`
         : `${arrow} ${sign}${displayPct.toFixed(2)}%`;
-      return `<div style="display:flex;align-items:center;flex-wrap:nowrap;padding:5px 8px;border-radius:8px;
-                           background:${bg};margin-bottom:4px;border-left:3px solid ${accent}">
+      const groupEnd = r.label==='A股平均股价' || r.label==='A/H溢价';
+      return `<div class="port-index-row${groupEnd?' port-index-group-end':''}" style="display:flex;align-items:center;flex-wrap:nowrap;padding:5px 8px;border-radius:8px;
+                           background:${bg};border-left:3px solid ${accent}">
         <span style="flex:0 0 auto;font-size:12px;font-weight:700;color:var(--text);letter-spacing:.01em;white-space:nowrap;margin-right:6px">${r.label}${badge}</span>
         <span style="flex:1;font-size:12px;font-weight:600;color:#475569;text-align:right;white-space:nowrap;margin-right:8px">${priceStr}</span>
         <span style="font-size:13px;font-weight:900;color:${color};flex:0 0 auto;white-space:nowrap;
@@ -9562,7 +9585,7 @@ function _renderPortTopW(){
       + '<div style="font-size:11px;color:var(--text2);margin-top:1px">现价 '+priceStr+'</div>'
       + '</div>'
       + '</div>';
-  }).join('')+_renderPortTopWeightedSummary(topW);
+  }).join('')+_renderPortTopWeightedSummary(topW,'orange');
 }
 
 // ── INIT ──────────────────────────────────────────────────────
