@@ -238,6 +238,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-stock-name-line{display:flex;align-items:center;gap:6px;min-width:0}
 .port-stock-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--text)}
 .port-hk-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:25px;height:17px;padding:0 5px;border:1px solid rgba(0,113,227,.24);border-radius:5px;background:linear-gradient(180deg,#f2f8ff 0%,#e4f1ff 100%);color:#0667c9;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;font-size:9px;font-weight:800;letter-spacing:.06em;line-height:1;box-shadow:0 1px 2px rgba(0,102,204,.08),inset 0 1px 0 rgba(255,255,255,.9)}
+.port-top-weighted{display:flex;align-items:center;gap:9px;margin-top:9px;padding:10px 11px;border:1px solid var(--ptw-border);border-radius:11px;background:linear-gradient(135deg,var(--ptw-bg) 0%,#fff 78%);box-shadow:0 4px 13px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.85)}
+.port-top-weighted-mark{display:flex;align-items:center;justify-content:center;flex:0 0 auto;width:28px;height:28px;border-radius:9px;background:var(--ptw-mark-bg);color:var(--ptw-color);font-size:15px;font-weight:900;box-shadow:inset 0 0 0 1px var(--ptw-border)}
+.port-top-weighted-copy{flex:1;min-width:0}
+.port-top-weighted-label{font-size:10.5px;font-weight:850;color:#334155;letter-spacing:.025em;white-space:nowrap}
+.port-top-weighted-meta{margin-top:2px;font-size:9.5px;font-weight:650;color:#8491a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.port-top-weighted-value{flex:0 0 auto;font-size:19px;font-weight:900;line-height:1;color:var(--ptw-color);font-variant-numeric:tabular-nums;letter-spacing:-.025em;white-space:nowrap}
 .port-market-breadth{margin-top:10px;padding-top:10px;border-top:1px solid #bfdbfe}
 .port-market-breadth-title{font-size:10px;color:#3b82f6;font-weight:800;letter-spacing:.05em;margin-bottom:7px}
 .port-market-breadth-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
@@ -6793,6 +6799,34 @@ function _portTopMarketIcon(mkt,code){
     : '';
 }
 
+// TOP7 榜内仓位加权平均：Σ（涨跌幅 × 仓位）÷ Σ榜内仓位。
+// 同时显示榜内仓位合计，避免把归一化加权结果误解为整个组合的单日贡献。
+function _renderPortTopWeightedSummary(items){
+  var valid=(Array.isArray(items)?items:[]).filter(function(item){
+    return isFinite(Number(item.pct)) && isFinite(Number(item.w)) && Number(item.w)>0;
+  });
+  var weightSum=valid.reduce(function(sum,item){ return sum+Number(item.w); },0);
+  var avg=weightSum>0
+    ? valid.reduce(function(sum,item){ return sum+Number(item.pct)*Number(item.w); },0)/weightSum
+    : null;
+  var up=avg!=null&&avg>0, down=avg!=null&&avg<0;
+  var color=up?'#c81e1e':down?'#078447':'#64748b';
+  var bg=up?'#fff4f4':down?'#effcf5':'#f7f9fc';
+  var border=up?'#fecaca':down?'#bbf7d0':'#dce3ec';
+  var markBg=up?'#fee2e2':down?'#dcfce7':'#eef2f7';
+  var value=avg==null?'—':(avg>0?'+':'')+avg.toFixed(2)+'%';
+  var meta=avg==null?'暂无有效仓位':valid.length+'只 · 榜内仓位 '+weightSum.toFixed(1)+'%';
+  return '<div class="port-top-weighted" title="Σ（榜内股票涨跌幅 × 仓位）÷ Σ榜内仓位"'
+    +' style="--ptw-color:'+color+';--ptw-bg:'+bg+';--ptw-border:'+border+';--ptw-mark-bg:'+markBg+'">'
+    +'<span class="port-top-weighted-mark">∑</span>'
+    +'<div class="port-top-weighted-copy">'
+    +'<div class="port-top-weighted-label">仓位加权涨跌幅</div>'
+    +'<div class="port-top-weighted-meta">'+meta+'</div>'
+    +'</div>'
+    +'<strong class="port-top-weighted-value">'+value+'</strong>'
+    +'</div>';
+}
+
 // 判断当前是否为交易刷新时段（北京时间，工作日）。按页面业务口径，港股从 09:00 开始刷新；
 // 下午仍覆盖港股独有的 15:00—16:00，避免自动刷新在港股盘中停摆。
 function _isTradingNow(nowMs){
@@ -9267,8 +9301,8 @@ function renderPortTop3(){
       + '</div>';
   }
 
-  upEl.innerHTML   = top5.map(function(s,i){ return mkRow(s,i+1,true);  }).join('');
-  downEl.innerHTML = bot5.map(function(s,i){ return mkRow(s,i+1,false); }).join('');
+  upEl.innerHTML   = top5.map(function(s,i){ return mkRow(s,i+1,true);  }).join('')+_renderPortTopWeightedSummary(top5);
+  downEl.innerHTML = bot5.map(function(s,i){ return mkRow(s,i+1,false); }).join('')+_renderPortTopWeightedSummary(bot5);
 }
 
 // ── 持仓涨跌分布热力图（持仓概览卡片底部）──────────────────────
@@ -9528,7 +9562,7 @@ function _renderPortTopW(){
       + '<div style="font-size:11px;color:var(--text2);margin-top:1px">现价 '+priceStr+'</div>'
       + '</div>'
       + '</div>';
-  }).join('');
+  }).join('')+_renderPortTopWeightedSummary(topW);
 }
 
 // ── INIT ──────────────────────────────────────────────────────
