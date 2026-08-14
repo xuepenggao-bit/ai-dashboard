@@ -160,9 +160,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   border-top:3px solid #7c3aed!important;background:linear-gradient(150deg,#faf8ff 0%,#fff 50%)!important
 }
 .market-style-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
-.market-style-title{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:#374151;letter-spacing:.01em}
+.market-style-title{display:flex;align-items:center;gap:7px;font-size:14.5px;font-weight:850;color:#283548;letter-spacing:.01em}
 .market-style-head-right{display:flex;align-items:center;gap:7px;min-width:0}
-.market-style-ts{font-size:10px;color:#94a3b8;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.market-style-ts{font-size:11px;color:#7c899b;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
 .market-style-refresh{
   display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;border:1px solid #ddd6fe;
   border-radius:8px;background:#f5f3ff;color:#6d28d9;font-family:inherit;font-size:12px;font-weight:900;cursor:pointer;
@@ -170,25 +170,25 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 }
 .market-style-refresh:hover{transform:rotate(18deg);background:#ede9fe}
 .market-style-refresh:disabled{opacity:.55;cursor:default;transform:none}
-.market-style-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:8px}
-.market-style-legend-group{min-width:0;padding:7px 8px;border:1px solid #e6e9f0;border-radius:9px;background:rgba(255,255,255,.88)}
-.market-style-cap{font-size:9px;color:#94a3b8;font-weight:800;letter-spacing:.06em;margin-bottom:5px}
-.market-style-legend-row{display:grid;grid-template-columns:15px minmax(0,1fr) auto;align-items:center;gap:4px;min-width:0;margin-top:3px}
-.market-style-legend-line{height:0;border-top:2px solid var(--style-color);border-radius:2px}
+.market-style-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:9px}
+.market-style-legend-group{min-width:0;padding:9px 10px;border:1px solid #dfe4ec;border-radius:10px;background:rgba(255,255,255,.92)}
+.market-style-cap{font-size:10.5px;color:#78869a;font-weight:850;letter-spacing:.06em;margin-bottom:6px}
+.market-style-legend-row{display:grid;grid-template-columns:23px minmax(0,1fr) auto;align-items:center;gap:6px;min-width:0;margin-top:5px}
+.market-style-legend-line{height:0;border-top:3px solid var(--style-color);border-radius:3px}
 .market-style-legend-line.value{border-top-style:dashed}
-.market-style-legend-name{font-size:9.5px;color:#475569;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.market-style-legend-value{font-size:10px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
+.market-style-legend-name{font-size:11.5px;color:#344256;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.market-style-legend-value{font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
 .market-style-chart{position:relative;flex:1;min-height:230px;border:1px solid #edf0f5;border-radius:10px;background:rgba(255,255,255,.78);overflow:hidden}
 .market-style-chart svg{display:block;width:100%;height:100%;min-height:230px;touch-action:none}
 .market-style-tooltip{
-  position:absolute;z-index:3;display:none;min-width:162px;padding:8px 9px;border:1px solid #dbe1ea;border-radius:9px;
+  position:absolute;z-index:3;display:none;min-width:180px;padding:9px 10px;border:1px solid #dbe1ea;border-radius:10px;
   background:rgba(255,255,255,.96);box-shadow:0 9px 24px rgba(15,23,42,.14);pointer-events:none
 }
-.market-style-tooltip-time{font-size:9.5px;color:#64748b;font-weight:800;margin-bottom:5px}
-.market-style-tooltip-row{display:grid;grid-template-columns:7px 1fr auto;gap:6px;align-items:center;padding:1.5px 0;font-size:9.5px;color:#475569}
-.market-style-tooltip-dot{width:6px;height:6px;border-radius:50%;background:var(--style-color)}
+.market-style-tooltip-time{font-size:11px;color:#58677b;font-weight:850;margin-bottom:6px}
+.market-style-tooltip-row{display:grid;grid-template-columns:8px 1fr auto;gap:7px;align-items:center;padding:2px 0;font-size:11px;color:#344256}
+.market-style-tooltip-dot{width:7px;height:7px;border-radius:50%;background:var(--style-color)}
 .market-style-tooltip-value{font-weight:900;font-variant-numeric:tabular-nums}
-.market-style-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px;font-size:9px;color:#94a3b8;font-weight:600}
+.market-style-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:10.5px;color:#7c899b;font-weight:650}
 .market-style-empty{display:flex;align-items:center;justify-content:center;height:100%;min-height:230px;padding:20px;text-align:center;font-size:11px;color:#94a3b8;line-height:1.7}
 @media(max-width:820px){
   .market-dashboard-grid{grid-template-columns:1fr;grid-template-rows:auto}
@@ -197,10 +197,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .market-style-card{grid-column:1;grid-row:3;min-height:410px}
 }
 @media(max-width:480px){
-  .market-style-legend{grid-template-columns:1fr 1fr 1fr;gap:4px}
-  .market-style-legend-group{padding:6px 5px}
-  .market-style-legend-row{grid-template-columns:11px minmax(0,1fr) auto;gap:3px}
-  .market-style-legend-name{font-size:8.5px}.market-style-legend-value{font-size:9px}
+  .market-style-legend{grid-template-columns:1fr;gap:5px}
+  .market-style-legend-group{display:grid;grid-template-columns:38px 1fr 1fr;align-items:center;gap:6px;padding:7px 9px}
+  .market-style-cap{font-size:10.5px;margin:0}
+  .market-style-legend-row{grid-template-columns:17px minmax(0,1fr) auto;gap:4px;margin:0}
+  .market-style-legend-name{font-size:10.5px}.market-style-legend-value{font-size:11px}
   .market-style-foot{align-items:flex-start;flex-direction:column;gap:2px}
 }
 
@@ -907,7 +908,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
       <div class="market-style-foot">
         <span>曲线：相对昨收涨跌幅</span>
-        <span>实线成长 · 虚线价值 · 腾讯行情</span>
+        <span>实线成长 · 长虚线价值 · 腾讯行情</span>
       </div>
     </div>
   </div>
@@ -8053,12 +8054,12 @@ async function _doFetchTurnover(){
 // ── 市场风格（国证 399372~399377，腾讯当日分钟行情）───────────────
 // 颜色区分大/中/小盘，实线=成长、虚线=价值；全部换算为相对昨收涨跌幅后同轴比较。
 const _MKT_STYLE_META = [
-  {cap:'大盘',type:'成长',name:'大盘成长',code:'399372',color:'#0071e3'},
-  {cap:'大盘',type:'价值',name:'大盘价值',code:'399373',color:'#0071e3'},
-  {cap:'中盘',type:'成长',name:'中盘成长',code:'399374',color:'#7c3aed'},
-  {cap:'中盘',type:'价值',name:'中盘价值',code:'399375',color:'#7c3aed'},
-  {cap:'小盘',type:'成长',name:'小盘成长',code:'399376',color:'#f97316'},
-  {cap:'小盘',type:'价值',name:'小盘价值',code:'399377',color:'#f97316'},
+  {cap:'大盘',type:'成长',name:'大盘成长',code:'399372',color:'#0057d9'},
+  {cap:'大盘',type:'价值',name:'大盘价值',code:'399373',color:'#008b8b'},
+  {cap:'中盘',type:'成长',name:'中盘成长',code:'399374',color:'#6d28d9'},
+  {cap:'中盘',type:'价值',name:'中盘价值',code:'399375',color:'#c026d3'},
+  {cap:'小盘',type:'成长',name:'小盘成长',code:'399376',color:'#ea580c'},
+  {cap:'小盘',type:'价值',name:'小盘价值',code:'399377',color:'#a16207'},
 ];
 var _mktStyleCache = null;
 var _mktStyleFetching = false;
@@ -8122,7 +8123,7 @@ function _renderMktStyle(data, cached){
   const width=Math.max(300,Math.round(chart.clientWidth||560));
   const height=Math.max(230,Math.round(chart.clientHeight||250));
   const mobile=width<430;
-  const margin={top:10,right:mobile?8:12,bottom:28,left:mobile?39:45};
+  const margin={top:10,right:mobile?9:13,bottom:30,left:mobile?45:51};
   const plotW=width-margin.left-margin.right, plotH=height-margin.top-margin.bottom;
   let yMin=Math.floor((Math.min(0,...values)-.06)*10)/10;
   let yMax=Math.ceil((Math.max(0,...values)+.06)*10)/10;
@@ -8133,19 +8134,20 @@ function _renderMktStyle(data, cached){
   for(let i=0;i<=5;i++){
     const v=yMax-i*(yMax-yMin)/5, yy=y(v), zero=Math.abs(v)<(yMax-yMin)/50;
     svg+=`<line x1="${margin.left}" y1="${yy.toFixed(1)}" x2="${width-margin.right}" y2="${yy.toFixed(1)}" stroke="${zero?'#94a3b8':'#e5e7eb'}" stroke-width="${zero?'1.2':'1'}"/>`;
-    svg+=`<text x="${margin.left-6}" y="${(yy+3.5).toFixed(1)}" text-anchor="end" fill="#94a3b8" font-size="9">${v>0?'+':''}${v.toFixed(1)}%</text>`;
+    svg+=`<text x="${margin.left-7}" y="${(yy+4).toFixed(1)}" text-anchor="end" fill="#7c899b" font-size="10.5" font-weight="600">${v>0?'+':''}${v.toFixed(1)}%</text>`;
   }
   const tickIdx=[0,.25,.5,.75,1].map(r=>Math.round(r*(times.length-1))).filter((v,i,a)=>a.indexOf(v)===i);
   tickIdx.forEach((idx,n)=>{
     const xx=x(times[idx]);
     svg+=`<line x1="${xx.toFixed(1)}" y1="${margin.top}" x2="${xx.toFixed(1)}" y2="${height-margin.bottom}" stroke="#eef0f4"/>`;
-    svg+=`<text x="${xx.toFixed(1)}" y="${height-9}" text-anchor="${n===0?'start':n===tickIdx.length-1?'end':'middle'}" fill="#94a3b8" font-size="9">${_mktStyleClock(times[idx])}</text>`;
+    svg+=`<text x="${xx.toFixed(1)}" y="${height-9}" text-anchor="${n===0?'start':n===tickIdx.length-1?'end':'middle'}" fill="#7c899b" font-size="10.5" font-weight="600">${_mktStyleClock(times[idx])}</text>`;
   });
   series.forEach(s=>{
     const d=s.points.map((p,i)=>(i?'L':'M')+x(p.time).toFixed(1)+','+y(p.pct).toFixed(1)).join(' ');
     const last=s.points[s.points.length-1];
-    svg+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" ${s.type==='价值'?'stroke-dasharray="5 4"':''}/>`;
-    svg+=`<circle cx="${x(last.time).toFixed(1)}" cy="${y(last.pct).toFixed(1)}" r="3.1" fill="${s.color}" stroke="#fff" stroke-width="1.5"/>`;
+    const isValue=s.type==='价值';
+    svg+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${isValue?'2.75':'3.1'}" stroke-linecap="round" stroke-linejoin="round" ${isValue?'stroke-dasharray="9 5"':''}/>`;
+    svg+=`<circle cx="${x(last.time).toFixed(1)}" cy="${y(last.pct).toFixed(1)}" r="4" fill="${isValue?'#fff':s.color}" stroke="${s.color}" stroke-width="${isValue?'2.2':'1.4'}"/>`;
   });
   svg+=`<line id="mktStyleCrosshair" x1="0" y1="${margin.top}" x2="0" y2="${height-margin.bottom}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 4" style="display:none"/>`;
   svg+=`<rect id="mktStyleHit" x="${margin.left}" y="${margin.top}" width="${plotW}" height="${plotH}" fill="transparent"/>`;
