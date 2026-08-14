@@ -7702,13 +7702,15 @@ async function _emClistGet(qs){
 
 let _breadthCache = null;   // 上次成功的渲染结果（粘性缓存，失败时保留不消失）
 
-// 全市场总数包含停牌、暂无成交或行情源暂未给出 f3 的股票。
-// 这些股票没有上涨或下跌，统一归入“平盘”，确保三项家数与总数严格一致。
+// 全市场总数包含退市、停牌、暂无成交或行情源暂未给出 f3 的股票。
+// “平盘”只统计真实 f3=0；无有效 f3 的股票单独列为“无行情”，避免虚增平盘家数。
 function _reconcileMarketBreadth(total, counts){
   const totalUp   = counts[0]+counts[1]+counts[2]+counts[3];
   const totalDown = counts[5]+counts[6]+counts[7]+counts[8];
-  const flat      = Math.max(0, Number(total)-totalUp-totalDown);
-  return {totalUp,totalDown,flat};
+  const flat      = counts[4];
+  const quotedTotal = counts.reduce((sum,count)=>sum+count,0);
+  const noQuote   = Math.max(0,Number(total)-quotedTotal);
+  return {totalUp,totalDown,flat,quotedTotal,noQuote};
 }
 
 async function _doFetchBreadth(){
@@ -7793,19 +7795,23 @@ async function _doFetchBreadth(){
     // ④ 区间过滤完全无效保护（sumCounts 极小且非交易检测未触发）
     if(sumCounts < 50) throw new Error(`区间统计异常(sum=${sumCounts},total=${total})`);
 
-    // ⑤ 按总数对账：精确 0、停牌、暂无成交或缺少 f3 的股票均归入平盘。
+    // ⑤ 精确 0 才是平盘；退市、停牌、暂无成交或缺少 f3 的股票单列为无行情。
     const bFlat   = reconciled.flat;
+    const noQuote = reconciled.noQuote;
     const b_lu    = counts[0];
     const b_ld    = counts[8];
     const totalUp   = reconciled.totalUp;
     const totalDown = reconciled.totalDown;
-    console.log('[涨跌统计] ↑',totalUp,'平',bFlat,'↓',totalDown,'涨停',b_lu,'跌停',b_ld);
+    console.log('[涨跌统计] ↑',totalUp,'平',bFlat,'↓',totalDown,'无行情',noQuote,'涨停',b_lu,'跌停',b_ld);
 
     if(elUp)   elUp.textContent   = totalUp;
     if(elDown) elDown.textContent = totalDown;
     if(elLU)   elLU.textContent   = b_lu;
     if(elLD)   elLD.textContent   = b_ld;
-    if(elFlat){ elFlat.textContent='平盘 '+bFlat+' 家'; elFlat.style.display=bFlat>0?'block':'none'; }
+    if(elFlat){
+      elFlat.textContent='平盘 '+bFlat+' 家'+(noQuote>0?' · 无行情 '+noQuote+' 家':'');
+      elFlat.style.display=(bFlat>0||noQuote>0)?'block':'none';
+    }
 
     // ⑥ 渲染直方图
     const displayCounts = [...counts.slice(0,4), bFlat, ...counts.slice(5)];
@@ -7824,13 +7830,13 @@ async function _doFetchBreadth(){
     const _hm = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
     if(chartEl) chartEl.innerHTML=
       `<div style="display:flex;align-items:stretch;gap:1px;padding:0 2px">${bars}</div>`
-      +`<div style="font-size:9px;color:#9ca3af;text-align:center;margin-top:4px">共 ${total} 家</div>`;
+      +`<div style="font-size:9px;color:#9ca3af;text-align:center;margin-top:4px">有行情 ${reconciled.quotedTotal} 家 · 无行情 ${noQuote} 家 · 全部 ${total} 家</div>`;
     if(bTs) bTs.textContent=_hm;
 
     // 成功后写入粘性缓存（含各数字与直方图，供失败时回填）
     _breadthCache = {
       up:String(totalUp), down:String(totalDown), lu:String(b_lu), ld:String(b_ld),
-      flat:bFlat, chart:chartEl?chartEl.innerHTML:'', ts:_hm
+      flat:bFlat, noQuote:noQuote, chart:chartEl?chartEl.innerHTML:'', ts:_hm
     };
   }catch(e){
     console.warn('[涨跌统计]', e.message);
@@ -7840,7 +7846,10 @@ async function _doFetchBreadth(){
       if(elDown) elDown.textContent = _breadthCache.down;
       if(elLU)   elLU.textContent   = _breadthCache.lu;
       if(elLD)   elLD.textContent   = _breadthCache.ld;
-      if(elFlat){ elFlat.textContent='平盘 '+_breadthCache.flat+' 家'; elFlat.style.display=_breadthCache.flat>0?'block':'none'; }
+      if(elFlat){
+        elFlat.textContent='平盘 '+_breadthCache.flat+' 家'+(_breadthCache.noQuote>0?' · 无行情 '+_breadthCache.noQuote+' 家':'');
+        elFlat.style.display=(_breadthCache.flat>0||_breadthCache.noQuote>0)?'block':'none';
+      }
       if(chartEl) chartEl.innerHTML = _breadthCache.chart;
       if(bTs) bTs.textContent = _breadthCache.ts + ' (缓存)';
     }else{
