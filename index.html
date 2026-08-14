@@ -7723,7 +7723,8 @@ async function _doFetchBreadth(){
   const elFlat = document.getElementById('mktFlatRow');
   if(bTs) bTs.textContent = '加载中…';
   try{
-    const FS  = 'm:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23';
+    // f:!2 排除退市、旧代码等已终止交易证券；停牌与待上市证券仍保留。
+    const FS  = 'm:0+t:6+f:!2,m:0+t:80+f:!2,m:1+t:2+f:!2,m:1+t:23+f:!2';
     // 不加 fltt，f3 为 EM 内部整数 centipercent（-1.56% = -156），与 BKTS 阈值单位一致
     const BP  = 'np=1&invt=2&fid=f12&po=0&fields=f3';
 
