@@ -7035,7 +7035,7 @@ const _IDX_EM = [
   {secids:['100.TWII'],     code:'TWII',     altCodes:[], label:'台湾加权',     region:'intl'},  // 台湾加权指数 TAIEX
 ];
 // 渲染顺序固定（A股平均股价紧随中证全指；港股在 A/H溢价前，期指置底）
-const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股平均股价','恒生指数','恒生科技','A/H溢价','美国10年期','韩国KOSPI200','台湾加权','A50期指','纳指期指'];
+const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股平均股价','恒生指数','恒生科技','A/H溢价','韩国KOSPI200','台湾加权','A50期指','纳指期指','美国10年期'];
 
 // 粘性缓存：每个指数上次成功获取的值。某数据源偶发失败时回填，保证不闪现消失
 let _IDX_CACHE = {};   // label → {label, price, pct, region, ts}
@@ -8158,7 +8158,7 @@ function _renderMktStyle(data, cached){
     const d=s.points.map((p,i)=>(i?'L':'M')+x(p.time).toFixed(1)+','+y(p.pct).toFixed(1)).join(' ');
     const last=s.points[s.points.length-1];
     const isValue=s.type==='价值';
-    svg+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${isValue?'2.75':'3.1'}" stroke-linecap="round" stroke-linejoin="round" ${isValue?'stroke-dasharray="9 5"':''}/>`;
+    svg+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${isValue?'2.25':'2.55'}" stroke-linecap="round" stroke-linejoin="round" ${isValue?'stroke-dasharray="9 5"':''}/>`;
     svg+=`<circle cx="${x(last.time).toFixed(1)}" cy="${y(last.pct).toFixed(1)}" r="4" fill="${isValue?'#fff':s.color}" stroke="${s.color}" stroke-width="${isValue?'2.2':'1.4'}"/>`;
   });
   svg+=`<line id="mktStyleCrosshair" x1="0" y1="${margin.top}" x2="0" y2="${height-margin.bottom}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 4" style="display:none"/>`;
