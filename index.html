@@ -8198,10 +8198,10 @@ async function _doFetchTurnover(){
 // 颜色区分大/中/小盘，实线=成长、虚线=价值；全部换算为相对昨收涨跌幅后同轴比较。
 const _MKT_STYLE_META = [
   {cap:'大盘',type:'成长',name:'大盘成长',code:'399372',color:'#0057d9'},
-  {cap:'大盘',type:'价值',name:'大盘价值',code:'399373',color:'#008b8b'},
   {cap:'中盘',type:'成长',name:'中盘成长',code:'399374',color:'#6d28d9'},
-  {cap:'中盘',type:'价值',name:'中盘价值',code:'399375',color:'#c026d3'},
   {cap:'小盘',type:'成长',name:'小盘成长',code:'399376',color:'#ea580c'},
+  {cap:'大盘',type:'价值',name:'大盘价值',code:'399373',color:'#008b8b'},
+  {cap:'中盘',type:'价值',name:'中盘价值',code:'399375',color:'#c026d3'},
   {cap:'小盘',type:'价值',name:'小盘价值',code:'399377',color:'#a16207'},
 ];
 var _mktStyleCache = null;
@@ -9257,6 +9257,9 @@ async function fetchPortPrices(){
     var aSids = aStocks.length  ? aStocks.map(function(s){ return (s.mkt==='SH'?'1.':'0.')+s.code; }).join(',') : null;
     var mcUrl = aSids           ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f12,f20,f11&secids='+aSids+'&_='+ts0 : null;
     var hkSids= hkStocks.length ? hkStocks.map(function(s){ return '116.'+s.code; }).join(',') : null;
+    // 腾讯港股返回结构与 A 股不同：量比位于 ~ 分隔后的第 50 号字段。
+    // 价格仍以东财实时源为准；这一路只补齐东财港股经常为空的量比字段。
+    var hkMetricUrl = hkStocks.length ? 'https://qt.gtimg.cn/q=' + hkStocks.map(function(s){ return 'hk'+s.code; }).join(',') + '&_=' + ts0 : null;
     var hkFields = 'f12,f14,f2,f3,f20,f50,f11,f124';
     var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields='+hkFields+'&_='+ts0 : null;
     // push2 主域名在部分网络/早盘时段会返回空响应；push2delay 在港股开市前竞价阶段
@@ -9288,13 +9291,17 @@ async function fetchPortPrices(){
             : Promise.resolve({}),
       emDelayUrl ? _pfFetch(emDelayUrl).then(function(r){ return r.json(); })
                           .catch(function(e){ console.warn('[HK东方财富冗余]',e.message); return null; })
-            : Promise.resolve(null)
+            : Promise.resolve(null),
+      hkMetricUrl ? _pfFetch(hkMetricUrl).then(function(r){ return r.arrayBuffer(); }).then(function(b){ return new TextDecoder('gbk').decode(b); })
+                          .catch(function(e){ console.warn('[HK腾讯量比]',e.message); return ''; })
+            : Promise.resolve('')
     ]);
     var aTxt   = results[0];
     var mcJson = results[1];
     var emJson = results[2];
     var sinaRes= results[3];
     var emDelayJson=results[4];
+    var hkMetricTxt=results[5];
 
     // ��─ 处理 A股行情 ────────────────────────────────────────────────
     if(aStocks.length && aTxt){
@@ -9436,8 +9443,21 @@ async function fetchPortPrices(){
           });
         }catch(e){ console.warn('[HK] 腾讯兜底:', e.message); }
       }
+
+      // ⑤ 为所有已取得价格的港股补齐量比。腾讯港股第 50 号字段经实测为量比；
+      // 仅合并指标，绝不改写东财/新浪取得的实时价格、涨跌幅和行情时间。
+      if(hkMetricTxt){
+        hkStocks.forEach(function(s){
+          var m = hkMetricTxt.match(new RegExp('v_hk' + s.code + '="([^"]+)"'));
+          if(!m || !_PORT_PRICES[s.code]) return;
+          var p = m[1].split('~');
+          var vr = parseFloat(p[50]);
+          if(isFinite(vr) && vr > 0) _PORT_PRICES[s.code].volRatio = vr;
+        });
+      }
       var _hkOk = hkStocks.filter(function(s){ return _PORT_PRICES[s.code]; }).length;
-      console.log('[HK] 港股获取', _hkOk, '/', hkStocks.length, '只（东财双源→新浪→腾讯）');
+      var _hkVrOk = hkStocks.filter(function(s){ return _PORT_PRICES[s.code] && _PORT_PRICES[s.code].volRatio > 0; }).length;
+      console.log('[HK] 港股获取', _hkOk, '/', hkStocks.length, '只；量比', _hkVrOk, '/', hkStocks.length, '只（东财价格＋腾讯量比）');
     }
 
     // ── 粘性回填：本轮未取到新值的个股，沿用上一时刻成功值（标记 stale），绝不让其消失/清零 ──
@@ -9454,6 +9474,14 @@ async function fetchPortPrices(){
       if(_curCodes[code] && _PORT_PRICES[code] && _prevPrices[code] &&
          !(_PORT_PRICES[code].mktCap>0) && _prevPrices[code].mktCap>0){
         _PORT_PRICES[code].mktCap=_prevPrices[code].mktCap;
+      }
+      if(_curCodes[code] && _PORT_PRICES[code] && _prevPrices[code] &&
+         !(_PORT_PRICES[code].volRatio>0) && _prevPrices[code].volRatio>0){
+        _PORT_PRICES[code].volRatio=_prevPrices[code].volRatio;
+      }
+      if(_curCodes[code] && _PORT_PRICES[code] && _prevPrices[code] &&
+         !isFinite(_PORT_PRICES[code].speedPct) && isFinite(_prevPrices[code].speedPct)){
+        _PORT_PRICES[code].speedPct=_prevPrices[code].speedPct;
       }
     });
 
