@@ -199,8 +199,16 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .market-rotation-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:9px}
 .market-rotation-legend-row{
   display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:6px;min-width:0;
-  padding:8px 9px;border:1px solid #dfe8e6;border-radius:10px;background:rgba(255,255,255,.92)
+  appearance:none;padding:8px 9px;border:1px solid #dfe8e6;border-radius:10px;background:rgba(255,255,255,.92);
+  color:inherit;font-family:inherit;text-align:left;cursor:pointer;transition:transform .16s,box-shadow .16s,border-color .16s,opacity .16s,background .16s
 }
+.market-rotation-legend-row:hover{transform:translateY(-1px);border-color:#94a3b8;background:#fff;box-shadow:0 4px 12px rgba(15,23,42,.07)}
+.market-rotation-legend-row:focus-visible{outline:3px solid color-mix(in srgb,var(--style-color) 24%,transparent);outline-offset:2px}
+.market-rotation-legend-row.active{
+  transform:translateY(-1px);border-color:var(--style-color);background:#fff;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--style-color) 18%,transparent),0 7px 16px rgba(15,23,42,.1)
+}
+.market-rotation-legend-row.is-muted{opacity:.52}
 .market-rotation-line{display:block;width:28px;height:4px;color:var(--style-color)}
 .market-rotation-line svg{display:block;width:100%;height:100%;overflow:visible}
 .market-rotation-name{font-size:11px;color:#344256;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -958,8 +966,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         <div id="mktRotationTooltip" class="market-style-tooltip" aria-hidden="true"></div>
       </div>
       <div class="market-style-foot">
-        <span>曲线：相对昨收涨跌幅</span>
-        <span>周期 · 防御 · 消费 · 科技 · 红利 · 资源</span>
+        <span>点击上方指数可高亮 · 再点恢复</span>
+        <span>相对昨收涨跌幅 · 腾讯行情</span>
       </div>
     </div>
   </div>
@@ -8336,6 +8344,7 @@ var _mktRotationCache = null;
 var _mktRotationFetching = false;
 var _mktRotationResizeBound = false;
 var _mktRotationResizeTimer = null;
+var _mktRotationActiveCode = '';
 
 async function _fetchMktRotationSeries(meta){
   const url='https://web.ifzq.gtimg.cn/appstock/app/minute/query?code='+meta.key+'&_='+Date.now();
@@ -8359,18 +8368,28 @@ function _rotationLegendLine(s){
     +`</svg></i>`;
 }
 
+function _toggleMktRotationSeries(code){
+  if(!_MKT_ROTATION_META.some(s=>s.code===code)) return;
+  _mktRotationActiveCode=_mktRotationActiveCode===code?'':code;
+  if(_mktRotationCache) _renderMktRotation(_mktRotationCache,false);
+}
+
 function _renderMktRotation(data,cached){
   const chart=document.getElementById('mktRotationChart');
   const legend=document.getElementById('mktRotationLegend');
   const ts=document.getElementById('mktRotationTs');
   if(!chart||!legend||!data||!Array.isArray(data.series)||!data.series.length) return;
   const series=data.series;
+  const active=series.some(s=>s.code===_mktRotationActiveCode)?_mktRotationActiveCode:'';
+  if(_mktRotationActiveCode&&!active) _mktRotationActiveCode='';
   legend.innerHTML=series.map(s=>{
     const v=s.points[s.points.length-1].pct;
-    return `<div class="market-rotation-legend-row" title="${s.name} ${s.code}">`
+    const selected=active===s.code,muted=active&&!selected;
+    return `<button type="button" class="market-rotation-legend-row${selected?' active':''}${muted?' is-muted':''}" data-rotation-code="${s.code}" style="--style-color:${s.color}"`
+      +` onclick="_toggleMktRotationSeries('${s.code}')" aria-pressed="${selected?'true':'false'}" title="点击${selected?'恢复全部曲线':'突出'+s.name+'曲线'}">`
       +_rotationLegendLine(s)
       +`<span class="market-rotation-name">${s.name}</span>`
-      +`<span class="market-rotation-value" style="color:${_mktStyleTone(v)}">${_mktStyleSigned(v)}</span></div>`;
+      +`<span class="market-rotation-value" style="color:${_mktStyleTone(v)}">${_mktStyleSigned(v)}</span></button>`;
   }).join('');
 
   const times=[...new Set(series.flatMap(s=>s.points.map(p=>p.time)))].sort((a,b)=>_mktStyleSessionMinute(a)-_mktStyleSessionMinute(b));
@@ -8398,11 +8417,17 @@ function _renderMktRotation(data,cached){
     svg+=`<line x1="${xx.toFixed(1)}" y1="${margin.top}" x2="${xx.toFixed(1)}" y2="${height-margin.bottom}" stroke="#eef0f4"/>`;
     svg+=`<text x="${xx.toFixed(1)}" y="${height-9}" text-anchor="${n===0?'start':n===tickIdx.length-1?'end':'middle'}" fill="#7c899b" font-size="10.5" font-weight="600">${_mktStyleClock(times[idx])}</text>`;
   });
-  series.forEach(s=>{
+  const drawSeries=active
+    ? [...series.filter(s=>s.code!==active),...series.filter(s=>s.code===active)]
+    : series;
+  drawSeries.forEach(s=>{
     const d=s.points.map((p,i)=>(i?'L':'M')+x(p.time).toFixed(1)+','+y(p.pct).toFixed(1)).join(' ');
     const last=s.points[s.points.length-1];
-    svg+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.45" stroke-linecap="round" stroke-linejoin="round" ${s.dash?`stroke-dasharray="${s.dash}"`:''}/>`;
-    svg+=`<circle cx="${x(last.time).toFixed(1)}" cy="${y(last.pct).toFixed(1)}" r="3.8" fill="${s.dash?'#fff':s.color}" stroke="${s.color}" stroke-width="1.8"/>`;
+    const selected=active===s.code,muted=active&&!selected;
+    const dash=s.dash?`stroke-dasharray="${s.dash}"`:'';
+    if(selected) svg+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="9" stroke-opacity=".14" stroke-linecap="round" stroke-linejoin="round" ${dash}/>`;
+    svg+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${selected?'4':'2.45'}" stroke-opacity="${muted?'.13':'1'}" stroke-linecap="round" stroke-linejoin="round" ${dash}/>`;
+    svg+=`<circle cx="${x(last.time).toFixed(1)}" cy="${y(last.pct).toFixed(1)}" r="${selected?'5.2':'3.8'}" fill="${s.dash?'#fff':s.color}" fill-opacity="${muted?'.18':'1'}" stroke="${s.color}" stroke-opacity="${muted?'.18':'1'}" stroke-width="${selected?'2.5':'1.8'}"/>`;
   });
   svg+=`<line id="mktRotationCrosshair" x1="0" y1="${margin.top}" x2="0" y2="${height-margin.bottom}" stroke="#64748b" stroke-width="1" stroke-dasharray="3 4" style="display:none"/>`;
   svg+=`<rect id="mktRotationHit" x="${margin.left}" y="${margin.top}" width="${plotW}" height="${plotH}" fill="transparent"/>`;
