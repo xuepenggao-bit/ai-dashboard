@@ -707,9 +707,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .port-action-chevron svg{width:10px;height:10px;display:block;stroke:currentColor;transition:transform .16s ease}
   #arBtn[aria-expanded="true"] .port-action-chevron svg{transform:rotate(180deg)}
   .port-action.loading .port-action-icon{animation:spin 1s linear infinite}
-  /* 中央时钟：渲染尺寸 78px，内部使用 80×80 矢量坐标，刻度和指针更清晰。 */
+  /* 中央时钟：保持顶部区域尺寸，内部用 160×160 高精度矢量坐标模拟 iPhone 时钟质感。 */
   .port-hero-clock{gap:12px!important}
-  #portAnalog{width:78px;height:78px}
+  #portAnalog{width:80px;height:80px;overflow:visible;shape-rendering:geometricPrecision}
   #portClock{
     color:#1d1d1f!important;font-size:26px!important;font-weight:510!important;letter-spacing:.035em!important;
     font-family:'SF Mono','SFMono-Regular',ui-monospace,'Cascadia Mono','Consolas',monospace!important
@@ -756,39 +756,48 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
     <!-- 中：高清模拟时钟 + 数字时钟（绝对居中） -->
     <div class="port-hero-clock" style="position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;pointer-events:none">
-      <svg id="portAnalog" width="78" height="78" viewBox="0 0 80 80" style="flex-shrink:0;filter:drop-shadow(0 5px 11px rgba(15,23,42,.22))" xmlns="http://www.w3.org/2000/svg">
+      <svg id="portAnalog" width="80" height="80" viewBox="0 0 160 160" shape-rendering="geometricPrecision" style="flex-shrink:0;filter:drop-shadow(0 6px 12px rgba(15,23,42,.25))" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id="paFace" cx="50%" cy="40%" r="66%">
-            <stop offset="0%" stop-color="#ffffff"/><stop offset="72%" stop-color="#fbfcfe"/><stop offset="100%" stop-color="#eef1f6"/>
+          <radialGradient id="paFace" cx="43%" cy="34%" r="72%">
+            <stop offset="0%" stop-color="#2d2d30"/><stop offset="55%" stop-color="#171719"/><stop offset="100%" stop-color="#09090a"/>
           </radialGradient>
           <linearGradient id="paBezel" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#fcfdff"/><stop offset="48%" stop-color="#d7dde7"/><stop offset="100%" stop-color="#b3bccb"/>
+            <stop offset="0%" stop-color="#525257"/><stop offset="45%" stop-color="#242427"/><stop offset="100%" stop-color="#080809"/>
           </linearGradient>
           <radialGradient id="paInner" cx="50%" cy="50%" r="50%">
-            <stop offset="76%" stop-color="rgba(15,23,42,0)"/><stop offset="100%" stop-color="rgba(15,23,42,.12)"/>
+            <stop offset="77%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".46"/>
           </radialGradient>
+          <linearGradient id="paGlass" x1="0" y1="0" x2="0.7" y2="1">
+            <stop offset="0%" stop-color="#fff" stop-opacity=".11"/><stop offset="55%" stop-color="#fff" stop-opacity=".025"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+          </linearGradient>
+          <filter id="paHandShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="1.6" stdDeviation="1.25" flood-color="#000" flood-opacity=".62"/>
+          </filter>
         </defs>
-        <!-- 金属渐变表框（上亮下暗，立体凸起）-->
-        <circle cx="40" cy="40" r="39.2" fill="url(#paBezel)"/>
-        <!-- 盘面 -->
-        <circle cx="40" cy="40" r="36.25" fill="url(#paFace)"/>
-        <!-- 盘面内阴影（边缘压暗，凹陷立体感）-->
-        <circle cx="40" cy="40" r="36.25" fill="url(#paInner)"/>
-        <circle cx="40" cy="40" r="35.7" fill="none" stroke="rgba(60,60,67,.14)" stroke-width=".7"/>
+        <!-- 深色窄表框与黑色盘面，贴近 iPhone 时钟图标 -->
+        <circle cx="80" cy="80" r="78.4" fill="url(#paBezel)"/>
+        <circle cx="80" cy="80" r="74.2" fill="url(#paFace)"/>
+        <circle cx="80" cy="80" r="74.2" fill="url(#paInner)"/>
+        <circle cx="80" cy="80" r="73.4" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="1.2"/>
         <!-- 60 分钟刻度 / 12 整点刻度（JS 生成）-->
-        <g id="paMinTicks" stroke="#bdc3ce" stroke-width=".85" stroke-linecap="round"></g>
-        <g id="paHrTicks"  stroke="#5f6672" stroke-width="2.1" stroke-linecap="round"></g>
-        <!-- 时针 / 分针：圆角矩形，使用整数级矢量坐标保持锐利 -->
-        <rect id="paHour" x="37.7" y="20" width="4.6" height="24" rx="2.3" fill="#1d1d1f"/>
-        <rect id="paMin"  x="38.55" y="11.5" width="2.9" height="32.5" rx="1.45" fill="#1d1d1f"/>
-        <!-- 秒针：橙色 + 尾部配重 -->
-        <g id="paSec">
-          <line x1="40" y1="49.5" x2="40" y2="9.5" stroke="#ff9500" stroke-width="1.65" stroke-linecap="round"/>
-          <circle cx="40" cy="49.5" r="3" fill="#ff9500"/>
+        <g id="paMinTicks" stroke="#8e8e93" stroke-opacity=".7" stroke-width="1.45" stroke-linecap="round"></g>
+        <g id="paHrTicks"  stroke="#f5f5f7" stroke-width="4.15" stroke-linecap="round"></g>
+        <!-- 时针 / 分针：白色圆角指针配轻微投影 -->
+        <g id="paHour" filter="url(#paHandShadow)">
+          <line x1="80" y1="88" x2="80" y2="43" stroke="#f5f5f7" stroke-width="9" stroke-linecap="round"/>
         </g>
-        <!-- 中心帽（双层）-->
-        <circle cx="40" cy="40" r="4" fill="#1d1d1f"/>
-        <circle cx="40" cy="40" r="1.7" fill="#ff9500"/>
+        <g id="paMin" filter="url(#paHandShadow)">
+          <line x1="80" y1="89" x2="80" y2="27" stroke="#f5f5f7" stroke-width="5.8" stroke-linecap="round"/>
+        </g>
+        <!-- 秒针：iPhone 标志性的橙色长秒针和配重 -->
+        <g id="paSec" filter="url(#paHandShadow)">
+          <line x1="80" y1="101" x2="80" y2="17" stroke="#ff9f0a" stroke-width="2.7" stroke-linecap="round"/>
+          <circle cx="80" cy="101" r="5.8" fill="#ff9f0a"/>
+        </g>
+        <!-- 中心帽与极轻的玻璃高光 -->
+        <circle cx="80" cy="80" r="7.1" fill="#f5f5f7" filter="url(#paHandShadow)"/>
+        <circle cx="80" cy="80" r="3.3" fill="#ff9f0a"/>
+        <ellipse cx="61" cy="48" rx="40" ry="26" fill="url(#paGlass)" transform="rotate(-18 61 48)" pointer-events="none"/>
       </svg>
       <div id="portClock"
         style="font-size:27px;font-weight:500;color:#334155;letter-spacing:.06em;
@@ -9309,10 +9318,12 @@ async function fetchPortPrices(){
         var m = aTxt.match(new RegExp('v_' + s.tc + '="([^"]+)"'));
         if(!m) return;
         var p = m[1].split('~');
-        var cur = parseFloat(p[3]), pct = parseFloat(p[32]), vr = parseFloat(p[49]), txMc = parseFloat(p[45]);
+        // 腾讯 A 股第 80 号字段为5分钟涨速；与分钟线“现价/5分钟前价格-1”交叉验证一致。
+        var cur = parseFloat(p[3]), pct = parseFloat(p[32]), vr = parseFloat(p[49]), sp = parseFloat(p[80]), txMc = parseFloat(p[45]);
         if(cur > 0 && isFinite(pct))
           _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w,
             volRatio: isFinite(vr)&&vr>0 ? vr : null,
+            speedPct: isFinite(sp) ? sp : null,
             // 腾讯行情 field[45] 已是亿元，可在东财市值接口超时/限流时直接兜底。
             mktCap: isFinite(txMc)&&txMc>0 ? txMc : null};
       });
@@ -9874,31 +9885,34 @@ document.addEventListener('DOMContentLoaded',()=>{
   (function _startClock(){
     const el = document.getElementById('portClock');
     const hH=document.getElementById('paHour'), hM=document.getElementById('paMin'), hS=document.getElementById('paSec');
-    // 构建 60 刻度：80×80 矢量坐标，分钟细刻度 + 整点粗刻度。
+    // 构建 60 刻度：160×160 高精度矢量坐标，分钟细刻度 + 整点粗刻度。
     const mt=document.getElementById('paMinTicks'), ht=document.getElementById('paHrTicks');
     if(mt && !mt.childNodes.length){
       let smin='', shr='';
       for(let i=0;i<60;i++){
-        const a=i*6*Math.PI/180, major=(i%5===0), ro=36.1, ri=(major?31.8:34.05);
-        const x1=(40+ri*Math.sin(a)).toFixed(2), y1=(40-ri*Math.cos(a)).toFixed(2);
-        const x2=(40+ro*Math.sin(a)).toFixed(2), y2=(40-ro*Math.cos(a)).toFixed(2);
+        const a=i*6*Math.PI/180, major=(i%5===0), ro=71.7, ri=(major?62.7:67.9);
+        const x1=(80+ri*Math.sin(a)).toFixed(2), y1=(80-ri*Math.cos(a)).toFixed(2);
+        const x2=(80+ro*Math.sin(a)).toFixed(2), y2=(80-ro*Math.cos(a)).toFixed(2);
         const ln='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>';
         if(major) shr+=ln; else smin+=ln;
       }
       mt.innerHTML=smin; if(ht) ht.innerHTML=shr;
     }
     const p=v=>String(v).padStart(2,'0');
+    let lastClockText='';
+    const reduceClockMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const tick = ()=>{
       const n=new Date();
-      if(el) el.textContent = p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds());
-      const s=n.getSeconds(), m=n.getMinutes(), h=n.getHours()%12;
-      const sa=s*6, ma=m*6+s*0.1, ha=h*30+m*0.5;          // 指针角度
-      if(hS) hS.setAttribute('transform','rotate('+sa+' 40 40)');
-      if(hM) hM.setAttribute('transform','rotate('+ma+' 40 40)');
-      if(hH) hH.setAttribute('transform','rotate('+ha+' 40 40)');
+      const clockText=p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds());
+      if(el && clockText!==lastClockText){ el.textContent=clockText; lastClockText=clockText; }
+      const s=n.getSeconds()+(reduceClockMotion?0:n.getMilliseconds()/1000), m=n.getMinutes()+s/60, h=(n.getHours()%12)+m/60;
+      const sa=s*6, ma=m*6, ha=h*30;                      // 指针角度
+      if(hS) hS.setAttribute('transform','rotate('+sa+' 80 80)');
+      if(hM) hM.setAttribute('transform','rotate('+ma+' 80 80)');
+      if(hH) hH.setAttribute('transform','rotate('+ha+' 80 80)');
+      requestAnimationFrame(tick);
     };
     tick();
-    setInterval(tick, 1000);
   })();
 
   // 恢复原版冲浪者巡游：根据标题与放大后的模拟时钟间距动态计算位移，避免与表盘重叠。
