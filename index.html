@@ -148,17 +148,23 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @media(max-width:900px){.g2,.g3,.g4,.g5{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.g2,.g3,.g4,.g5{grid-template-columns:1fr}}
 
-/* ── Portfolio market dashboard: breadth + turnover / style curves ── */
+/* ── Portfolio market dashboard: breadth + turnover / style + sector rotation ── */
 .market-dashboard-grid{
   display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
   grid-template-rows:auto auto;gap:16px;align-items:stretch
 }
 .market-breadth-card{grid-column:1;grid-row:1}
-.market-turnover-card{grid-column:1;grid-row:2}
+.market-turnover-card{grid-column:2;grid-row:1}
 .market-style-card{
-  grid-column:2;grid-row:1 / span 2;display:flex;flex-direction:column;min-width:0;min-height:0;
+  grid-column:1;grid-row:2;display:flex;flex-direction:column;min-width:0;min-height:410px;
   border-top:3px solid #7c3aed!important;background:linear-gradient(150deg,#faf8ff 0%,#fff 50%)!important
 }
+.market-rotation-card{
+  grid-column:2;grid-row:2;display:flex;flex-direction:column;min-width:0;min-height:410px;
+  border-top:3px solid #0f766e!important;background:linear-gradient(150deg,#f0fdfa 0%,#fff 50%)!important
+}
+.market-rotation-card .market-style-refresh{border-color:#99f6e4;background:#f0fdfa;color:#0f766e}
+.market-rotation-card .market-style-refresh:hover{background:#ccfbf1}
 .market-style-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
 .market-style-title{display:flex;align-items:center;gap:7px;font-size:14.5px;font-weight:850;color:#283548;letter-spacing:.01em}
 .market-style-head-right{display:flex;align-items:center;gap:7px;min-width:0}
@@ -190,11 +196,21 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .market-style-tooltip-value{font-weight:900;font-variant-numeric:tabular-nums}
 .market-style-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:10.5px;color:#7c899b;font-weight:650}
 .market-style-empty{display:flex;align-items:center;justify-content:center;height:100%;min-height:230px;padding:20px;text-align:center;font-size:11px;color:#94a3b8;line-height:1.7}
+.market-rotation-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:9px}
+.market-rotation-legend-row{
+  display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:6px;min-width:0;
+  padding:8px 9px;border:1px solid #dfe8e6;border-radius:10px;background:rgba(255,255,255,.92)
+}
+.market-rotation-line{display:block;width:28px;height:4px;color:var(--style-color)}
+.market-rotation-line svg{display:block;width:100%;height:100%;overflow:visible}
+.market-rotation-name{font-size:11px;color:#344256;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.market-rotation-value{font-size:11.5px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
 @media(max-width:820px){
   .market-dashboard-grid{grid-template-columns:1fr;grid-template-rows:auto}
   .market-breadth-card{grid-column:1;grid-row:1}
   .market-turnover-card{grid-column:1;grid-row:2}
   .market-style-card{grid-column:1;grid-row:3;min-height:410px}
+  .market-rotation-card{grid-column:1;grid-row:4;min-height:410px}
 }
 @media(max-width:480px){
   .market-style-legend{grid-template-columns:1fr;gap:5px}
@@ -203,6 +219,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .market-style-legend-row{grid-template-columns:17px minmax(0,1fr) auto;gap:4px;margin:0}
   .market-style-legend-name{font-size:10.5px}.market-style-legend-value{font-size:11px}
   .market-style-foot{align-items:flex-start;flex-direction:column;gap:2px}
+  .market-rotation-legend{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+  .market-rotation-legend-row{grid-template-columns:22px minmax(0,1fr) auto;gap:4px;padding:7px 8px}
+  .market-rotation-line{width:22px}.market-rotation-name{font-size:10.5px}.market-rotation-value{font-size:10.5px}
 }
 
 /* ── Cards ── */
@@ -845,7 +864,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   </div>
 
-  <!-- Row 1.5: 左侧涨跌统计/成交分析，右侧市场风格实时曲线 -->
+  <!-- Row 1.5: 第一行涨跌统计+成交分析，第二行市场风格+板块轮动 -->
   <div class="market-dashboard-grid mb16">
     <!-- 涨跌统计（仿东方财富牛熊风向标格式） -->
     <div class="card market-breadth-card" style="border-top:3px solid #dc2626;background:#fff">
@@ -919,6 +938,28 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="market-style-foot">
         <span>曲线：相对昨收涨跌幅</span>
         <span>实线成长 · 长虚线价值 · 腾讯行情</span>
+      </div>
+    </div>
+
+    <!-- 宏观板块/策略轮动：周期、防御、消费、科技、红利、资源 -->
+    <div class="card market-rotation-card">
+      <div class="market-style-head">
+        <span class="market-style-title">🔄 板块轮动</span>
+        <div class="market-style-head-right">
+          <span id="mktRotationTs" class="market-style-ts"></span>
+          <button id="mktRotationBtn" class="market-style-refresh" type="button" onclick="fetchMarketRotation()" title="刷新板块轮动" aria-label="刷新板块轮动">↻</button>
+        </div>
+      </div>
+      <div id="mktRotationLegend" class="market-rotation-legend">
+        <div class="market-style-empty" style="grid-column:1/-1;min-height:66px">正在读取六类板块指数…</div>
+      </div>
+      <div id="mktRotationChart" class="market-style-chart">
+        <div class="market-style-empty">加载中…</div>
+        <div id="mktRotationTooltip" class="market-style-tooltip" aria-hidden="true"></div>
+      </div>
+      <div class="market-style-foot">
+        <span>曲线：相对昨收涨跌幅</span>
+        <span>周期 · 防御 · 消费 · 科技 · 红利 · 资源</span>
       </div>
     </div>
   </div>
@@ -7822,8 +7863,8 @@ async function fetchMarketStats(){
   const tBtn = document.getElementById('mktTurnBtn');
   [bBtn,tBtn].forEach(b=>{ if(b){ b.disabled=true; b.textContent='⏳'; } });
   try{
-    // 三个区块完全独立并行，互不阻塞
-    await Promise.allSettled([ _doFetchBreadth(), _doFetchTurnover(), _doFetchMarketStyle() ]);
+    // 四个区块完全独立并行，互不阻塞
+    await Promise.allSettled([ _doFetchBreadth(), _doFetchTurnover(), _doFetchMarketStyle(), _doFetchMarketRotation() ]);
   }finally{
     _mktStatsFetching = false;
     [bBtn,tBtn].forEach(b=>{ if(b){ b.disabled=false; b.textContent='↻'; } });
@@ -8280,6 +8321,151 @@ async function _doFetchMarketStyle(){
   }
 }
 function fetchMarketStyle(){ return _doFetchMarketStyle(); }
+
+// ── 板块轮动（周期/防御/消费/科技/红利/资源，腾讯当日分钟行情）──────
+// 除了高对比配色，还给每条曲线配置独立线型，兼顾色觉差异与小屏辨识度。
+const _MKT_ROTATION_META = [
+  {name:'周期100',code:'399402',key:'sz399402',color:'#2563eb',dash:''},
+  {name:'防御100',code:'399403',key:'sz399403',color:'#ef4444',dash:'12 5'},
+  {name:'消费100',code:'399364',key:'sz399364',color:'#f59e0b',dash:'3 4'},
+  {name:'全指信息',code:'000993',key:'sh000993',color:'#7c3aed',dash:'9 4 2 4'},
+  {name:'国证红利',code:'399321',key:'sz399321',color:'#16a34a',dash:'16 5'},
+  {name:'资源优势',code:'399319',key:'sz399319',color:'#0891b2',dash:'2 3'},
+];
+var _mktRotationCache = null;
+var _mktRotationFetching = false;
+var _mktRotationResizeBound = false;
+var _mktRotationResizeTimer = null;
+
+async function _fetchMktRotationSeries(meta){
+  const url='https://web.ifzq.gtimg.cn/appstock/app/minute/query?code='+meta.key+'&_='+Date.now();
+  const j=await _idxFetch(url,{timeout:4500,retries:1});
+  const node=j&&j.data&&j.data[meta.key];
+  const raw=node&&node.data&&node.data.data;
+  const qt=node&&node.qt&&node.qt[meta.key];
+  const prev=parseFloat(qt&&qt[4]) || ((parseFloat(qt&&qt[3])||0)-(parseFloat(qt&&qt[31])||0));
+  if(!Array.isArray(raw)||!raw.length||!(prev>0)) throw new Error(meta.name+'分钟行情无效');
+  const points=raw.map(row=>{
+    const p=String(row).split(' '), price=parseFloat(p[1]);
+    return {time:String(p[0]||''),pct:(price>0?(price/prev-1)*100:NaN)};
+  }).filter(p=>/^\d{4}$/.test(p.time)&&isFinite(p.pct));
+  if(points.length<2) throw new Error(meta.name+'分钟点不足');
+  return {...meta,date:String(node.data.date||''),points};
+}
+
+function _rotationLegendLine(s){
+  return `<i class="market-rotation-line" style="--style-color:${s.color}"><svg viewBox="0 0 28 4" aria-hidden="true">`
+    +`<line x1="0" y1="2" x2="28" y2="2" stroke="${s.color}" stroke-width="3" stroke-linecap="round" ${s.dash?`stroke-dasharray="${s.dash}"`:''}/>`
+    +`</svg></i>`;
+}
+
+function _renderMktRotation(data,cached){
+  const chart=document.getElementById('mktRotationChart');
+  const legend=document.getElementById('mktRotationLegend');
+  const ts=document.getElementById('mktRotationTs');
+  if(!chart||!legend||!data||!Array.isArray(data.series)||!data.series.length) return;
+  const series=data.series;
+  legend.innerHTML=series.map(s=>{
+    const v=s.points[s.points.length-1].pct;
+    return `<div class="market-rotation-legend-row" title="${s.name} ${s.code}">`
+      +_rotationLegendLine(s)
+      +`<span class="market-rotation-name">${s.name}</span>`
+      +`<span class="market-rotation-value" style="color:${_mktStyleTone(v)}">${_mktStyleSigned(v)}</span></div>`;
+  }).join('');
+
+  const times=[...new Set(series.flatMap(s=>s.points.map(p=>p.time)))].sort((a,b)=>_mktStyleSessionMinute(a)-_mktStyleSessionMinute(b));
+  const values=series.flatMap(s=>s.points.map(p=>p.pct)).filter(isFinite);
+  if(times.length<2||!values.length){ chart.innerHTML='<div class="market-style-empty">分钟行情暂时不足</div>'; return; }
+  const width=Math.max(300,Math.round(chart.clientWidth||560));
+  const height=Math.max(230,Math.round(chart.clientHeight||250));
+  const mobile=width<430;
+  const margin={top:10,right:mobile?9:13,bottom:30,left:mobile?45:51};
+  const plotW=width-margin.left-margin.right,plotH=height-margin.top-margin.bottom;
+  let yMin=Math.floor((Math.min(0,...values)-.06)*10)/10;
+  let yMax=Math.ceil((Math.max(0,...values)+.06)*10)/10;
+  if(yMax-yMin<.6){const mid=(yMax+yMin)/2;yMin=mid-.3;yMax=mid+.3;}
+  const x=t=>margin.left+(times.indexOf(t)/Math.max(1,times.length-1))*plotW;
+  const y=v=>margin.top+(yMax-v)/(yMax-yMin)*plotH;
+  let svg=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="六类板块轮动指数当日涨跌幅曲线">`;
+  for(let i=0;i<=5;i++){
+    const v=yMax-i*(yMax-yMin)/5,yy=y(v),zero=Math.abs(v)<(yMax-yMin)/50;
+    svg+=`<line x1="${margin.left}" y1="${yy.toFixed(1)}" x2="${width-margin.right}" y2="${yy.toFixed(1)}" stroke="${zero?'#94a3b8':'#e5e7eb'}" stroke-width="${zero?'1.2':'1'}"/>`;
+    svg+=`<text x="${margin.left-7}" y="${(yy+4).toFixed(1)}" text-anchor="end" fill="#7c899b" font-size="10.5" font-weight="600">${v>0?'+':''}${v.toFixed(1)}%</text>`;
+  }
+  const tickIdx=[0,.25,.5,.75,1].map(r=>Math.round(r*(times.length-1))).filter((v,i,a)=>a.indexOf(v)===i);
+  tickIdx.forEach((idx,n)=>{
+    const xx=x(times[idx]);
+    svg+=`<line x1="${xx.toFixed(1)}" y1="${margin.top}" x2="${xx.toFixed(1)}" y2="${height-margin.bottom}" stroke="#eef0f4"/>`;
+    svg+=`<text x="${xx.toFixed(1)}" y="${height-9}" text-anchor="${n===0?'start':n===tickIdx.length-1?'end':'middle'}" fill="#7c899b" font-size="10.5" font-weight="600">${_mktStyleClock(times[idx])}</text>`;
+  });
+  series.forEach(s=>{
+    const d=s.points.map((p,i)=>(i?'L':'M')+x(p.time).toFixed(1)+','+y(p.pct).toFixed(1)).join(' ');
+    const last=s.points[s.points.length-1];
+    svg+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.45" stroke-linecap="round" stroke-linejoin="round" ${s.dash?`stroke-dasharray="${s.dash}"`:''}/>`;
+    svg+=`<circle cx="${x(last.time).toFixed(1)}" cy="${y(last.pct).toFixed(1)}" r="3.8" fill="${s.dash?'#fff':s.color}" stroke="${s.color}" stroke-width="1.8"/>`;
+  });
+  svg+=`<line id="mktRotationCrosshair" x1="0" y1="${margin.top}" x2="0" y2="${height-margin.bottom}" stroke="#64748b" stroke-width="1" stroke-dasharray="3 4" style="display:none"/>`;
+  svg+=`<rect id="mktRotationHit" x="${margin.left}" y="${margin.top}" width="${plotW}" height="${plotH}" fill="transparent"/>`;
+  svg+='</svg><div id="mktRotationTooltip" class="market-style-tooltip" aria-hidden="true"></div>';
+  chart.innerHTML=svg;
+
+  const hit=chart.querySelector('#mktRotationHit'),cross=chart.querySelector('#mktRotationCrosshair'),tip=chart.querySelector('#mktRotationTooltip');
+  const showTip=e=>{
+    const rect=chart.querySelector('svg').getBoundingClientRect();
+    const local=Math.min(width-margin.right,Math.max(margin.left,(e.clientX-rect.left)*width/rect.width));
+    const idx=Math.max(0,Math.min(times.length-1,Math.round((local-margin.left)/plotW*(times.length-1))));
+    const time=times[idx],xx=x(time),rows=series.map(s=>{
+      const p=s.points.find(q=>q.time===time),v=p?p.pct:null;
+      return `<div class="market-style-tooltip-row"><i class="market-style-tooltip-dot" style="--style-color:${s.color}"></i>`
+        +`<span>${s.name}</span><span class="market-style-tooltip-value" style="color:${v==null?'#94a3b8':_mktStyleTone(v)}">${v==null?'—':_mktStyleSigned(v)}</span></div>`;
+    }).join('');
+    cross.setAttribute('x1',xx);cross.setAttribute('x2',xx);cross.style.display='block';
+    tip.innerHTML=`<div class="market-style-tooltip-time">${_mktStyleClock(time)}</div>${rows}`;
+    tip.style.display='block';tip.setAttribute('aria-hidden','false');
+    const cssX=xx/width*rect.width,tipW=tip.offsetWidth;
+    tip.style.left=(cssX+tipW+20>rect.width?cssX-tipW-9:cssX+9)+'px';tip.style.top='8px';
+  };
+  const hideTip=()=>{cross.style.display='none';tip.style.display='none';tip.setAttribute('aria-hidden','true');};
+  hit.addEventListener('pointermove',showTip);hit.addEventListener('pointerdown',showTip);hit.addEventListener('pointerleave',hideTip);
+
+  const lastTime=times[times.length-1],date=String(data.date||'');
+  const dateLabel=date.length===8?date.slice(4,6)+'-'+date.slice(6,8):'';
+  if(ts) ts.textContent=(dateLabel?dateLabel+' ':'')+_mktStyleClock(lastTime)+(cached?' · 缓存':data.partial?' · 部分缓存':'');
+  if(!_mktRotationResizeBound){
+    _mktRotationResizeBound=true;
+    window.addEventListener('resize',()=>{
+      clearTimeout(_mktRotationResizeTimer);
+      _mktRotationResizeTimer=setTimeout(()=>{if(_mktRotationCache)_renderMktRotation(_mktRotationCache,false);},120);
+    });
+  }
+}
+
+async function _doFetchMarketRotation(){
+  if(_mktRotationFetching) return;
+  _mktRotationFetching=true;
+  const btn=document.getElementById('mktRotationBtn'),ts=document.getElementById('mktRotationTs'),chart=document.getElementById('mktRotationChart');
+  if(btn){btn.disabled=true;btn.textContent='…';} if(ts) ts.textContent='加载中…';
+  try{
+    const settled=await Promise.allSettled(_MKT_ROTATION_META.map(_fetchMktRotationSeries));
+    const old=new Map(((_mktRotationCache&&_mktRotationCache.series)||[]).map(s=>[s.code,s]));
+    const series=_MKT_ROTATION_META.map((meta,i)=>settled[i].status==='fulfilled'?settled[i].value:old.get(meta.code)).filter(Boolean);
+    if(!series.length) throw new Error('板块轮动指数暂时无法访问');
+    const dates=series.map(s=>s.date).filter(Boolean).sort();
+    _mktRotationCache={date:dates[dates.length-1]||'',series,partial:series.length<_MKT_ROTATION_META.length||settled.some(x=>x.status==='rejected')};
+    _renderMktRotation(_mktRotationCache,false);
+  }catch(e){
+    console.warn('[板块轮动]',e.message);
+    if(_mktRotationCache) _renderMktRotation(_mktRotationCache,true);
+    else{
+      if(chart) chart.innerHTML='<div class="market-style-empty">板块轮动暂时无法访问<br>请点击右上角 ↻ 重试</div>';
+      if(ts) ts.textContent='';
+    }
+  }finally{
+    _mktRotationFetching=false;
+    if(btn){btn.disabled=false;btn.textContent='↻';}
+  }
+}
+function fetchMarketRotation(){return _doFetchMarketRotation();}
 
 // ── 财经要闻（独立多源：华尔街见闻 + 东方财富；任一源成功即可渲染）──────
 var _newsAttemptTS = 0;
