@@ -756,48 +756,52 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
     <!-- 中：高清模拟时钟 + 数字时钟（绝对居中） -->
     <div class="port-hero-clock" style="position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;pointer-events:none">
-      <svg id="portAnalog" width="80" height="80" viewBox="0 0 160 160" shape-rendering="geometricPrecision" style="flex-shrink:0;filter:drop-shadow(0 6px 12px rgba(15,23,42,.25))" xmlns="http://www.w3.org/2000/svg">
+      <svg id="portAnalog" width="80" height="80" viewBox="0 0 160 160" shape-rendering="geometricPrecision" style="flex-shrink:0;filter:drop-shadow(0 4px 9px rgba(15,23,42,.18))" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id="paFace" cx="43%" cy="34%" r="72%">
-            <stop offset="0%" stop-color="#2d2d30"/><stop offset="55%" stop-color="#171719"/><stop offset="100%" stop-color="#09090a"/>
+          <radialGradient id="paFace" cx="43%" cy="34%" r="76%">
+            <stop offset="0%" stop-color="#ffffff"/><stop offset="72%" stop-color="#fbfbfc"/><stop offset="100%" stop-color="#f0f0f2"/>
           </radialGradient>
           <linearGradient id="paBezel" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#525257"/><stop offset="45%" stop-color="#242427"/><stop offset="100%" stop-color="#080809"/>
+            <stop offset="0%" stop-color="#ffffff"/><stop offset="52%" stop-color="#f7f7f8"/><stop offset="100%" stop-color="#d7d7da"/>
           </linearGradient>
           <radialGradient id="paInner" cx="50%" cy="50%" r="50%">
-            <stop offset="77%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".46"/>
+            <stop offset="76%" stop-color="#fff" stop-opacity="0"/><stop offset="100%" stop-color="#8e8e93" stop-opacity=".13"/>
           </radialGradient>
           <linearGradient id="paGlass" x1="0" y1="0" x2="0.7" y2="1">
-            <stop offset="0%" stop-color="#fff" stop-opacity=".11"/><stop offset="55%" stop-color="#fff" stop-opacity=".025"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+            <stop offset="0%" stop-color="#fff" stop-opacity=".55"/><stop offset="58%" stop-color="#fff" stop-opacity=".08"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/>
           </linearGradient>
           <filter id="paHandShadow" x="-30%" y="-30%" width="160%" height="160%">
-            <feDropShadow dx="0" dy="1.6" stdDeviation="1.25" flood-color="#000" flood-opacity=".62"/>
+            <feDropShadow dx="0" dy="1.2" stdDeviation="1" flood-color="#000" flood-opacity=".28"/>
           </filter>
         </defs>
-        <!-- 深色窄表框与黑色盘面，贴近 iPhone 时钟图标 -->
-        <circle cx="80" cy="80" r="78.4" fill="url(#paBezel)"/>
-        <circle cx="80" cy="80" r="74.2" fill="url(#paFace)"/>
-        <circle cx="80" cy="80" r="74.2" fill="url(#paInner)"/>
-        <circle cx="80" cy="80" r="73.4" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="1.2"/>
+        <!-- 白色圆角方形表盘，贴近 iPhone 时钟 App 的经典外观 -->
+        <rect x="2.2" y="2.2" width="155.6" height="155.6" rx="38" fill="url(#paBezel)"/>
+        <rect x="6" y="6" width="148" height="148" rx="34.5" fill="url(#paFace)"/>
+        <rect x="6" y="6" width="148" height="148" rx="34.5" fill="url(#paInner)"/>
+        <rect x="6.7" y="6.7" width="146.6" height="146.6" rx="33.8" fill="none" stroke="#8e8e93" stroke-opacity=".18" stroke-width="1.1"/>
         <!-- 60 分钟刻度 / 12 整点刻度（JS 生成）-->
-        <g id="paMinTicks" stroke="#8e8e93" stroke-opacity=".7" stroke-width="1.45" stroke-linecap="round"></g>
-        <g id="paHrTicks"  stroke="#f5f5f7" stroke-width="4.15" stroke-linecap="round"></g>
-        <!-- 时针 / 分针：白色圆角指针配轻微投影 -->
+        <g id="paMinTicks" stroke="#c7c7cc" stroke-opacity=".9" stroke-width="1.6" stroke-linecap="round"></g>
+        <g id="paHrTicks"  stroke="#57575c" stroke-width="4" stroke-linecap="round"></g>
+        <!-- 苹果表盘仅标注 12 / 3 / 6 / 9，避免小尺寸下显得拥挤 -->
+        <g fill="#3a3a3c" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif" font-size="27" font-weight="520">
+          <text x="80" y="38">12</text><text x="126" y="82">3</text><text x="80" y="128">6</text><text x="34" y="82">9</text>
+        </g>
+        <!-- 时针 / 分针：黑色圆角指针配轻微投影 -->
         <g id="paHour" filter="url(#paHandShadow)">
-          <line x1="80" y1="88" x2="80" y2="43" stroke="#f5f5f7" stroke-width="9" stroke-linecap="round"/>
+          <line x1="80" y1="88" x2="80" y2="45" stroke="#111113" stroke-width="8.6" stroke-linecap="round"/>
         </g>
         <g id="paMin" filter="url(#paHandShadow)">
-          <line x1="80" y1="89" x2="80" y2="27" stroke="#f5f5f7" stroke-width="5.8" stroke-linecap="round"/>
+          <line x1="80" y1="89" x2="80" y2="24" stroke="#111113" stroke-width="5.8" stroke-linecap="round"/>
         </g>
         <!-- 秒针：iPhone 标志性的橙色长秒针和配重 -->
         <g id="paSec" filter="url(#paHandShadow)">
-          <line x1="80" y1="101" x2="80" y2="17" stroke="#ff9f0a" stroke-width="2.7" stroke-linecap="round"/>
-          <circle cx="80" cy="101" r="5.8" fill="#ff9f0a"/>
+          <line x1="80" y1="104" x2="80" y2="18" stroke="#d97717" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="80" cy="104" r="4.8" fill="#d97717"/>
         </g>
         <!-- 中心帽与极轻的玻璃高光 -->
-        <circle cx="80" cy="80" r="7.1" fill="#f5f5f7" filter="url(#paHandShadow)"/>
-        <circle cx="80" cy="80" r="3.3" fill="#ff9f0a"/>
-        <ellipse cx="61" cy="48" rx="40" ry="26" fill="url(#paGlass)" transform="rotate(-18 61 48)" pointer-events="none"/>
+        <circle cx="80" cy="80" r="5.9" fill="#111113" filter="url(#paHandShadow)"/>
+        <circle cx="80" cy="80" r="3.2" fill="#d97717"/>
+        <path d="M25 22 Q80 -2 135 22 Q112 13 80 14 Q48 13 25 22Z" fill="url(#paGlass)" pointer-events="none"/>
       </svg>
       <div id="portClock"
         style="font-size:27px;font-weight:500;color:#334155;letter-spacing:.06em;
