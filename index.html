@@ -153,7 +153,22 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
   grid-template-rows:auto auto;gap:16px;align-items:stretch
 }
-.market-breadth-card{grid-column:1;grid-row:1}
+.market-breadth-card{grid-column:1;grid-row:1;display:flex;flex-direction:column;min-height:0}
+.market-breadth-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.market-breadth-head>span:first-child{font-size:14px!important;font-weight:850!important}
+.market-breadth-summary{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:10px}
+.market-breadth-summary>div{display:flex;align-items:center;gap:7px}
+.market-breadth-summary>div>span[id]{font-size:18px!important;line-height:1.1}
+.market-breadth-summary>div>span:not([id]){font-size:13px!important}
+#mktBreadthChart{flex:1;min-height:230px;display:flex;flex-direction:column}
+.market-breadth-bars{flex:1;min-height:195px;display:flex;align-items:stretch;gap:3px;padding:0 3px}
+.market-breadth-col{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
+.market-breadth-count{height:19px;font-size:13px;font-weight:850;text-align:center;line-height:17px;margin-bottom:3px}
+.market-breadth-track{flex:1;min-height:155px;width:90%;display:flex;flex-direction:column;justify-content:flex-end}
+.market-breadth-bar{width:100%;min-height:3px}
+.market-breadth-label{font-size:10.5px;font-weight:650;color:#5f6b7a;text-align:center;margin-top:5px;white-space:nowrap;line-height:1.2}
+.market-breadth-total{font-size:10.5px;font-weight:600;color:#8b98a9;text-align:center;margin-top:8px;line-height:1.35}
+#mktFlatRow{font-size:11px!important;font-weight:600;margin-top:7px!important}
 .market-turnover-card{grid-column:2;grid-row:1}
 .market-turnover-chart-box{
   margin-top:10px;padding:10px 11px 8px;border:1px solid #dbeafe;border-radius:10px;
@@ -937,12 +952,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <!-- 涨跌统计（仿东方财富牛熊风向标格式） -->
     <div class="card market-breadth-card" style="border-top:3px solid #dc2626;background:#fff">
       <!-- 标题行 -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="market-breadth-head">
         <span style="font-size:13px;font-weight:800;color:#374151;letter-spacing:.01em">📊 涨跌统计</span>
         <span id="mktBreadthTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
       </div>
       <!-- 家数统计：左列上涨/下跌，右列涨停/跌停 -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-bottom:12px">
+      <div class="market-breadth-summary">
         <div style="display:flex;align-items:center;gap:6px">
           <span style="width:10px;height:10px;border-radius:2px;background:#ef4444;display:inline-block;flex-shrink:0"></span>
           <span style="font-size:13px;color:#374151;font-weight:500">上涨</span>
@@ -8086,22 +8101,20 @@ async function _doFetchBreadth(){
 
     // ⑥ 渲染直方图
     const displayCounts = [...counts.slice(0,4), bFlat, ...counts.slice(5)];
-    const MAX_H  = 66;
     const maxCnt = Math.max(...displayCounts, 1);
     const bars   = BKTS.map((b, i) => {
       const cnt = displayCounts[i];
-      const bh  = Math.max(2, Math.round((cnt/maxCnt)*MAX_H));
-      const r   = Math.min(5, Math.ceil(bh/2));
-      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0">`
-        +`<div style="font-size:11.5px;font-weight:800;color:${b.lblCol};min-height:15px;text-align:center;line-height:1.15;margin-bottom:2px">${cnt||''}</div>`
-        +`<div style="display:flex;flex-direction:column;justify-content:flex-end;height:${MAX_H}px;width:88%">`
-        +`<div style="width:100%;height:${bh}px;background:${b.barCol};border-radius:${r}px ${r}px 0 0"></div></div>`
-        +`<div style="font-size:9px;color:#6b7280;text-align:center;margin-top:3px;white-space:nowrap;line-height:1.2">${b.label}</div></div>`;
+      const bh  = Math.max(1.6, (cnt/maxCnt)*100);
+      return `<div class="market-breadth-col">`
+        +`<div class="market-breadth-count" style="color:${b.lblCol}">${cnt||''}</div>`
+        +`<div class="market-breadth-track">`
+        +`<div class="market-breadth-bar" style="height:${bh.toFixed(2)}%;background:${b.barCol};border-radius:6px 6px 1px 1px;box-shadow:inset 0 1px 0 rgba(255,255,255,.22)"></div></div>`
+        +`<div class="market-breadth-label">${b.label}</div></div>`;
     }).join('');
     const _hm = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
     if(chartEl) chartEl.innerHTML=
-      `<div style="display:flex;align-items:stretch;gap:1px;padding:0 2px">${bars}</div>`
-      +`<div style="font-size:9px;color:#9ca3af;text-align:center;margin-top:4px">有行情 ${reconciled.quotedTotal} 家 · 无行情 ${noQuote} 家 · 全部 ${total} 家</div>`;
+      `<div class="market-breadth-bars">${bars}</div>`
+      +`<div class="market-breadth-total">有行情 ${reconciled.quotedTotal} 家 · 无行情 ${noQuote} 家 · 全部 ${total} 家</div>`;
     if(bTs) bTs.textContent=_hm;
 
     // 成功后写入粘性缓存（含各数字与直方图，供失败时回填）
