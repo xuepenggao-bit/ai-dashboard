@@ -707,13 +707,31 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .port-action-chevron svg{width:10px;height:10px;display:block;stroke:currentColor;transition:transform .16s ease}
   #arBtn[aria-expanded="true"] .port-action-chevron svg{transform:rotate(180deg)}
   .port-action.loading .port-action-icon{animation:spin 1s linear infinite}
-  /* 中央时钟：保持顶部区域尺寸，内部用 160×160 高精度矢量坐标模拟 iPhone 时钟质感。 */
-  .port-hero-clock{gap:12px!important}
-  #portAnalog{width:80px;height:80px;overflow:visible;shape-rendering:geometricPrecision}
-  #portClock{
-    color:#1d1d1f!important;font-size:26px!important;font-weight:510!important;letter-spacing:.035em!important;
-    font-family:'SF Mono','SFMono-Regular',ui-monospace,'Cascadia Mono','Consolas',monospace!important
+  /* 中央时钟：固定页面尺寸，内部用 320×320 矢量坐标与独立图层提升细腻度。 */
+  .port-hero-clock{gap:11px!important}
+  #portAnalog{
+    width:80px;height:80px;overflow:visible;shape-rendering:geometricPrecision;text-rendering:geometricPrecision;
+    transform:translateZ(0)
   }
+  #portClock{
+    width:146px;height:54px;box-sizing:border-box;padding:6px 12px 5px;
+    display:grid;grid-template-rows:29px 12px;align-content:center;justify-items:center;
+    color:#1d1d1f;background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(247,247,249,.94));
+    border:1px solid rgba(142,142,147,.19);border-radius:16px;
+    box-shadow:0 3px 10px rgba(15,23,42,.08),inset 0 1px 0 #fff,inset 0 -1px 0 rgba(142,142,147,.08);
+    font-family:'SF Mono','SFMono-Regular',ui-monospace,'Cascadia Mono','Consolas',monospace;
+    font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1
+  }
+  .port-clock-row{height:29px;display:flex;align-items:baseline;justify-content:center;white-space:nowrap;line-height:1}
+  .port-clock-hm{font-size:26px;font-weight:610;letter-spacing:-.035em;color:#1d1d1f}
+  .port-clock-colon{margin:0 2px;font-size:20px;font-weight:590;color:#8e8e93;transform:translateY(-1px)}
+  .port-clock-sec{min-width:2ch;font-size:18px;font-weight:650;letter-spacing:-.025em;color:#d97717}
+  .port-clock-zone{
+    display:flex;align-items:center;justify-content:center;gap:4px;height:12px;
+    color:#86868b;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sans-serif;
+    font-size:8.5px;font-weight:600;letter-spacing:.07em;line-height:12px;white-space:nowrap
+  }
+  .port-clock-zone-dot{width:4px;height:4px;border-radius:50%;background:#d97717;box-shadow:0 0 0 2px rgba(217,119,23,.1)}
   @media(max-width:1080px){.port-hero-clock{display:none!important}}
   @media(max-width:720px){
     .port-hero{flex-direction:column;align-items:stretch!important;gap:13px;padding:14px!important}
@@ -756,57 +774,68 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
     <!-- 中：高清模拟时钟 + 数字时钟（绝对居中） -->
     <div class="port-hero-clock" style="position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;pointer-events:none">
-      <svg id="portAnalog" width="80" height="80" viewBox="0 0 160 160" shape-rendering="geometricPrecision" style="flex-shrink:0;filter:drop-shadow(0 4px 9px rgba(15,23,42,.18))" xmlns="http://www.w3.org/2000/svg">
+      <svg id="portAnalog" width="80" height="80" viewBox="0 0 320 320" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" preserveAspectRatio="xMidYMid meet" style="flex-shrink:0" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id="paFace" cx="43%" cy="34%" r="76%">
-            <stop offset="0%" stop-color="#ffffff"/><stop offset="72%" stop-color="#fbfbfc"/><stop offset="100%" stop-color="#f0f0f2"/>
+          <radialGradient id="paFace" cx="42%" cy="31%" r="82%">
+            <stop offset="0%" stop-color="#ffffff"/><stop offset="69%" stop-color="#fcfcfd"/><stop offset="100%" stop-color="#ededf0"/>
           </radialGradient>
           <linearGradient id="paBezel" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#ffffff"/><stop offset="52%" stop-color="#f7f7f8"/><stop offset="100%" stop-color="#d7d7da"/>
+            <stop offset="0%" stop-color="#ffffff"/><stop offset="47%" stop-color="#fafafc"/><stop offset="78%" stop-color="#eeeef1"/><stop offset="100%" stop-color="#d1d1d6"/>
           </linearGradient>
           <radialGradient id="paInner" cx="50%" cy="50%" r="50%">
-            <stop offset="76%" stop-color="#fff" stop-opacity="0"/><stop offset="100%" stop-color="#8e8e93" stop-opacity=".13"/>
+            <stop offset="73%" stop-color="#fff" stop-opacity="0"/><stop offset="100%" stop-color="#636366" stop-opacity=".11"/>
           </radialGradient>
           <linearGradient id="paGlass" x1="0" y1="0" x2="0.7" y2="1">
-            <stop offset="0%" stop-color="#fff" stop-opacity=".55"/><stop offset="58%" stop-color="#fff" stop-opacity=".08"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+            <stop offset="0%" stop-color="#fff" stop-opacity=".8"/><stop offset="55%" stop-color="#fff" stop-opacity=".16"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/>
           </linearGradient>
-          <filter id="paHandShadow" x="-30%" y="-30%" width="160%" height="160%">
-            <feDropShadow dx="0" dy="1.2" stdDeviation="1" flood-color="#000" flood-opacity=".28"/>
+          <linearGradient id="paHandInk" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#08080a"/><stop offset=".48" stop-color="#252528"/><stop offset="1" stop-color="#050506"/>
+          </linearGradient>
+          <filter id="paOuterShadow" x="-12%" y="-12%" width="124%" height="130%" color-interpolation-filters="sRGB">
+            <feDropShadow dx="0" dy="5" stdDeviation="5.5" flood-color="#111827" flood-opacity=".16"/>
+          </filter>
+          <filter id="paHandShadow" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+            <feDropShadow dx="0" dy="2.4" stdDeviation="1.6" flood-color="#000" flood-opacity=".3"/>
           </filter>
         </defs>
         <!-- 白色圆角方形表盘，贴近 iPhone 时钟 App 的经典外观 -->
-        <rect x="2.2" y="2.2" width="155.6" height="155.6" rx="38" fill="url(#paBezel)"/>
-        <rect x="6" y="6" width="148" height="148" rx="34.5" fill="url(#paFace)"/>
-        <rect x="6" y="6" width="148" height="148" rx="34.5" fill="url(#paInner)"/>
-        <rect x="6.7" y="6.7" width="146.6" height="146.6" rx="33.8" fill="none" stroke="#8e8e93" stroke-opacity=".18" stroke-width="1.1"/>
+        <rect x="6" y="6" width="308" height="308" rx="76" fill="url(#paBezel)" filter="url(#paOuterShadow)"/>
+        <rect x="9" y="9" width="302" height="302" rx="73" fill="none" stroke="#fff" stroke-opacity=".92" stroke-width="2"/>
+        <rect x="13" y="13" width="294" height="294" rx="69" fill="url(#paFace)"/>
+        <rect x="13" y="13" width="294" height="294" rx="69" fill="url(#paInner)"/>
+        <rect x="14.5" y="14.5" width="291" height="291" rx="67.5" fill="none" stroke="#8e8e93" stroke-opacity=".22" stroke-width="1.7"/>
         <!-- 60 分钟刻度 / 12 整点刻度（JS 生成）-->
-        <g id="paMinTicks" stroke="#c7c7cc" stroke-opacity=".9" stroke-width="1.6" stroke-linecap="round"></g>
-        <g id="paHrTicks"  stroke="#57575c" stroke-width="4" stroke-linecap="round"></g>
+        <g id="paMinTicks" stroke="#c3c3c8" stroke-opacity=".96" stroke-width="3.1" stroke-linecap="round"></g>
+        <g id="paHrTicks" stroke="#515156" stroke-width="7.8" stroke-linecap="round"></g>
         <!-- 苹果表盘仅标注 12 / 3 / 6 / 9，避免小尺寸下显得拥挤 -->
-        <g fill="#3a3a3c" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif" font-size="27" font-weight="520">
-          <text x="80" y="38">12</text><text x="126" y="82">3</text><text x="80" y="128">6</text><text x="34" y="82">9</text>
+        <g fill="#343438" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif" font-size="54" font-weight="540" style="font-variant-numeric:tabular-nums">
+          <text x="160" y="76">12</text><text x="252" y="164">3</text><text x="160" y="256">6</text><text x="68" y="164">9</text>
         </g>
         <!-- 时针 / 分针：黑色圆角指针配轻微投影 -->
         <g id="paHour" filter="url(#paHandShadow)">
-          <line x1="80" y1="88" x2="80" y2="45" stroke="#111113" stroke-width="8.6" stroke-linecap="round"/>
+          <line x1="160" y1="176" x2="160" y2="90" stroke="url(#paHandInk)" stroke-width="17.2" stroke-linecap="round"/>
+          <line x1="158.3" y1="174" x2="158.3" y2="94" stroke="#fff" stroke-opacity=".1" stroke-width="2" stroke-linecap="round"/>
         </g>
         <g id="paMin" filter="url(#paHandShadow)">
-          <line x1="80" y1="89" x2="80" y2="24" stroke="#111113" stroke-width="5.8" stroke-linecap="round"/>
+          <line x1="160" y1="178" x2="160" y2="48" stroke="url(#paHandInk)" stroke-width="11.4" stroke-linecap="round"/>
+          <line x1="158.8" y1="175" x2="158.8" y2="52" stroke="#fff" stroke-opacity=".12" stroke-width="1.5" stroke-linecap="round"/>
         </g>
         <!-- 秒针：iPhone 标志性的橙色长秒针和配重 -->
         <g id="paSec" filter="url(#paHandShadow)">
-          <line x1="80" y1="104" x2="80" y2="18" stroke="#d97717" stroke-width="2.5" stroke-linecap="round"/>
-          <circle cx="80" cy="104" r="4.8" fill="#d97717"/>
+          <line x1="160" y1="208" x2="160" y2="36" stroke="#d97717" stroke-width="5" stroke-linecap="round"/>
+          <line x1="159.2" y1="204" x2="159.2" y2="40" stroke="#ffc36a" stroke-opacity=".7" stroke-width="1.1" stroke-linecap="round"/>
+          <circle cx="160" cy="208" r="9.5" fill="#d97717"/>
         </g>
         <!-- 中心帽与极轻的玻璃高光 -->
-        <circle cx="80" cy="80" r="5.9" fill="#111113" filter="url(#paHandShadow)"/>
-        <circle cx="80" cy="80" r="3.2" fill="#d97717"/>
-        <path d="M25 22 Q80 -2 135 22 Q112 13 80 14 Q48 13 25 22Z" fill="url(#paGlass)" pointer-events="none"/>
+        <circle cx="160" cy="160" r="12" fill="#111113" filter="url(#paHandShadow)"/>
+        <circle cx="160" cy="160" r="6.5" fill="#d97717"/>
+        <circle cx="158.2" cy="158.2" r="1.8" fill="#ffd18b" fill-opacity=".75"/>
+        <path d="M50 43 Q160 -5 270 43 Q224 25 160 27 Q96 25 50 43Z" fill="url(#paGlass)" pointer-events="none"/>
       </svg>
-      <div id="portClock"
-        style="font-size:27px;font-weight:500;color:#334155;letter-spacing:.06em;
-               font-variant-numeric:tabular-nums;
-               font-family:'SF Mono','Consolas','Courier New',monospace">--:--:--</div>
+      <div id="portClock" role="timer" aria-label="北京时间">
+        <div class="port-clock-row"><span id="portClockHM" class="port-clock-hm">--:--</span><span class="port-clock-colon">:</span><span id="portClockSec" class="port-clock-sec">--</span></div>
+        <div class="port-clock-zone"><span class="port-clock-zone-dot"></span><span>北京时间 · UTC+8</span></div>
+      </div>
     </div>
 
     <!-- 右：固定三列的 Apple 风格分段控制器 -->
@@ -9888,15 +9917,16 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 实时时钟（精确到秒），仅在投资组合 tab 顶部显示
   (function _startClock(){
     const el = document.getElementById('portClock');
+    const elHM = document.getElementById('portClockHM'), elSec = document.getElementById('portClockSec');
     const hH=document.getElementById('paHour'), hM=document.getElementById('paMin'), hS=document.getElementById('paSec');
-    // 构建 60 刻度：160×160 高精度矢量坐标，分钟细刻度 + 整点粗刻度。
+    // 构建 60 刻度：320×320 高精度矢量坐标，分钟细刻度 + 整点粗刻度。
     const mt=document.getElementById('paMinTicks'), ht=document.getElementById('paHrTicks');
     if(mt && !mt.childNodes.length){
       let smin='', shr='';
       for(let i=0;i<60;i++){
-        const a=i*6*Math.PI/180, major=(i%5===0), ro=71.7, ri=(major?62.7:67.9);
-        const x1=(80+ri*Math.sin(a)).toFixed(2), y1=(80-ri*Math.cos(a)).toFixed(2);
-        const x2=(80+ro*Math.sin(a)).toFixed(2), y2=(80-ro*Math.cos(a)).toFixed(2);
+        const a=i*6*Math.PI/180, major=(i%5===0), ro=143.4, ri=(major?125.4:135.8);
+        const x1=(160+ri*Math.sin(a)).toFixed(3), y1=(160-ri*Math.cos(a)).toFixed(3);
+        const x2=(160+ro*Math.sin(a)).toFixed(3), y2=(160-ro*Math.cos(a)).toFixed(3);
         const ln='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>';
         if(major) shr+=ln; else smin+=ln;
       }
@@ -9908,12 +9938,17 @@ document.addEventListener('DOMContentLoaded',()=>{
     const tick = ()=>{
       const n=new Date();
       const clockText=p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds());
-      if(el && clockText!==lastClockText){ el.textContent=clockText; lastClockText=clockText; }
+      if(clockText!==lastClockText){
+        if(elHM) elHM.textContent=p(n.getHours())+':'+p(n.getMinutes());
+        if(elSec) elSec.textContent=p(n.getSeconds());
+        if(el) el.setAttribute('aria-label','北京时间 '+clockText);
+        lastClockText=clockText;
+      }
       const s=n.getSeconds()+(reduceClockMotion?0:n.getMilliseconds()/1000), m=n.getMinutes()+s/60, h=(n.getHours()%12)+m/60;
       const sa=s*6, ma=m*6, ha=h*30;                      // 指针角度
-      if(hS) hS.setAttribute('transform','rotate('+sa+' 80 80)');
-      if(hM) hM.setAttribute('transform','rotate('+ma+' 80 80)');
-      if(hH) hH.setAttribute('transform','rotate('+ha+' 80 80)');
+      if(hS) hS.setAttribute('transform','rotate('+sa+' 160 160)');
+      if(hM) hM.setAttribute('transform','rotate('+ma+' 160 160)');
+      if(hH) hH.setAttribute('transform','rotate('+ha+' 160 160)');
       requestAnimationFrame(tick);
     };
     tick();
