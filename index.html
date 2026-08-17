@@ -155,6 +155,19 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 }
 .market-breadth-card{grid-column:1;grid-row:1}
 .market-turnover-card{grid-column:2;grid-row:1}
+.market-turnover-chart-box{
+  margin-top:10px;padding:10px 11px 8px;border:1px solid #dbeafe;border-radius:10px;
+  background:linear-gradient(180deg,#f8fbff 0%,#fff 100%)
+}
+.market-turnover-chart-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.market-turnover-chart-title{font-size:10.5px;font-weight:800;color:#334155;white-space:nowrap}
+.market-turnover-chart-legend{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0}
+.market-turnover-legend-item{display:flex;align-items:center;gap:4px;font-size:9px;font-weight:700;color:#64748b;white-space:nowrap}
+.market-turnover-legend-line{display:inline-block;flex:0 0 16px;width:16px;height:0;border-top:2.5px solid var(--turn-color);border-radius:3px}
+.market-turnover-legend-line.yesterday{border-top-style:dashed}
+.market-turnover-chart-canvas{position:relative;height:132px;min-height:132px}
+.market-turnover-chart-canvas svg{display:block;width:100%;height:132px;overflow:visible}
+.market-turnover-chart-empty{height:132px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px}
 .market-style-card{
   grid-column:1;grid-row:2;display:flex;flex-direction:column;min-width:0;min-height:410px;
   border-top:3px solid #7c3aed!important;background:linear-gradient(150deg,#faf8ff 0%,#fff 50%)!important
@@ -8119,9 +8132,9 @@ async function _doFetchBreadth(){
   }
 }
 
-// 成交额「同期对比」：用东财分时(trends2, ndays=2)按同一时刻累计成交额对比。
+// 成交额「同期对比」：用东财分时(trends2, ndays=2)取得每分钟成交额。
 // 日内量能不均(早盘尾盘重、午间轻)，必须「今日此刻累计 vs 昨日同一时刻累计」才是正确的相对增速。
-// 返回 { todayCumYi, yestSameYi, yestFullYi, tod }（亿元）；缺昨日数据返回 null。
+// 返回成交额 KPI 以及今日/昨日同期累计成交额曲线（均为亿元）；缺昨日数据返回 null。
 // 25s 短缓存：同期增速分钟级才变，无需每次刷新都拉分时。
 var _turnoverCmpCache = { ts:0, data:null };
 async function _turnoverCompare(){
@@ -8129,23 +8142,82 @@ async function _turnoverCompare(){
   const fetchT = async secid=>{
     const u='https://push2his.eastmoney.com/api/qt/stock/trends2/get?secid='+secid
           +'&fields1=f1&fields2=f51,f57&iscr=0&ndays=2&_='+Date.now();
-    const j=await (await fetch(u)).json();
-    return (j&&j.data&&j.data.trends)||[];        // 每行 "YYYY-MM-DD HH:MM,该分钟成交额(元)"
+    const j=await _idxFetch(u,{timeout:5000,retries:1});
+    return (j&&j.data&&j.data.trends)||[];        // 每行 "YYYY-MM-DD HH:MM,成交额(元)"
   };
   const arrs = await Promise.all([fetchT('1.000001'), fetchT('0.399106')]);  // 上证综指 + 深证综指
-  const parse = arr=>{ const d={}; arr.forEach(s=>{ const p=s.split(','); const sp=p[0].split(' '); if(sp.length<2)return; (d[sp[0]]=d[sp[0]]||[]).push({tod:sp[1], amt:parseFloat(p[1])||0}); }); return d; };
+  const parse = arr=>{
+    const d={};
+    arr.forEach(s=>{
+      const p=s.split(','), sp=p[0].split(' ');
+      if(sp.length<2) return;
+      (d[sp[0]]=d[sp[0]]||[]).push({tod:sp[1],amt:parseFloat(p[1])||0});
+    });
+    Object.keys(d).forEach(day=>d[day].sort((a,b)=>a.tod.localeCompare(b.tod)));
+    return d;
+  };
   const days = arrs.map(parse);
   const ds = Object.keys(days[0]||{}).sort();
   if(ds.length<2) return null;                    // 缺昨日（如长假后首日分时未含昨日）则不对比
   const yDay=ds[0], tDay=ds[ds.length-1];
   const tArr=days[0][tDay];
   const tod = tArr[tArr.length-1].tod;            // 今日最新时分（用市场时间，比墙钟更准）
-  const sumBy=(d,day,upto)=> (d[day]||[]).filter(x=>!upto||x.tod<=upto).reduce((s,x)=>s+x.amt,0);
+  const sumBy=(d,day,upto,key)=> (d[day]||[]).filter(x=>!upto||x.tod<=upto).reduce((s,x)=>s+(x[key]||0),0);
   let todayCum=0, yestSame=0, yestFull=0;
-  days.forEach(d=>{ todayCum+=sumBy(d,tDay); yestSame+=sumBy(d,yDay,tod); yestFull+=sumBy(d,yDay); });
-  const out={ todayCumYi:todayCum/1e8, yestSameYi:yestSame/1e8, yestFullYi:yestFull/1e8, tod:tod };  // 元→亿元
+  days.forEach(d=>{
+    todayCum+=sumBy(d,tDay,null,'amt');
+    yestSame+=sumBy(d,yDay,tod,'amt');
+    yestFull+=sumBy(d,yDay,null,'amt');
+  });
+
+  // 以今天已经出现的分钟为横轴；昨日曲线也截到相同交易分钟，严格进行同期比较。
+  const labels=[...new Set(days.flatMap(d=>(d[tDay]||[]).map(x=>x.tod)))].sort().filter(t=>t<=tod);
+  const cumulativeAmount=(day)=>{
+    const marketMaps=days.map(d=>new Map((d[day]||[]).map(x=>[x.tod,x.amt||0])));
+    let cumulative=0;
+    return labels.map(time=>{
+      marketMaps.forEach(m=>{ cumulative+=m.get(time)||0; });
+      return +(cumulative/1e8).toFixed(2);          // 元→亿元
+    });
+  };
+  const out={
+    todayCumYi:todayCum/1e8,yestSameYi:yestSame/1e8,yestFullYi:yestFull/1e8,tod,
+    labels,todayAmountYi:cumulativeAmount(tDay),yestAmountYi:cumulativeAmount(yDay),
+    todayDate:tDay,yestDate:yDay,
+  };
   if(out.yestSameYi>0 && out.yestFullYi>0) _turnoverCmpCache={ ts:Date.now(), data:out };
   return out;
+}
+
+function _turnoverAmountChartSvg(cmp){
+  const labels=cmp&&cmp.labels||[], today=cmp&&cmp.todayAmountYi||[], yesterday=cmp&&cmp.yestAmountYi||[];
+  if(labels.length<2||today.length!==labels.length||yesterday.length!==labels.length) return '';
+  const W=620,H=132,L=48,R=9,T=7,B=21,pw=W-L-R,ph=H-T-B;
+  const maxVal=Math.max(1,...today,...yesterday)*1.06;
+  const x=i=>L+(i/(labels.length-1))*pw;
+  const y=v=>T+(1-(Number(v)||0)/maxVal)*ph;
+  const path=vals=>vals.map((v,i)=>(i?'L':'M')+x(i).toFixed(2)+' '+y(v).toFixed(2)).join(' ');
+  const todayPath=path(today), yesterdayPath=path(yesterday);
+  const areaPath=todayPath+' L '+x(labels.length-1).toFixed(2)+' '+(T+ph)+' L '+L+' '+(T+ph)+' Z';
+  const axisFmt=v=>v>=10000?(v/10000).toFixed(1)+'万':Math.round(v).toString();
+  let grid='';
+  for(let i=0;i<=4;i++){
+    const gy=T+(i/4)*ph, val=maxVal*(1-i/4);
+    grid+=`<line x1="${L}" y1="${gy.toFixed(2)}" x2="${W-R}" y2="${gy.toFixed(2)}" stroke="#dbeafe" stroke-opacity=".82" stroke-width="1" vector-effect="non-scaling-stroke"/>`
+      +`<text x="${L-6}" y="${gy.toFixed(2)}" text-anchor="end" dominant-baseline="central" fill="#94a3b8" font-size="9">${axisFmt(val)}</text>`;
+  }
+  const xi=[0,Math.round((labels.length-1)/4),Math.round((labels.length-1)/2),Math.round((labels.length-1)*3/4),labels.length-1]
+    .filter((v,i,a)=>a.indexOf(v)===i);
+  const xTicks=xi.map(i=>`<text x="${x(i).toFixed(2)}" y="${H-5}" text-anchor="${i===0?'start':i===labels.length-1?'end':'middle'}" fill="#94a3b8" font-size="9">${labels[i]}</text>`).join('');
+  return `<svg id="mktTurnoverChart" viewBox="0 0 ${W} ${H}" role="img" aria-label="今日与昨日同期累计成交额曲线">`
+    +`<defs><linearGradient id="mktTurnArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b82f6" stop-opacity=".16"/><stop offset="1" stop-color="#3b82f6" stop-opacity="0"/></linearGradient></defs>`
+    +grid+xTicks
+    +`<path d="${areaPath}" fill="url(#mktTurnArea)"/>`
+    +`<path d="${yesterdayPath}" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="6 4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`
+    +`<path d="${todayPath}" fill="none" stroke="#2563eb" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`
+    +`<circle cx="${x(labels.length-1).toFixed(2)}" cy="${y(yesterday[yesterday.length-1]).toFixed(2)}" r="2.5" fill="#fff" stroke="#94a3b8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`
+    +`<circle cx="${x(labels.length-1).toFixed(2)}" cy="${y(today[today.length-1]).toFixed(2)}" r="2.7" fill="#fff" stroke="#2563eb" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`
+    +`</svg>`;
 }
 
 // ── 成交分析（腾讯行情，完全独立）────────────────────────────────
@@ -8219,7 +8291,24 @@ async function _doFetchTurnover(){
         +`<span style="font-size:13px;font-weight:800;color:#475569;margin-left:6px">${fmt(cmp.yestFullYi)}</span></div>`
         +`<div style="text-align:right">${cmpHtml}</div></div>`;
     }
-    html+=`<div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:6px">沪综指+深综指 · 腾讯实时 + 东财分时同期对比</div>`;
+    // 两条累计成交额曲线：今日实线 vs 昨日同期虚线；只展示到今天最新交易分钟。
+    const hasAmountCurve=cmp&&cmp.labels&&cmp.labels.length>1
+      &&cmp.todayAmountYi&&cmp.todayAmountYi.length===cmp.labels.length
+      &&cmp.yestAmountYi&&cmp.yestAmountYi.length===cmp.labels.length;
+    if(hasAmountCurve){
+      const tAmt=cmp.todayAmountYi[cmp.todayAmountYi.length-1]||0;
+      const yAmt=cmp.yestAmountYi[cmp.yestAmountYi.length-1]||0;
+      html+=`<div class="market-turnover-chart-box">`
+        +`<div class="market-turnover-chart-head"><span class="market-turnover-chart-title">盘中累计成交额（亿元）</span>`
+        +`<div class="market-turnover-chart-legend">`
+        +`<span class="market-turnover-legend-item"><i class="market-turnover-legend-line" style="--turn-color:#2563eb"></i>今日 ${fmt(tAmt)}</span>`
+        +`<span class="market-turnover-legend-item"><i class="market-turnover-legend-line yesterday" style="--turn-color:#94a3b8"></i>昨日同期 ${fmt(yAmt)}</span>`
+        +`</div></div><div class="market-turnover-chart-canvas">${_turnoverAmountChartSvg(cmp)}</div></div>`;
+    }else{
+      html+=`<div class="market-turnover-chart-box"><div class="market-turnover-chart-head"><span class="market-turnover-chart-title">盘中累计成交额（亿元）</span></div>`
+        +`<div class="market-turnover-chart-empty">分时曲线暂不可用，请稍后刷新</div></div>`;
+    }
+    html+=`<div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:6px">沪综指+深综指 · 腾讯实时成交额 + 东财分钟成交额</div>`;
     if(bodyEl) bodyEl.innerHTML=html;
     if(tTs)    tTs.textContent=timeStr;
   }catch(e){
