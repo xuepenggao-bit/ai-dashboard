@@ -1,6 +1,6 @@
 {
-  "updated": "2026-08-09 23:51:50",
-  "last_checked": "2026-08-17 15:19:23",
+  "updated": "2026-08-17 16:06:40",
+  "last_checked": "2026-08-17 16:06:40",
   "scan_interval_hours": 3,
   "scanner_method": "local-evidence-v2",
   "capex_as_of": "2026-08-08",
@@ -77,37 +77,41 @@
     "2024末",
     "2025末",
     "2026-02",
-    "2026-05"
+    "2026-05",
+    "2026-08"
   ],
   "arr_openai": [
     60,
     214,
     250,
-    null
+    null,
+    400.0
   ],
   "arr_anthropic": [
     10,
     90,
     null,
-    470
+    470,
+    null
   ],
-  "arr_as_of": "2026-07-29",
+  "arr_as_of": "2026-08-16",
   "arr_note": "年化收入运行率公开里程碑（非传统合同ARR） · 仅提取来源明确给出的金额，不从增速或定性表述反推数值",
   "arr_latest_events": {
     "openai": {
       "company": "OpenAI",
-      "summary": "CFO称7月年化经常性收入高于整个第二季度；报道未给出可验证的绝对金额，图表数值暂不变",
-      "numeric": false,
-      "source_label": "CNBC",
-      "source_date": "2026-07-29",
-      "source_url": "https://www.cnbc.com/2026/07/29/openai-cfo-sarah-friar-tells-employees-arr-in-july-topped-all-of-q2.html"
+      "summary": "最新公开披露的年化收入运行率约为$40B。",
+      "numeric": true,
+      "source_label": "bloomberg.com",
+      "source_date": "2026-08-16",
+      "source_url": "https://www.bloomberg.com/news/articles/2026-08-13/openai-s-revenue-run-rate-tops-40-billion-ahead-of-ipo",
+      "arr_yi": 400.0
     }
   },
   "arr_sources": {
     "openai": {
-      "source_label": "Reuters / The Information",
-      "source_date": "2026-03-04",
-      "source_url": "https://www.reuters.com/technology/openai-tops-25-billion-annualized-revenue-last-month-information-reports-2026-03-05/"
+      "source_label": "bloomberg.com",
+      "source_date": "2026-08-16",
+      "source_url": "https://www.bloomberg.com/news/articles/2026-08-13/openai-s-revenue-run-rate-tops-40-billion-ahead-of-ipo"
     },
     "anthropic": {
       "source_label": "Anthropic Series H公告",
