@@ -714,24 +714,18 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     transform:translateZ(0)
   }
   #portClock{
-    width:146px;height:54px;box-sizing:border-box;padding:6px 12px 5px;
-    display:grid;grid-template-rows:29px 12px;align-content:center;justify-items:center;
+    width:156px;height:52px;box-sizing:border-box;padding:0 13px;
+    display:flex;align-items:center;justify-content:center;
     color:#1d1d1f;background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(247,247,249,.94));
     border:1px solid rgba(142,142,147,.19);border-radius:16px;
     box-shadow:0 3px 10px rgba(15,23,42,.08),inset 0 1px 0 #fff,inset 0 -1px 0 rgba(142,142,147,.08);
     font-family:'SF Mono','SFMono-Regular',ui-monospace,'Cascadia Mono','Consolas',monospace;
     font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1
   }
-  .port-clock-row{height:29px;display:flex;align-items:baseline;justify-content:center;white-space:nowrap;line-height:1}
+  .port-clock-row{display:flex;align-items:baseline;justify-content:center;white-space:nowrap;line-height:1}
   .port-clock-hm{font-size:26px;font-weight:610;letter-spacing:-.035em;color:#1d1d1f}
-  .port-clock-colon{margin:0 2px;font-size:20px;font-weight:590;color:#8e8e93;transform:translateY(-1px)}
-  .port-clock-sec{min-width:2ch;font-size:18px;font-weight:650;letter-spacing:-.025em;color:#d97717}
-  .port-clock-zone{
-    display:flex;align-items:center;justify-content:center;gap:4px;height:12px;
-    color:#86868b;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sans-serif;
-    font-size:8.5px;font-weight:600;letter-spacing:.07em;line-height:12px;white-space:nowrap
-  }
-  .port-clock-zone-dot{width:4px;height:4px;border-radius:50%;background:#d97717;box-shadow:0 0 0 2px rgba(217,119,23,.1)}
+  .port-clock-colon{margin:0 1.5px;font-size:26px;font-weight:610;color:#8e8e93}
+  .port-clock-sec{min-width:2ch;font-size:26px;font-weight:610;letter-spacing:-.035em;color:#d97717}
   @media(max-width:1080px){.port-hero-clock{display:none!important}}
   @media(max-width:720px){
     .port-hero{flex-direction:column;align-items:stretch!important;gap:13px;padding:14px!important}
@@ -834,7 +828,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </svg>
       <div id="portClock" role="timer" aria-label="北京时间">
         <div class="port-clock-row"><span id="portClockHM" class="port-clock-hm">--:--</span><span class="port-clock-colon">:</span><span id="portClockSec" class="port-clock-sec">--</span></div>
-        <div class="port-clock-zone"><span class="port-clock-zone-dot"></span><span>北京时间 · UTC+8</span></div>
       </div>
     </div>
 
