@@ -177,12 +177,21 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .market-style-refresh:hover{transform:rotate(18deg);background:#ede9fe}
 .market-style-refresh:disabled{opacity:.55;cursor:default;transform:none}
 .market-style-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:9px}
-.market-style-legend-group{min-width:0;padding:9px 10px;border:1px solid #dfe4ec;border-radius:10px;background:rgba(255,255,255,.92)}
-.market-style-cap{font-size:10.5px;color:#78869a;font-weight:850;letter-spacing:.06em;margin-bottom:6px}
-.market-style-legend-row{display:grid;grid-template-columns:23px minmax(0,1fr) auto;align-items:center;gap:6px;min-width:0;margin-top:5px}
+.market-style-series-button{
+  display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:6px;min-width:0;
+  appearance:none;padding:8px 9px;border:1px solid #e3dff0;border-radius:10px;background:rgba(255,255,255,.92);
+  color:inherit;font-family:inherit;text-align:left;cursor:pointer;transition:transform .16s,box-shadow .16s,border-color .16s,opacity .16s,background .16s
+}
+.market-style-series-button:hover{transform:translateY(-1px);border-color:#a78bfa;background:#fff;box-shadow:0 4px 12px rgba(76,29,149,.08)}
+.market-style-series-button:focus-visible{outline:3px solid color-mix(in srgb,var(--style-color) 24%,transparent);outline-offset:2px}
+.market-style-series-button.active{
+  transform:translateY(-1px);border-color:var(--style-color);background:#fff;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--style-color) 18%,transparent),0 7px 16px rgba(15,23,42,.1)
+}
+.market-style-series-button.is-muted{opacity:.52}
 .market-style-legend-line{height:0;border-top:3px solid var(--style-color);border-radius:3px}
 .market-style-legend-line.value{border-top-style:dashed}
-.market-style-legend-name{font-size:11.5px;color:#344256;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.market-style-legend-name{font-size:11px;color:#344256;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .market-style-legend-value{font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
 .market-style-chart{position:relative;flex:1;min-height:230px;border:1px solid #edf0f5;border-radius:10px;background:rgba(255,255,255,.78);overflow:hidden}
 .market-style-chart svg{display:block;width:100%;height:100%;min-height:230px;touch-action:none}
@@ -221,10 +230,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .market-rotation-card{grid-column:1;grid-row:4;min-height:410px}
 }
 @media(max-width:480px){
-  .market-style-legend{grid-template-columns:1fr;gap:5px}
-  .market-style-legend-group{display:grid;grid-template-columns:38px 1fr 1fr;align-items:center;gap:6px;padding:7px 9px}
-  .market-style-cap{font-size:10.5px;margin:0}
-  .market-style-legend-row{grid-template-columns:17px minmax(0,1fr) auto;gap:4px;margin:0}
+  .market-style-legend{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+  .market-style-series-button{grid-template-columns:22px minmax(0,1fr) auto;gap:4px;padding:7px 8px}
   .market-style-legend-name{font-size:10.5px}.market-style-legend-value{font-size:11px}
   .market-style-foot{align-items:flex-start;flex-direction:column;gap:2px}
   .market-rotation-legend{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
@@ -944,8 +951,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         <div id="mktStyleTooltip" class="market-style-tooltip" aria-hidden="true"></div>
       </div>
       <div class="market-style-foot">
-        <span>曲线：相对昨收涨跌幅</span>
-        <span>实线成长 · 长虚线价值 · 腾讯行情</span>
+        <span>点击上方指数可高亮 · 再点恢复</span>
+        <span>相对昨收涨跌幅 · 腾讯行情</span>
       </div>
     </div>
 
@@ -8183,6 +8190,7 @@ var _mktStyleCache = null;
 var _mktStyleFetching = false;
 var _mktStyleResizeBound = false;
 var _mktStyleResizeTimer = null;
+var _mktStyleActiveCode = '';
 
 function _mktStyleSigned(v){
   v=Number(v)||0;
@@ -8216,23 +8224,28 @@ async function _fetchMktStyleSeries(meta){
   return {...meta,date:String(node.data.date||''),points};
 }
 
+function _toggleMktStyleSeries(code){
+  if(!_MKT_STYLE_META.some(s=>s.code===code)) return;
+  _mktStyleActiveCode=_mktStyleActiveCode===code?'':code;
+  if(_mktStyleCache) _renderMktStyle(_mktStyleCache,false);
+}
+
 function _renderMktStyle(data, cached){
   const chart=document.getElementById('mktStyleChart');
   const legend=document.getElementById('mktStyleLegend');
   const ts=document.getElementById('mktStyleTs');
   if(!chart||!legend||!data||!Array.isArray(data.series)||!data.series.length) return;
   const series=data.series;
-  const byCap=['大盘','中盘','小盘'];
-  legend.innerHTML=byCap.map(cap=>{
-    const rows=series.filter(s=>s.cap===cap);
-    return `<div class="market-style-legend-group"><div class="market-style-cap">${cap}</div>`
-      +rows.map(s=>{
-        const v=s.points[s.points.length-1].pct;
-        return `<div class="market-style-legend-row" title="${s.name} ${s.code}">`
-          +`<i class="market-style-legend-line ${s.type==='价值'?'value':''}" style="--style-color:${s.color}"></i>`
-          +`<span class="market-style-legend-name">${s.type}</span>`
-          +`<span class="market-style-legend-value" style="color:${_mktStyleTone(v)}">${_mktStyleSigned(v)}</span></div>`;
-      }).join('')+`</div>`;
+  const active=series.some(s=>s.code===_mktStyleActiveCode)?_mktStyleActiveCode:'';
+  if(_mktStyleActiveCode&&!active) _mktStyleActiveCode='';
+  legend.innerHTML=series.map(s=>{
+    const v=s.points[s.points.length-1].pct;
+    const selected=active===s.code,muted=active&&!selected;
+    return `<button type="button" class="market-style-series-button${selected?' active':''}${muted?' is-muted':''}" data-style-code="${s.code}" style="--style-color:${s.color}"`
+      +` onclick="_toggleMktStyleSeries('${s.code}')" aria-pressed="${selected?'true':'false'}" title="点击${selected?'恢复全部曲线':'突出'+s.name+'曲线'}">`
+      +`<i class="market-style-legend-line ${s.type==='价值'?'value':''}" style="--style-color:${s.color}"></i>`
+      +`<span class="market-style-legend-name">${s.name}</span>`
+      +`<span class="market-style-legend-value" style="color:${_mktStyleTone(v)}">${_mktStyleSigned(v)}</span></button>`;
   }).join('');
 
   const times=[...new Set(series.flatMap(s=>s.points.map(p=>p.time)))].sort((a,b)=>_mktStyleSessionMinute(a)-_mktStyleSessionMinute(b));
@@ -8260,12 +8273,16 @@ function _renderMktStyle(data, cached){
     svg+=`<line x1="${xx.toFixed(1)}" y1="${margin.top}" x2="${xx.toFixed(1)}" y2="${height-margin.bottom}" stroke="#eef0f4"/>`;
     svg+=`<text x="${xx.toFixed(1)}" y="${height-9}" text-anchor="${n===0?'start':n===tickIdx.length-1?'end':'middle'}" fill="#7c899b" font-size="10.5" font-weight="600">${_mktStyleClock(times[idx])}</text>`;
   });
-  series.forEach(s=>{
+  const drawSeries=active?[...series.filter(s=>s.code!==active),...series.filter(s=>s.code===active)]:series;
+  drawSeries.forEach(s=>{
     const d=s.points.map((p,i)=>(i?'L':'M')+x(p.time).toFixed(1)+','+y(p.pct).toFixed(1)).join(' ');
     const last=s.points[s.points.length-1];
     const isValue=s.type==='价值';
-    svg+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${isValue?'2.25':'2.55'}" stroke-linecap="round" stroke-linejoin="round" ${isValue?'stroke-dasharray="9 5"':''}/>`;
-    svg+=`<circle cx="${x(last.time).toFixed(1)}" cy="${y(last.pct).toFixed(1)}" r="4" fill="${isValue?'#fff':s.color}" stroke="${s.color}" stroke-width="${isValue?'2.2':'1.4'}"/>`;
+    const selected=active===s.code,muted=active&&!selected;
+    const dash=isValue?'stroke-dasharray="9 5"':'';
+    if(selected) svg+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity=".14" ${dash}/>`;
+    svg+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${selected?'4':isValue?'2.25':'2.55'}" stroke-linecap="round" stroke-linejoin="round" opacity="${muted?'.13':'1'}" ${dash}/>`;
+    svg+=`<circle cx="${x(last.time).toFixed(1)}" cy="${y(last.pct).toFixed(1)}" r="${selected?'5.2':'4'}" fill="${isValue?'#fff':s.color}" stroke="${s.color}" stroke-width="${isValue?'2.2':'1.4'}" opacity="${muted?'.13':'1'}"/>`;
   });
   svg+=`<line id="mktStyleCrosshair" x1="0" y1="${margin.top}" x2="0" y2="${height-margin.bottom}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 4" style="display:none"/>`;
   svg+=`<rect id="mktStyleHit" x="${margin.left}" y="${margin.top}" width="${plotW}" height="${plotH}" fill="transparent"/>`;
@@ -8330,15 +8347,15 @@ async function _doFetchMarketStyle(){
 }
 function fetchMarketStyle(){ return _doFetchMarketStyle(); }
 
-// ── 板块轮动（周期/防御/消费/科技/红利/资源，腾讯当日分钟行情）──────
+// ── 板块轮动（信息/消费/周期/防御/红利/资源，腾讯当日分钟行情）──────
 // 除了高对比配色，还给每条曲线配置独立线型，兼顾色觉差异与小屏辨识度。
 const _MKT_ROTATION_META = [
-  {name:'周期100',code:'399402',key:'sz399402',color:'#2563eb',dash:''},
-  {name:'防御100',code:'399403',key:'sz399403',color:'#ef4444',dash:'12 5'},
-  {name:'消费100',code:'399364',key:'sz399364',color:'#f59e0b',dash:'3 4'},
-  {name:'全指信息',code:'000993',key:'sh000993',color:'#7c3aed',dash:'9 4 2 4'},
-  {name:'国证红利',code:'399321',key:'sz399321',color:'#16a34a',dash:'16 5'},
-  {name:'资源优势',code:'399319',key:'sz399319',color:'#0891b2',dash:'2 3'},
+  {name:'信息',code:'000993',key:'sh000993',color:'#7c3aed',dash:'9 4 2 4'},
+  {name:'消费',code:'399364',key:'sz399364',color:'#f59e0b',dash:'3 4'},
+  {name:'周期',code:'399402',key:'sz399402',color:'#2563eb',dash:''},
+  {name:'防御',code:'399403',key:'sz399403',color:'#ef4444',dash:'12 5'},
+  {name:'红利',code:'399321',key:'sz399321',color:'#16a34a',dash:'16 5'},
+  {name:'资源',code:'399319',key:'sz399319',color:'#0891b2',dash:'2 3'},
 ];
 var _mktRotationCache = null;
 var _mktRotationFetching = false;
