@@ -7207,6 +7207,8 @@ let _IDX_REQ_SEQ = 0;  // 只允许最新一轮请求更新 DOM，避免慢响�
 let _IDX_LAST_RENDER = 0;
 const _IDX_RATE_CACHE_KEY = 'aiDashboard.us10y.quote.v1';
 const _IDX_FX_CACHE_KEY = 'aiDashboard.usdcnh.quote.v1';
+const _IDX_HK_CACHE_KEY = 'aiDashboard.hkIndices.quote.v2';
+const _IDX_HK_LABELS = ['恒生指数','恒生科技'];
 try{
   const savedRate=JSON.parse(localStorage.getItem(_IDX_RATE_CACHE_KEY)||'null');
   if(savedRate && Number(savedRate.price)>0) _IDX_CACHE['美国10年期']=savedRate;
@@ -7215,6 +7217,65 @@ try{
   const savedFx=JSON.parse(localStorage.getItem(_IDX_FX_CACHE_KEY)||'null');
   if(savedFx && Number(savedFx.price)>0) _IDX_CACHE['美元兑人民币']=savedFx;
 }catch(e){ /* Safari 隐私模式可能禁用 localStorage；不影响实时请求 */ }
+
+// 恒指/恒科额外持久化「最后一份可信行情」。Safari 恢复后及新一轮接口失败时，
+// 仍可以用它拦住腾讯等约 15 分钟延迟源的时间倒退。最多保留 14 天，覆盖长假期但不会无限显示陈旧值。
+try{
+  const savedHk=JSON.parse(localStorage.getItem(_IDX_HK_CACHE_KEY)||'null');
+  _IDX_HK_LABELS.forEach(label=>{
+    const row=savedHk&&savedHk[label];
+    const quoteTs=Number(row&&row.quoteTs)||0;
+    if(_idxIsSaneHkQuote(label,row) && quoteTs>0 && quoteTs<=Date.now()+5*60000 && Date.now()-quoteTs<14*86400000)
+      _IDX_CACHE[label]=row;
+  });
+}catch(e){ /* 持久化不可用时仅影响跨刷新保留，不影响行情请求 */ }
+
+function _idxBeijingDay(ts){
+  return ts>0 ? new Date(ts+8*3600000).toISOString().slice(0,10) : '';
+}
+
+function _idxIsSaneHkQuote(label,row){
+  if(!row) return false;
+  const price=Number(row.price), pct=Number(row.pct);
+  if(!(price>0) || !isFinite(pct) || Math.abs(pct)>20) return false;
+  // 宽松的量纲边界只用于拦截缺小数点/代码错配等明显异常，不限制正常市场波动。
+  if(label==='恒生指数' && (price<5000 || price>60000)) return false;
+  if(label==='恒生科技' && (price<500 || price>30000)) return false;
+  return true;
+}
+
+// 只有「时间更新 + 数值合理」的港指行情才能覆盖粘性缓存。
+// 源端偶发旧快照、无时间响应或短时异常跳变时，宁可继续显示上一个可信值。
+function _idxShouldAcceptHkQuote(label,next,prev,nowMs){
+  if(!_idxIsSaneHkQuote(label,next)) return false;
+  const nextTs=Number(next.quoteTs)||0;
+  const prevTs=Number(prev&&prev.quoteTs)||0;
+  if(nextTs>nowMs+5*60000) return false;                 // 服务器时钟/字段解析异常
+  if(!prev) return true;
+  if(prevTs>0 && (!nextTs || nextTs<=prevTs)) return false; // 绝不允许时间倒退或同时刻改值
+
+  if(nextTs>0 && prevTs>0 && _idxBeijingDay(nextTs)===_idxBeijingDay(prevTs)){
+    const oldPrice=Number(prev.price), oldPct=Number(prev.pct);
+    const gap=(nextTs-prevTs);
+    // 5 分钟内指数突然跳动超过 4%，更像是字段错配/坏响应，留待下轮确认。
+    if(oldPrice>0 && gap<=5*60000 && Math.abs(Number(next.price)-oldPrice)/oldPrice>0.04) return false;
+    // 同一交易日的「隐含昨收」应基本一致；不一致表明价格与涨跌幅来自不同快照。
+    if(oldPrice>0 && isFinite(oldPct)){
+      const nextClose=Number(next.price)/(1+Number(next.pct)/100);
+      const prevClose=oldPrice/(1+oldPct/100);
+      if(nextClose>0 && prevClose>0 && Math.abs(nextClose-prevClose)/prevClose>0.008) return false;
+    }
+  }
+  return true;
+}
+
+function _idxPersistHkCache(){
+  try{
+    const saved={};
+    _IDX_HK_LABELS.forEach(label=>{ if(_IDX_CACHE[label]) saved[label]=_IDX_CACHE[label]; });
+    localStorage.setItem(_IDX_HK_CACHE_KEY,JSON.stringify(saved));
+  }catch(e){}
+}
 
 // 带超时 + 重试的 fetch（gbk=true 时按 GBK 解码返回文本，否则返回 JSON）
 async function _idxFetch(url, opt){
@@ -7372,17 +7433,28 @@ async function fetchIndexPrices(){
   // ── ③ 粘性缓存合并：本次成功的写入缓存，本次缺失的用上次成功值回填 ──
   const _now = Date.now();
   Object.keys(rowMap).forEach(lbl=>{
-    rowMap[lbl].ts = _now;
-    _IDX_CACHE[lbl] = rowMap[lbl];
+    const next=rowMap[lbl];
+    const cached=_IDX_CACHE[lbl];
+    if(_IDX_HK_LABELS.includes(lbl) && !_idxShouldAcceptHkQuote(lbl,next,cached,_now)){
+      console.warn('[IDX] 拒绝覆盖可信港指行情:',lbl,
+        'new=',next&&next.src,next&&next.price,next&&next.quoteTs,
+        'keep=',cached&&cached.src,cached&&cached.price,cached&&cached.quoteTs);
+      if(cached) rowMap[lbl]=cached;
+      else delete rowMap[lbl];
+      return;
+    }
+    next.ts = _now;
+    _IDX_CACHE[lbl] = next;
     if(lbl==='美国10年期'){
-      try{ localStorage.setItem(_IDX_RATE_CACHE_KEY,JSON.stringify(rowMap[lbl])); }catch(e){}
+      try{ localStorage.setItem(_IDX_RATE_CACHE_KEY,JSON.stringify(next)); }catch(e){}
     }else if(lbl==='美元兑人民币'){
-      try{ localStorage.setItem(_IDX_FX_CACHE_KEY,JSON.stringify(rowMap[lbl])); }catch(e){}
+      try{ localStorage.setItem(_IDX_FX_CACHE_KEY,JSON.stringify(next)); }catch(e){}
     }
   });
   _IDX_ORDER.forEach(lbl=>{
     if(!rowMap[lbl] && _IDX_CACHE[lbl]) rowMap[lbl] = _IDX_CACHE[lbl];  // 回填旧值，避免闪现消失
   });
+  _idxPersistHkCache();
   // 新设备首次访问且所有行情端点同时失败时仍保留指标位置，后续自动刷新成功即替换。
   if(!rowMap['美国10年期']) rowMap['美国10年期']={label:'美国10年期',price:null,pct:0,delta:0,region:'rate',unavailable:true};
   if(!rowMap['美元兑人民币']) rowMap['美元兑人民币']={label:'美元兑人民币',price:null,pct:0,delta:0,region:'fx',unavailable:true};
