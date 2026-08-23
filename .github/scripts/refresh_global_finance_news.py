@@ -106,6 +106,24 @@ def _bad_reuters_title(title: str) -> bool:
     )
 
 
+def _is_reuters_finance_title(title: str) -> bool:
+    """Keep the broad RSS fallback inside markets, finance and investing."""
+    return bool(
+        re.search(
+            r"\b(?:markets?|stocks?|shares?|wall\s+st(?:reet)?|dow|nasdaq|s&p|"
+            r"banks?|banking|finance|financial|investors?|investment|funds?|hedge|"
+            r"private\s+equity|venture|ipo|deals?|merger|takeover|acquisition|"
+            r"earnings|revenue|profit|inflation|fed|central\s+bank|"
+            r"bonds?|treasury|yields?|dollar|currenc(?:y|ies)|euro|yen|yuan|pound|"
+            r"forex|commodit(?:y|ies)|bitcoin|crypto|debt|credit|"
+            r"loans?|mortgage|insurance|assets?|wealth|breakingviews|morning\s+bid|"
+            r"trading\s+day|futures)\b",
+            _clean_text(title),
+            re.I,
+        )
+    )
+
+
 def _clean_items(items: Iterable[dict], limit: int = LIMIT) -> list[dict]:
     cleaned: list[dict] = []
     seen: set[str] = set()
@@ -130,48 +148,73 @@ def _clean_items(items: Iterable[dict], limit: int = LIMIT) -> list[dict]:
 
 
 def _reuters_api() -> list[dict]:
-    query = {
-        "section_id": "/business/finance",
-        "size": 30,
-        "website": "reuters",
-        "fetch_type": "section",
-    }
-    endpoint = (
-        "https://www.reuters.com/pf/api/v3/content/fetch/"
-        "articles-by-section-alias-or-id-v1?" + urlencode({"query": json.dumps(query, separators=(",", ":"))})
+    """Collect several Reuters market desks, then globally sort by publish time.
+
+    The Finance landing page can go quiet for a day while Stocks, Currencies or
+    general Markets continues publishing.  Reading only /business/finance made
+    a healthy feed look stale, so all relevant official sections compete for
+    the five newest slots.
+    """
+    items: list[dict] = []
+    sections = (
+        ("/markets", "https://www.reuters.com/markets/"),
+        ("/business/finance", "https://www.reuters.com/business/finance/"),
+        ("/markets/stocks", "https://www.reuters.com/markets/stocks/"),
+        ("/markets/currencies", "https://www.reuters.com/markets/currencies/"),
+        ("/markets/rates-bonds", "https://www.reuters.com/markets/rates-bonds/"),
     )
-    payload = _get_json(endpoint, referer="https://www.reuters.com/business/finance/")
-    stories = ((payload.get("arcResult") or {}).get("articles") or []) if isinstance(payload, dict) else []
-    if not stories and isinstance(payload, dict):
-        stories = ((payload.get("result") or {}).get("articles") or [])
-    items = []
-    for story in stories:
-        if not isinstance(story, dict):
-            continue
-        canonical = str(story.get("canonical_url") or story.get("website_url") or "")
-        url = urljoin("https://www.reuters.com", canonical)
-        items.append(
-            {
-                "title": story.get("title") or story.get("headline"),
-                "url": url,
-                "publisher": "Reuters",
-                "ts": _to_epoch(story.get("published_time") or story.get("display_time")),
-            }
+    errors: list[str] = []
+    for section_id, referer in sections:
+        query = {
+            "section_id": section_id,
+            "size": 30,
+            "website": "reuters",
+            "fetch_type": "section",
+        }
+        endpoint = (
+            "https://www.reuters.com/pf/api/v3/content/fetch/"
+            "articles-by-section-alias-or-id-v1?"
+            + urlencode({"query": json.dumps(query, separators=(",", ":"))})
         )
-    result = _clean_items(items)
+        try:
+            payload = _get_json(endpoint, referer=referer)
+        except Exception as exc:
+            errors.append(f"{section_id}: {exc}")
+            continue
+        stories = ((payload.get("arcResult") or {}).get("articles") or []) if isinstance(payload, dict) else []
+        if not stories and isinstance(payload, dict):
+            stories = ((payload.get("result") or {}).get("articles") or [])
+        for story in stories:
+            if not isinstance(story, dict):
+                continue
+            canonical = str(story.get("canonical_url") or story.get("website_url") or "")
+            items.append(
+                {
+                    "title": story.get("title") or story.get("headline"),
+                    "url": urljoin("https://www.reuters.com", canonical),
+                    "publisher": "Reuters",
+                    "ts": _to_epoch(story.get("published_time") or story.get("display_time")),
+                }
+            )
+    result = _clean_items(item for item in items if not _bad_reuters_title(item.get("title", "")))
     if not result:
-        raise RuntimeError("Reuters finance API returned no usable articles")
+        raise RuntimeError("Reuters market APIs returned no usable articles: " + " | ".join(errors))
     return result
 
 
 def _reuters_google_rss() -> list[dict]:
     """Fallback index when Reuters temporarily blocks its own section API."""
     items = []
+    # First two searches intentionally use a one-day window.  The longer
+    # windows only fill remaining slots on weekends or unusually quiet days;
+    # _clean_items performs the final global newest-first sort.
     queries = [
-        'site:reuters.com/business/finance when:7d -"Stock Price & Latest News" -"About"',
+        'Reuters (markets OR stocks OR bonds OR currencies OR commodities) when:1d -"Stock Price & Latest News"',
+        'Reuters (finance OR banks OR deals OR earnings OR economy) when:1d -"Stock Price & Latest News"',
         'site:reuters.com/markets when:3d -"Stock Price & Latest News" -"About"',
-        'Reuters banks finance when:7d -"Stock Price & Latest News"',
-        'Reuters markets economy when:3d -"Stock Price & Latest News"',
+        'site:reuters.com/business/finance when:3d -"Stock Price & Latest News" -"About"',
+        'Reuters (stock market OR Wall Street OR investors OR earnings) when:7d -"Stock Price & Latest News"',
+        'Reuters (banks OR bonds OR dollar OR oil OR gold OR deals) when:7d -"Stock Price & Latest News"',
     ]
     for query in queries:
         url = "https://news.google.com/rss/search?" + urlencode(
@@ -185,7 +228,7 @@ def _reuters_google_rss() -> list[dict]:
             if source.lower() != "reuters" and not title.lower().endswith(" - reuters"):
                 continue
             title = re.sub(r"\s+-\s+Reuters$", "", title, flags=re.I)
-            if _bad_reuters_title(title):
+            if _bad_reuters_title(title) or not _is_reuters_finance_title(title):
                 continue
             items.append(
                 {
@@ -202,11 +245,28 @@ def _reuters_google_rss() -> list[dict]:
 
 
 def fetch_reuters() -> tuple[list[dict], str]:
+    # Merge both discovery paths even when the official section API succeeds:
+    # Google News often indexes a newly published Reuters story before the
+    # section landing page updates.  Five items are chosen only after merging.
+    items: list[dict] = []
+    labels: list[str] = []
+    errors: list[str] = []
     try:
-        return _reuters_api(), "Reuters Finance"
+        items.extend(_reuters_api())
+        labels.append("Reuters Markets")
     except Exception as exc:
         print(f"Reuters direct API unavailable: {exc}")
-        return _reuters_google_rss(), "Reuters via Google News index"
+        errors.append(str(exc))
+    try:
+        items.extend(_reuters_google_rss())
+        labels.append("Google News index")
+    except Exception as exc:
+        print(f"Reuters Google News index unavailable: {exc}")
+        errors.append(str(exc))
+    result = _clean_items(items)
+    if not result:
+        raise RuntimeError(" | ".join(errors) or "Reuters returned no usable articles")
+    return result, "Reuters latest via " + " + ".join(labels)
 
 
 def _publication_name(item: dict, post: dict) -> str:
