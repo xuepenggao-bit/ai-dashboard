@@ -1,6 +1,10 @@
 name: Refresh Global Finance News
 
 on:
+  push:
+    paths:
+      - '.github/scripts/refresh_global_finance_news.py'
+      - '.github/workflows/refresh-global-finance-news.yml'
   schedule:
     # Twice an hour; the page itself reads the same-origin committed cache.
     - cron: '7,37 * * * *'
