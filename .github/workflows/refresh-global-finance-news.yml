@@ -1,0 +1,41 @@
+name: Refresh Global Finance News
+
+on:
+  schedule:
+    # Twice an hour; the page itself reads the same-origin committed cache.
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-global-finance-news
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Refresh Reuters and Substack finance news
+        run: python .github/scripts/refresh_global_finance_news.py
+
+      - name: Commit and push data file
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/global_finance_news.json
+          git diff --staged --quiet && echo "No changes." && exit 0
+          git commit -m "chore: refresh global finance news $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git pull --rebase origin main
+          git push
