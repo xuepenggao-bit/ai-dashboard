@@ -1,16 +1,17 @@
 {
-  "updatedAt": "2026-08-23T04:47:31Z",
+  "updatedAt": "2026-08-23T04:58:59Z",
   "sources": {
     "reuters": {
       "label": "Reuters via Google News index",
-      "status": "fresh",
-      "count": 5
+      "status": "cached",
+      "count": 5,
+      "error": "Reuters Google News fallback returned no usable articles"
     },
     "substack": {
       "label": "Substack Finance Recent",
       "status": "unavailable",
       "count": 0,
-      "error": "GET https://substack.com/explore/category/finance failed: HTTP Error 403: Forbidden"
+      "error": "Explore API: GET https://substack.com/api/v1/search/explore/web?tab=153&type=category failed: HTTP Error 403: Forbidden | Category API: GET https://substack.com/api/v1/category/public/153/all?page=0 failed: HTTP Error 403: Forbidden | Finan"
     }
   },
   "reuters": [
