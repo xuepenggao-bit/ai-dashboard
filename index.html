@@ -600,9 +600,15 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-overview-change.is-flat .port-overview-stat-value,.port-overview-change.is-flat .port-overview-stat-label{color:#475569}
 .port-overview-change.is-empty .port-overview-stat-value{font-size:17px;color:#64748b}
 
-/* ── 分类饼图面板 ─────────────────────────────────────────── */
-.sec-pie-panel{transition:opacity .3s}
-@media(max-width:640px){.sec-pie-panel{display:none!important}}
+/* ── 前5日收盘价距离 ─────────────────────────────────────── */
+#tPort .th-range5{min-width:118px;text-align:right;line-height:1.28;cursor:default}
+#tPort .th-range5 span{font-size:10px;font-weight:600;letter-spacing:.01em;color:#94a3b8}
+#tPort .col-range5{text-align:right;min-width:118px}
+.port-range-pill{display:inline-flex;align-items:center;justify-content:flex-end;min-width:68px;padding:4px 8px;border-radius:7px;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em;border:1px solid transparent}
+.port-range-pill.is-up{color:#991b1b;background:#fff1f2;border-color:#fecdd3}
+.port-range-pill.is-down{color:#065f46;background:#ecfdf5;border-color:#bbf7d0}
+.port-range-pill.is-flat{color:#475569;background:#f8fafc;border-color:#e2e8f0}
+.port-range-empty{font-size:12px;color:#94a3b8}
 
 /* ── 移动端响应式：≤768px ────────────────────────────────── */
 @media(max-width:768px){
@@ -3602,11 +3608,127 @@ const GH_TOKEN_LOCAL_KEY = 'ai_dash_github_pat_v2';
 let _githubTokenMemory = '';
 let PORT = null;
 let _PORT_PRICES = {};
+const PORT_5D_CLOSE_KEY = 'aiDashboard.portfolioFiveDayClose.v1';
+let _PORT_5D_CLOSE = {}; // "市场:代码" → {high,low,from,to,asOf,dayKey,updatedAt}
+let _port5dInflight = null;
 let _pfInflight = false;   // fetchPortPrices 进行中标志：防止上一轮未完又触发（自动刷新高频时避免重叠/快照竞争）
 let _portSort = {col:'w', dir:1};
 let _portDirty = false;   // 有本地修改未同步到云端时为 true
 let _portRevision = 0;    // 本地组合版本；旧的异步同步完成时不得覆盖新版本状态
 let _portSyncQueue = Promise.resolve(); // 写入按顺序执行，避免旧请求回写
+
+try{
+  const saved5d=JSON.parse(localStorage.getItem(PORT_5D_CLOSE_KEY)||'{}');
+  const cutoff=Date.now()-14*86400000;
+  Object.keys(saved5d||{}).forEach(key=>{
+    const row=saved5d[key];
+    if(row && Number(row.high)>0 && Number(row.low)>0 && Number(row.updatedAt)>cutoff)
+      _PORT_5D_CLOSE[key]=row;
+  });
+}catch(e){ /* Safari 隐私模式禁用 localStorage 时仅失去跨刷新缓存 */ }
+
+function _port5dKey(stock){
+  return String(stock&&stock.mkt||'')+':'+String(stock&&stock.code||'');
+}
+
+function _portBeijingDate(){
+  return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Shanghai'});
+}
+
+function _port5dSymbol(stock){
+  if(stock.mkt==='HK') return 'hk'+String(stock.code).padStart(5,'0');
+  return (stock.mkt==='SH'?'sh':'sz')+String(stock.code).padStart(6,'0');
+}
+
+function _port5dSecid(stock){
+  const market=stock.mkt==='HK'?'116':stock.mkt==='SH'?'1':'0';
+  const code=stock.mkt==='HK'?String(stock.code).padStart(5,'0'):String(stock.code).padStart(6,'0');
+  return market+'.'+code;
+}
+
+function _port5dBuild(rows,today,source){
+  const clean=(rows||[]).map(row=>({date:String(row.date||''),close:Number(row.close)}))
+    .filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&row.date<today&&row.close>0)
+    .sort((a,b)=>a.date.localeCompare(b.date));
+  const five=clean.slice(-5);
+  if(five.length<5) throw new Error('前5个交易日数据不足');
+  const closes=five.map(row=>row.close);
+  return {
+    high:Math.max(...closes), low:Math.min(...closes),
+    from:five[0].date, to:five[five.length-1].date, asOf:five[five.length-1].date,
+    dayKey:today, updatedAt:Date.now(), source
+  };
+}
+
+async function _fetchPort5dOne(stock,today){
+  const symbol=_port5dSymbol(stock);
+  const errors=[];
+  // 腾讯日K主源：A股、港股格式一致，lmt=8 足够覆盖周末/停牌后取最近5个有效收盘日。
+  try{
+    const ctrl=new AbortController();
+    const tid=setTimeout(()=>ctrl.abort(),5000);
+    let text;
+    try{
+      const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
+        +'?_var=kl&param='+symbol+',day,,,8,qfq&_='+Date.now();
+      text=await (await fetch(url,{signal:ctrl.signal,cache:'no-store'})).text();
+    }finally{ clearTimeout(tid); }
+    const start=text.indexOf('{');
+    if(start<0) throw new Error('空响应');
+    const json=JSON.parse(text.slice(start));
+    const data=json?.data?.[symbol]||json?.data?.[symbol+'qfq'];
+    const days=data?.day||data?.qfqday||[];
+    return _port5dBuild(days.map(row=>({date:row[0],close:row[2]})),today,'腾讯日K');
+  }catch(e){ errors.push('腾讯:'+e.message); }
+
+  // 东方财富日K仅在腾讯失败时补位；不传 beg，避免接口忽略 lmt 后返回全历史。
+  try{
+    const ctrl=new AbortController();
+    const tid=setTimeout(()=>ctrl.abort(),5000);
+    let json;
+    try{
+      const url='https://push2his.eastmoney.com/api/qt/stock/kline/get'
+        +'?secid='+_port5dSecid(stock)
+        +'&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56'
+        +'&klt=101&fqt=1&end=20500101&lmt=8&_='+Date.now();
+      json=await (await fetch(url,{signal:ctrl.signal,cache:'no-store'})).json();
+    }finally{ clearTimeout(tid); }
+    const kl=json?.data?.klines||[];
+    return _port5dBuild(kl.map(line=>{const f=String(line).split(',');return {date:f[0],close:f[2]};}),today,'东方财富日K');
+  }catch(e){ errors.push('东方财富:'+e.message); }
+  throw new Error(errors.join(' | '));
+}
+
+async function fetchPortFiveDayRanges(){
+  if(_port5dInflight) return _port5dInflight;
+  portLoad();
+  const today=_portBeijingDate();
+  const unique=new Map();
+  (PORT?.sectors||[]).forEach(sec=>(sec.stocks||[]).forEach(stock=>unique.set(_port5dKey(stock),stock)));
+  const missing=[...unique.entries()].filter(([key])=>!_PORT_5D_CLOSE[key]||_PORT_5D_CLOSE[key].dayKey!==today);
+  if(!missing.length) return Promise.resolve();
+
+  _port5dInflight=(async()=>{
+    let changed=false;
+    // 每批5只，避免首次载入时同时发出过多历史请求；成功结果当天复用，10秒刷新不会重拉。
+    for(let i=0;i<missing.length;i+=5){
+      const batch=missing.slice(i,i+5);
+      const results=await Promise.all(batch.map(async([key,stock])=>{
+        try{ return [key,await _fetchPort5dOne(stock,today),null]; }
+        catch(error){ return [key,null,error]; }
+      }));
+      results.forEach(([key,row,error])=>{
+        if(row){ _PORT_5D_CLOSE[key]=row; changed=true; }
+        else console.warn('[前5日收盘价]',key,error&&error.message);
+      });
+    }
+    if(changed){
+      try{ localStorage.setItem(PORT_5D_CLOSE_KEY,JSON.stringify(_PORT_5D_CLOSE)); }catch(e){}
+      renderPortfolio();
+    }
+  })().finally(()=>{ _port5dInflight=null; });
+  return _port5dInflight;
+}
 
 function togglePortSort(col){
   // 首次点击某列：降序（dir=1，即 b-a，由高到低）
@@ -3935,6 +4057,7 @@ async function portInit(){
   const _initCodes = new Set((PORT?.sectors||[]).flatMap(s=>s.stocks.map(sk=>sk.code)));
   try{ renderPortfolio(); }catch(e){ console.warn('[portInit renderPortfolio]', e); }
   try{ fetchIndexPrices(); }catch(e){ console.warn('[portInit fetchIndexPrices]', e); }
+  try{ fetchPortFiveDayRanges(); }catch(e){ console.warn('[portInit fiveDayClose]', e); }
   try{ updateRiskDashboard(); }catch(e){ console.warn('[portInit updateRiskDashboard]', e); }
   // fetchPortPrices 独立 try，确保上面任何一步抛错都不会跳过它
   try{ fetchPortPrices(); }catch(e){ console.warn('[portInit fetchPortPrices]', e); }
@@ -4280,6 +4403,20 @@ function renderPortfolio(){
   const vrThCls   = 'th-sort'+(_portSort.col==='vr'   ?(_portSort.dir>0?' th-desc':' th-asc'):'');
   const spThCls   = 'th-sort'+(_portSort.col==='speed'?(_portSort.dir>0?' th-desc':' th-asc'):'');
   const portRenderNow=Date.now(); // 本轮所有行共用同一北京时间快照，避免 09:15 边界显示不一致
+  const _render5dDistance=(stock,priceInfo,side)=>{
+    const range=_PORT_5D_CLOSE[_port5dKey(stock)];
+    const price=Number(priceInfo&&priceInfo.price);
+    const level=Number(range&&(side==='high'?range.high:range.low));
+    if(!(price>0&&level>0)) return '<span class="port-range-empty">—</span>';
+    const pct=(price/level-1)*100;
+    const cls=pct>0.005?'is-up':pct<-0.005?'is-down':'is-flat';
+    const sign=pct>0?'+':'';
+    const precision=stock.mkt==='HK'?3:2;
+    const label=side==='high'?'最高':'最低';
+    const direction=side==='high'?(pct>0?'已突破':'距高点'):(pct<0?'已跌破':'距低点');
+    const title=`前5个交易日${label}收盘价 ${level.toFixed(precision)} · ${direction} ${sign}${pct.toFixed(2)}% · 区间 ${range.from} 至 ${range.to}`;
+    return `<span class="port-range-pill ${cls}" title="${title}">${sign}${pct.toFixed(2)}%</span>`;
+  };
 
   document.getElementById('portSectors').innerHTML = PORT.sectors.map((sec,si)=>{
     const secW = secWeights[si];
@@ -4310,6 +4447,8 @@ function renderPortfolio(){
       const pctCell = displayPct!=null
         ? `<span style="display:inline-block;background:${pctBg};color:${pctCol};font-weight:800;font-size:15px;padding:4px 10px;border-radius:7px;letter-spacing:-.01em">${displayPct>0?'+':''}${displayPct.toFixed(2)}%</span>`
         : `<span style="color:var(--text2);font-size:13px">—</span>`;
+      const high5Cell=_render5dDistance(sk,pi,'high');
+      const low5Cell =_render5dDistance(sk,pi,'low');
       const vr = pi?.volRatio;
       const vrCol = !vr ? 'var(--text2)' : vr>=3 ? '#991b1b' : vr>=2 ? '#dc2626' : vr>=1.5 ? '#d97706' : vr>=1 ? 'var(--text)' : '#64748b';
       const vrAnim = vr>=3 ? 'animation:vrBlink 1s ease-in-out infinite;font-weight:900;' : 'font-weight:700;';
@@ -4337,6 +4476,8 @@ function renderPortfolio(){
         <td class="col-industry" style="color:var(--text2);font-size:13px">${sk.industry||''}</td>
         <td class="col-price" style="text-align:right">${priceCell}</td>
         <td style="text-align:right">${pctCell}</td>
+        <td class="col-range5">${high5Cell}</td>
+        <td class="col-range5">${low5Cell}</td>
         <td style="text-align:right">${sk.w!=null?'<strong style="color:var(--blue);font-size:15px">'+sk.w.toFixed(1)+'%</strong>':'<span style="color:var(--text2);font-size:13px">—</span>'}</td>
         <td class="col-vr" style="text-align:right">${vrCell}</td>
         <td class="col-sp" style="text-align:right">${spCell}</td>
@@ -4345,7 +4486,7 @@ function renderPortfolio(){
           <button class="btn-del"  onclick="delPortStock(${si},${ki})"         style="background:none;border:1.5px solid #fca5a5;color:var(--red);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;margin-left:5px">删除</button>
         </td>
       </tr>`;}).join('')
-    : `<tr><td colspan="10" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
+    : `<tr><td colspan="12" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
     return `<div class="card mb16" style="overflow:hidden">
       <div class="sec-header">
         <span style="width:20px;height:20px;border-radius:6px;background:${sec.color};display:inline-block;flex-shrink:0;box-shadow:0 2px 6px ${sec.color}55"></span>
@@ -4365,30 +4506,23 @@ function renderPortfolio(){
           <button onclick="delPortSector(${si})" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:7px;padding:6px 10px;cursor:pointer;font-size:12px;font-family:inherit">删分类</button>
         </div>
       </div>
-      <!-- 卡片主体：表格 + 饼图并排 -->
-      <div style="display:flex;align-items:stretch;margin:0 -20px -20px -20px">
-        <!-- 表格区域 -->
-        <div style="flex:1;min-width:0;overflow-x:auto;overflow-y:hidden">
-          <table class="mtable"><thead><tr>
+      <!-- 卡片主体：删除分类饼图，完整宽度留给持仓明细 -->
+      <div style="margin:0 -20px -20px -20px">
+        <div class="overflow" style="border-radius:0">
+          <table class="mtable" style="min-width:1320px"><thead><tr>
             <th>股票名称</th>
             <th class="th-code">代码</th>
             <th class="th-mkt">市场</th>
             <th class="th-industry">行业</th>
             <th class="th-price" style="text-align:right">当前股价</th>
             <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
+            <th class="th-range5" title="当前股价相对前5个交易日最高收盘价的百分比距离">前5日最高收盘价<br><span>现价距离</span></th>
+            <th class="th-range5" title="当前股价相对前5个交易日最低收盘价的百分比距离">前5日最低收盘价<br><span>现价距离</span></th>
             <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
             <th class="${vrThCls} th-vr" onclick="togglePortSort('vr')"    style="text-align:right;cursor:pointer">量比 ${vrArrow}</th>
             <th class="${spThCls} th-sp" onclick="togglePortSort('speed')" style="text-align:right;cursor:pointer">5分钟 ${spArrow}</th>
             <th>操作</th>
           </tr></thead><tbody>${rows}</tbody></table>
-        </div>
-        <!-- 饼图面板 -->
-        <div class="sec-pie-panel" style="width:220px;flex-shrink:0;padding:14px 12px 10px 14px;border-left:1px solid var(--border);background:#f8fafc;display:flex;flex-direction:column">
-          <div style="font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.04em;margin-bottom:8px;text-align:center">仓位分布</div>
-          <div style="height:140px;width:100%;position:relative;flex-shrink:0">
-            <canvas id="cSecPie_${si}"></canvas>
-          </div>
-          <div id="cSecLegend_${si}" style="margin-top:10px;flex:1;overflow-y:auto"></div>
         </div>
       </div>
     </div>`;
@@ -4396,76 +4530,6 @@ function renderPortfolio(){
 
   // 每次渲染都刷新重仓TOP5（仓位数据不依赖股价）
   _renderPortTopW();
-  // 渲染各分类饼图
-  _renderSecPies();
-}
-
-// ── 各分类仓位饼图 ─────────────────────────────────────────
-function _renderSecPies(){
-  // 销毁旧 charts
-  (CH.secPies||[]).forEach(ch=>{ try{ ch.destroy(); }catch(e){} });
-  CH.secPies=[];
-
-  // 颜色库（16色循环，保证视觉区分度）
-  const PAL=[
-    '#2563eb','#059669','#d97706','#7c3aed','#dc2626',
-    '#0891b2','#16a34a','#ea580c','#9333ea','#be123c',
-    '#1d4ed8','#047857','#b45309','#6d28d9','#b91c1c','#0e7490',
-  ];
-
-  PORT.sectors.forEach((sec,si)=>{
-    const canvas=document.getElementById('cSecPie_'+si);
-    if(!canvas) return;
-
-    // 只统计有仓位的股票，按仓位从高到低排序
-    const stks=sec.stocks.filter(sk=>(sk.w||0)>0).sort((a,b)=>(b.w||0)-(a.w||0));
-    if(stks.length===0){
-      // 无仓位 → 文字占位
-      const wrap=canvas.parentElement;
-      wrap.innerHTML='<div style="display:flex;height:100%;align-items:center;justify-content:center;text-align:center;color:#94a3b8;font-size:11px;line-height:1.6">请在编辑中<br>设置个股仓位</div>';
-      return;
-    }
-
-    const colors=stks.map((_,i)=>PAL[i%PAL.length]);
-    // 标签：缩短名称 + 仓位%（显示完整名让图例清晰）
-    const labels=stks.map(sk=>sk.name);
-    const data  =stks.map(sk=>+(sk.w||0));
-
-    const chart=new Chart(canvas.getContext('2d'),{
-      type:'doughnut',
-      data:{
-        labels,
-        datasets:[{
-          data,
-          backgroundColor:colors,
-          borderWidth:2,
-          borderColor:'#fff',
-          hoverOffset:5,
-        }]
-      },
-      options:{
-        responsive:true,
-        maintainAspectRatio:false,
-        cutout:'48%',
-        plugins:{
-          legend:{display:false},
-          tooltip:{callbacks:{label:(ctx)=>ctx.label+': '+ctx.raw.toFixed(1)+'%'}}
-        }
-      }
-    });
-    CH.secPies.push(chart);
-
-    // 自定义图例：一行一只股票，名称 + 仓位
-    const legendEl=document.getElementById('cSecLegend_'+si);
-    if(legendEl){
-      legendEl.innerHTML=stks.map((sk,i)=>`
-        <div style="display:flex;align-items:center;gap:7px;padding:3px 0;border-bottom:1px solid #e2e8f0">
-          <span style="width:9px;height:9px;border-radius:2px;flex-shrink:0;background:${colors[i]}"></span>
-          <span style="font-size:11.5px;font-weight:600;color:#334155;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sk.name}</span>
-          <span style="font-size:11.5px;font-weight:700;color:#475569;flex-shrink:0">${(sk.w||0).toFixed(1)}%</span>
-        </div>`).join('');
-    }
-  });
 }
 
 function delPortStock(si,ki){
@@ -9725,6 +9789,8 @@ async function fetchPortPrices(){
     renderPortfolio();
     renderPortTop3();
     _renderPortTopW();
+    // 历史收盘价按北京时间每日缓存；新增股票时只补拉缺失项，自动股价刷新不会重复请求。
+    fetchPortFiveDayRanges().catch(function(e){ console.warn('[前5日收盘价]',e.message); });
     // 指数 / 主力 / 大盘统计 已由 refreshPortAll() 与本函数并行触发，此处不再串行调用（避免等股价+港股回退跑完才开始）。
     // 注：定时自动刷新、保存持仓等仅调 fetchPortPrices 的入口，本就只需刷股价，无需连带重活。
     // 如果估值分析标签页是活动状态，同步刷新估值表格（更新股价+市值列）
