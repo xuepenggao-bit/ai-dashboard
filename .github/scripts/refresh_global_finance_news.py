@@ -42,6 +42,9 @@ def _request(url: str, *, accept: str, referer: str, attempts: int = 3) -> bytes
         "Accept-Language": "en-US,en;q=0.9",
         "Referer": referer,
         "Cache-Control": "no-cache",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
     }
     for attempt in range(attempts):
         try:
@@ -153,27 +156,33 @@ def _reuters_api() -> list[dict]:
 
 def _reuters_google_rss() -> list[dict]:
     """Fallback index when Reuters temporarily blocks its own section API."""
-    query = "site:reuters.com/business/finance OR site:reuters.com/markets when:1d"
-    url = "https://news.google.com/rss/search?" + urlencode(
-        {"q": query, "hl": "en-US", "gl": "US", "ceid": "US:en"}
-    )
-    raw = _request(url, accept="application/rss+xml, application/xml, text/xml, */*", referer="https://news.google.com/")
-    root = ET.fromstring(raw)
     items = []
-    for node in root.findall(".//item"):
-        title = _clean_text(node.findtext("title"))
-        source = _clean_text(node.findtext("source"))
-        if source.lower() != "reuters" and not title.lower().endswith(" - reuters"):
-            continue
-        title = re.sub(r"\s+-\s+Reuters$", "", title, flags=re.I)
-        items.append(
-            {
-                "title": title,
-                "url": _clean_text(node.findtext("link")),
-                "publisher": "Reuters",
-                "ts": _to_epoch(node.findtext("pubDate")),
-            }
+    queries = [
+        'site:reuters.com/business/finance when:2d -"Stock Price & Latest News" -"About"',
+        'site:reuters.com/markets when:1d -"Stock Price & Latest News" -"About"',
+    ]
+    for query in queries:
+        url = "https://news.google.com/rss/search?" + urlencode(
+            {"q": query, "hl": "en-US", "gl": "US", "ceid": "US:en"}
         )
+        raw = _request(url, accept="application/rss+xml, application/xml, text/xml, */*", referer="https://news.google.com/")
+        root = ET.fromstring(raw)
+        for node in root.findall(".//item"):
+            title = _clean_text(node.findtext("title"))
+            source = _clean_text(node.findtext("source"))
+            if source.lower() != "reuters" and not title.lower().endswith(" - reuters"):
+                continue
+            title = re.sub(r"\s+-\s+Reuters$", "", title, flags=re.I)
+            if re.search(r"Stock Price\s*&\s*Latest News|^About\s+.+\b(?:ETF|Fund)\b|^[A-Z0-9.]{1,12}\s+-\s*\|", title, re.I):
+                continue
+            items.append(
+                {
+                    "title": title,
+                    "url": _clean_text(node.findtext("link")),
+                    "publisher": "Reuters",
+                    "ts": _to_epoch(node.findtext("pubDate")),
+                }
+            )
     result = _clean_items(items)
     if not result:
         raise RuntimeError("Reuters Google News fallback returned no usable articles")
@@ -199,6 +208,8 @@ def _publication_name(item: dict, post: dict) -> str:
             name = candidate.get("name") or candidate.get("publication_name")
             if name:
                 return _clean_text(name)
+    if item.get("name") and item is not post:
+        return _clean_text(item.get("name"))
     byline = post.get("publishedBylines") or post.get("bylines") or []
     if isinstance(byline, list) and byline and isinstance(byline[0], dict):
         return _clean_text(byline[0].get("name"))
@@ -208,7 +219,7 @@ def _publication_name(item: dict, post: dict) -> str:
 def _post_item(post: dict, container: dict | None = None) -> dict | None:
     if not isinstance(post, dict):
         return None
-    url = str(post.get("canonical_url") or post.get("canonicalUrl") or post.get("url") or "")
+    url = str(post.get("canonical_url") or post.get("canonicalUrl") or post.get("post_url") or post.get("url") or "")
     title = post.get("title") or post.get("headline") or post.get("social_title")
     if "/p/" not in url or not title:
         return None
@@ -241,6 +252,19 @@ def _substack_explore_api() -> list[dict]:
     result = _clean_items(items)
     if not result:
         raise RuntimeError("Substack Explore API returned no post entities")
+    return result
+
+
+def _substack_category_public() -> list[dict]:
+    """Rebuild Finance Recent from recent_posts on the public category API."""
+    items: list[dict] = []
+    for page in (0, 1):
+        endpoint = "https://substack.com/api/v1/category/public/153/all?" + urlencode({"page": page})
+        payload = _get_json(endpoint, referer="https://substack.com/explore/category/finance")
+        items.extend(_walk_posts(payload))
+    result = _clean_items(items)
+    if not result:
+        raise RuntimeError("Substack public Finance category returned no recent_posts")
     return result
 
 
@@ -312,11 +336,22 @@ def _substack_page_json() -> list[dict]:
 
 
 def fetch_substack() -> tuple[list[dict], str]:
+    errors: list[str] = []
     try:
         return _substack_explore_api(), "Substack Finance Recent"
     except Exception as exc:
         print(f"Substack Explore API unavailable: {exc}")
+        errors.append(f"Explore API: {exc}")
+    try:
+        return _substack_category_public(), "Substack Finance Recent"
+    except Exception as exc:
+        print(f"Substack public category unavailable: {exc}")
+        errors.append(f"Category API: {exc}")
+    try:
         return _substack_page_json(), "Substack Finance page"
+    except Exception as exc:
+        errors.append(f"Finance page: {exc}")
+        raise RuntimeError(" | ".join(errors)) from exc
 
 
 def _load_existing() -> dict:
