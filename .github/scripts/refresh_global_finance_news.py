@@ -96,6 +96,16 @@ def _clean_text(value: Any) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _bad_reuters_title(title: str) -> bool:
+    return bool(
+        re.search(
+            r"Stock Price\s*&\s*Latest News|^About\s+.+\b(?:ETF|Fund)\b|^[A-Z0-9.]{1,12}\s+-\s*\|",
+            _clean_text(title),
+            re.I,
+        )
+    )
+
+
 def _clean_items(items: Iterable[dict], limit: int = LIMIT) -> list[dict]:
     cleaned: list[dict] = []
     seen: set[str] = set()
@@ -160,6 +170,8 @@ def _reuters_google_rss() -> list[dict]:
     queries = [
         'site:reuters.com/business/finance when:7d -"Stock Price & Latest News" -"About"',
         'site:reuters.com/markets when:3d -"Stock Price & Latest News" -"About"',
+        'Reuters banks finance when:7d -"Stock Price & Latest News"',
+        'Reuters markets economy when:3d -"Stock Price & Latest News"',
     ]
     for query in queries:
         url = "https://news.google.com/rss/search?" + urlencode(
@@ -173,7 +185,7 @@ def _reuters_google_rss() -> list[dict]:
             if source.lower() != "reuters" and not title.lower().endswith(" - reuters"):
                 continue
             title = re.sub(r"\s+-\s+Reuters$", "", title, flags=re.I)
-            if re.search(r"Stock Price\s*&\s*Latest News|^About\s+.+\b(?:ETF|Fund)\b|^[A-Z0-9.]{1,12}\s+-\s*\|", title, re.I):
+            if _bad_reuters_title(title):
                 continue
             items.append(
                 {
@@ -401,10 +413,12 @@ def _load_existing() -> dict:
 def refresh() -> dict:
     previous = _load_existing()
     now = dt.datetime.now(dt.timezone.utc)
+    previous_reuters = _clean_items(previous.get("reuters") if isinstance(previous.get("reuters"), list) else [])
+    previous_reuters = [item for item in previous_reuters if not _bad_reuters_title(item.get("title", ""))]
     output: dict[str, Any] = {
         "updatedAt": now.isoformat(timespec="seconds").replace("+00:00", "Z"),
         "sources": {},
-        "reuters": previous.get("reuters") if isinstance(previous.get("reuters"), list) else [],
+        "reuters": previous_reuters,
         "substack": previous.get("substack") if isinstance(previous.get("substack"), list) else [],
     }
     fresh = 0
