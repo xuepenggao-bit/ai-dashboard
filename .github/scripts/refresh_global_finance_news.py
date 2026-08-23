@@ -158,8 +158,8 @@ def _reuters_google_rss() -> list[dict]:
     """Fallback index when Reuters temporarily blocks its own section API."""
     items = []
     queries = [
-        'site:reuters.com/business/finance when:2d -"Stock Price & Latest News" -"About"',
-        'site:reuters.com/markets when:1d -"Stock Price & Latest News" -"About"',
+        'site:reuters.com/business/finance when:7d -"Stock Price & Latest News" -"About"',
+        'site:reuters.com/markets when:3d -"Stock Price & Latest News" -"About"',
     ]
     for query in queries:
         url = "https://news.google.com/rss/search?" + urlencode(
@@ -335,6 +335,38 @@ def _substack_page_json() -> list[dict]:
     return result
 
 
+def _substack_google_rss() -> list[dict]:
+    """Last-resort Recent index for networks on which Substack returns 403."""
+    queries = [
+        "site:substack.com/p (markets OR investing OR stocks) when:3d",
+        "site:substack.com/p (finance OR economy OR macro) when:3d",
+    ]
+    items: list[dict] = []
+    for query in queries:
+        url = "https://news.google.com/rss/search?" + urlencode(
+            {"q": query, "hl": "en-US", "gl": "US", "ceid": "US:en"}
+        )
+        raw = _request(url, accept="application/rss+xml, application/xml, text/xml, */*", referer="https://news.google.com/")
+        root = ET.fromstring(raw)
+        for node in root.findall(".//item"):
+            title = _clean_text(node.findtext("title"))
+            publisher = _clean_text(node.findtext("source")) or "Substack"
+            if publisher and title.lower().endswith((" - " + publisher).lower()):
+                title = title[: -(len(publisher) + 3)].rstrip()
+            items.append(
+                {
+                    "title": title,
+                    "url": _clean_text(node.findtext("link")),
+                    "publisher": publisher,
+                    "ts": _to_epoch(node.findtext("pubDate")),
+                }
+            )
+    result = _clean_items(items)
+    if not result:
+        raise RuntimeError("Substack Google News fallback returned no recent finance posts")
+    return result
+
+
 def fetch_substack() -> tuple[list[dict], str]:
     errors: list[str] = []
     try:
@@ -351,6 +383,10 @@ def fetch_substack() -> tuple[list[dict], str]:
         return _substack_page_json(), "Substack Finance page"
     except Exception as exc:
         errors.append(f"Finance page: {exc}")
+    try:
+        return _substack_google_rss(), "Substack Finance Recent via Google News index"
+    except Exception as exc:
+        errors.append(f"Google index: {exc}")
         raise RuntimeError(" | ".join(errors)) from exc
 
 
