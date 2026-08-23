@@ -1486,6 +1486,23 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="tx3 mt4" id="volumeKpiFooter">来源: 东方财富 · 上证综指 + 深证综指成交量 · 柱=每日成交量 · 线=5日均量 · 加载中…</div>
   </div>
 
+  <!-- 日频：沪深 A 股涨跌家数趋势（近 60 个交易日） -->
+  <div class="card mb16">
+    <div class="ch">
+      <span class="ct">沪深 A 股涨跌家数趋势（日频·家）</span>
+      <span class="cbadge" style="background:#f1f5f9;color:#475569">近 3 个月 · 60 交易日</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
+      <span id="breadthKpiDate" class="tx3" style="color:#64748b">加载中…</span>
+      <div><span class="tx3">上涨&nbsp;</span><span id="breadthKpiUp" style="font-size:18px;font-weight:800;color:#ef4444">—</span></div>
+      <div><span class="tx3">下跌&nbsp;</span><span id="breadthKpiDown" style="font-size:18px;font-weight:800;color:#16a34a">—</span></div>
+      <span id="breadthKpiRatio" class="tx3" style="font-weight:700;color:#64748b">涨跌比 —</span>
+      <span id="breadthKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
+    </div>
+    <div style="height:230px"><canvas id="cUpDown"></canvas></div>
+    <div class="tx3 mt4" id="cUpDownFooter">来源: 东方财富 · 沪深 A 股（不含北交所）· 红=上涨、绿=下跌 · 加载中…</div>
+  </div>
+
   <!-- 第一行：X关注意见领袖 -->
   <div class="card mb16" style="border-top:3px solid #1d9bf0">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -5049,16 +5066,21 @@ function mkVolume(){
 // mkNorth 已移除（北向资金净流入官方停止披露）
 
 function mkUpDown(){
-  const ctx=document.getElementById('cUpDown').getContext('2d');
+  const canvas=document.getElementById('cUpDown');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
   const d=BASE.ashare.updown;
-  CH.updown=new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[
-    {label:'上涨(家)',data:d.up,backgroundColor:'rgba(5,150,105,.65)',borderRadius:1,stack:'s',barPercentage:0.9},
-    {label:'下跌(家)',data:d.down.map(v=>-v),backgroundColor:'rgba(220,38,38,.55)',borderRadius:1,stack:'s',barPercentage:0.9},
-  ]},options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{labels:{color:'#64748b',font:{size:11}}}},
+  CH.updown=new Chart(ctx,{type:'line',data:{labels:d.labels,datasets:[
+    {label:'上涨家数',data:d.up,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.06)',borderWidth:2,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#ef4444',tension:.18},
+    {label:'下跌家数',data:d.down,borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.05)',borderWidth:2,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#16a34a',tension:.18},
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{labels:{color:'#475569',font:{size:12,weight:'600'},usePointStyle:true,pointStyle:'line'}},
+      tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+Number(ctx.parsed.y||0).toLocaleString()+' 家'}},
+    },
     scales:{
-      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:9},maxTicksLimit:12,maxRotation:0}},
-      y:{grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>Math.abs(v)+'家'}},
+      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:10},maxTicksLimit:10,maxRotation:0}},
+      y:{beginAtZero:true,grid:{color:'rgba(226,232,240,.9)'},ticks:{color:'#64748b',font:{size:10},callback:v=>Number(v).toLocaleString()+'家'}},
     }
   }});
 }
@@ -6446,70 +6468,48 @@ async function fetchDailyCharts(){
 
   // ── 3. 北向资金已移除（沪深港通自 2024-08 起官方停止披露日度北向净流入）──
 
-  // ── 4. 涨跌家数：EM DataCenter 历史数据（60交易日）+ 实时今日覆盖 ──
-  // DataCenter 候选 report/列名（依次尝试，取第一个有效的）
+  // ── 4. 涨跌家数：后台每日汇总并缓存为 60 交易日 JSON ─────────────
   try{
-    const UD_CANDS = [
-      {report:'RPT_ASHARE_MKTSTAT',      uf:'RISE_COUNT',      df:'FALL_COUNT'     },
-      {report:'RPT_ASTOCK_MARKET_STAT',  uf:'RISE_COUNT',      df:'FALL_COUNT'     },
-      {report:'RPT_ASHARE_MARKET_STAT',  uf:'UP_NUM',          df:'DOWN_NUM'       },
-      {report:'RPT_MARKETDATA_TRADESTAT',uf:'UP_NUM',          df:'DOWN_NUM'       },
-      {report:'RPT_ASHARE_MKTSTAT',      uf:'UP_STOCK_COUNT',  df:'DOWN_STOCK_COUNT'},
-    ];
-    let udLoaded = false;
-    for(const c of UD_CANDS){
-      const url = _DC60
-        + `reportName=${c.report}&columns=TRADE_DATE,${c.uf},${c.df}&sortColumns=TRADE_DATE`;
-      const res = await fetch(url,{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
-      const data = res?.result?.data;
-      if(!data?.length || data[0][c.uf]==null) continue;
-
-      const sorted=[...data].sort((a,b)=>String(a.TRADE_DATE)>String(b.TRADE_DATE)?1:-1);
-      const labels=sorted.map(d=>_fmtDayLabel(d.TRADE_DATE));
-      const upVals=sorted.map(d=>parseInt(d[c.uf])||0);
-      const dnVals=sorted.map(d=>-(parseInt(d[c.df])||0));
-
-      if(CH.updown){
-        CH.updown.data.labels=labels;
-        CH.updown.data.datasets[0].data=upVals;
-        CH.updown.data.datasets[1].data=dnVals;
-        CH.updown.update('none');
-      }
-      const foot=document.getElementById('cUpDownFooter');
-      if(foot) foot.textContent=`来源: 东方财富 · 近${labels.length}交易日(${labels[0]}至${labels[labels.length-1]}) · 绿=上涨 红=下跌`;
-      console.log('[Daily] 涨跌家数 DC OK report:',c.report,'最新:',labels[labels.length-1],'↑'+upVals[upVals.length-1],'↓'+Math.abs(dnVals[dnVals.length-1]));
-      udLoaded=true;
-      break;
-    }
-
-    // 降级 / 实时补充今日：用 push2 f104/f105 追加/覆盖最后一根柱
-    const r=await fetch(
-      `https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=1&po=1&np=1&fltt=2&invt=2`
-      +`&fid=f3&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23&fields=f104,f105&_=${Date.now()}`
-    ).then(r=>r.json()).catch(()=>null);
-    const f104=parseInt(r?.data?.diff?.[0]?.f104);
-    const f105=parseInt(r?.data?.diff?.[0]?.f105);
-    if(isFinite(f104)&&isFinite(f105)&&f104>0&&CH.updown){
-      const now=new Date();
-      const lbl=String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-      const labels=CH.updown.data.labels;
-      const upDs=CH.updown.data.datasets[0].data;
-      const dnDs=CH.updown.data.datasets[1].data;
-      if(labels[labels.length-1]===lbl){ upDs[upDs.length-1]=f104; dnDs[dnDs.length-1]=-f105; }
-      else{ labels.push(lbl); upDs.push(f104); dnDs.push(-f105); }
+    const payload=await fetch(`data/market_breadth_history.json?_=${Date.now()}`,{cache:'no-store'}).then(r=>{
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    });
+    const rows=(payload?.series||[]).filter(row=>
+      row&&/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&Number.isFinite(+row.up)&&Number.isFinite(+row.down)
+    ).sort((a,b)=>a.date.localeCompare(b.date)).slice(-60);
+    if(rows.length<20) throw new Error('有效历史不足');
+    const labels=rows.map(row=>_fmtDayLabel(row.date));
+    const upVals=rows.map(row=>+row.up);
+    const downVals=rows.map(row=>+row.down);
+    BASE.ashare.updown={labels,up:upVals,down:downVals,dates:rows.map(row=>row.date)};
+    if(CH.updown){
+      CH.updown.data.labels=labels;
+      CH.updown.data.datasets[0].data=upVals;
+      CH.updown.data.datasets[1].data=downVals;
       CH.updown.update('none');
-      if(!udLoaded){
-        const foot=document.getElementById('cUpDownFooter');
-        if(foot) foot.textContent=`东方财富实时 · 仅今日 ${lbl}（↑${f104} ↓${f105}）· 历史趋势数据源暂不可用`;
-      }
-      console.log('[Daily] 涨跌家数 RT OK:',lbl,'↑'+f104,'↓'+f105);
-    } else if(!udLoaded){
-      // 历史与实时均取不到 → 清空图表，明确标注无法取得
-      if(CH.updown){ CH.updown.data.labels=[]; CH.updown.data.datasets[0].data=[]; CH.updown.data.datasets[1].data=[]; CH.updown.update('none'); }
-      const foot=document.getElementById('cUpDownFooter');
-      if(foot) foot.textContent='⚠️ 涨跌家数暂无法取得（历史与实时数据源均不可用）';
     }
-  }catch(e){ console.warn('[Daily] 涨跌家数失败:',e.message); }
+    const last=rows[rows.length-1];
+    const ratio=last.down>0?last.up/last.down:null;
+    const dateEl=document.getElementById('breadthKpiDate'); if(dateEl) dateEl.textContent=last.date;
+    const upEl=document.getElementById('breadthKpiUp'); if(upEl) upEl.textContent=last.up.toLocaleString()+' 家';
+    const downEl=document.getElementById('breadthKpiDown'); if(downEl) downEl.textContent=last.down.toLocaleString()+' 家';
+    const ratioEl=document.getElementById('breadthKpiRatio');
+    if(ratioEl){
+      ratioEl.textContent=ratio==null?'涨跌比 —':`涨跌比 ${ratio.toFixed(2)}`;
+      ratioEl.style.color=ratio==null?'#64748b':ratio>=1?'#ef4444':'#16a34a';
+    }
+    const cntEl=document.getElementById('breadthKpiCnt');
+    if(cntEl) cntEl.textContent=`${rows.length}交易日 · ${rows[0].date} 至 ${last.date}`;
+    const foot=document.getElementById('cUpDownFooter');
+    if(foot) foot.textContent=`来源: 东方财富牛熊风向标 + 个股日行情汇总 · 沪深 A 股（不含北交所）· 红=上涨、绿=下跌 · 数据截至 ${last.date}`;
+    console.log('[Daily] 涨跌家数 OK:',last.date,'↑'+last.up,'↓'+last.down);
+  }catch(e){
+    console.warn('[Daily] 涨跌家数失败:',e.message);
+    if(CH.updown){ CH.updown.data.labels=[]; CH.updown.data.datasets.forEach(ds=>ds.data=[]); CH.updown.update('none'); }
+    const dateEl=document.getElementById('breadthKpiDate'); if(dateEl) dateEl.textContent='数据暂不可用';
+    const cntEl=document.getElementById('breadthKpiCnt'); if(cntEl) cntEl.textContent='请稍后重新打开“宏观趋势”';
+    const foot=document.getElementById('cUpDownFooter'); if(foot) foot.textContent='⚠️ 涨跌家数历史暂时取不到，已保留空图而不显示错误数值';
+  }
 }
 const MACRO_CFGS={
   cpi:{
@@ -10235,7 +10235,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     // 其他标签页图表（宏观趋势/产业链监控等）
     _safe(mkCapex);_safe(mkTrend);_safe(mkCloudCompare);_safe(mkSig);_safe(mkStageC);
     _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);
-    _safe(mkArr);_safe(mkMargin);_safe(mkVolume);
+    _safe(mkArr);_safe(mkMargin);_safe(mkVolume);_safe(mkUpDown);
     _safe(mkStageMatrix);
     _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();});
     // 非首屏数据抓取（错开首屏行情请求，避免抢东财/腾讯连接）

@@ -1,0 +1,41 @@
+name: Refresh A-share Market Breadth
+
+on:
+  schedule:
+    # 16:20 Beijing time, after the daily breadth data has settled.
+    - cron: '20 8 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-market-breadth
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Refresh 60-session breadth history
+        run: python .github/scripts/refresh_market_breadth.py
+
+      - name: Commit and push data file
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/market_breadth_history.json
+          git diff --staged --quiet && echo "No changes." && exit 0
+          git commit -m "chore: refresh A-share breadth $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git pull --rebase origin main
+          git push
