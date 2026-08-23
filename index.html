@@ -602,7 +602,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 /* ── 前5日收盘价距离 ─────────────────────────────────────── */
 #tPort .th-range5{min-width:118px;text-align:right;line-height:1.28;cursor:default}
-#tPort .th-range5 span{font-size:10px;font-weight:600;letter-spacing:.01em;color:#94a3b8}
 #tPort .col-range5{text-align:right;min-width:118px}
 .port-range-pill{display:inline-flex;align-items:center;justify-content:flex-end;min-width:68px;padding:4px 8px;border-radius:7px;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em;border:1px solid transparent}
 .port-range-pill.is-up{color:#991b1b;background:#fff1f2;border-color:#fecdd3}
@@ -1493,7 +1492,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span style="font-size:13px;font-weight:800;color:#374151">🐦 X关注意见领袖</span>
         <span id="kolCount" style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
-                     padding:1px 7px;border-radius:10px;font-weight:600">82人关注</span>
+                     padding:1px 7px;border-radius:10px;font-weight:600">86人关注</span>
         <span id="kolTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
       </div>
       <button onclick="triggerKolRefresh()" id="kolBtn" title="触发后台抓取最新动态并生成自动摘要（约1-2分钟）"
@@ -4516,8 +4515,8 @@ function renderPortfolio(){
             <th class="th-industry">行业</th>
             <th class="th-price" style="text-align:right">当前股价</th>
             <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
-            <th class="th-range5" title="当前股价相对前5个交易日最高收盘价的百分比距离">前5日最高收盘价<br><span>现价距离</span></th>
-            <th class="th-range5" title="当前股价相对前5个交易日最低收盘价的百分比距离">前5日最低收盘价<br><span>现价距离</span></th>
+            <th class="th-range5" title="当前股价相对前5个交易日最高收盘价的百分比距离">前5日最高收盘价</th>
+            <th class="th-range5" title="当前股价相对前5个交易日最低收盘价的百分比距离">前5日最低收盘价</th>
             <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
             <th class="${vrThCls} th-vr" onclick="togglePortSort('vr')"    style="text-align:right;cursor:pointer">量比 ${vrArrow}</th>
             <th class="${spThCls} th-sp" onclick="togglePortSort('speed')" style="text-align:right;cursor:pointer">5分钟 ${spArrow}</th>
@@ -9129,7 +9128,7 @@ let _kolCache = null; // { ts:epoch, data }
 
 const _KOL_CAT_COLORS = {
   'AI技术研究':   '#7c3aed',
-  'AI应用与科技': '#0369a1',
+  '交易策略':     '#c2410c',
   '投资策略':     '#059669',
   '宏观与市场':   '#dc2626',
 };

@@ -37,14 +37,15 @@ META_CATS = [
         'topics': ['AI行业/学术','AI行业/Claude Code','AI行业/HuggingFace',
                    'AI行业/DeepMind','AI行业/谷歌','AI行业/Anthropic',
                    'AI行业/SSI','AI行业/安全','AI行业/伦理','AI行业',
-                   'AI行业/半导体','AI行业/投资'],
+                   'AI行业/半导体','AI行业/投资','AI工具','AI/提示工程',
+                   'AI行业分析','AI干货/投资','AI芯片/资本市场',
+                   'AI/投资工具','AI/投资','前沿科技/资本','科技',
+                   '科技行业研究','科技产业/苹果'],
     },
     {
-        'name': 'AI应用与科技',
-        'color': '#0369a1',
-        'topics': ['AI工具','AI/提示工程','AI行业分析','AI干货/投资',
-                   'AI芯片/资本市场','AI/投资工具','AI/投资','前沿科技/资本',
-                   '科技','科技行业研究','科技产业/苹果'],
+        'name': '交易策略',
+        'color': '#c2410c',
+        'topics': ['交易策略'],
     },
     {
         'name': '投资策略',
@@ -62,8 +63,8 @@ META_CATS = [
 ]
 
 HANDLE_OVERRIDE = {
-    'trendforce':   '科技行业',
-    '168X_Fortune': 'AI应用与动态',
+    'trendforce':   'AI技术研究',
+    '168X_Fortune': 'AI技术研究',
 }
 
 def get_meta_cat(handle, topic):
@@ -77,8 +78,8 @@ def get_meta_cat(handle, topic):
     if '投资' in t or '价值' in t or '交易' in t: return '投资策略'
     if '宏观' in t or '市场' in t or '估值' in t: return '宏观与市场'
     if '加密' in t: return '投资策略'
-    if '科技' in t: return '科技行业'
-    return 'AI应用与动态'
+    if '科技' in t: return 'AI技术研究'
+    return 'AI技术研究'
 
 def now_ts():
     tz8 = datetime.timezone(datetime.timedelta(hours=8))
@@ -228,8 +229,8 @@ ENTITY_RULES = [
 ]
 
 CATEGORY_TAKEAWAY = {
-    'AI技术研究': '整体主线是模型能力竞争、研究人才流动与安全治理。',
-    'AI应用与科技': '整体主线是AI产品落地、算力迭代与科技公司商业化。',
+    'AI技术研究': '整体主线是模型能力、产品落地、算力迭代与安全治理。',
+    '交易策略': '整体主线是交易机会识别、仓位管理与风险控制。',
     '投资策略': '整体主线是风险收益权衡、科技资产交易与组合调整。',
     '宏观与市场': '整体主线是宏观政策、市场风险偏好与AI主题交易。',
 }
