@@ -2,8 +2,9 @@ name: Refresh A-share Market Breadth
 
 on:
   schedule:
-    # 16:20 Beijing time, after the daily breadth data has settled.
-    - cron: '20 8 * * 1-5'
+    # Beijing time 15:05 and 15:35. The first run refreshes just after the
+    # A-share close; the second catches occasional source-publication delays.
+    - cron: '5,35 7 * * 1-5'
   workflow_dispatch:
 
 concurrency:
