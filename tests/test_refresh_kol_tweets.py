@@ -23,7 +23,7 @@ SPEC.loader.exec_module(KOL)
 
 class FakeTweet:
     def __init__(self, tweet_id='123', text='Breakout with controlled risk', hours=1,
-                 in_reply_to=None, retweeted_tweet=None):
+                 in_reply_to=None, retweeted_tweet=None, handle='TheShortBear'):
         self.id = tweet_id
         self.full_text = text
         self.created_at_datetime = (
@@ -33,6 +33,7 @@ class FakeTweet:
         self.created_at = self.created_at_datetime.strftime('%a %b %d %H:%M:%S %z %Y')
         self.in_reply_to = in_reply_to
         self.retweeted_tweet = retweeted_tweet
+        self.user = type('User', (), {'screen_name': handle})()
 
 
 class KolRefreshTests(unittest.TestCase):
@@ -108,6 +109,32 @@ class KolRefreshTests(unittest.TestCase):
         self.assertEqual(completed, {'TheShortBear'})
         self.assertTrue(posts[0]['is_reply'])
 
+    def test_authenticated_search_batches_accounts_and_maps_authors(self):
+        accounts = [
+            self.account,
+            {'handle': 'Tradestl', 'display_name': 'Phil Goedeker'},
+            {'handle': 'JasonHBerry', 'display_name': 'Jason Berry'},
+            {'handle': 'Off_The_Tape', 'display_name': 'Rick Bandazian Jr.'},
+        ]
+
+        class Client:
+            queries = []
+
+            async def search_tweet(self, query, product, count=20):
+                self.queries.append(query)
+                handle = 'TheShortBear' if len(self.queries) == 1 else 'Off_The_Tape'
+                return [FakeTweet(tweet_id=str(len(self.queries)), handle=handle)]
+
+        client = Client()
+        with mock.patch.object(KOL.asyncio, 'sleep', new=mock.AsyncMock()):
+            posts, completed = asyncio.run(KOL._fetch_x_with_search(
+                client, accounts, 'test', batch_size=3
+            ))
+        self.assertEqual(len(client.queries), 2)
+        self.assertIn('from:TheShortBear OR from:Tradestl OR from:JasonHBerry', client.queries[0])
+        self.assertEqual(completed, {a['handle'] for a in accounts})
+        self.assertEqual({p['handle'] for p in posts}, {'TheShortBear', 'Off_The_Tape'})
+
     def test_failed_cookie_session_is_rebuilt_before_guest_fallback(self):
         class Client:
             instances = 0
@@ -119,12 +146,9 @@ class KolRefreshTests(unittest.TestCase):
             def set_cookies(self, *args, **kwargs):
                 pass
 
-            async def get_user_by_screen_name(self, handle):
+            async def search_tweet(self, query, product, count=20):
                 if self.number == 1:
                     raise RuntimeError('transient session failure')
-                return type('User', (), {'id': 'user-1'})()
-
-            async def get_user_tweets(self, user_id, tweet_type, count=40):
                 return [FakeTweet()]
 
         class GuestClient:

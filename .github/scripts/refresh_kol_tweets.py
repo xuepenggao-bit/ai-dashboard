@@ -3,7 +3,8 @@
 Refresh X KOL (Key Opinion Leader) summaries.
 
 Data source:
-  Every KOL category: direct X timeline first (cookie auth, then guest),
+  Every KOL category: direct X posts first (batched cookie-auth search, then
+  per-account guest lookup),
   Google/Bing News RSS as a per-account fallback.
 
 Pipeline:
@@ -197,8 +198,50 @@ async def _fetch_x_with_client(client, accounts, label, tweet_type='Tweets'):
         await asyncio.sleep(0.7)
     return posts, completed
 
+async def _fetch_x_with_search(client, accounts, label, batch_size=3):
+    """Read first-party posts/replies in small batches to avoid user-lookup limits."""
+    posts = []
+    completed = set()
+    for start in range(0, len(accounts), batch_size):
+        batch = accounts[start:start + batch_size]
+        handles = [account['handle'] for account in batch]
+        account_map = {account['handle'].lower(): account for account in batch}
+        since = (datetime.datetime.now(datetime.timezone.utc)
+                 - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        authors = ' OR '.join(f'from:{handle}' for handle in handles)
+        query = f'({authors}) -filter:retweets since:{since}'
+        try:
+            tweets = await client.search_tweet(query, 'Latest', count=20)
+            completed.update(handles)
+            batch_posts = []
+            for tweet in list(tweets or []):
+                user = _safe_attr(tweet, 'user')
+                screen_name = str(_safe_attr(user, 'screen_name', '') or '').lower()
+                account = account_map.get(screen_name)
+                if not account:
+                    continue
+                post = _tweet_to_post(tweet, account)
+                if post:
+                    batch_posts.append(post)
+            # Retain the same per-account cap as the timeline route.
+            per_account = Counter()
+            batch_posts.sort(key=lambda p: p.get('pub_iso', ''), reverse=True)
+            for post in batch_posts:
+                handle = post['handle']
+                if per_account[handle] < 6:
+                    posts.append(post)
+                    per_account[handle] += 1
+            counts = Counter(p['handle'] for p in batch_posts)
+            detail = ', '.join(f'@{h}:{min(counts[h], 6)}' for h in handles)
+            print(f'  [{label}] {detail}（24h）')
+        except Exception as exc:
+            joined = ', '.join(f'@{handle}' for handle in handles)
+            print(f'  [{label}] {joined}: {type(exc).__name__}: {exc}')
+        await asyncio.sleep(0.7)
+    return posts, completed
+
 async def _fetch_x_posts_async(accounts):
-    """Cookie-authenticated X first; rebuild the session before guest fallback."""
+    """Batched authenticated X search first; rebuild before guest fallback."""
     try:
         from twikit import Client
         from twikit.guest import GuestClient
@@ -216,8 +259,8 @@ async def _fetch_x_posts_async(accounts):
                 'auth_token': TWITTER_AUTH_TOKEN,
                 'ct0': TWITTER_CT0,
             }, clear_cookies=True)
-            auth_posts, auth_completed = await _fetch_x_with_client(
-                client, accounts, 'X cookie', tweet_type='Replies'
+            auth_posts, auth_completed = await _fetch_x_with_search(
+                client, accounts, 'X cookie search'
             )
             posts.extend(auth_posts)
             completed.update(auth_completed)
@@ -227,9 +270,8 @@ async def _fetch_x_posts_async(accounts):
         print('  [X cookie] secrets missing; using public guest timeline')
 
     remaining = [a for a in accounts if a['handle'] not in completed]
-    # X occasionally returns a run of false 404s for an otherwise valid cookie
-    # session. A freshly constructed client succeeds on the following category,
-    # so retry only the failed accounts once before falling back to guest/news.
+    # X occasionally rejects every request from one otherwise valid cookie
+    # session. Rebuild it and retry only failed batches before guest/news.
     if remaining and TWITTER_AUTH_TOKEN and TWITTER_CT0:
         try:
             await asyncio.sleep(1.2)
@@ -238,8 +280,8 @@ async def _fetch_x_posts_async(accounts):
                 'auth_token': TWITTER_AUTH_TOKEN,
                 'ct0': TWITTER_CT0,
             }, clear_cookies=True)
-            retry_posts, retry_completed = await _fetch_x_with_client(
-                retry_client, remaining, 'X cookie retry', tweet_type='Replies'
+            retry_posts, retry_completed = await _fetch_x_with_search(
+                retry_client, remaining, 'X cookie search retry'
             )
             posts.extend(retry_posts)
             completed.update(retry_completed)
@@ -387,9 +429,9 @@ def fetch_posts_for_category(cat_name, accounts):
 def describe_sources(posts):
     kinds = {p.get('source_type') for p in posts}
     if 'x-direct' in kinds and 'news-rss' in kinds:
-        return 'X direct timeline + Google/Bing News fallback'
+        return 'X direct posts + Google/Bing News fallback'
     if 'x-direct' in kinds:
-        return 'X direct timeline'
+        return 'X direct posts'
     return 'Google/Bing News RSS (24h)'
 
 # ── Local summarisation (no model/API dependency) ───────────────────
@@ -533,7 +575,7 @@ def main():
     output = {
         'last_updated':   now_ts(),
         'has_tweets':     total_snippets > 0,
-        'data_source':    'X direct timeline for all KOL categories; Google/Bing News RSS fallback',
+        'data_source':    'X direct posts for all KOL categories; Google/Bing News RSS fallback',
         'summary_method': 'local-theme-entity-v1',
         'total_accounts': all_count,
         'categories':     output_cats,
