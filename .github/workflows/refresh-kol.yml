@@ -20,7 +20,9 @@ on:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Four categories contain 86 accounts in total. Direct timelines are read
+    # sequentially to stay gentle on X, so leave enough room for RSS fallbacks.
+    timeout-minutes: 35
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     permissions:

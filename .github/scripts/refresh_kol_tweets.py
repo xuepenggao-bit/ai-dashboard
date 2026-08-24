@@ -3,9 +3,8 @@
 Refresh X KOL (Key Opinion Leader) summaries.
 
 Data source:
-  Trading-strategy accounts: direct X timeline first (cookie auth, then guest),
+  Every KOL category: direct X timeline first (cookie auth, then guest),
   Google/Bing News RSS as a per-account fallback.
-  Other categories: Google/Bing News RSS.
 
 Pipeline:
   1. Load accounts from data/twitter_following.json
@@ -28,9 +27,15 @@ REPO_ROOT    = os.path.normpath(os.path.join(SCRIPT_DIR, '..', '..'))
 TWITTER_AUTH_TOKEN = os.environ.get('TWITTER_AUTH_TOKEN', '').strip()
 TWITTER_CT0        = os.environ.get('TWITTER_CT0', '').strip()
 
-# These accounts are individual traders whose posts are rarely indexed as news.
-# Keep this set small to avoid unnecessary X requests and account rate limits.
-DIRECT_X_CATEGORIES = {'交易策略'}
+# All four dashboard categories should reflect the followed accounts' own X
+# activity.  News search is only a per-account fallback when no post/reply was
+# retrieved in the rolling 24-hour window.
+DIRECT_X_CATEGORIES = {
+    'AI技术研究',
+    '交易策略',
+    '投资策略',
+    '宏观与市场',
+}
 
 UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
       'AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -349,7 +354,7 @@ def _dedupe_posts(posts):
     return result
 
 def fetch_posts_for_category(cat_name, accounts):
-    """Direct X for trader accounts; news RSS fills accounts with no X result."""
+    """Direct X first; news RSS fills accounts with no recent X result."""
     if cat_name not in DIRECT_X_CATEGORIES:
         return fetch_news_for_category(cat_name, accounts)
 
@@ -508,7 +513,7 @@ def main():
     output = {
         'last_updated':   now_ts(),
         'has_tweets':     total_snippets > 0,
-        'data_source':    'X direct timeline for trading strategy; Google/Bing News RSS fallback',
+        'data_source':    'X direct timeline for all KOL categories; Google/Bing News RSS fallback',
         'summary_method': 'local-theme-entity-v1',
         'total_accounts': all_count,
         'categories':     output_cats,

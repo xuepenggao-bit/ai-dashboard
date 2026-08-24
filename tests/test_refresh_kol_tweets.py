@@ -2,8 +2,16 @@ import asyncio
 import datetime
 import importlib.util
 import pathlib
+import sys
 import unittest
 from unittest import mock
+
+# The unit tests exercise parsing and routing only; keep them runnable on a
+# clean macOS Python even when the workflow-only HTTP dependency is absent.
+try:
+    import requests  # noqa: F401
+except ModuleNotFoundError:
+    sys.modules['requests'] = mock.MagicMock()
 
 
 SCRIPT = pathlib.Path(__file__).parents[1] / '.github' / 'scripts' / 'refresh_kol_tweets.py'
@@ -49,7 +57,7 @@ class KolRefreshTests(unittest.TestCase):
             FakeTweet(retweeted_tweet=object()), self.account
         ))
 
-    def test_trading_category_uses_news_only_for_missing_x_accounts(self):
+    def test_direct_category_uses_news_only_for_missing_x_accounts(self):
         accounts = [
             self.account,
             {'handle': 'Tradestl', 'display_name': 'Phil Goedeker'},
@@ -70,6 +78,14 @@ class KolRefreshTests(unittest.TestCase):
             posts = KOL.fetch_posts_for_category('交易策略', accounts)
         self.assertEqual({p['source_type'] for p in posts}, {'x-direct', 'news-rss'})
         self.assertEqual(news.call_args.args[1], [accounts[1]])
+
+    def test_all_dashboard_categories_use_direct_x_first(self):
+        for category in ('AI技术研究', '交易策略', '投资策略', '宏观与市场'):
+            with self.subTest(category=category), \
+                 mock.patch.object(KOL, 'fetch_x_posts', return_value=[]) as direct_x, \
+                 mock.patch.object(KOL, 'fetch_news_for_category', return_value=[]):
+                KOL.fetch_posts_for_category(category, [self.account])
+            direct_x.assert_called_once_with([self.account])
 
     def test_authenticated_timeline_can_request_posts_and_replies(self):
         class Client:
