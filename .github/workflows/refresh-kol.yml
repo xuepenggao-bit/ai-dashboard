@@ -4,9 +4,10 @@ on:
   push:
     branches: [main]
     paths:
-      - '.github/scripts/refresh-kol_tweets.py'
+      - '.github/scripts/refresh_kol_tweets.py'
       - '.github/workflows/refresh-kol.yml'
       - 'data/twitter_following.json'
+      - 'tests/test_refresh_kol_tweets.py'
   schedule:
     - cron: '30 0 * * *'   # 每天北京时间 08:30
   workflow_dispatch:
