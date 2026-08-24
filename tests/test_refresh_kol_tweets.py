@@ -38,11 +38,12 @@ class KolRefreshTests(unittest.TestCase):
         self.assertEqual(post['handle'], 'TheShortBear')
         self.assertEqual(post['link'], 'https://x.com/TheShortBear/status/123')
 
-    def test_tweet_to_post_drops_old_reply_and_retweet(self):
+    def test_tweet_to_post_drops_old_and_retweet_but_keeps_reply(self):
         self.assertIsNone(KOL._tweet_to_post(FakeTweet(hours=25), self.account))
-        self.assertIsNone(KOL._tweet_to_post(
+        reply = KOL._tweet_to_post(
             FakeTweet(in_reply_to='456'), self.account
-        ))
+        )
+        self.assertTrue(reply['is_reply'])
         self.assertIsNone(KOL._tweet_to_post(
             FakeTweet(retweeted_tweet=object()), self.account
         ))

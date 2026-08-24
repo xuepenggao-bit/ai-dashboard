@@ -126,7 +126,10 @@ def _safe_attr(value, name, default=None):
 
 def _tweet_to_post(tweet, account, now=None):
     """Convert one Twikit Tweet into the same shape used by the detail page."""
-    if _safe_attr(tweet, 'in_reply_to') or _safe_attr(tweet, 'retweeted_tweet'):
+    # Replies are still first-party activity and often contain a trader's most
+    # useful observations.  Pure retweets are excluded to avoid attributing
+    # somebody else's words to the followed account.
+    if _safe_attr(tweet, 'retweeted_tweet'):
         return None
 
     pub_dt = _safe_attr(tweet, 'created_at_datetime')
@@ -159,6 +162,7 @@ def _tweet_to_post(tweet, account, now=None):
         'link': f'https://x.com/{handle}/status/{tweet_id}',
         'source': f'X · @{handle}',
         'source_type': 'x-direct',
+        'is_reply': bool(_safe_attr(tweet, 'in_reply_to')),
         'pubDate': str(_safe_attr(tweet, 'created_at', '') or ''),
         'pub_iso': pub_dt.isoformat(),
         'handle': handle,
@@ -173,7 +177,7 @@ async def _fetch_x_with_client(client, accounts, label):
         handle = account['handle']
         try:
             user = await client.get_user_by_screen_name(handle)
-            tweets = await client.get_user_tweets(user.id, 'Tweets', count=20)
+            tweets = await client.get_user_tweets(user.id, 'Tweets', count=40)
             completed.add(handle)
             account_posts = []
             for tweet in list(tweets or []):
