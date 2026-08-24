@@ -1,20 +1,30 @@
 {
-  "updatedAt": "2026-08-24T07:17:53Z",
+  "updatedAt": "2026-08-24T08:23:18Z",
   "sources": {
     "reuters": {
       "label": "Reuters latest via Google News index",
-      "status": "cached",
-      "count": 5,
-      "error": "Reuters market APIs returned no usable articles: /markets: GET https://www.reuters.com/pf/api/v3/content/fetch/articles-by-section-alias-or-id-v1?query=%7B%22section_id%22%3A%22%2Fmarkets%22%2C%22size%22%3A30%2C%22website%22%3A%22reuters%22"
+      "status": "fresh",
+      "count": 5
     },
     "substack": {
       "label": "Substack Finance Recent via Google News index",
-      "status": "cached",
-      "count": 5,
-      "error": "Explore API: GET https://substack.com/api/v1/search/explore/web?tab=153&type=category failed: HTTP Error 403: Forbidden | Category API: GET https://substack.com/api/v1/category/public/153/all?page=0 failed: HTTP Error 403: Forbidden | Finan"
+      "status": "fresh",
+      "count": 5
     }
   },
   "reuters": [
+    {
+      "title": "European shares slip as tech drags; Iran sanctions in focus",
+      "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPYUFOcHRycnRBVzJHNi1CM1o1TWo5dHJha2xIcmFFbEQyTy1PQ2x1WWFSdkpWYjQtQ1RxcW5TYlhJbXE3TGE5S3RqazhrT0dMRjdVbW5rMEdPUk5BUWNrMkJqY0NILVpTNkhQeEJhcjBkc0NwS1ZkVDUyM1BSZkhrakNPUERDNk54LS1kd1BxLWRuVWRiQ084SHhQOG1GVW9GNm1EckhR?oc=5",
+      "publisher": "Reuters",
+      "ts": 1787556659
+    },
+    {
+      "title": "Thames Water's creditors line up new board under proposed rescue deal",
+      "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxNbzFMRGtzVWtEWHd6SVBqaHlMN3Z2cXR1SkNTalg4dnpIbTlnZGg1UDAtOVhGYmdvaXlESnloR1ZVQllaNmNnM0p5aElKQ3ZUNkk3Ujlnb2RzdnV3TkRrbjdadU1XM2JZRkU5dDBIbERXYjBiR3NaUWdhbk1FSkFFZUZrd1RzRlM4SDEzOGcxWWVxU3pzbWZzYlZBZS1QVm15dDdOUnVQNTdLUGE1Q3ZaTnVOWQ?oc=5",
+      "publisher": "Reuters",
+      "ts": 1787554260
+    },
     {
       "title": "South Africa telco MTN's half-year adjusted profit rises more than 21%",
       "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxQTkU3Mnd1M3RVU1YyTkh2WlJwU3UyRUlUS05RbFpuOFVXT09idEpSLVRKQ1VsZ203bmx0b01rVmdhV016SXFfMUl6ajZVM2EtR3hzeXp6X0ZjZDAzdzIzOTJzcUJ3ci1sVlc1VXRoalVoM1NXejQwNHYwSEJ1X2pZdVExUTlXRmxhV01pY1NJdUxYRk00T1dWR3cwZFE0OUJ0ekhyc1F5VEg3Ti0t?oc=5",
@@ -28,25 +38,31 @@
       "ts": 1787546340
     },
     {
-      "title": "Thailand to discuss proposed taxes with gold association this week, Finance Minister says",
-      "url": "https://news.google.com/rss/articles/CBMi0AFBVV95cUxNWk1BbHlxZnphOHpReFppRVRVVk8zMEFIRXFGdjlXeWF1cnpseDliUE0tekpPT00tY2J0R3c0LUtGTE8zdzhwa01TNmZPN1BYNENsQngzN1NKQ3Bzc0tXZ0tkelhrUFZGdEVxTlNTQ1dpVXE3dEJpcThnSm94RmxVR3NtR3hCVEhKVkZxRWVsUC0xaVdhNDZ6T21QWWZPRS1NNkM3MllndGdVbXZIZlg4TXR1U3BlTUR3OUtHYWZXRXl2TDBFbU1EelJqWjVfdjNt?oc=5",
+      "title": "Morning Bid: Mixing economic wars, trade wars and actual wars",
+      "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE0zYlNwM05renFqUDNLaGZkdl9sa0cxLXJDTmhLcXYwRG1aYjlLR1c4QjlGbGtqY3pNaXhMR1E4cnJLLU1VcjNfR2h4anE4RTFqVDk2Y3AwWTY5TVZnZnFkRjZVR0tGaGQ0REJpZXljSElWQWFsRnZGY2NUT0t1M1k?oc=5",
       "publisher": "Reuters",
-      "ts": 1787546160
-    },
-    {
-      "title": "Exxon, Lyondell among suitors for Shell's US chemical assets, could fetch $8 billion, FT reports",
-      "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxNYTBGM3lpaTNrakZuLTdyZGZvVXV2WWlEbV85bTctbzQ1WElhSFlRRkVMeDhkSm9XelBqSW5fTVdHV1NKbnZKRWF3VGxxdmtPczZPTnFqY3I0WWNrYmtud1c2MTlNT0RaU05OSkREMk1xTG9wVVlYY0ZtTXZVc1RoVnRsLVhXVjY1MHFoU3ZZT3BvVmMzNWtROTBiU2dUbFBrTnB4cU14LUtqRVJLME9yYncyZEFkNkdjalJEcnI4N1hoNko0djNqSA?oc=5",
-      "publisher": "Reuters",
-      "ts": 1787544720
-    },
-    {
-      "title": "Shein to pay up to $3.5 billion to select pre-IPO investors around Hong Kong listing",
-      "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxOZUtTcXQ0cS1QOEpqQk10a0dPRnlmaU9SOGoyaEFBWHNHTHZRby03c3FoZzFCdmMyYlNhY0Y0V2FSQjhXNE5RYlBHTll3ekNoZm1sdzJ0VWtwOEZqdWQ4ZXd2VGVYZ3AwcnZiTkJNOHkzRTZ5UnZkZlZNajgtb2dmM3ZFYkUybkR1TTBEN0dZZTJzS3RhWEI5VVVlV19TQWYxYUdIVXk2algybmpLdVVzNHEyUUNCb0p6Ym85X1ZmRHFsM3VweGs5Mw?oc=5",
-      "publisher": "Reuters",
-      "ts": 1787542320
+      "ts": 1787546040
     }
   ],
   "substack": [
+    {
+      "title": "No Smooth Descent: Morgan Stanley’s Savone Says the Bull Market Is Changing Horses Midstream",
+      "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxQeGkwYnZPMW4wX0k2Mi1lNzJtbFVqZDU3cWdZZmZleDNqdXVNQ2RSZjdIT29IaFd4VF9adUxJSXdBNUdwU093QldNa05VcVllLWQ4Q0JfdHB5eTduYnRIcnBrVHpWci1vN2M4TlVQbi1IaUxGRGtxdldpUUdwRERWTUxyUQ?oc=5",
+      "publisher": "The Dark Side Of The Boom",
+      "ts": 1787555014
+    },
+    {
+      "title": "Shall we dance?",
+      "url": "https://news.google.com/rss/articles/CBMiY0FVX3lxTE9HZFJhRkJudF9fYnpGWVFSclZwTXlOcFBfOERFb2l1M2ExX0luNUZQTF9hX1BJcE1oMG56aFBkYnhEcEhnc0w4bnFybmJPRmRKaTA5ZzFCR1p3cUlhcFYzWVJfOA?oc=5",
+      "publisher": "Earnings+More",
+      "ts": 1787554688
+    },
+    {
+      "title": "Hot Take: Tehran At The Crossroads As Civilian Leaders Seek Peace And Hardliners Threaten The Gulf",
+      "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPTlNrZC1zYVgxVHdZSmhIbUxBOGozbzVhRXlTNjFjNkYzTWxPWVhta0xWZnhibGZtTElOOXVsQ0NyclNoTzUwdTl1VVA4XzROY3ItajExQ3NrVjVQSkhvWW8yMTZCeWxYQzlOZmRURWRpQ1p3WHlyY3BGV0k3SDFrOUJIdw?oc=5",
+      "publisher": "The Dark Side Of The Boom",
+      "ts": 1787554291
+    },
     {
       "title": "Let the climate wars begin",
       "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTFBuVXFXYzA1UlBFVDI2ajRLR1pyYV80YjQ4d3J2NHFfbmVfOFlLMVIxVU9wUGotZXhBekFSeEpmYm1RdmZlTnotN2JLeXgtNFIyTjV5eWgySXZCUmtlQlJSTEhGbUYzWldxRmktXzVITTh2Z2FSNDAw?oc=5",
@@ -54,28 +70,10 @@
       "ts": 1787551280
     },
     {
-      "title": "Asian Stocks Ease Lower Even as Oil Loosens the Anchor",
-      "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxNclB1TXpmOHJhcXRnZDFjQW5UTWxBT0d5MzRXdW44NTAydWthaDk1cjhnd2xxTVNwYlhvWktpR2lpTV9Zb0tvSXdHQ0NKbFp3TGpCenZvMGNadXI1M0tjVlBJSGVteGdPTHpGeXBYQUJ0dGVZRFNyTkJBNWNmVVFGSnRVaEtsQQ?oc=5",
-      "publisher": "The Dark Side Of The Boom",
-      "ts": 1787535051
-    },
-    {
-      "title": "Sparkling Summer Weekend for These Chicago Farmers Markets",
-      "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE1UR1QzWEZxWDJIdFJPSmNUT1pCUHp3RzIyR0c5WWRJT0IwcEFKbDd2LW9ERmxjcGY0Ym1uaHRMVjhxTFVxS3ZjRlJCNjdQU1BERXFyWl9HdmpaYllEVmprc2tqMHZESm1QY3NtQ1g1T3hFWkhmY3Q5dm1fQlo?oc=5",
-      "publisher": "Substack",
-      "ts": 1787533296
-    },
-    {
-      "title": "The Long Bond Is Putting Warsh and Bessent on Notice",
-      "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxPY2I1T1pTTmkwQUlhb09QLTVYcVFEdHJWMkZaUl81X0x1bmZnQ0hyZmRPTTdfbThzYkwzbVVDVFlTRjVzSGpPZFFVOVlXN0RQTkp5RjhsaHRDRkd5eGVhd0c3RTRMTkdXMUxkeFlKejZJYmZ5SnRfbS1WdGZGenZGelNRNTI?oc=5",
-      "publisher": "The Dark Side Of The Boom",
-      "ts": 1787532657
-    },
-    {
-      "title": "Global Liquidity Architecture Report: Collateral Frictions, Offshore Stress and the Federal Reserve Balance-Sheet Adjustment",
-      "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxNMFY0ek5EU1lHclpPeC0yZU5sNEhQM1NWeVFwQTVOSlZtNE5OWWtnMGZPclVWVE5KS3RLWHRGbnZBOGlGZmIxTTRoTnFBUVQwUXVvQ0pfZy0xX2htOUdvMGhrTVR2dFRwTUR3eFcxOHk1c0w3T1FQN3BqUHJfOXRHRERhbG0tU2xwNmc?oc=5",
-      "publisher": "Liquidity Infrastructure",
-      "ts": 1787527518
+      "title": "Indian Shipbuilding, Dredging & Allied Industries",
+      "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE5sdXctZ2JYVnpBb1RSVm94RGFWR25Ma2FIMUpsZ3NNRS1vaXc1OU1xNlBkZjFaLW1JOTZ1NHkzcy1UQ055aTY4M2d1QVBzMDhTTzl5d2tFUG1jY0ppSDBpeGNzOXp5MDkxdVVDYTh4OTNMVHhH?oc=5",
+      "publisher": "Abhishek Basumallick | Substack",
+      "ts": 1787547401
     }
   ]
 }
