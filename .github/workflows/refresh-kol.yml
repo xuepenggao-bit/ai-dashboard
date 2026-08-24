@@ -36,7 +36,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests twikit==2.3.3
+        # twikit-x-mcp vendors the July 2026 transaction parser fix.  The
+        # upstream PyPI twikit 2.3.3 still fails on X's current ondemand bundle.
+        run: pip install requests twikit-x-mcp==0.1.1
 
       - name: Run KOL refresh script
         env:
@@ -52,5 +54,13 @@ jobs:
           git add data/twitter_kol_summary.json
           git diff --staged --quiet && echo "No changes." && exit 0
           git commit -m "chore: refresh KOL summary $(date -u '+%Y-%m-%d %H:%M UTC')"
-          git pull --rebase origin main
-          git push
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push; then
+              exit 0
+            fi
+            echo "Push raced with another data workflow; retrying (${attempt}/5)…"
+            sleep $((attempt * 2))
+          done
+          echo "Failed to publish KOL summary after 5 attempts."
+          exit 1
