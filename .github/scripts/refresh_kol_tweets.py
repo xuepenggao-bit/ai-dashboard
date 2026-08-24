@@ -3,13 +3,14 @@
 Refresh X KOL (Key Opinion Leader) summaries.
 
 Data source:
-  Bing News RSS — searches each KOL's name + handle for recent articles/quotes.
-  No API key or X login required; works from any IP.
+  Trading-strategy accounts: direct X timeline first (cookie auth, then guest),
+  Google/Bing News RSS as a per-account fallback.
+  Other categories: Google/Bing News RSS.
 
 Pipeline:
   1. Load accounts from data/twitter_following.json
-  2. For each category, search Bing News for top accounts in that category
-  3. Collect news snippets mentioning each person
+  2. Read direct X posts for categories that require first-party activity
+  3. Fill missing accounts with recent news snippets
   4. Per category: build a deterministic Chinese digest from themes and entities
   5. Write data/twitter_kol_summary.json
 
@@ -17,13 +18,19 @@ The summariser intentionally has no external AI dependency. GitHub Models was
 retired on 2026-07-30; a local fallback guarantees that non-empty news batches
 cannot silently produce empty summaries again.
 """
-import os, json, re, datetime, time, urllib.parse, requests, html
+import os, json, re, datetime, time, urllib.parse, requests, html, asyncio
 import xml.etree.ElementTree as ET
 from collections import Counter
 from email.utils import parsedate_to_datetime
 
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT    = os.path.normpath(os.path.join(SCRIPT_DIR, '..', '..'))
+TWITTER_AUTH_TOKEN = os.environ.get('TWITTER_AUTH_TOKEN', '').strip()
+TWITTER_CT0        = os.environ.get('TWITTER_CT0', '').strip()
+
+# These accounts are individual traders whose posts are rarely indexed as news.
+# Keep this set small to avoid unnecessary X requests and account rate limits.
+DIRECT_X_CATEGORIES = {'交易策略'}
 
 UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
       'AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -107,6 +114,131 @@ def build_cat_map(following):
 
 MAX_AGE_H = 24   # 只保留过去 24 小时内发布的条目
 
+def _clean_news_text(value):
+    value = html.unescape(str(value or '')).replace('\xa0', ' ')
+    return re.sub(r'\s+', ' ', value).strip()
+
+def _safe_attr(value, name, default=None):
+    try:
+        return getattr(value, name, default)
+    except Exception:
+        return default
+
+def _tweet_to_post(tweet, account, now=None):
+    """Convert one Twikit Tweet into the same shape used by the detail page."""
+    if _safe_attr(tweet, 'in_reply_to') or _safe_attr(tweet, 'retweeted_tweet'):
+        return None
+
+    pub_dt = _safe_attr(tweet, 'created_at_datetime')
+    if not isinstance(pub_dt, datetime.datetime):
+        created_at = _safe_attr(tweet, 'created_at', '')
+        try:
+            pub_dt = parsedate_to_datetime(created_at)
+        except Exception:
+            return None
+    if pub_dt.tzinfo is None:
+        pub_dt = pub_dt.replace(tzinfo=datetime.timezone.utc)
+    pub_dt = pub_dt.astimezone(datetime.timezone.utc)
+
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    age_seconds = (now - pub_dt).total_seconds()
+    if age_seconds < -300 or age_seconds > MAX_AGE_H * 3600:
+        return None
+
+    text = _clean_news_text(
+        _safe_attr(tweet, 'full_text') or _safe_attr(tweet, 'text')
+    )
+    tweet_id = str(_safe_attr(tweet, 'id', '') or '').strip()
+    handle = account['handle']
+    if not text or not tweet_id:
+        return None
+
+    return {
+        'title': text[:1200],
+        'desc': '',
+        'link': f'https://x.com/{handle}/status/{tweet_id}',
+        'source': f'X · @{handle}',
+        'source_type': 'x-direct',
+        'pubDate': str(_safe_attr(tweet, 'created_at', '') or ''),
+        'pub_iso': pub_dt.isoformat(),
+        'handle': handle,
+        'display_name': account.get('display_name', handle),
+    }
+
+async def _fetch_x_with_client(client, accounts, label):
+    """Fetch accounts with one Twikit client; return posts and completed handles."""
+    posts = []
+    completed = set()
+    for account in accounts:
+        handle = account['handle']
+        try:
+            user = await client.get_user_by_screen_name(handle)
+            tweets = await client.get_user_tweets(user.id, 'Tweets', count=20)
+            completed.add(handle)
+            account_posts = []
+            for tweet in list(tweets or []):
+                post = _tweet_to_post(tweet, account)
+                if post:
+                    account_posts.append(post)
+            account_posts.sort(key=lambda p: p.get('pub_iso', ''), reverse=True)
+            posts.extend(account_posts[:6])
+            print(f'  [{label}] @{handle}: {len(account_posts[:6])} 条（24h）')
+        except Exception as exc:
+            print(f'  [{label}] @{handle}: {type(exc).__name__}: {exc}')
+        await asyncio.sleep(0.7)
+    return posts, completed
+
+async def _fetch_x_posts_async(accounts):
+    """Cookie-authenticated X first; retry failed accounts through guest access."""
+    try:
+        from twikit import Client
+        from twikit.guest import GuestClient
+    except Exception as exc:
+        print(f'  [X] twikit unavailable: {type(exc).__name__}: {exc}')
+        return []
+
+    posts = []
+    completed = set()
+
+    if TWITTER_AUTH_TOKEN and TWITTER_CT0:
+        try:
+            client = Client('en-US', timeout=20)
+            client.set_cookies({
+                'auth_token': TWITTER_AUTH_TOKEN,
+                'ct0': TWITTER_CT0,
+            }, clear_cookies=True)
+            auth_posts, auth_completed = await _fetch_x_with_client(
+                client, accounts, 'X cookie'
+            )
+            posts.extend(auth_posts)
+            completed.update(auth_completed)
+        except Exception as exc:
+            print(f'  [X cookie] client init failed: {type(exc).__name__}: {exc}')
+    else:
+        print('  [X cookie] secrets missing; using public guest timeline')
+
+    remaining = [a for a in accounts if a['handle'] not in completed]
+    if remaining:
+        try:
+            guest = GuestClient('en-US', timeout=20)
+            await guest.activate()
+            guest_posts, guest_completed = await _fetch_x_with_client(
+                guest, remaining, 'X guest'
+            )
+            posts.extend(guest_posts)
+            completed.update(guest_completed)
+        except Exception as exc:
+            print(f'  [X guest] unavailable: {type(exc).__name__}: {exc}')
+
+    return posts
+
+def fetch_x_posts(accounts):
+    try:
+        return asyncio.run(_fetch_x_posts_async(accounts))
+    except Exception as exc:
+        print(f'  [X] direct timeline failed: {type(exc).__name__}: {exc}')
+        return []
+
 def _parse_rss_items(xml_text, count):
     """解析 RSS，返回 [{title,desc,link,source,pubDate,pub_iso}]，并过滤为过去 24 小时内。"""
     posts = []
@@ -140,6 +272,7 @@ def _parse_rss_items(xml_text, count):
                 continue
             posts.append({
                 'title': title, 'desc': desc, 'link': link, 'source': source,
+                'source_type': 'news-rss',
                 'pubDate': pub,
                 'pub_iso': pub_dt.astimezone(datetime.timezone.utc).isoformat() if pub_dt else '',
             })
@@ -200,6 +333,36 @@ def fetch_news_for_category(cat_name, accounts):
     posts.sort(key=lambda p: p.get('pub_iso', ''), reverse=True)   # 新→旧
     return posts
 
+def _dedupe_posts(posts):
+    unique = {}
+    for post in posts:
+        key = post.get('link') or re.sub(
+            r'\W+', '', _clean_news_text(post.get('title')).lower()
+        )[:240]
+        unique.setdefault(key or str(len(unique)), post)
+    result = list(unique.values())
+    result.sort(key=lambda p: p.get('pub_iso', ''), reverse=True)
+    return result
+
+def fetch_posts_for_category(cat_name, accounts):
+    """Direct X for trader accounts; news RSS fills accounts with no X result."""
+    if cat_name not in DIRECT_X_CATEGORIES:
+        return fetch_news_for_category(cat_name, accounts)
+
+    x_posts = fetch_x_posts(accounts)
+    x_handles = {p.get('handle') for p in x_posts}
+    missing = [a for a in accounts if a['handle'] not in x_handles]
+    news_posts = fetch_news_for_category(cat_name, missing) if missing else []
+    return _dedupe_posts(x_posts + news_posts)
+
+def describe_sources(posts):
+    kinds = {p.get('source_type') for p in posts}
+    if 'x-direct' in kinds and 'news-rss' in kinds:
+        return 'X direct timeline + Google/Bing News fallback'
+    if 'x-direct' in kinds:
+        return 'X direct timeline'
+    return 'Google/Bing News RSS (24h)'
+
 # ── Local summarisation (no model/API dependency) ───────────────────
 
 THEME_RULES = [
@@ -234,10 +397,6 @@ CATEGORY_TAKEAWAY = {
     '投资策略': '整体主线是风险收益权衡、科技资产交易与组合调整。',
     '宏观与市场': '整体主线是宏观政策、市场风险偏好与AI主题交易。',
 }
-
-def _clean_news_text(value):
-    value = html.unescape(str(value or '')).replace('\xa0', ' ')
-    return re.sub(r'\s+', ' ', value).strip()
 
 def _zh_join(items):
     items = list(items)
@@ -292,7 +451,7 @@ def build_local_summary(cat_name, posts):
     if entities:
         parts.append(f'高频对象包括{_zh_join(entities)}。')
     if active:
-        parts.append(f'{_zh_join(active)}相关报道较多。')
+        parts.append(f'{_zh_join(active)}发布或被提及的动态较多。')
     parts.append(CATEGORY_TAKEAWAY.get(cat_name, '整体反映行业关注点仍在快速变化。'))
     summary = ''.join(parts)
     return summary if len(summary) <= 180 else summary[:179].rstrip('，；。') + '。'
@@ -317,14 +476,13 @@ def main():
             continue
 
         print(f'\n--- {cat_name} ({len(accs)} accounts) ---')
-        posts    = fetch_news_for_category(cat_name, accs)
+        posts    = fetch_posts_for_category(cat_name, accs)
         n_snip   = len(posts)
         total_snippets += n_snip
 
-        summary = ''
+        summary = build_local_summary(cat_name, posts)
         if posts:
             print(f'  Building local digest for {cat_name} ({n_snip} posts)…')
-            summary = build_local_summary(cat_name, posts)
             if summary:
                 print(f'  Summary: {summary[:80]}…')
             else:
@@ -336,6 +494,7 @@ def main():
             'summary':     summary,
             'summary_method': 'local-theme-entity-v1',
             'tweet_count': n_snip,
+            'data_source': describe_sources(posts),
             'accounts':    [{'handle': a['handle'],
                              'display_name': a.get('display_name', a['handle'])}
                             for a in accs],
@@ -345,7 +504,7 @@ def main():
     output = {
         'last_updated':   now_ts(),
         'has_tweets':     total_snippets > 0,
-        'data_source':    'Google/Bing News RSS (24h)',
+        'data_source':    'X direct timeline for trading strategy; Google/Bing News RSS fallback',
         'summary_method': 'local-theme-entity-v1',
         'total_accounts': all_count,
         'categories':     output_cats,
