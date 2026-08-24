@@ -297,6 +297,34 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .cloud-compare-note{margin-top:10px;padding-top:9px;border-top:1px dashed #cbd5e1;font-size:9.5px;line-height:1.6;color:#64748b}
 @media(max-width:900px){.cloud-summary-grid{grid-template-columns:1fr}.cloud-compare-head{align-items:flex-start}}
 @media(max-width:600px){.cloud-compare-stamp{display:none}.cloud-compare-card{padding:14px}.cloud-summary-main{align-items:flex-end}}
+.credit-ratings-card{padding:18px;border:1px solid #d8e1ec;background:linear-gradient(145deg,#fff 0%,#f8fafc 58%,#f4f7fb 100%);overflow:hidden}
+.credit-ratings-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:13px}
+.credit-ratings-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:850;color:#0f172a;letter-spacing:-.01em}
+.credit-ratings-icon{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9px;background:linear-gradient(145deg,#0f172a,#334155);color:#fff;font-size:13px;box-shadow:0 4px 10px rgba(15,23,42,.16)}
+.credit-ratings-subtitle{font-size:10.5px;color:#64748b;line-height:1.6;margin-top:4px}
+.credit-ratings-stamp{flex:0 0 auto;padding:4px 9px;border:1px solid #cbd5e1;border-radius:999px;background:rgba(255,255,255,.85);color:#475569;font-size:9.5px;font-weight:750;white-space:nowrap}
+.credit-ratings-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.credit-rating-company{--rating-accent:#2563eb;position:relative;min-width:0;padding:13px;border:1px solid #dde5ef;border-radius:12px;background:rgba(255,255,255,.94);box-shadow:0 5px 16px rgba(15,23,42,.045);overflow:hidden}
+.credit-rating-company::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--rating-accent)}
+.credit-rating-company-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.credit-rating-company-name{display:flex;align-items:center;gap:7px;min-width:0;font-size:12px;font-weight:850;color:#1e293b}
+.credit-rating-mark{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:23px;height:23px;border-radius:7px;background:color-mix(in srgb,var(--rating-accent) 12%,#fff);color:var(--rating-accent);font-size:10px;font-weight:900}
+.credit-rating-outlook{padding:2px 6px;border-radius:999px;background:#ecfdf5;color:#047857;font-size:8.5px;font-weight:800;white-space:nowrap}
+.credit-rating-hero{display:flex;align-items:flex-end;gap:8px;margin:10px 0 9px}
+.credit-rating-hero-value{font-size:27px;line-height:1;font-weight:900;color:#0f172a;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+.credit-rating-hero-label{padding-bottom:2px;font-size:8.5px;line-height:1.2;color:#94a3b8;font-weight:650}
+.credit-rating-agencies{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.credit-rating-agency{min-width:0;padding:7px 6px;border:1px solid #edf1f6;border-radius:8px;background:#f8fafc;text-align:center}
+.credit-rating-agency span{display:block;font-size:8px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.credit-rating-agency strong{display:block;margin-top:3px;font-size:11px;color:#334155;font-weight:850;font-variant-numeric:tabular-nums;white-space:nowrap}
+.credit-rating-action{display:flex;align-items:flex-start;gap:7px;min-height:46px;margin-top:9px;padding:8px;border-radius:9px;background:#f8fafc;border:1px solid #edf1f6}
+.credit-rating-action-badge{flex:0 0 auto;padding:2px 5px;border-radius:5px;font-size:8px;font-weight:900;white-space:nowrap}
+.credit-rating-action-badge.is-flat{background:#e0f2fe;color:#0369a1}.credit-rating-action-badge.is-up{background:#dcfce7;color:#15803d}.credit-rating-action-badge.is-new{background:#ede9fe;color:#6d28d9}
+.credit-rating-action-copy{min-width:0;font-size:9px;line-height:1.45;color:#64748b}
+.credit-rating-source{display:inline-block;max-width:100%;margin-top:8px;color:#2563eb;font-size:8.8px;font-weight:700;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.credit-ratings-note{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:10px;padding-top:9px;border-top:1px dashed #cbd5e1;font-size:9.5px;line-height:1.55;color:#64748b}
+@media(max-width:1100px){.credit-ratings-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.credit-ratings-grid{grid-template-columns:1fr}.credit-ratings-head{display:block}.credit-ratings-stamp{display:inline-flex;margin-top:8px}.credit-ratings-card{padding:14px}.credit-ratings-note{display:block}}
 .port-stock-name-line{display:flex;align-items:center;gap:6px;min-width:0}
 .port-stock-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--text)}
 .port-hk-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:25px;height:17px;padding:0 5px;border:1px solid rgba(0,113,227,.24);border-radius:5px;background:linear-gradient(180deg,#f2f8ff 0%,#e4f1ff 100%);color:#0667c9;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;font-size:9px;font-weight:800;letter-spacing:.06em;line-height:1;box-shadow:0 1px 2px rgba(0,102,204,.08),inset 0 1px 0 rgba(255,255,255,.9)}
@@ -1711,6 +1739,24 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <a id="kMetaSource" href="https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Second-Quarter-2026-Results/default.aspx" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Meta 2026 Q2业绩 · 2026-07-29 ↗</a>
     </div>
   </div>
+
+  <!-- 四大 CSP 债券评级：当前评级与最近一次可核验评级动作分开展示 -->
+  <section class="card credit-ratings-card mb16" aria-labelledby="creditRatingsTitle">
+    <div class="credit-ratings-head">
+      <div>
+        <div class="credit-ratings-title" id="creditRatingsTitle"><span class="credit-ratings-icon">债</span>四大 CSP 债券评级与变化</div>
+        <div class="credit-ratings-subtitle">长期发行人 / 高级无担保口径 · 当前评级与最近评级动作分开展示，避免把新债定级误读为主体评级调整</div>
+      </div>
+      <span class="credit-ratings-stamp" id="creditRatingTs">载入评级快照…</span>
+    </div>
+    <div class="credit-ratings-grid" id="creditRatingGrid">
+      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:24px 0">正在读取评级资料…</div>
+    </div>
+    <div class="credit-ratings-note">
+      <span id="creditRatingNote">评级来源：S&amp;P Global Ratings、公司债券发行文件及公司投资者关系页面</span>
+      <span>“—”表示所引用公开材料未列示该机构评级</span>
+    </div>
+  </section>
 
 </div>
 
@@ -4896,6 +4942,65 @@ function _updateCapexCharts(d){
   }
 }
 
+function _renderCreditRatings(d){
+  const snapshot=d&&d.credit_ratings;
+  const grid=document.getElementById('creditRatingGrid');
+  if(!snapshot||!grid||!snapshot.companies) return;
+  const keys=['alphabet','microsoft','amazon','meta'];
+  const agencyOrder=[['sp','S&P'],['moodys','Moody’s'],['fitch','Fitch']];
+  const allowedHosts=['spglobal.com','microsoft.com','sec.gov','investing.com'];
+  const safeUrl=value=>{
+    try{
+      const u=new URL(value||'');
+      return u.protocol==='https:'&&allowedHosts.some(host=>u.hostname===host||u.hostname.endsWith('.'+host))?u.href:'';
+    }catch(_){ return ''; }
+  };
+  const el=(tag,className,text)=>{
+    const node=document.createElement(tag);
+    if(className) node.className=className;
+    if(text!==undefined&&text!==null) node.textContent=text;
+    return node;
+  };
+  grid.replaceChildren();
+  keys.forEach(key=>{
+    const company=snapshot.companies[key]; if(!company) return;
+    const card=el('article','credit-rating-company');
+    card.style.setProperty('--rating-accent',company.accent||'#2563eb');
+    const head=el('div','credit-rating-company-head');
+    const name=el('div','credit-rating-company-name');
+    name.append(el('span','credit-rating-mark',company.mark||String(company.display_name||'?').charAt(0)),el('span','',company.display_name||key));
+    const primary=(company.ratings&&company.ratings.sp)||{};
+    head.append(name,el('span','credit-rating-outlook',primary.outlook==='Stable'?'展望稳定':(primary.outlook||'展望未列示')));
+    const hero=el('div','credit-rating-hero');
+    hero.append(el('strong','credit-rating-hero-value',primary.rating||'—'),el('span','credit-rating-hero-label','S&P 长期评级'));
+    const agencies=el('div','credit-rating-agencies');
+    agencyOrder.forEach(([agency,label])=>{
+      const item=(company.ratings&&company.ratings[agency])||{};
+      const box=el('div','credit-rating-agency');
+      box.title=item.note||((item.outlook&&item.outlook!=='—')?'展望 '+item.outlook:'公开材料未列示');
+      box.append(el('span','',label),el('strong','',item.rating||'—'));
+      agencies.append(box);
+    });
+    const action=company.last_action||{};
+    const actionBox=el('div','credit-rating-action');
+    const actionKind=['up','new'].includes(action.kind)?action.kind:'flat';
+    const actionLabel=actionKind==='up'?'↑ 上调':actionKind==='new'?'＋ 首评':'→ 维持';
+    actionBox.append(el('span','credit-rating-action-badge is-'+actionKind,actionLabel),el('span','credit-rating-action-copy',action.detail||'近期未发现评级或展望变化'));
+    card.append(head,hero,agencies,actionBox);
+    const sourceUrl=safeUrl(company.source_url);
+    if(sourceUrl){
+      const source=el('a','credit-rating-source',(company.source_label||'查看评级来源')+' ↗');
+      source.href=sourceUrl; source.target='_blank'; source.rel='noopener';
+      card.append(source);
+    }
+    grid.append(card);
+  });
+  const stamp=document.getElementById('creditRatingTs');
+  if(stamp) stamp.textContent='评级核验截至 '+(snapshot.as_of||'—');
+  const note=document.getElementById('creditRatingNote');
+  if(note&&snapshot.note) note.textContent=snapshot.note;
+}
+
 function _renderAiTrend(d){
   if(!d) return;
   const _set=(id,txt)=>{ const el=document.getElementById(id); if(el&&txt!=null) el.textContent=txt; };
@@ -4920,6 +5025,7 @@ function _renderAiTrend(d){
   });
   _updateCapexCharts(d);
   _renderCloudCompare(d);
+  _renderCreditRatings(d);
   const sourceSummary=document.getElementById('capexSourceSummary');
   if(sourceSummary) sourceSummary.textContent='口径：亿美元；2026E 为公司指引，2025A 为各公司已披露财年口径'+(d.capex_as_of?' · 最新披露截至 '+d.capex_as_of:'');
   // OpenAI / Anthropic 年化收入：仅接受等长、逐家公司不倒退的公开里程碑。
