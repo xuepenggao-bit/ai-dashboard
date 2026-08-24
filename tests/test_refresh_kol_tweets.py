@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import importlib.util
 import pathlib
@@ -69,6 +70,26 @@ class KolRefreshTests(unittest.TestCase):
             posts = KOL.fetch_posts_for_category('交易策略', accounts)
         self.assertEqual({p['source_type'] for p in posts}, {'x-direct', 'news-rss'})
         self.assertEqual(news.call_args.args[1], [accounts[1]])
+
+    def test_authenticated_timeline_can_request_posts_and_replies(self):
+        class Client:
+            requested_type = None
+
+            async def get_user_by_screen_name(self, handle):
+                return type('User', (), {'id': 'user-1'})()
+
+            async def get_user_tweets(self, user_id, tweet_type, count=40):
+                self.requested_type = tweet_type
+                return [FakeTweet(in_reply_to='456')]
+
+        client = Client()
+        with mock.patch.object(KOL.asyncio, 'sleep', new=mock.AsyncMock()):
+            posts, completed = asyncio.run(KOL._fetch_x_with_client(
+                client, [self.account], 'test', tweet_type='Replies'
+            ))
+        self.assertEqual(client.requested_type, 'Replies')
+        self.assertEqual(completed, {'TheShortBear'})
+        self.assertTrue(posts[0]['is_reply'])
 
     def test_empty_category_has_explicit_status_instead_of_blank(self):
         self.assertEqual(KOL.build_local_summary('交易策略', []), '过去24小时暂无足够的新动态。')

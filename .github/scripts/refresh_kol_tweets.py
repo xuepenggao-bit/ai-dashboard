@@ -169,7 +169,7 @@ def _tweet_to_post(tweet, account, now=None):
         'display_name': account.get('display_name', handle),
     }
 
-async def _fetch_x_with_client(client, accounts, label):
+async def _fetch_x_with_client(client, accounts, label, tweet_type='Tweets'):
     """Fetch accounts with one Twikit client; return posts and completed handles."""
     posts = []
     completed = set()
@@ -177,7 +177,7 @@ async def _fetch_x_with_client(client, accounts, label):
         handle = account['handle']
         try:
             user = await client.get_user_by_screen_name(handle)
-            tweets = await client.get_user_tweets(user.id, 'Tweets', count=40)
+            tweets = await client.get_user_tweets(user.id, tweet_type, count=40)
             completed.add(handle)
             account_posts = []
             for tweet in list(tweets or []):
@@ -212,7 +212,7 @@ async def _fetch_x_posts_async(accounts):
                 'ct0': TWITTER_CT0,
             }, clear_cookies=True)
             auth_posts, auth_completed = await _fetch_x_with_client(
-                client, accounts, 'X cookie'
+                client, accounts, 'X cookie', tweet_type='Replies'
             )
             posts.extend(auth_posts)
             completed.update(auth_completed)
