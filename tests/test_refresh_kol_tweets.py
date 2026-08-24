@@ -3,6 +3,7 @@ import datetime
 import importlib.util
 import pathlib
 import sys
+import types
 import unittest
 from unittest import mock
 
@@ -106,6 +107,43 @@ class KolRefreshTests(unittest.TestCase):
         self.assertEqual(client.requested_type, 'Replies')
         self.assertEqual(completed, {'TheShortBear'})
         self.assertTrue(posts[0]['is_reply'])
+
+    def test_failed_cookie_session_is_rebuilt_before_guest_fallback(self):
+        class Client:
+            instances = 0
+
+            def __init__(self, *args, **kwargs):
+                type(self).instances += 1
+                self.number = type(self).instances
+
+            def set_cookies(self, *args, **kwargs):
+                pass
+
+            async def get_user_by_screen_name(self, handle):
+                if self.number == 1:
+                    raise RuntimeError('transient session failure')
+                return type('User', (), {'id': 'user-1'})()
+
+            async def get_user_tweets(self, user_id, tweet_type, count=40):
+                return [FakeTweet()]
+
+        class GuestClient:
+            def __init__(self, *args, **kwargs):
+                raise AssertionError('guest fallback should not be reached')
+
+        twikit = types.ModuleType('twikit')
+        twikit.Client = Client
+        guest = types.ModuleType('twikit.guest')
+        guest.GuestClient = GuestClient
+        with mock.patch.dict(sys.modules, {'twikit': twikit, 'twikit.guest': guest}), \
+             mock.patch.object(KOL, 'TWITTER_AUTH_TOKEN', 'token'), \
+             mock.patch.object(KOL, 'TWITTER_CT0', 'ct0'), \
+             mock.patch.object(KOL.asyncio, 'sleep', new=mock.AsyncMock()):
+            posts = asyncio.run(KOL._fetch_x_posts_async([self.account]))
+
+        self.assertEqual(Client.instances, 2)
+        self.assertEqual(len(posts), 1)
+        self.assertEqual(posts[0]['source_type'], 'x-direct')
 
     def test_empty_category_has_explicit_status_instead_of_blank(self):
         self.assertEqual(KOL.build_local_summary('交易策略', []), '过去24小时暂无足够的新动态。')

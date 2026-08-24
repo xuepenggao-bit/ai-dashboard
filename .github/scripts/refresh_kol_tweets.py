@@ -198,7 +198,7 @@ async def _fetch_x_with_client(client, accounts, label, tweet_type='Tweets'):
     return posts, completed
 
 async def _fetch_x_posts_async(accounts):
-    """Cookie-authenticated X first; retry failed accounts through guest access."""
+    """Cookie-authenticated X first; rebuild the session before guest fallback."""
     try:
         from twikit import Client
         from twikit.guest import GuestClient
@@ -225,6 +225,26 @@ async def _fetch_x_posts_async(accounts):
             print(f'  [X cookie] client init failed: {type(exc).__name__}: {exc}')
     else:
         print('  [X cookie] secrets missing; using public guest timeline')
+
+    remaining = [a for a in accounts if a['handle'] not in completed]
+    # X occasionally returns a run of false 404s for an otherwise valid cookie
+    # session. A freshly constructed client succeeds on the following category,
+    # so retry only the failed accounts once before falling back to guest/news.
+    if remaining and TWITTER_AUTH_TOKEN and TWITTER_CT0:
+        try:
+            await asyncio.sleep(1.2)
+            retry_client = Client('en-US', timeout=20)
+            retry_client.set_cookies({
+                'auth_token': TWITTER_AUTH_TOKEN,
+                'ct0': TWITTER_CT0,
+            }, clear_cookies=True)
+            retry_posts, retry_completed = await _fetch_x_with_client(
+                retry_client, remaining, 'X cookie retry', tweet_type='Replies'
+            )
+            posts.extend(retry_posts)
+            completed.update(retry_completed)
+        except Exception as exc:
+            print(f'  [X cookie retry] failed: {type(exc).__name__}: {exc}')
 
     remaining = [a for a in accounts if a['handle'] not in completed]
     if remaining:
