@@ -1,6 +1,12 @@
 name: Refresh KOL Tweet Summaries
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/refresh-kol_tweets.py'
+      - '.github/workflows/refresh-kol.yml'
+      - 'data/twitter_following.json'
   schedule:
     - cron: '30 0 * * *'   # 每天北京时间 08:30
   workflow_dispatch:
