@@ -35,6 +35,8 @@ HEADERS = {
     "Accept": "application/json, text/plain, */*",
     "Referer": "https://data.eastmoney.com/",
 }
+BEIJING_TZ = dt.timezone(dt.timedelta(hours=8))
+MARKET_CLOSE = dt.time(15, 0)
 
 
 def _get_json(url: str, *, params: dict, attempts: int = 3) -> dict | list:
@@ -140,6 +142,44 @@ def _load_existing() -> dict[str, dict]:
         return {}
 
 
+def _recent_missing_days(rows: dict[str, dict], now: dt.datetime | None = None) -> list[dt.date]:
+    """Return missing weekdays after the latest row, including today after 15:00."""
+    now = now or dt.datetime.now(BEIJING_TZ)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=BEIJING_TZ)
+    now = now.astimezone(BEIJING_TZ)
+    end = now.date()
+    if now.time() < MARKET_CLOSE:
+        end -= dt.timedelta(days=1)
+
+    latest = max((dt.date.fromisoformat(day) for day in rows), default=end - dt.timedelta(days=14))
+    cursor = latest + dt.timedelta(days=1)
+    missing: list[dt.date] = []
+    while cursor <= end:
+        if cursor.weekday() < 5:
+            missing.append(cursor)
+        cursor += dt.timedelta(days=1)
+    return missing
+
+
+def _collect_computed_days(rows: dict[str, dict], days: list[dt.date], label: str) -> None:
+    if not days:
+        return
+    print(f"{label}: checking {len(days)} candidate day(s)")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {executor.submit(_computed_day, day): day for day in days}
+        for future in concurrent.futures.as_completed(futures):
+            day = futures[future]
+            try:
+                row = future.result()
+            except Exception as exc:
+                print(f"  {day}: failed ({exc})")
+                continue
+            if row:
+                rows[row["date"]] = row
+                print(f"  {row['date']}: up={row['up']} down={row['down']} flat={row.get('flat', 0)}")
+
+
 def refresh() -> dict:
     rows = _load_existing()
     try:
@@ -149,6 +189,12 @@ def refresh() -> dict:
     except Exception as exc:
         official = {}
         print(f"Eastmoney official breadth unavailable: {exc}")
+
+    # Eastmoney's official monthly series can lag the closing bell. After
+    # 15:00 Beijing time, compute any missing recent session directly from the
+    # complete Shanghai/Shenzhen per-security daily table instead of waiting
+    # for the official aggregate to publish later.
+    _collect_computed_days(rows, _recent_missing_days(rows), "Recent close")
 
     # The official endpoint is intentionally capped at one month.  On first
     # run, backfill only the missing older sessions from the daily stock table.
@@ -160,27 +206,15 @@ def refresh() -> dict:
     while need > 0 and index < len(candidates):
         batch = candidates[index:index + 8]
         index += len(batch)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-            futures = {executor.submit(_computed_day, day): day for day in batch}
-            for future in concurrent.futures.as_completed(futures):
-                day = futures[future]
-                try:
-                    row = future.result()
-                except Exception as exc:
-                    print(f"  {day}: failed ({exc})")
-                    continue
-                if row:
-                    rows[row["date"]] = row
-                    print(f"  {row['date']}: up={row['up']} down={row['down']}")
+        _collect_computed_days(rows, batch, "Historical backfill")
         need = max(0, TARGET_DAYS - len(rows))
 
     ordered = [rows[key] for key in sorted(rows)][-TARGET_DAYS:]
     if len(ordered) < TARGET_DAYS:
         raise RuntimeError(f"only {len(ordered)} valid trading sessions collected")
 
-    tz8 = dt.timezone(dt.timedelta(hours=8))
     payload = {
-        "updatedAt": dt.datetime.now(tz8).isoformat(timespec="minutes"),
+        "updatedAt": dt.datetime.now(BEIJING_TZ).isoformat(timespec="minutes"),
         "scope": "沪深 A 股（上海、深圳；不含北京证券交易所）",
         "source": "东方财富牛熊风向标 + 东方财富个股日行情",
         "method": "涨跌家数采用东方财富官方近月序列；更早日期按个股日涨跌幅汇总",

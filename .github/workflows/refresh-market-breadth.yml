@@ -1,6 +1,12 @@
 name: Refresh A-share Market Breadth
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/refresh_market_breadth.py'
+      - '.github/workflows/refresh-market-breadth.yml'
+      - 'tests/test_refresh_market_breadth.py'
   schedule:
     # Beijing time 15:05 and 15:35. The first run refreshes just after the
     # A-share close; the second catches occasional source-publication delays.
@@ -38,5 +44,13 @@ jobs:
           git add data/market_breadth_history.json
           git diff --staged --quiet && echo "No changes." && exit 0
           git commit -m "chore: refresh A-share breadth $(date -u '+%Y-%m-%d %H:%M UTC')"
-          git pull --rebase origin main
-          git push
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push; then
+              exit 0
+            fi
+            echo "Push raced with another data workflow; retrying (${attempt}/5)…"
+            sleep $((attempt * 2))
+          done
+          echo "Failed to publish market breadth after 5 attempts."
+          exit 1
