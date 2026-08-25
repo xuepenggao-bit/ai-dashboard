@@ -1,15 +1,16 @@
 {
-  "updatedAt": "2026-08-25T15:54:40Z",
+  "updatedAt": "2026-08-25T16:50:54Z",
   "sources": {
     "reuters": {
-      "label": "Reuters latest via Reuters Markets + Google News index",
+      "label": "Reuters latest via Reuters Markets",
       "status": "fresh",
       "count": 5
     },
     "substack": {
       "label": "Substack Finance Recent via Google News index",
-      "status": "fresh",
-      "count": 5
+      "status": "cached",
+      "count": 5,
+      "error": "Explore API: GET https://substack.com/api/v1/search/explore/web?tab=153&type=category failed: HTTP Error 403: Forbidden | Category API: GET https://substack.com/api/v1/category/public/153/all?page=0 failed: HTTP Error 403: Forbidden | Finan"
     }
   },
   "reuters": [
@@ -18,12 +19,6 @@
       "url": "https://www.reuters.com/business/finance/italy-says-wont-sell-mps-stake-before-ma-battle-concluded-2026-08-25/",
       "publisher": "Reuters",
       "ts": 1787672578
-    },
-    {
-      "title": "McKesson strikes $2.25 billion Precision Medicine deal in clinical research bets",
-      "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxOeE9qLXFuTXNhbUQ5VzBtNkl0LXpEb0xyUTVSWVEzVnFLemlyNjhCNl9LMVFiNUJUSVZ2QlNsZUNBbXFZWDhadldFUXQxRnBvblZVdHFlNG5pSjJKOEtHb2hXZmZkdDEyM29CTWpzVGlSRE02M3pkWUItYjFyZDcteHQ0dTZ0d0c4R1ZxZTdwNmxRd2pFemlxakZlVGZaR0Q2SU5scjdKNV9lWmF4NndfOEJubE8wU1k?oc=5",
-      "publisher": "Reuters",
-      "ts": 1787670809
     },
     {
       "title": "BNP Paribas receives Saudi regional headquarters licence",
@@ -42,6 +37,12 @@
       "url": "https://www.reuters.com/legal/transactional/jpmorgan-hiring-citigroups-mcdow-run-east-coast-tech-investment-bank-memo-says-2026-08-25/",
       "publisher": "Reuters",
       "ts": 1787667527
+    },
+    {
+      "title": "Jackson Hole's big question: who pays the government's bill?",
+      "url": "https://www.reuters.com/markets/europe/jackson-holes-big-question-who-pays-governments-bill-2026-08-25/",
+      "publisher": "Reuters",
+      "ts": 1787667502
     }
   ],
   "substack": [
