@@ -1,52 +1,68 @@
 {
-  "updatedAt": "2026-08-25T07:04:15Z",
+  "updatedAt": "2026-08-25T07:55:14Z",
   "sources": {
     "reuters": {
-      "label": "Reuters latest via Google News index",
-      "status": "cached",
-      "count": 5,
-      "error": "Reuters market APIs returned no usable articles: /markets: GET https://www.reuters.com/pf/api/v3/content/fetch/articles-by-section-alias-or-id-v1?query=%7B%22section_id%22%3A%22%2Fmarkets%22%2C%22size%22%3A30%2C%22website%22%3A%22reuters%22"
+      "label": "Reuters latest via Reuters Markets + Google News index",
+      "status": "fresh",
+      "count": 5
     },
     "substack": {
       "label": "Substack Finance Recent via Google News index",
-      "status": "cached",
-      "count": 5,
-      "error": "Explore API: GET https://substack.com/api/v1/search/explore/web?tab=153&type=category failed: HTTP Error 403: Forbidden | Category API: GET https://substack.com/api/v1/category/public/153/all?page=0 failed: HTTP Error 403: Forbidden | Finan"
+      "status": "fresh",
+      "count": 5
     }
   },
   "reuters": [
     {
-      "title": "Gold Fields posts 81% jump in half-year profit, boosts dividend",
-      "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxQUk1FMVppZkctTTdRV2FVTVhtMXlscWN6dG9GQmM0Mklqcy13YVNGTThWZ3FZckQyTVZvZkJoNzdBbjZwZ3ZlTDI1akRqYzdEdTB3OWx5XzNvMlk1MDZ0ck1NdDFpMkx1UWRVRGE0VzNadkpGcC1pU09PNllUR2VsVmlzZmpjUHJHOEww?oc=5",
+      "title": "Japan debt-servicing cost to rise 17% to record in next fiscal year, Kyodo reports",
+      "url": "https://www.reuters.com/world/asia-pacific/japan-debt-servicing-cost-rise-17-record-next-fiscal-year-kyodo-reports-2026-08-25/",
       "publisher": "Reuters",
-      "ts": 1787635486
+      "ts": 1787644180
     },
     {
-      "title": "Bitcoin rises above $80,000 as soft dollar, debasement fears boost momentum",
-      "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxOU1A3ZDBwNm85VE41dmUyZGMzWUdmTHJMb3JMYkl4V21XdG9PTHNOZnFnLXhPR2VpSWtsbDNla1pna3I2WHNSRzU2TkhERE9oMnRNZGluNDNHMlFOWnlmSUEtT1dwNGxqVnRrQ1pJemRCTzlDa3A3b3hJV0pNSGJPSFpYbktMemhOblpRZW1QekkwT3F0VEY5TkNQaFZhdlZjejFTU1JjTjVKZ01SNjZMQ195YWlZOVA2NG1fTVFMaw?oc=5",
+      "title": "Hungary foreign ministry files report on $964 million pandemic-era ventilator deals",
+      "url": "https://news.google.com/rss/articles/CBMi4AFBVV95cUxNNU1xVDJwdF9yZUhlU0F1S3pqQmVZN1BMd3JkRTd0TUk5ajN4a25NVWIzTnBRU3JOaFNCekJob2kycmxPMmdMX3pTMVhDdTU5T1g2aGxPNTFYSUIyczA0dWtSa1ZqTWJsN0NmeTJNUUw3YUdTMHZnb2JXZU8yREp0RC1QeXY5U0tmSUtianA3Yk5yWVZ2R3A2cUo4cmRSZ0hXLXBjMm1vYWhYZzk0cjliSWVFc1ZWZ1JaejNNUU14SERyeFpkbTB6V2hiMzUwWTlVZ0JYUlhIUHNLOFVnaFQwOA?oc=5",
       "publisher": "Reuters",
-      "ts": 1787635140
+      "ts": 1787643514
     },
     {
-      "title": "Nvidia shares set for $280 billion price swing after earnings, options show",
-      "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPa182VERRNl9ULTg3MXh0Z004aGNnVW9HQW9TLTI3R01YZzRMeWZEMFhramsxeHVLNGE1ZXAwYTRZcWxMbGF5YTB5dkl6OHVyT2FrTks2ODRFdlNPSTNmUE1MM0ZhaF9LT1JRZEdVX1ZJU2NMNlZiQWlQZ0toUWk1WmVSbXdYTWJva3NxTG92LVJrczhfQzVnLTZ4aE1yYTAwVHVucFNQbHRxSDN6OGJZcjZNVHo?oc=5",
+      "title": "European shares climb on Iran sanctions relief, defence gains",
+      "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNYV9RU3NQS3FlMnJsNy1fRTVxZVJOX0htaElRYmMyRE5jazNycV9lbU9DN0dWaEZ4eUZQcW5sbll6YUlpaDk2ZE9wc1dRTERkM1JhYjFOWW1XcENBVXhTeXNvWjZZZ1hpTUlnbDF4VkJmUXRYNXNBTWM1a0NweVJUVXZfV3pxeS1IbUhVZVNaaU5hZEg2TjRDeXZwNUhudjVFVjBlVWxDcVBEX052?oc=5",
       "publisher": "Reuters",
-      "ts": 1787634060
+      "ts": 1787643224
     },
     {
-      "title": "Australian bank investors brace for tough times as mortgage demand plummets",
-      "url": "https://news.google.com/rss/articles/CBMivgFBVV95cUxOcVhCM0tKeExUM1ZMWkxTbFVTWk9aRmhOSXA1eXltZkJja3ZmY0U4djhCR2pyLTJDeUFfQkswUklsLUVRdlAxXy0yV1Vkdk1CWklUQm00djhwOC1zRkdsdEM2NGhrYzBhc2ktZElBMldfeTJEd2hBZk9faE50dXV0Rm5IbEplby1yNGNzRlFFT192SktreklpVEI0VnlZUTlaUjNMX2ZIeWlDQWlOZ3htQjd1UENuQ3NKUEloX2tB?oc=5",
+      "title": "India's Axis Bank bets on data centres to gold loans to outpace industry credit growth",
+      "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxQLUR3aklpWDFRWUprRlc4cXRERTlTZzFjajN5VkY5ZlBOWUt3d2hvM3ZfMG9USFFRTFJKRDhUblc5Zlg0YURSSm9fbk51VW8yMjkzOTFNSzZpMDJ3Y2t0OGppa21pQW9zVGN3SzIxOU9xS0NSQVdaMjFzUHp3ZGhNZGgxRmEySmdUVzhBaFQ4bm9NbHg5X3J3Vi0yMEYzQTRzdDNMU2tkcVM5M1l6d1pNcmlybEhzdHdJMHlfQmdTWXlQQQ?oc=5",
       "publisher": "Reuters",
-      "ts": 1787633880
+      "ts": 1787640780
     },
     {
-      "title": "Breakingviews - Bank stocks put the lie to an Aussie housing crash",
-      "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxNaFB1ZUJQUUVjTU0xRDdZQ19HdzRaWF9JeDJDbExvbklhZzV3NFhQdVUwb0p5b01NcTg3T1ktZnR2LThxWDZQT1gyci1MTFFsejZVN0tuQU4zZmd6STZHSjVWZGV5azJNT25ETnY4Ql9fLWFaaFVYaU9NVzE3bldhb3ZzM3BTMlFQaFRvZDBDRzZBc1Z0LUVVRTV1RTJyUVMxcUQ1Yk1ycw?oc=5",
+      "title": "US Treasury buybacks a 'mistake' costing credibility, says Druckenmiller",
+      "url": "https://www.reuters.com/legal/transactional/us-treasury-buybacks-mistake-costing-credibility-says-druckenmiller-2026-08-25/",
       "publisher": "Reuters",
-      "ts": 1787632200
+      "ts": 1787640247
     }
   ],
   "substack": [
+    {
+      "title": "Xi’s Four-Point Perspective on ‘Middle East - China-Jordan Joint Statement - Zhong Caiwen Commentary on Economic Policy Direction",
+      "url": "https://news.google.com/rss/articles/CBMihwFBVV95cUxNRWFLX2dXM0Q5Nk1OaGkyMC1nN2NZTy1IM2VnaFNXUzBIOWdsQThiN1lnenU1cmRDN1Y0bDIyR29VeUZhbWljZXI0dGpWX1ZxdkNHeEhqeVRwdElfNnRHaUlZVnl3cTRDRTljX1RfSzEzVUtQZ3FVNk1KTjlfVzRGSWJ4TFU4eFk?oc=5",
+      "publisher": "Tracking People's Daily",
+      "ts": 1787641527
+    },
+    {
+      "title": "‘Maybe you should learn about credible markets’",
+      "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxOYnlKa0dHdVR0a0lFdjBCZjVGYUZnZ2tRQjF6NHR4eml2N1FlTTBQa0tyTHo0N2F1UlE4QXo5WWlsX2RSb0RvWUNzWmIzZjNBNC1uNlplN2pUdlU5cDhScVNEUkJoT3RNMERGTjNPQXZHd3RpYUo1UWUyZFJkMUZuOTBVeWo?oc=5",
+      "publisher": "Compliance+More",
+      "ts": 1787641268
+    },
+    {
+      "title": "Knowledge and experience are what count",
+      "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxQUVM3N2tIRWlsNy1ESG5VQTZRTG9JOHRvMy1abU10V0JUal9pZkJvNXR5aW9IYWx4ZzZGV21PRVVyaGpFczZPM0pqUXhMcGRJY3BxSXdia3lUNC1wNVVmZGJfUGhvQ3luNTZIQU8zY1ZfWlptbGNqWGZ0MHNnbkI2Qw?oc=5",
+      "publisher": "Klement on Investing",
+      "ts": 1787637654
+    },
     {
       "title": "NSE and Anthropic IPOs point to the contrasting capitalism of India and US",
       "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE9kLVpsX2wxZTZLNUh2azJBeUhlQVhFMFVrdVlWQ3M2Qld0cDNCMlE4RTJYNXBUeTVuVW5hc2JVVGg4a0x0YkNIY21pVTZqTFAwZDBRTW5Xel9YclpULWNXcUVkQUxSNVJ3aW1DLWFHdTRYS1VkOV90TTRmd1Q?oc=5",
@@ -58,24 +74,6 @@
       "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxNZmMzeTk1djViSEFvMXZDWEp0TnpTcmxiVzkyVE9IaW9mQ25Val9WdDRHeVJNaUxYZW5VU0JfRnU1SlpBcnhMRU9BVEdPTmZLVldwaHYxbXNoY1RQd0xhTDdadWUyWU1CUUptWE5aYjcxT1hBWjFreGNmSlVuVS0yUUpLYw?oc=5",
       "publisher": "Substack",
       "ts": 1787628495
-    },
-    {
-      "title": "A fight over…water purifiers?💧",
-      "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxQUmtmWWFIdEZoeG9Fd1RIOXhZYVAyZWZvVDNwWDBaZE5rSlFwNEhycURZcEZNMXpseVJsYWt6Z08xakoyRHozT1FfemZra3p0c0NFZW9CX1UzLURHNVFDeXM1QkxnVzd3V295NnMtcTRLcmtzQThOa042b0VZdnZOb0NCYUc1MkpQZm1COTRONEFfbnBJLXNUMFlKdWFyVkRsd2JydW5kb01jckhURm5ITE5iWi1wYm9LcG5MYVNKLXdvbmNyUWo0QzYyQQ?oc=5",
-      "publisher": "Filter Coffee ☕ | Substack",
-      "ts": 1787625055
-    },
-    {
-      "title": "Don’t Tax Canada’s Pink Gold",
-      "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTFA5VkgwZVZxc052enBuX3A4TDh4ZWpMSms3OHNjQ3RxR3NnR0NtRXBEUnZXd1JPaC1jaXZvQzJ4X2RORHRzaENaZEpEdEwxSDdmdUtEeVpENmtOYVUzR2dyV0RpSlF4bDI4Mm5UREYzd2pULXV6YzdkRDJn?oc=5",
-      "publisher": "Substack",
-      "ts": 1787621601
-    },
-    {
-      "title": "Quintex Intel Asia Market Daily: Tech Wreck Deepens Even as Oil Offers Relief",
-      "url": "https://news.google.com/rss/articles/CBMihwFBVV95cUxOXzBFU3diOHhDVlV4WE41M29PQ0lvay1ZVXVaRC1IUE54VjdlNklMREtubU05LXdhb2ZzOXlBZFJQZlVtOHBTRjc4ZVVlNTdfbWdacEhDNEg0czlPUlpSaUl0S1ByNmNqYWlDYmFiOXRzRTRNT3hWV3I2eHFWOGUxZ0JrMlM2emc?oc=5",
-      "publisher": "The Dark Side Of The Boom",
-      "ts": 1787618789
     }
   ]
 }
