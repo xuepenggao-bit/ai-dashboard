@@ -1,15 +1,17 @@
 {
-  "updatedAt": "2026-08-25T06:01:32Z",
+  "updatedAt": "2026-08-25T07:04:15Z",
   "sources": {
     "reuters": {
       "label": "Reuters latest via Google News index",
-      "status": "fresh",
-      "count": 5
+      "status": "cached",
+      "count": 5,
+      "error": "Reuters market APIs returned no usable articles: /markets: GET https://www.reuters.com/pf/api/v3/content/fetch/articles-by-section-alias-or-id-v1?query=%7B%22section_id%22%3A%22%2Fmarkets%22%2C%22size%22%3A30%2C%22website%22%3A%22reuters%22"
     },
     "substack": {
       "label": "Substack Finance Recent via Google News index",
-      "status": "fresh",
-      "count": 5
+      "status": "cached",
+      "count": 5,
+      "error": "Explore API: GET https://substack.com/api/v1/search/explore/web?tab=153&type=category failed: HTTP Error 403: Forbidden | Category API: GET https://substack.com/api/v1/category/public/153/all?page=0 failed: HTTP Error 403: Forbidden | Finan"
     }
   },
   "reuters": [
