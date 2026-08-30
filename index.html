@@ -719,90 +719,168 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .ar-opt.on{background:#4f46e5;color:#fff}
   .ar-opt.on::after{content:'✓';font-size:12px;font-weight:800}
 
-  /* 投资组合操作区：Apple 风格三段控制器。固定三列，动态状态文字不参与宽度计算。 */
+  /* 投资组合顶部：浅色 3D 仪表台。阴影只表达层级，不牺牲文字对比度。 */
+  .port-hero{
+    --hero-ink:#14213d;--hero-muted:#68768c;--hero-blue:#1677ff;--hero-cyan:#3cc8ff;--hero-warm:#e88b18;
+    position:relative;isolation:isolate;overflow:hidden;min-height:104px;
+    display:flex;align-items:center;justify-content:space-between;gap:18px;
+    padding:12px 18px 12px 20px;margin-bottom:20px;border-radius:24px;
+    background:
+      radial-gradient(460px 120px at 49% -20%,rgba(255,255,255,.98) 0%,rgba(255,255,255,0) 76%),
+      radial-gradient(260px 130px at 100% 0%,rgba(60,200,255,.11),rgba(60,200,255,0) 72%),
+      linear-gradient(145deg,#fbfdff 0%,#f4f7fb 45%,#edf3f9 100%);
+    border:1px solid rgba(132,151,178,.27);
+    box-shadow:
+      0 18px 38px rgba(38,55,83,.12),0 5px 12px rgba(38,55,83,.07),
+      inset 0 1px 0 rgba(255,255,255,.98),inset 0 -1px 0 rgba(104,122,147,.08);
+    perspective:1100px;transform-style:preserve-3d
+  }
+  .port-hero::before{
+    content:'';position:absolute;z-index:0;left:18px;right:18px;top:0;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.98) 20%,rgba(255,255,255,.98) 80%,transparent)
+  }
+  .port-hero::after{
+    content:'';position:absolute;z-index:0;inset:0;pointer-events:none;
+    background:linear-gradient(112deg,rgba(255,255,255,.42) 0%,rgba(255,255,255,0) 34%,rgba(22,119,255,.025) 70%,rgba(255,255,255,.15) 100%)
+  }
+  .port-hero>*{position:relative;z-index:1}
+  .port-hero-accent{
+    position:absolute!important;z-index:2!important;left:0;top:13px;bottom:13px;width:4px;border-radius:0 5px 5px 0;
+    background:linear-gradient(180deg,var(--hero-blue),var(--hero-cyan) 52%,var(--hero-warm));
+    box-shadow:0 0 14px rgba(22,119,255,.26)
+  }
+  .port-hero-title{
+    width:282px;flex:0 0 282px;display:flex;align-items:center;gap:13px;min-width:0;
+    transform:translateZ(14px);transform-style:preserve-3d
+  }
+  .port-brand-mark{
+    position:relative;width:52px;height:52px;flex:0 0 52px;padding:7px;border-radius:17px;overflow:hidden;
+    background:linear-gradient(145deg,#263b5c 0%,#16263f 57%,#0d1829 100%);
+    border:1px solid rgba(255,255,255,.7);
+    box-shadow:0 11px 20px rgba(29,46,72,.22),0 3px 6px rgba(29,46,72,.16),inset 0 1px 1px rgba(255,255,255,.32),inset 0 -2px 5px rgba(0,0,0,.18);
+    transform:translateZ(16px) rotateY(4deg)
+  }
+  .port-brand-mark::after{
+    content:'';position:absolute;inset:1px;border-radius:15px;pointer-events:none;
+    background:linear-gradient(135deg,rgba(255,255,255,.28),rgba(255,255,255,0) 38%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)
+  }
+  .port-brand-mark svg{position:relative;z-index:1;width:100%;height:100%;filter:drop-shadow(0 2px 2px rgba(0,0,0,.15))}
+  .port-brand-copy{display:flex;flex-direction:column;justify-content:center;min-width:0;gap:2px}
+  .port-hero .tf-swayx{gap:7px;min-width:0}
+  .port-hero .tf-sway{
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','PingFang SC','Helvetica Neue',Arial,sans-serif;
+    font-size:20px;font-weight:760;line-height:1.1;letter-spacing:-.035em;white-space:nowrap;
+    color:var(--hero-ink);background:linear-gradient(105deg,#13233e 0%,#265488 72%,#1677ff 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    text-shadow:0 1px 0 rgba(255,255,255,.8);animation:portBrandFloat 4.8s ease-in-out infinite
+  }
+  .port-brand-kicker{
+    color:var(--hero-muted);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;
+    font-size:8.5px;font-weight:720;line-height:1.15;letter-spacing:.16em;white-space:nowrap
+  }
+  .port-hero .tf-surf-travel{animation-duration:14s;opacity:.9}
+  .port-hero .tf-surf{width:44px;height:auto;filter:drop-shadow(0 2px 2px rgba(161,98,7,.32))!important}
+  @keyframes portBrandFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
+
+  /* 投资组合操作区：三块微立体控制键，固定三列，状态文字不参与宽度计算。 */
   .port-actions{
-    width:354px;height:64px;flex:0 0 354px;
-    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;
-    padding:4px;border-radius:18px;
-    background:rgba(242,242,247,.82);
-    border:1px solid rgba(60,60,67,.12);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.86),0 8px 26px rgba(15,23,42,.08);
-    backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
-    overflow:visible;isolation:isolate
+    width:370px;height:74px;flex:0 0 370px;
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:6px;
+    padding:6px;border-radius:21px;
+    background:linear-gradient(160deg,rgba(223,231,241,.82),rgba(244,247,251,.88));
+    border:1px solid rgba(116,135,160,.22);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.92),inset 0 -1px 2px rgba(71,89,114,.08),0 12px 24px rgba(35,52,78,.12),0 3px 7px rgba(35,52,78,.08);
+    backdrop-filter:blur(20px) saturate(145%);-webkit-backdrop-filter:blur(20px) saturate(145%);
+    overflow:visible;isolation:isolate;transform:translateZ(12px);transform-style:preserve-3d
   }
   .port-action-wrap{position:relative;min-width:0;display:flex}
   .port-action{
-    position:relative;min-width:0;width:100%;height:100%;border:0;border-radius:14px;
-    padding:6px 8px 5px;background:transparent;color:#1d1d1f;cursor:pointer;
-    display:grid;grid-template-columns:20px minmax(0,1fr);grid-template-rows:20px 15px;
-    column-gap:5px;row-gap:1px;align-content:center;align-items:center;text-align:left;
+    position:relative;min-width:0;width:100%;height:100%;border:1px solid rgba(124,143,168,.18);border-radius:15px;
+    padding:7px 7px;background:linear-gradient(155deg,rgba(255,255,255,.98),rgba(246,249,253,.96) 62%,rgba(236,242,249,.94));color:var(--hero-ink);cursor:pointer;
+    display:grid;grid-template-columns:29px minmax(0,1fr);grid-template-rows:23px 15px;
+    column-gap:6px;row-gap:1px;align-content:center;align-items:center;text-align:left;
     font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC','Microsoft YaHei',sans-serif;
     -webkit-tap-highlight-color:transparent;
-    transition:background-color .18s ease,box-shadow .18s ease,transform .12s ease,opacity .18s ease
+    box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(91,111,138,.08),0 4px 7px rgba(31,49,74,.10),0 1px 2px rgba(31,49,74,.08);
+    transform:translateZ(5px);transform-style:preserve-3d;
+    transition:background .2s ease,box-shadow .2s ease,transform .16s cubic-bezier(.2,.8,.2,1),border-color .2s ease,opacity .18s ease
   }
-  .port-action:not(.port-action-last)::after{
-    content:'';position:absolute;right:-2px;top:10px;bottom:10px;width:1px;
-    background:rgba(60,60,67,.13);pointer-events:none
-  }
-  .port-action:hover{background:rgba(255,255,255,.82);box-shadow:0 2px 10px rgba(15,23,42,.07)}
-  .port-action:active{transform:scale(.975);background:rgba(255,255,255,.96)}
+  .port-action:hover{border-color:rgba(22,119,255,.24);background:linear-gradient(155deg,#fff,#f4f9ff);box-shadow:inset 0 1px 0 #fff,0 9px 15px rgba(36,74,122,.14),0 3px 5px rgba(36,74,122,.09);transform:translateY(-2px) translateZ(9px) rotateX(1deg)}
+  .port-action:active{transform:translateY(1px) translateZ(2px) scale(.985);box-shadow:inset 0 2px 4px rgba(31,49,74,.10),0 2px 3px rgba(31,49,74,.07)}
   .port-action:focus-visible{outline:3px solid rgba(0,113,227,.28);outline-offset:-2px}
   .port-action:disabled{cursor:default;opacity:.62}
-  .port-action.is-active{background:rgba(255,255,255,.94);box-shadow:0 2px 10px rgba(15,23,42,.08)}
-  .port-action-icon{width:18px;height:18px;grid-column:1;grid-row:1;align-self:center;justify-self:center;color:#0071e3;stroke:currentColor}
+  .port-action.is-active{border-color:rgba(22,119,255,.22);background:linear-gradient(155deg,#fff,#eef7ff);box-shadow:inset 0 1px 0 #fff,0 7px 13px rgba(22,119,255,.12)}
+  .port-action-icon{
+    width:27px;height:27px;box-sizing:border-box;padding:5px;grid-column:1;grid-row:1/3;align-self:center;justify-self:center;
+    color:#096ed7;stroke:currentColor;border-radius:9px;background:linear-gradient(145deg,#edf7ff,#dbeeff);
+    border:1px solid rgba(22,119,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.92),0 3px 6px rgba(22,119,255,.12)
+  }
   .port-action-title{
     min-width:0;overflow:visible;white-space:nowrap;display:flex;align-items:center;gap:4px;
-    font-size:12.5px;font-weight:650;letter-spacing:-.015em;line-height:20px;color:#1d1d1f
+    font-size:12.5px;font-weight:720;letter-spacing:-.018em;line-height:20px;color:var(--hero-ink)
   }
   .port-action-meta{
-    display:block;grid-column:1/-1;grid-row:2;min-width:0;width:100%;height:15px;line-height:15px;
-    overflow:hidden;text-align:center;white-space:nowrap;
-    font-size:9.3px;font-weight:520;letter-spacing:0;color:#86868b;
+    display:block;grid-column:2;grid-row:2;min-width:0;width:100%;height:15px;line-height:15px;
+    overflow:hidden;text-align:left;text-overflow:ellipsis;white-space:nowrap;
+    font-size:9.2px;font-weight:560;letter-spacing:0;color:var(--hero-muted);
     font-variant-numeric:tabular-nums
   }
   .port-action-chevron{
-    width:17px;height:17px;flex:0 0 17px;margin-left:auto;border-radius:50%;
-    display:inline-grid;place-items:center;color:#0071e3;background:rgba(0,113,227,.11);
-    border:1px solid rgba(0,113,227,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.72)
+    width:18px;height:18px;flex:0 0 18px;margin-left:auto;border-radius:7px;
+    display:inline-grid;place-items:center;color:#096ed7;background:linear-gradient(145deg,#edf7ff,#dbeeff);
+    border:1px solid rgba(22,119,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.82),0 2px 4px rgba(22,119,255,.10)
   }
   .port-action-chevron svg{width:10px;height:10px;display:block;stroke:currentColor;transition:transform .16s ease}
   #arBtn[aria-expanded="true"] .port-action-chevron svg{transform:rotate(180deg)}
   .port-action.loading .port-action-icon{animation:spin 1s linear infinite}
-  /* 中央时钟：固定页面尺寸，内部用 320×320 矢量坐标与独立图层提升细腻度。 */
-  .port-hero-clock{gap:11px!important}
+  /* 中央时钟舱：矢量表盘与时间卡片形成独立悬浮层。 */
+  .port-hero-clock{
+    position:absolute!important;z-index:3!important;left:50%;top:50%;height:94px;
+    display:flex;align-items:center;gap:11px!important;padding:7px 10px 7px 7px;border-radius:23px;
+    background:linear-gradient(145deg,rgba(255,255,255,.93),rgba(241,246,252,.88));
+    border:1px solid rgba(118,138,164,.22);
+    box-shadow:inset 0 1px 0 #fff,inset 0 -1px 2px rgba(76,96,123,.08),0 14px 27px rgba(35,53,80,.14),0 4px 8px rgba(35,53,80,.09);
+    backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);
+    transform:translate(-50%,-50%) translateZ(24px);transform-style:preserve-3d;pointer-events:none
+  }
+  .port-hero-clock::before{
+    content:'';position:absolute;left:16px;right:16px;top:1px;height:1px;border-radius:50%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent)
+  }
   #portAnalog{
     width:80px;height:80px;overflow:visible;shape-rendering:geometricPrecision;text-rendering:geometricPrecision;
-    transform:translateZ(0)
+    transform:translateZ(14px) rotateY(1deg);filter:drop-shadow(0 3px 3px rgba(20,33,61,.08))
   }
   .port-time-stack{width:156px;height:80px;display:flex;flex-direction:column;gap:4px;flex-shrink:0}
   #portClock{
     width:156px;height:48px;box-sizing:border-box;padding:0 13px;
     display:flex;align-items:center;justify-content:center;
-    color:#1d1d1f;background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(247,247,249,.94));
-    border:1px solid rgba(142,142,147,.19);border-radius:16px;
-    box-shadow:0 3px 10px rgba(15,23,42,.08),inset 0 1px 0 #fff,inset 0 -1px 0 rgba(142,142,147,.08);
+    color:var(--hero-ink);background:linear-gradient(155deg,#ffffff 0%,#f7f9fc 62%,#eef3f8 100%);
+    border:1px solid rgba(118,138,164,.20);border-radius:15px;
+    box-shadow:0 5px 11px rgba(28,46,73,.10),inset 0 1px 0 #fff,inset 0 -1px 0 rgba(95,114,140,.08);
     font-family:'SF Mono','SFMono-Regular',ui-monospace,'Cascadia Mono','Consolas',monospace;
     font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1
   }
   .port-clock-row{display:flex;align-items:baseline;justify-content:center;white-space:nowrap;line-height:1}
-  .port-clock-hm{font-size:26px;font-weight:610;letter-spacing:-.035em;color:#1d1d1f}
-  .port-clock-colon{margin:0 1.5px;font-size:26px;font-weight:610;color:#8e8e93}
-  .port-clock-sec{min-width:2ch;font-size:26px;font-weight:610;letter-spacing:-.035em;color:#d97717}
+  .port-clock-hm{font-size:26px;font-weight:650;letter-spacing:-.04em;color:var(--hero-ink)}
+  .port-clock-colon{margin:0 1.5px;font-size:26px;font-weight:650;color:#8190a6}
+  .port-clock-sec{min-width:2ch;font-size:26px;font-weight:650;letter-spacing:-.04em;color:var(--hero-warm)}
   .year-progress{
-    height:28px;box-sizing:border-box;padding:4px 8px 5px;border:1px solid rgba(142,142,147,.16);border-radius:10px;
-    background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(247,249,252,.95));
-    box-shadow:0 2px 7px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.96);
+    height:28px;box-sizing:border-box;padding:4px 8px 5px;border:1px solid rgba(118,138,164,.17);border-radius:10px;
+    background:linear-gradient(155deg,rgba(255,255,255,.99),rgba(241,246,251,.96));
+    box-shadow:0 3px 7px rgba(28,46,73,.07),inset 0 1px 0 rgba(255,255,255,.98);
     font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;
     font-variant-numeric:tabular-nums;overflow:hidden
   }
   .year-progress-head{height:9px;display:flex;align-items:center;justify-content:space-between;gap:8px;line-height:9px}
-  .year-progress-label{display:flex;align-items:center;gap:4px;color:#72727a;font-size:8.5px;font-weight:620;letter-spacing:.015em;white-space:nowrap}
+  .year-progress-label{display:flex;align-items:center;gap:4px;color:var(--hero-muted);font-size:8.5px;font-weight:650;letter-spacing:.015em;white-space:nowrap}
   .year-progress-dot{
     width:4px;height:4px;flex:0 0 4px;border-radius:50%;background:#0a84ff;
     box-shadow:0 0 0 2px rgba(10,132,255,.12),0 0 6px rgba(10,132,255,.38);
     animation:yearProgressPulse 2.4s ease-in-out infinite
   }
-  .year-progress-value{color:#1d1d1f;font-size:9.5px;font-weight:720;letter-spacing:-.01em;white-space:nowrap}
+  .year-progress-value{color:var(--hero-ink);font-size:9.5px;font-weight:760;letter-spacing:-.01em;white-space:nowrap}
   .year-progress-track{
     position:relative;height:4px;margin-top:5px;border-radius:999px;overflow:hidden;
     background:linear-gradient(180deg,rgba(120,120,128,.18),rgba(120,120,128,.09));
@@ -820,28 +898,21 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   }
   @keyframes yearProgressShimmer{0%,28%{left:-38%;opacity:0}38%{opacity:1}62%{left:112%;opacity:.75}63%,100%{left:112%;opacity:0}}
   @keyframes yearProgressPulse{0%,100%{transform:scale(.9);opacity:.72}50%{transform:scale(1.12);opacity:1}}
-  @media(prefers-reduced-motion:reduce){.year-progress-dot,.year-progress-fill::after{animation:none}.year-progress-fill{transition:none}}
-  @media(max-width:1080px){.port-hero-clock{display:none!important}}
+  @media(prefers-reduced-motion:reduce){.port-hero .tf-sway,.year-progress-dot,.year-progress-fill::after{animation:none}.port-action,.year-progress-fill{transition:none}}
+  @media(max-width:1120px){.port-hero-clock{display:none!important}}
   @media(max-width:720px){
-    .port-hero{flex-direction:column;align-items:stretch!important;gap:13px;padding:14px!important}
-    .port-hero-title{justify-content:center;width:100%}
-    .port-actions{width:100%;height:62px;flex-basis:62px}
+    .port-hero{flex-direction:column;align-items:stretch;gap:12px;padding:15px 14px;min-height:0;border-radius:21px}
+    .port-hero-title{justify-content:center;width:100%;flex-basis:auto;transform:none}
+    .port-actions{width:100%;height:72px;flex-basis:72px;transform:none}
   }
   </style>
-  <!-- ══ 投资组合页眉（浅色·紧凑） ══ -->
-  <div class="port-hero" style="position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;
-              padding:7px 24px 7px 26px;margin-bottom:18px;border-radius:18px;
-              background:linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%);border:1px solid #edf0f5;
-              box-shadow:0 4px 22px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.04)">
-    <!-- 左侧渐变 accent 细条 -->
-    <div style="position:absolute;left:0;top:0;bottom:0;width:4px;
-                background:linear-gradient(180deg,#e11d48,#d97706)"></div>
+  <!-- ══ 投资组合页眉（浅色 3D 仪表台） ══ -->
+  <div class="port-hero">
+    <div class="port-hero-accent" aria-hidden="true"></div>
 
     <!-- 左：Logo + 标题 -->
-    <div class="port-hero-title" style="display:flex;align-items:center;gap:11px;flex-shrink:0">
-      <div style="width:44px;height:44px;border-radius:13px;overflow:hidden;flex-shrink:0;
-                  background:linear-gradient(150deg,#a89b88 0%,#7d7160 52%,#5d5345 100%);
-                  box-shadow:0 3px 13px rgba(75,63,47,.36);padding:4.5px;box-sizing:border-box">
+    <div class="port-hero-title">
+      <div class="port-brand-mark">
         <svg width="35" height="35" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" style="display:block">
           <defs>
             <linearGradient id="lgOrg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb923c"/><stop offset="1" stop-color="#fde6d3"/></linearGradient>
@@ -854,15 +925,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           <path d="M2 31 L8 23 L13 27 L19 17 L25 23 L30 13 L34 19" fill="none" stroke="#f97316" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
         </svg>
       </div>
-      <div class="tf-swayx"><div class="tf-sway" style="font-family:'Monotype Corsiva','Segoe Script','Lucida Handwriting','Brush Script MT',cursive;font-size:26px;font-weight:700;
-                  letter-spacing:.01em;line-height:1.25;white-space:nowrap;
-                  background:linear-gradient(105deg,#dc2626 0%,#f43f5e 48%,#fb6f8e 100%);
-                  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
-                  text-shadow:0 1px 1px rgba(127,29,29,.08)">Trend Following</div><span class="tf-surf-travel"><svg class="tf-surf" width="54" height="41" viewBox="0 0 58 44" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;overflow:visible;filter:drop-shadow(0 1.4px 1.3px rgba(161,98,7,.5))"><defs><linearGradient id="tfSurfG" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fde047"/><stop offset="0.5" stop-color="#facc15"/><stop offset="1" stop-color="#eab308"/></linearGradient><linearGradient id="tfSurfBd" x1="0" y1="0" x2="1" y2="0.25"><stop offset="0" stop-color="#fef08a"/><stop offset="0.55" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs><path class="tf-wave" d="M0 33 Q11 26 21 32 Q30 37 40 31 Q49 26 58 32 L58 42 Q47 37 38 40 Q27 44 16 40 Q8 37 0 41 Z" fill="url(#tfSurfG)" opacity="0.4"/><g class="tf-spray" fill="#fde047"><circle cx="13.5" cy="33" r="1.4"/><circle cx="10" cy="31.2" r="1"/><circle cx="15.5" cy="30.4" r="0.9"/><circle cx="11.5" cy="34.6" r="0.7"/></g><g class="tf-board"><ellipse cx="31" cy="35.5" rx="18.5" ry="2.8" transform="rotate(-9 31 35.5)" fill="url(#tfSurfBd)"/></g><g stroke="url(#tfSurfG)" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M28 14 L31 23" stroke-width="5.2"/><path d="M31 23 L27 27 L24.5 32.5" stroke-width="3.6"/><path d="M31 23 L35 26.5 L38.5 32" stroke-width="3.6"/><path d="M28.5 16 L23 13 L19 9.5" stroke-width="3"/><path d="M28.5 16 L34.5 17.5 L40.5 16.5" stroke-width="3"/></g><circle cx="27" cy="10" r="3.4" fill="url(#tfSurfG)"/><path class="tf-pony" d="M24.6 9.2 Q17 5 12.5 8.4 Q18 7.6 24 11.2 Z" fill="url(#tfSurfG)"/></svg></span></div>
+      <div class="tf-swayx"><div class="port-brand-copy"><div class="tf-sway">Trend Following</div><div class="port-brand-kicker">PORTFOLIO · LIVE DASHBOARD</div></div><span class="tf-surf-travel"><svg class="tf-surf" width="54" height="41" viewBox="0 0 58 44" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;overflow:visible;filter:drop-shadow(0 1.4px 1.3px rgba(161,98,7,.5))"><defs><linearGradient id="tfSurfG" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fde047"/><stop offset="0.5" stop-color="#facc15"/><stop offset="1" stop-color="#eab308"/></linearGradient><linearGradient id="tfSurfBd" x1="0" y1="0" x2="1" y2="0.25"><stop offset="0" stop-color="#fef08a"/><stop offset="0.55" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs><path class="tf-wave" d="M0 33 Q11 26 21 32 Q30 37 40 31 Q49 26 58 32 L58 42 Q47 37 38 40 Q27 44 16 40 Q8 37 0 41 Z" fill="url(#tfSurfG)" opacity="0.4"/><g class="tf-spray" fill="#fde047"><circle cx="13.5" cy="33" r="1.4"/><circle cx="10" cy="31.2" r="1"/><circle cx="15.5" cy="30.4" r="0.9"/><circle cx="11.5" cy="34.6" r="0.7"/></g><g class="tf-board"><ellipse cx="31" cy="35.5" rx="18.5" ry="2.8" transform="rotate(-9 31 35.5)" fill="url(#tfSurfBd)"/></g><g stroke="url(#tfSurfG)" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M28 14 L31 23" stroke-width="5.2"/><path d="M31 23 L27 27 L24.5 32.5" stroke-width="3.6"/><path d="M31 23 L35 26.5 L38.5 32" stroke-width="3.6"/><path d="M28.5 16 L23 13 L19 9.5" stroke-width="3"/><path d="M28.5 16 L34.5 17.5 L40.5 16.5" stroke-width="3"/></g><circle cx="27" cy="10" r="3.4" fill="url(#tfSurfG)"/><path class="tf-pony" d="M24.6 9.2 Q17 5 12.5 8.4 Q18 7.6 24 11.2 Z" fill="url(#tfSurfG)"/></svg></span></div>
     </div>
 
     <!-- 中：高清模拟时钟 + 数字时钟（绝对居中） -->
-    <div class="port-hero-clock" style="position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;pointer-events:none">
+    <div class="port-hero-clock">
       <svg id="portAnalog" width="80" height="80" viewBox="0 0 320 320" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" preserveAspectRatio="xMidYMid meet" style="flex-shrink:0" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="paFace" cx="42%" cy="31%" r="82%">
