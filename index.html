@@ -774,8 +774,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     width:80px;height:80px;overflow:visible;shape-rendering:geometricPrecision;text-rendering:geometricPrecision;
     transform:translateZ(0)
   }
+  .port-time-stack{width:156px;height:80px;display:flex;flex-direction:column;gap:4px;flex-shrink:0}
   #portClock{
-    width:156px;height:52px;box-sizing:border-box;padding:0 13px;
+    width:156px;height:48px;box-sizing:border-box;padding:0 13px;
     display:flex;align-items:center;justify-content:center;
     color:#1d1d1f;background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(247,247,249,.94));
     border:1px solid rgba(142,142,147,.19);border-radius:16px;
@@ -787,6 +788,39 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .port-clock-hm{font-size:26px;font-weight:610;letter-spacing:-.035em;color:#1d1d1f}
   .port-clock-colon{margin:0 1.5px;font-size:26px;font-weight:610;color:#8e8e93}
   .port-clock-sec{min-width:2ch;font-size:26px;font-weight:610;letter-spacing:-.035em;color:#d97717}
+  .year-progress{
+    height:28px;box-sizing:border-box;padding:4px 8px 5px;border:1px solid rgba(142,142,147,.16);border-radius:10px;
+    background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(247,249,252,.95));
+    box-shadow:0 2px 7px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.96);
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;
+    font-variant-numeric:tabular-nums;overflow:hidden
+  }
+  .year-progress-head{height:9px;display:flex;align-items:center;justify-content:space-between;gap:8px;line-height:9px}
+  .year-progress-label{display:flex;align-items:center;gap:4px;color:#72727a;font-size:8.5px;font-weight:620;letter-spacing:.015em;white-space:nowrap}
+  .year-progress-dot{
+    width:4px;height:4px;flex:0 0 4px;border-radius:50%;background:#0a84ff;
+    box-shadow:0 0 0 2px rgba(10,132,255,.12),0 0 6px rgba(10,132,255,.38);
+    animation:yearProgressPulse 2.4s ease-in-out infinite
+  }
+  .year-progress-value{color:#1d1d1f;font-size:9.5px;font-weight:720;letter-spacing:-.01em;white-space:nowrap}
+  .year-progress-track{
+    position:relative;height:4px;margin-top:5px;border-radius:999px;overflow:hidden;
+    background:linear-gradient(180deg,rgba(120,120,128,.18),rgba(120,120,128,.09));
+    box-shadow:inset 0 1px 2px rgba(15,23,42,.12),0 1px 0 rgba(255,255,255,.9)
+  }
+  .year-progress-fill{
+    position:absolute;inset:0 auto 0 0;width:0;border-radius:inherit;overflow:hidden;
+    background:linear-gradient(90deg,#0a84ff 0%,#34c7ff 58%,#ff9f0a 100%);
+    box-shadow:0 0 7px rgba(10,132,255,.35);transition:width 1.15s cubic-bezier(.22,1,.36,1)
+  }
+  .year-progress-fill::after{
+    content:'';position:absolute;top:-3px;bottom:-3px;left:-38%;width:30%;transform:skewX(-20deg);
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);
+    animation:yearProgressShimmer 3.8s ease-in-out infinite
+  }
+  @keyframes yearProgressShimmer{0%,28%{left:-38%;opacity:0}38%{opacity:1}62%{left:112%;opacity:.75}63%,100%{left:112%;opacity:0}}
+  @keyframes yearProgressPulse{0%,100%{transform:scale(.9);opacity:.72}50%{transform:scale(1.12);opacity:1}}
+  @media(prefers-reduced-motion:reduce){.year-progress-dot,.year-progress-fill::after{animation:none}.year-progress-fill{transition:none}}
   @media(max-width:1080px){.port-hero-clock{display:none!important}}
   @media(max-width:720px){
     .port-hero{flex-direction:column;align-items:stretch!important;gap:13px;padding:14px!important}
@@ -887,8 +921,17 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         <circle cx="158.2" cy="158.2" r="1.8" fill="#ffd18b" fill-opacity=".75"/>
         <path d="M50 43 Q160 -5 270 43 Q224 25 160 27 Q96 25 50 43Z" fill="url(#paGlass)" pointer-events="none"/>
       </svg>
-      <div id="portClock" role="timer" aria-label="北京时间">
-        <div class="port-clock-row"><span id="portClockHM" class="port-clock-hm">--:--</span><span class="port-clock-colon">:</span><span id="portClockSec" class="port-clock-sec">--</span></div>
+      <div class="port-time-stack">
+        <div id="portClock" role="timer" aria-label="北京时间">
+          <div class="port-clock-row"><span id="portClockHM" class="port-clock-hm">--:--</span><span class="port-clock-colon">:</span><span id="portClockSec" class="port-clock-sec">--</span></div>
+        </div>
+        <div id="yearProgress" class="year-progress" role="progressbar" aria-label="本年度时间进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="year-progress-head">
+            <span class="year-progress-label"><span class="year-progress-dot" aria-hidden="true"></span><span><span id="yearProgressYear">----</span> 年进度</span></span>
+            <strong id="yearProgressPct" class="year-progress-value">--.--%</strong>
+          </div>
+          <div class="year-progress-track" aria-hidden="true"><span id="yearProgressFill" class="year-progress-fill"></span></div>
+        </div>
       </div>
     </div>
 
@@ -10444,6 +10487,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   (function _startClock(){
     const el = document.getElementById('portClock');
     const elHM = document.getElementById('portClockHM'), elSec = document.getElementById('portClockSec');
+    const yearProgress=document.getElementById('yearProgress'), yearProgressYear=document.getElementById('yearProgressYear');
+    const yearProgressPct=document.getElementById('yearProgressPct'), yearProgressFill=document.getElementById('yearProgressFill');
     const hH=document.getElementById('paHour'), hM=document.getElementById('paMin'), hS=document.getElementById('paSec');
     // 构建 60 刻度：320×320 高精度矢量坐标，分钟细刻度 + 整点粗刻度。
     const mt=document.getElementById('paMinTicks'), ht=document.getElementById('paHrTicks');
@@ -10460,7 +10505,27 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
     const p=v=>String(v).padStart(2,'0');
     let lastClockText='';
+    let lastYearProgressText='';
     const reduceClockMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const updateYearProgress=(now)=>{
+      // 固定按北京时间计算，确保不同国家和时区的浏览器看到同一个年度进度。
+      const bj=new Date(now.getTime()+8*60*60*1000), year=bj.getUTCFullYear();
+      const start=Date.UTC(year,0,1)-8*60*60*1000, end=Date.UTC(year+1,0,1)-8*60*60*1000;
+      const elapsed=Math.max(0,Math.min(end-start,now.getTime()-start));
+      const pct=elapsed/(end-start)*100, pctText=pct.toFixed(2)+'%';
+      if(pctText===lastYearProgressText) return;
+      const day=Math.min(Math.floor(elapsed/86400000)+1,Math.round((end-start)/86400000));
+      const totalDays=Math.round((end-start)/86400000), remaining=Math.max(0,totalDays-day);
+      if(yearProgressYear) yearProgressYear.textContent=String(year);
+      if(yearProgressPct) yearProgressPct.textContent=pctText;
+      if(yearProgressFill) yearProgressFill.style.width=pct.toFixed(4)+'%';
+      if(yearProgress){
+        yearProgress.setAttribute('aria-valuenow',pct.toFixed(2));
+        yearProgress.setAttribute('aria-valuetext',year+' 年已过 '+pctText+'，还剩 '+remaining+' 天');
+        yearProgress.title=year+' 年第 '+day+' 天 · 已过 '+pctText+' · 还剩 '+remaining+' 天';
+      }
+      lastYearProgressText=pctText;
+    };
     const tick = ()=>{
       const n=new Date();
       const clockText=p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds());
@@ -10470,6 +10535,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         if(el) el.setAttribute('aria-label','北京时间 '+clockText);
         lastClockText=clockText;
       }
+      updateYearProgress(n);
       const s=n.getSeconds()+(reduceClockMotion?0:n.getMilliseconds()/1000), m=n.getMinutes()+s/60, h=(n.getHours()%12)+m/60;
       const sa=s*6, ma=m*6, ha=h*30;                      // 指针角度
       if(hS) hS.setAttribute('transform','rotate('+sa+' 160 160)');
