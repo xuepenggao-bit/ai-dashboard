@@ -6739,8 +6739,7 @@ function _renderBreadthTrend(){
   return true;
 }
 
-function _setBreadthTrendLivePoint(up,down,flat){
-  const clock=_breadthBeijingClock();
+function _setBreadthTrendLivePoint(up,down,flat,clock=_breadthBeijingClock()){
   const nUp=Number(up),nDown=Number(down),nFlat=Number(flat||0);
   if(!clock.isTrading||!Number.isFinite(nUp)||!Number.isFinite(nDown)||nUp+nDown<50) return false;
   _breadthLivePoint={date:clock.date,up:nUp,down:nDown,flat:Math.max(0,nFlat),asOf:clock.time};
@@ -8502,6 +8501,8 @@ function _reconcileMarketBreadth(total, counts){
 }
 
 async function _doFetchBreadth(){
+  // 分页请求可能跨过 11:30/15:00，按请求发起时刻判断是否属于交易时段。
+  const trendClock=_breadthBeijingClock();
   const bTs    = document.getElementById('mktBreadthTs');
   const chartEl= document.getElementById('mktBreadthChart');
   const elUp   = document.getElementById('mktUp');
@@ -8625,7 +8626,7 @@ async function _doFetchBreadth(){
       up:String(totalUp), down:String(totalDown), lu:String(b_lu), ld:String(b_ld),
       flat:bFlat, noQuote:noQuote, chart:chartEl?chartEl.innerHTML:'', ts:_hm
     };
-    _setBreadthTrendLivePoint(totalUp,totalDown,bFlat);
+    _setBreadthTrendLivePoint(totalUp,totalDown,bFlat,trendClock);
   }catch(e){
     console.warn('[涨跌统计]', e.message);
     // 有缓存则回填上次成功值（不闪现消失），仅从未成功过时才显示重试提示
