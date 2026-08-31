@@ -1167,7 +1167,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       </div>
     </div>
 
-    <!-- 宏观板块/策略轮动：周期、防御、消费、科技、红利、资源 -->
+    <!-- 宏观板块/策略轮动：周期、生物医药、消费、科技、红利、资源 -->
     <div class="card market-rotation-card">
       <div class="market-style-head">
         <span class="market-style-title">🔄 板块轮动</span>
@@ -9009,13 +9009,13 @@ async function _doFetchMarketStyle(){
 }
 function fetchMarketStyle(){ return _doFetchMarketStyle(); }
 
-// ── 板块轮动（信息/消费/周期/防御/红利/资源，腾讯当日分钟行情）──────
+// ── 板块轮动（信息/消费/周期/生物医药/红利/资源，腾讯当日分钟行情）──────
 // 除了高对比配色，还给每条曲线配置独立线型，兼顾色觉差异与小屏辨识度。
 const _MKT_ROTATION_META = [
   {name:'信息',code:'000993',key:'sh000993',color:'#7c3aed',dash:'9 4 2 4'},
   {name:'消费',code:'399364',key:'sz399364',color:'#f59e0b',dash:'3 4'},
   {name:'周期',code:'399402',key:'sz399402',color:'#2563eb',dash:''},
-  {name:'防御',code:'399403',key:'sz399403',color:'#ef4444',dash:'12 5'},
+  {name:'生物医药',code:'399441',key:'sz399441',color:'#e11d48',dash:'12 5'},
   {name:'红利',code:'399321',key:'sz399321',color:'#16a34a',dash:'16 5'},
   {name:'资源',code:'399319',key:'sz399319',color:'#0891b2',dash:'2 3'},
 ];
