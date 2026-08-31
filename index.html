@@ -1666,7 +1666,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div class="card mb16">
     <div class="ch">
       <span class="ct">沪深 A 股涨跌家数趋势（日频·家）</span>
-      <span class="cbadge" style="background:#eff6ff;color:#1d4ed8">60 交易日 · 盘中实时</span>
+      <span class="cbadge" style="background:#eff6ff;color:#1d4ed8">60 交易日 · 盘中/午间快照</span>
     </div>
     <div style="display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
       <span id="breadthKpiDate" class="tx3" style="color:#64748b">加载中…</span>
@@ -6665,9 +6665,11 @@ function _breadthBeijingClock(nowMs=Date.now()){
   const date=year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
   const time=String(bj.getUTCHours()).padStart(2,'0')+':'+String(bj.getUTCMinutes()).padStart(2,'0');
   const weekdayOpen=weekday>=1&&weekday<=5;
-  const morning=minute>=9*60+30&&minute<=11*60+30;
-  const afternoon=minute>=13*60&&minute<=15*60;
-  return{date,time,minute,weekday,isTrading:weekdayOpen&&(morning||afternoon)};
+  // 午休时东方财富仍保留 11:30 的上午收盘行情；允许 9:30–15:00 连续读取，
+  // 避免用户中午首次打开宏观趋势时看不到今天的数据。
+  const liveWindow=minute>=9*60+30&&minute<=15*60;
+  const phase=minute>11*60+30&&minute<13*60?'午间快照':minute===15*60?'收盘快照':'盘中实时';
+  return{date,time,minute,weekday,phase,isTrading:weekdayOpen&&liveWindow};
 }
 
 function _mergeBreadthTrendRows(historyRows,livePoint,today=_breadthBeijingClock().date){
@@ -6681,7 +6683,7 @@ function _mergeBreadthTrendRows(historyRows,livePoint,today=_breadthBeijingClock
   if(livePoint&&livePoint.date===today&&/^\d{4}-\d{2}-\d{2}$/.test(livePoint.date)){
     const up=Number(livePoint.up),down=Number(livePoint.down),flat=Number(livePoint.flat||0);
     if(Number.isFinite(up)&&Number.isFinite(down)&&up+down>=50){
-      byDate.set(livePoint.date,{date:livePoint.date,up,down,flat:Math.max(0,flat),live:true,asOf:livePoint.asOf||''});
+      byDate.set(livePoint.date,{date:livePoint.date,up,down,flat:Math.max(0,flat),live:true,asOf:livePoint.asOf||'',status:livePoint.status||'盘中实时'});
     }
   }
   return[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-60);
@@ -6720,7 +6722,7 @@ function _renderBreadthTrend(){
     CH.updownDelta.update('none');
   }
   const last=rows[rows.length-1],ratio=last.down>0?last.up/last.down:null;
-  const liveSuffix=last.live?' · 盘中 '+last.asOf:'';
+  const liveSuffix=last.live?' · '+(last.status||'盘中实时')+' '+last.asOf:'';
   const dateEl=document.getElementById('breadthKpiDate'); if(dateEl) dateEl.textContent=last.date+liveSuffix;
   const upEl=document.getElementById('breadthKpiUp'); if(upEl) upEl.textContent=last.up.toLocaleString()+' 家';
   const downEl=document.getElementById('breadthKpiDown'); if(downEl) downEl.textContent=last.down.toLocaleString()+' 家';
@@ -6733,7 +6735,7 @@ function _renderBreadthTrend(){
   if(cntEl) cntEl.textContent=`${rows.length}交易日 · ${rows[0].date} 至 ${last.date}${last.live?' · 实时':''}`;
   const foot=document.getElementById('cUpDownFooter');
   if(foot) foot.textContent=last.live
-    ?`来源: 历史为东方财富牛熊风向标/个股日行情；今日为东方财富全市场实时行情 · 盘中更新 ${last.asOf} · 实心点=今日实时值`
+    ?`来源: 历史为东方财富牛熊风向标/个股日行情；今日为东方财富全市场实时行情 · ${last.status||'盘中实时'} ${last.asOf} · 实心点=今日最新值`
     :`来源: 东方财富牛熊风向标 + 个股日行情汇总 · 沪深 A 股（不含北交所）· 折线=上涨/下跌家数 · 柱=上涨−下跌（正值红、负值绿）· 数据截至 ${last.date}`;
   console.log('[Daily] 涨跌家数',last.live?'盘中实时':'历史收盘',last.date,'↑'+last.up,'↓'+last.down,last.asOf||'');
   return true;
@@ -6742,7 +6744,7 @@ function _renderBreadthTrend(){
 function _setBreadthTrendLivePoint(up,down,flat,clock=_breadthBeijingClock()){
   const nUp=Number(up),nDown=Number(down),nFlat=Number(flat||0);
   if(!clock.isTrading||!Number.isFinite(nUp)||!Number.isFinite(nDown)||nUp+nDown<50) return false;
-  _breadthLivePoint={date:clock.date,up:nUp,down:nDown,flat:Math.max(0,nFlat),asOf:clock.time};
+  _breadthLivePoint={date:clock.date,up:nUp,down:nDown,flat:Math.max(0,nFlat),asOf:clock.time,status:clock.phase};
   if(_breadthHistoryRows.length) _renderBreadthTrend();
   return true;
 }
@@ -8461,7 +8463,7 @@ async function fetchMarketStats(){
   }
 }
 
-// 宏观趋势打开/手动刷新时，仅在沪深交易时段主动补取一次实时涨跌家数。
+// 宏观趋势打开/手动刷新时，在沪深 9:30–15:00（含午休）主动补取一次最新涨跌家数。
 // 若投资组合页的并行刷新仍在进行，则由那次请求完成后自动推送到趋势图，避免重复拉全市场分页。
 async function refreshBreadthTrendLive(){
   if(!_breadthBeijingClock().isTrading||_mktStatsFetching) return false;
