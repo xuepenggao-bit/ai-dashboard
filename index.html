@@ -1666,7 +1666,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div class="card mb16">
     <div class="ch">
       <span class="ct">沪深 A 股涨跌家数趋势（日频·家）</span>
-      <span class="cbadge" style="background:#f1f5f9;color:#475569">近 3 个月 · 60 交易日</span>
+      <span class="cbadge" style="background:#eff6ff;color:#1d4ed8">60 交易日 · 盘中实时</span>
     </div>
     <div style="display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
       <span id="breadthKpiDate" class="tx3" style="color:#64748b">加载中…</span>
@@ -6654,6 +6654,100 @@ function _isCurrentAAmountPartial(latestDate){
   return latestDate===today&&weekday>=1&&weekday<=5&&minute>=9*60+30&&minute<15*60;
 }
 
+// 涨跌家数趋势：历史 JSON 为稳定基线；交易时段把投资组合页实时全市场统计合并为“今日”最后一点。
+let _breadthHistoryRows=[];
+let _breadthLivePoint=null;
+
+function _breadthBeijingClock(nowMs=Date.now()){
+  const bj=new Date(nowMs+8*60*60*1000);
+  const year=bj.getUTCFullYear(), month=bj.getUTCMonth()+1, day=bj.getUTCDate();
+  const minute=bj.getUTCHours()*60+bj.getUTCMinutes(), weekday=bj.getUTCDay();
+  const date=year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+  const time=String(bj.getUTCHours()).padStart(2,'0')+':'+String(bj.getUTCMinutes()).padStart(2,'0');
+  const weekdayOpen=weekday>=1&&weekday<=5;
+  const morning=minute>=9*60+30&&minute<=11*60+30;
+  const afternoon=minute>=13*60&&minute<=15*60;
+  return{date,time,minute,weekday,isTrading:weekdayOpen&&(morning||afternoon)};
+}
+
+function _mergeBreadthTrendRows(historyRows,livePoint,today=_breadthBeijingClock().date){
+  const byDate=new Map();
+  (historyRows||[]).forEach(row=>{
+    if(!row||!/^\d{4}-\d{2}-\d{2}$/.test(row.date)) return;
+    const up=Number(row.up),down=Number(row.down),flat=Number(row.flat||0);
+    if(Number.isFinite(up)&&Number.isFinite(down)&&up>=0&&down>=0) byDate.set(row.date,{date:row.date,up,down,flat:Math.max(0,flat),live:false});
+  });
+  // 页面跨夜未关闭时，绝不能把昨天残留的盘中点继续混入今天的图表。
+  if(livePoint&&livePoint.date===today&&/^\d{4}-\d{2}-\d{2}$/.test(livePoint.date)){
+    const up=Number(livePoint.up),down=Number(livePoint.down),flat=Number(livePoint.flat||0);
+    if(Number.isFinite(up)&&Number.isFinite(down)&&up+down>=50){
+      byDate.set(livePoint.date,{date:livePoint.date,up,down,flat:Math.max(0,flat),live:true,asOf:livePoint.asOf||''});
+    }
+  }
+  return[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-60);
+}
+
+function _renderBreadthTrend(){
+  const rows=_mergeBreadthTrendRows(_breadthHistoryRows,_breadthLivePoint);
+  if(!rows.length) return false;
+  const labels=rows.map(row=>_fmtDayLabel(row.date));
+  const upVals=rows.map(row=>row.up),downVals=rows.map(row=>row.down);
+  const deltaVals=rows.map(row=>row.up-row.down);
+  const livePoints=rows.map(row=>row.live?4.5:0);
+  BASE.ashare.updown={labels,up:upVals,down:downVals,delta:deltaVals,dates:rows.map(row=>row.date)};
+  if(CH.updown){
+    CH.updown.data.labels=labels;
+    CH.updown.data.datasets[0].data=upVals;
+    CH.updown.data.datasets[1].data=downVals;
+    CH.updown.data.datasets[0].pointRadius=livePoints;
+    CH.updown.data.datasets[1].pointRadius=livePoints;
+    CH.updown.data.datasets[0].pointBackgroundColor=rows.map(row=>row.live?'#ef4444':'rgba(239,68,68,0)');
+    CH.updown.data.datasets[1].pointBackgroundColor=rows.map(row=>row.live?'#16a34a':'rgba(22,163,74,0)');
+    CH.updown.data.datasets.forEach(ds=>{ ds.pointBorderColor='#fff'; ds.pointBorderWidth=rows.map(row=>row.live?2:0); });
+    CH.updown.update('none');
+  }
+  if(CH.updownDelta){
+    const maxAbs=Math.max(100,...deltaVals.map(v=>Math.abs(v)));
+    CH.updownDelta.data.labels=labels;
+    CH.updownDelta.data.datasets[0].data=deltaVals;
+    CH.updownDelta.data.datasets[0].backgroundColor=deltaVals.map((v,i)=>{
+      const alpha=rows[i].live?'.58':'.76';
+      return v>0?`rgba(220,38,38,${alpha})`:v<0?`rgba(22,163,74,${alpha})`:'rgba(148,163,184,.65)';
+    });
+    CH.updownDelta.data.datasets[0].borderColor=deltaVals.map(v=>v>0?'#dc2626':v<0?'#16a34a':'#94a3b8');
+    CH.updownDelta.options.scales.y.min=-maxAbs;
+    CH.updownDelta.options.scales.y.max=maxAbs;
+    CH.updownDelta.update('none');
+  }
+  const last=rows[rows.length-1],ratio=last.down>0?last.up/last.down:null;
+  const liveSuffix=last.live?' · 盘中 '+last.asOf:'';
+  const dateEl=document.getElementById('breadthKpiDate'); if(dateEl) dateEl.textContent=last.date+liveSuffix;
+  const upEl=document.getElementById('breadthKpiUp'); if(upEl) upEl.textContent=last.up.toLocaleString()+' 家';
+  const downEl=document.getElementById('breadthKpiDown'); if(downEl) downEl.textContent=last.down.toLocaleString()+' 家';
+  const ratioEl=document.getElementById('breadthKpiRatio');
+  if(ratioEl){
+    ratioEl.textContent=ratio==null?'涨跌比 —':`涨跌比 ${ratio.toFixed(2)}`;
+    ratioEl.style.color=ratio==null?'#64748b':ratio>=1?'#ef4444':'#16a34a';
+  }
+  const cntEl=document.getElementById('breadthKpiCnt');
+  if(cntEl) cntEl.textContent=`${rows.length}交易日 · ${rows[0].date} 至 ${last.date}${last.live?' · 实时':''}`;
+  const foot=document.getElementById('cUpDownFooter');
+  if(foot) foot.textContent=last.live
+    ?`来源: 历史为东方财富牛熊风向标/个股日行情；今日为东方财富全市场实时行情 · 盘中更新 ${last.asOf} · 实心点=今日实时值`
+    :`来源: 东方财富牛熊风向标 + 个股日行情汇总 · 沪深 A 股（不含北交所）· 折线=上涨/下跌家数 · 柱=上涨−下跌（正值红、负值绿）· 数据截至 ${last.date}`;
+  console.log('[Daily] 涨跌家数',last.live?'盘中实时':'历史收盘',last.date,'↑'+last.up,'↓'+last.down,last.asOf||'');
+  return true;
+}
+
+function _setBreadthTrendLivePoint(up,down,flat){
+  const clock=_breadthBeijingClock();
+  const nUp=Number(up),nDown=Number(down),nFlat=Number(flat||0);
+  if(!clock.isTrading||!Number.isFinite(nUp)||!Number.isFinite(nDown)||nUp+nDown<50) return false;
+  _breadthLivePoint={date:clock.date,up:nUp,down:nDown,flat:Math.max(0,nFlat),asOf:clock.time};
+  if(_breadthHistoryRows.length) _renderBreadthTrend();
+  return true;
+}
+
 async function fetchDailyCharts(){
   // ── 1. 融资融券余额 ──────────────────────────────────────────────
   try{
@@ -6762,49 +6856,18 @@ async function fetchDailyCharts(){
       row&&/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&Number.isFinite(+row.up)&&Number.isFinite(+row.down)
     ).sort((a,b)=>a.date.localeCompare(b.date)).slice(-60);
     if(rows.length<20) throw new Error('有效历史不足');
-    const labels=rows.map(row=>_fmtDayLabel(row.date));
-    const upVals=rows.map(row=>+row.up);
-    const downVals=rows.map(row=>+row.down);
-    const deltaVals=rows.map(row=>+row.up-(+row.down));
-    BASE.ashare.updown={labels,up:upVals,down:downVals,delta:deltaVals,dates:rows.map(row=>row.date)};
-    if(CH.updown){
-      CH.updown.data.labels=labels;
-      CH.updown.data.datasets[0].data=upVals;
-      CH.updown.data.datasets[1].data=downVals;
-      CH.updown.update('none');
-    }
-    if(CH.updownDelta){
-      const maxAbs=Math.max(100,...deltaVals.map(v=>Math.abs(v)));
-      CH.updownDelta.data.labels=labels;
-      CH.updownDelta.data.datasets[0].data=deltaVals;
-      CH.updownDelta.data.datasets[0].backgroundColor=deltaVals.map(v=>v>0?'rgba(220,38,38,.76)':v<0?'rgba(22,163,74,.76)':'rgba(148,163,184,.65)');
-      CH.updownDelta.data.datasets[0].borderColor=deltaVals.map(v=>v>0?'#dc2626':v<0?'#16a34a':'#94a3b8');
-      CH.updownDelta.options.scales.y.min=-maxAbs;
-      CH.updownDelta.options.scales.y.max=maxAbs;
-      CH.updownDelta.update('none');
-    }
-    const last=rows[rows.length-1];
-    const ratio=last.down>0?last.up/last.down:null;
-    const dateEl=document.getElementById('breadthKpiDate'); if(dateEl) dateEl.textContent=last.date;
-    const upEl=document.getElementById('breadthKpiUp'); if(upEl) upEl.textContent=last.up.toLocaleString()+' 家';
-    const downEl=document.getElementById('breadthKpiDown'); if(downEl) downEl.textContent=last.down.toLocaleString()+' 家';
-    const ratioEl=document.getElementById('breadthKpiRatio');
-    if(ratioEl){
-      ratioEl.textContent=ratio==null?'涨跌比 —':`涨跌比 ${ratio.toFixed(2)}`;
-      ratioEl.style.color=ratio==null?'#64748b':ratio>=1?'#ef4444':'#16a34a';
-    }
-    const cntEl=document.getElementById('breadthKpiCnt');
-    if(cntEl) cntEl.textContent=`${rows.length}交易日 · ${rows[0].date} 至 ${last.date}`;
-    const foot=document.getElementById('cUpDownFooter');
-    if(foot) foot.textContent=`来源: 东方财富牛熊风向标 + 个股日行情汇总 · 沪深 A 股（不含北交所）· 折线=上涨/下跌家数 · 柱=上涨−下跌（正值红、负值绿）· 数据截至 ${last.date}`;
-    console.log('[Daily] 涨跌家数 OK:',last.date,'↑'+last.up,'↓'+last.down);
+    _breadthHistoryRows=rows.map(row=>({date:row.date,up:+row.up,down:+row.down,flat:+(row.flat||0)}));
+    _renderBreadthTrend();
   }catch(e){
     console.warn('[Daily] 涨跌家数失败:',e.message);
-    if(CH.updown){ CH.updown.data.labels=[]; CH.updown.data.datasets.forEach(ds=>ds.data=[]); CH.updown.update('none'); }
-    if(CH.updownDelta){ CH.updownDelta.data.labels=[]; CH.updownDelta.data.datasets.forEach(ds=>ds.data=[]); CH.updownDelta.update('none'); }
-    const dateEl=document.getElementById('breadthKpiDate'); if(dateEl) dateEl.textContent='数据暂不可用';
-    const cntEl=document.getElementById('breadthKpiCnt'); if(cntEl) cntEl.textContent='请稍后重新打开“宏观趋势”';
-    const foot=document.getElementById('cUpDownFooter'); if(foot) foot.textContent='⚠️ 涨跌家数历史暂时取不到，已保留空图而不显示错误数值';
+    // 历史文件偶发不可达时，交易时段仍可展示实时点；两者都没有才保留空图。
+    if(!_renderBreadthTrend()){
+      if(CH.updown){ CH.updown.data.labels=[]; CH.updown.data.datasets.forEach(ds=>ds.data=[]); CH.updown.update('none'); }
+      if(CH.updownDelta){ CH.updownDelta.data.labels=[]; CH.updownDelta.data.datasets.forEach(ds=>ds.data=[]); CH.updownDelta.update('none'); }
+      const dateEl=document.getElementById('breadthKpiDate'); if(dateEl) dateEl.textContent='数据暂不可用';
+      const cntEl=document.getElementById('breadthKpiCnt'); if(cntEl) cntEl.textContent='请稍后重新打开“宏观趋势”';
+      const foot=document.getElementById('cUpDownFooter'); if(foot) foot.textContent='⚠️ 涨跌家数历史暂时取不到，已保留空图而不显示错误数值';
+    }
   }
 }
 const MACRO_CFGS={
@@ -7122,6 +7185,7 @@ async function refreshMacro(){
   const jobs=[
     fetchMacroKpis(),
     fetchDailyCharts(),
+    refreshBreadthTrendLive(),
     fetchVixChart(),
   ];
   await Promise.allSettled(jobs);
@@ -7129,7 +7193,7 @@ async function refreshMacro(){
   // 月度宏观图表(CPI/社融/固投/社零/工业利润/电子利润/PE走势)已随"A股宏观"页删除，
   // 对应请求一并移除（refreshMacro 现仅刷新市场 KPI、两融、成交量、涨跌家数与 iVIX）。
   const timeStr=new Date().toLocaleString('zh-CN');
-  if(ts) ts.textContent=`已刷新 市值/PE/两融/成交量 · ${timeStr}`;
+  if(ts) ts.textContent=`已刷新 市值/PE/两融/成交额/涨跌家数 · ${timeStr}`;
   if(btn){ btn.classList.remove('loading'); btn.disabled=false; }
   const macroIdx=TAB_ORDER.indexOf('t0');
   if(macroIdx>=0) _TAB_TS[macroIdx]=Date.now();
@@ -8398,6 +8462,14 @@ async function fetchMarketStats(){
   }
 }
 
+// 宏观趋势打开/手动刷新时，仅在沪深交易时段主动补取一次实时涨跌家数。
+// 若投资组合页的并行刷新仍在进行，则由那次请求完成后自动推送到趋势图，避免重复拉全市场分页。
+async function refreshBreadthTrendLive(){
+  if(!_breadthBeijingClock().isTrading||_mktStatsFetching) return false;
+  await _doFetchBreadth();
+  return !!_breadthLivePoint;
+}
+
 // ── 涨跌统计（东方财富 clist，分批分页拉取全量 f3 精确计数）────────
 // 策略：先取第1页获得 total，再按 total 算出页数，
 //        每8页一批顺序拉取（避免55+并发触发限流），前端对 f3 精确分档
@@ -8553,6 +8625,7 @@ async function _doFetchBreadth(){
       up:String(totalUp), down:String(totalDown), lu:String(b_lu), ld:String(b_ld),
       flat:bFlat, noQuote:noQuote, chart:chartEl?chartEl.innerHTML:'', ts:_hm
     };
+    _setBreadthTrendLivePoint(totalUp,totalDown,bFlat);
   }catch(e){
     console.warn('[涨跌统计]', e.message);
     // 有缓存则回填上次成功值（不闪现消失），仅从未成功过时才显示重试提示
