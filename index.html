@@ -673,72 +673,56 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-range-pill.is-flat{color:#475569;background:#f8fafc;border-color:#e2e8f0}
 .port-range-empty{font-size:12px;color:#94a3b8}
 
-/* ── 分类持仓明细：分组信息架构 + 克制的实时反馈 ───────────── */
+/* ── 分类持仓明细：横向色带分区 + 圆角数据卡片 ───────────── */
 #tPort .port-holdings-table{min-width:1360px;border-collapse:separate;border-spacing:0;table-layout:auto;background:#fff}
 #tPort .port-holdings-table thead th{text-transform:none}
-#tPort .port-table-group-row th{
-  height:28px;padding:5px 12px;border-bottom:1px solid #d9e1ea;text-align:center;
-  font-size:9.5px;font-weight:850;letter-spacing:.075em;color:#64748b
-}
-.port-table-group-label{display:inline-flex;align-items:center;justify-content:center;gap:6px}
-.port-table-group-label::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.62;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 11%,transparent)}
-#tPort .port-table-group-identity{background:#f1f4f7;color:#5f6e80;border-radius:0}
-#tPort .port-table-group-market{background:#edf3f8;color:#42647f}
-#tPort .port-table-group-momentum{background:#f3f1f5;color:#6d6277}
-#tPort .port-table-group-actions{background:#f4f5f7;color:#727b87}
 #tPort .port-table-columns th{
-  padding:9px 12px;border-bottom:1px solid #cfd9e4;background:#fafbfc;
-  color:#687689;font-size:10.5px;font-weight:820;letter-spacing:.025em
+  padding:12px 12px 10px;border-bottom:1px solid #cfd9e4;background:#f7f9fb;
+  color:#536174;font-size:11.5px;font-weight:850;letter-spacing:.012em;white-space:nowrap
 }
-#tPort .port-table-columns th:nth-child(-n+4){background:#fafbfc}
-#tPort .port-table-columns th:nth-child(n+5):nth-child(-n+8){background:#f7fafc;color:#506a80}
-#tPort .port-table-columns th:nth-child(n+9):nth-child(-n+11){background:#faf8fb;color:#6f6577}
-#tPort .port-table-columns th:nth-child(4),
-#tPort .port-holding-row td:nth-child(4){border-right:2px solid #d9e2eb}
-#tPort .port-table-columns th:nth-child(8),
-#tPort .port-holding-row td:nth-child(8){border-right:2px solid #d9e2eb}
-#tPort .port-table-columns th:nth-child(11),
-#tPort .port-holding-row td:nth-child(11){border-right:2px solid #e1dce4}
+#tPort .port-table-columns th:nth-child(-n+4){background:#f6f8fa;box-shadow:inset 0 3px 0 #c4cfda}
+#tPort .port-table-columns th:nth-child(n+5):nth-child(-n+8){background:#f1f6f9;color:#49647a;box-shadow:inset 0 3px 0 #9fb4c5}
+#tPort .port-table-columns th:nth-child(n+9):nth-child(-n+11){background:#f6f3f7;color:#695f70;box-shadow:inset 0 3px 0 #b9adbf}
+#tPort .port-table-columns th:nth-child(12){background:#f5f7f9;color:#616d7a;box-shadow:inset 0 3px 0 #bdc6cf}
 #tPort .port-holding-row td{
-  height:58px;padding:9px 12px;border-bottom:1px solid #e9eef4;background:#fff;
+  height:61px;padding:10px 12px;border-bottom:1px solid #e7edf3;background:#fff;
   transition:background-color .18s ease,border-color .18s ease
 }
 #tPort .port-holding-row:nth-child(even) td{background:#fcfdfe}
-#tPort .port-holding-row td.port-cell-market{background:#fbfdff}
-#tPort .port-holding-row:nth-child(even) td.port-cell-market{background:#f8fbfd}
-#tPort .port-holding-row td.port-cell-momentum{background:#fdfcfd}
-#tPort .port-holding-row:nth-child(even) td.port-cell-momentum{background:#faf9fb}
+#tPort .port-holding-row td.port-cell-market{background:#f9fcfe}
+#tPort .port-holding-row:nth-child(even) td.port-cell-market{background:#f6fafc}
+#tPort .port-holding-row td.port-cell-momentum{background:#fcfafc}
+#tPort .port-holding-row:nth-child(even) td.port-cell-momentum{background:#f9f7fa}
 #tPort .port-holding-row:hover td{background:#f3f7fb!important}
 .port-stock-cell{display:flex;align-items:center;gap:9px;min-width:120px}
-.port-stock-accent{width:4px;height:29px;flex:0 0 auto;border-radius:4px;background:var(--sector-accent);box-shadow:0 2px 6px color-mix(in srgb,var(--sector-accent) 22%,transparent)}
-.port-stock-primary{min-width:0;color:#172033;font-size:14px;font-weight:850;letter-spacing:-.012em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.port-stock-monogram{display:inline-flex;align-items:center;justify-content:center;width:29px;height:29px;flex:0 0 auto;border:1px solid color-mix(in srgb,var(--sector-accent) 28%,#dbe3ec);border-radius:9px;background:color-mix(in srgb,var(--sector-accent) 10%,#fff);color:var(--sector-accent);font-size:11.5px;font-weight:900;box-shadow:0 2px 7px color-mix(in srgb,var(--sector-accent) 10%,transparent)}
+.port-stock-primary{min-width:0;color:#172033;font-size:14.5px;font-weight:850;letter-spacing:-.012em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .port-code-link,.port-code-plain{
-  display:inline-flex;align-items:center;padding:3px 6px;border:1px solid #dbe3ec;border-radius:6px;
+  display:inline-flex;align-items:center;padding:4px 7px;border:1px solid #d9e2eb;border-radius:7px;
   background:#fff;color:#47637e!important;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-  font-size:11px!important;font-weight:700;text-decoration:none!important;letter-spacing:.02em
+  font-size:11.5px!important;font-weight:750;text-decoration:none!important;letter-spacing:.015em
 }
 .port-code-link:hover{border-color:#9eb6cc;background:#f5f9fc;color:#234b70!important}
-.port-industry-tag{display:inline-flex;align-items:center;max-width:96px;padding:3px 7px;border:1px solid #e1e6ec;border-radius:999px;background:#f6f8fa;color:#667587;font-size:10.5px;font-weight:720;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.port-industry-tag{display:inline-flex;align-items:center;max-width:96px;padding:4px 8px;border:1px solid #dfe5eb;border-radius:8px;background:#f4f6f8;color:#5f6f82;font-size:11.5px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .port-price-number,.port-metric-number,.port-weight-value{font-variant-numeric:tabular-nums;letter-spacing:-.018em;white-space:nowrap}
-.port-price-number{display:inline-flex;justify-content:flex-end;min-width:64px;color:#253247;font-size:14px;font-weight:850}
-.port-preopen-pill{display:inline-flex;color:#64748b;background:#f1f4f7;border:1px solid #dfe5eb;border-radius:7px;padding:3px 8px;font-size:10.5px;font-weight:750;white-space:nowrap}
-.port-data-empty{color:#a1adba;font-size:12px;font-weight:650}
-.port-change-pill{display:inline-flex;align-items:center;justify-content:flex-end;min-width:72px;padding:4px 8px;border:1px solid transparent;border-radius:8px;font-size:13px;font-weight:880;font-variant-numeric:tabular-nums;letter-spacing:-.015em}
+.port-price-number{display:inline-flex;justify-content:flex-end;min-width:64px;padding:4px 8px;border:1px solid #dbe3ea;border-radius:8px;background:#f6f8fa;color:#253247;font-size:14px;font-weight:850}
+.port-preopen-pill{display:inline-flex;color:#5f6e80;background:#f1f4f7;border:1px solid #dce4eb;border-radius:8px;padding:4px 8px;font-size:11.5px;font-weight:780;white-space:nowrap}
+.port-data-empty{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:3px 7px;border-radius:7px;background:#f6f8fa;color:#95a2b0;font-size:12.5px;font-weight:700}
+.port-change-pill{display:inline-flex;align-items:center;justify-content:flex-end;min-width:72px;padding:4px 8px;border:1px solid transparent;border-radius:8px;font-size:13.5px;font-weight:880;font-variant-numeric:tabular-nums;letter-spacing:-.015em}
 .port-change-pill.is-up{color:#a21d3d;background:#fff6f7;border-color:#f6d8de}
 .port-change-pill.is-down{color:#167153;background:#f3faf6;border-color:#d4ebdd}
 .port-change-pill.is-flat{color:#637083;background:#f5f7f9;border-color:#e1e6eb}
-#tPort .port-range-pill{min-width:72px;padding:4px 7px;border-radius:8px;font-size:12.5px;background:#fff}
+#tPort .port-range-pill{min-width:72px;padding:4px 8px;border-radius:8px;font-size:13px;background:#fff}
 #tPort .port-range-pill.is-up{color:#96334a;border-color:#ecd9df;background:#fffafb}
 #tPort .port-range-pill.is-down{color:#2d715a;border-color:#d5e8df;background:#f9fcfa}
 #tPort .port-range-pill.is-flat{color:#64748b;border-color:#e2e8f0;background:#fafbfc}
-.port-weight-value{display:inline-flex;align-items:center;justify-content:flex-end;gap:5px;min-width:62px;color:#334e73;font-size:13.5px;font-weight:900}
-.port-weight-value::before{content:"";width:3px;height:16px;border-radius:3px;background:var(--sector-accent);opacity:.72}
-.port-metric-number{display:inline-flex;align-items:center;justify-content:flex-end;min-width:48px;font-size:12.5px;font-weight:820;color:#59677a}
-.port-metric-number.is-elevated{color:#9a6824}
-.port-metric-number.is-hot{color:#96334a;font-weight:900}
-.port-speed-value.is-up{color:#a21d3d}.port-speed-value.is-down{color:#167153}.port-speed-value.is-flat{color:#64748b}
+.port-weight-value{display:inline-flex;align-items:center;justify-content:flex-end;min-width:62px;padding:4px 8px;border:1px solid #d8e3ee;border-radius:8px;background:#f2f7fb;color:#334e73;font-size:13.5px;font-weight:900}
+.port-metric-number{display:inline-flex;align-items:center;justify-content:flex-end;min-width:48px;padding:4px 7px;border:1px solid #e0e5eb;border-radius:8px;background:#f6f7f9;font-size:13px;font-weight:820;color:#59677a}
+.port-metric-number.is-elevated{color:#8b601f;background:#fff9ed;border-color:#ecdfc1}
+.port-metric-number.is-hot{color:#96334a;background:#fff6f8;border-color:#efd8de;font-weight:900}
+.port-speed-value.is-up{color:#a21d3d;background:#fff6f7;border-color:#f1d9de}.port-speed-value.is-down{color:#167153;background:#f3faf6;border-color:#d4e9dd}.port-speed-value.is-flat{color:#64748b;background:#f5f7f9;border-color:#e1e6eb}
 .port-row-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px}
-.port-row-action{min-width:42px;padding:5px 8px;border-radius:7px;cursor:pointer;font-family:inherit;font-size:10.5px;font-weight:780;transition:transform .14s,box-shadow .14s,border-color .14s,background .14s}
+.port-row-action{min-width:44px;padding:6px 9px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:800;transition:transform .14s,box-shadow .14s,border-color .14s,background .14s}
 .port-row-action:hover{transform:translateY(-1px)}
 .port-row-action-edit{border:1px solid #c8d8e8;background:linear-gradient(180deg,#fff,#f3f7fb);color:#315b82;box-shadow:0 2px 0 #d5e0ea,0 4px 8px rgba(45,78,110,.06)}
 .port-row-action-delete{border:1px solid #e4d7da;background:linear-gradient(180deg,#fff,#faf6f7);color:#8c5660;box-shadow:0 2px 0 #e6dadd,0 4px 8px rgba(120,73,83,.05)}
@@ -769,10 +753,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .port-sector-kpis{grid-column:1/-1;grid-template-columns:1fr 1.25fr;width:100%;margin:0}
   .port-sector-actions{grid-column:2;grid-row:1}
   .port-sector-action{padding:7px 10px}
-  #tPort .port-table-group-row{display:none}
   #tPort .port-holdings-table{min-width:980px}
   /* 表格紧凑 */
-  #tPort .mtable th{font-size:11px;padding:7px 9px}
+  #tPort .mtable th{font-size:11.5px;padding:8px 9px}
   #tPort .mtable td{font-size:13px;padding:9px 9px}
   /* 隐藏：代码、行业 */
   #tPort .col-code,#tPort .th-code,
@@ -4870,7 +4853,7 @@ function renderPortfolio(){
       const stockNameHtml=_escH(sk.name||'—');
       const industryHtml=_escH(sk.industry||'未标注');
       return `<tr class="port-holding-row">
-        <td class="col-stock port-cell-identity"><div class="port-stock-cell"><span class="port-stock-accent"></span><span class="port-stock-primary" title="${stockNameHtml}">${stockNameHtml}</span></div></td>
+        <td class="col-stock port-cell-identity"><div class="port-stock-cell"><span class="port-stock-monogram" aria-hidden="true">${_escH(String(sk.name||'股').slice(0,1))}</span><span class="port-stock-primary" title="${stockNameHtml}">${stockNameHtml}</span></div></td>
         <td class="col-code port-cell-identity">${_codeCell}</td>
         <td class="col-mkt port-cell-identity"><span class="mkt-badge" style="${mktStyle[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span></td>
         <td class="col-industry port-cell-identity"><span class="port-industry-tag" title="${industryHtml}">${industryHtml}</span></td>
@@ -4926,12 +4909,6 @@ function renderPortfolio(){
       <div style="margin:0 -20px -20px -20px">
         <div class="overflow" style="border-radius:0">
           <table class="mtable port-holdings-table"><thead>
-            <tr class="port-table-group-row">
-              <th colspan="4" class="port-table-group-identity"><span class="port-table-group-label">标的资料</span></th>
-              <th colspan="4" class="port-table-group-market"><span class="port-table-group-label">行情表现</span></th>
-              <th colspan="3" class="port-table-group-momentum"><span class="port-table-group-label">仓位与动量</span></th>
-              <th class="port-table-group-actions"><span class="port-table-group-label">管理</span></th>
-            </tr>
             <tr class="port-table-columns">
               <th>股票名称</th>
               <th class="th-code">代码</th>
