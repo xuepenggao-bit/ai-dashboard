@@ -549,14 +549,14 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .mkt-badge{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600}
 .port-sector-card{--sector-accent:#2563eb;position:relative;border-color:color-mix(in srgb,var(--sector-accent) 17%,#dbe3ef)!important;box-shadow:0 8px 24px rgba(15,23,42,.07),0 1px 3px rgba(15,23,42,.04)!important}
 .port-sector-card::before{content:"";position:absolute;z-index:3;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,var(--sector-accent),color-mix(in srgb,var(--sector-accent) 44%,#fff),transparent 88%)}
-.port-sector-identity{display:flex;align-items:center;gap:11px;min-width:180px}
-.port-sector-mark{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:38px;height:38px;border-radius:12px;background:linear-gradient(145deg,color-mix(in srgb,var(--sector-accent) 90%,#fff),var(--sector-accent));box-shadow:0 7px 15px color-mix(in srgb,var(--sector-accent) 24%,transparent),inset 0 1px 0 rgba(255,255,255,.45)}
+.port-sector-identity{display:flex;align-items:center;gap:9px;min-width:170px}
+.port-sector-mark{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,color-mix(in srgb,var(--sector-accent) 90%,#fff),var(--sector-accent));box-shadow:0 6px 13px color-mix(in srgb,var(--sector-accent) 22%,transparent),inset 0 1px 0 rgba(255,255,255,.45)}
 .port-sector-mark::before{content:"";width:16px;height:11px;border-left:2px solid rgba(255,255,255,.95);border-bottom:2px solid rgba(255,255,255,.95);border-radius:2px;transform:skewY(-27deg) rotate(-4deg)}
 .port-sector-mark::after{content:"";position:absolute;width:5px;height:5px;right:8px;top:8px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.24)}
 .port-sector-copy{min-width:0}
 .port-sector-name-wrap{display:flex;align-items:center;gap:6px;min-width:0}
-.port-sector-name{font-size:17px;font-weight:900;color:#172033;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.port-sector-subline{display:flex;align-items:center;gap:6px;margin-top:4px;color:#7c899b;font-size:10.5px;font-weight:700;white-space:nowrap}
+.port-sector-name{font-size:16px;font-weight:900;color:#172033;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.port-sector-subline{display:flex;align-items:center;gap:6px;margin-top:3px;color:#7c899b;font-size:10px;font-weight:700;white-space:nowrap}
 .port-sector-count{display:inline-flex;align-items:center;gap:3px;color:#475569}
 .port-sector-count strong{color:var(--sector-accent);font-size:12px;font-weight:900;font-variant-numeric:tabular-nums}
 .port-sector-separator{width:3px;height:3px;border-radius:50%;background:#cbd5e1}
@@ -564,12 +564,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-sector-rename:hover{background:#eff6ff;border-color:#93c5fd;color:#2563eb}
 .port-sector-rename:active{transform:scale(.94)}
 .port-sector-rename svg{width:13px;height:13px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.port-sector-kpis{display:grid;grid-template-columns:118px minmax(170px,190px);gap:8px;margin-left:auto}
-.port-sector-kpi{min-width:0;padding:8px 11px;border:1px solid #dbe3ef;border-radius:11px;background:rgba(255,255,255,.88);box-shadow:0 3px 10px rgba(15,23,42,.045),inset 0 1px 0 #fff}
-.port-sector-kpi-label{font-size:9.5px;color:#7c899b;font-weight:800;letter-spacing:.045em;white-space:nowrap}
-.port-sector-kpi-value{margin-top:3px;color:#1d4ed8;font-size:20px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.035em;white-space:nowrap}
+.port-sector-kpis{display:grid;grid-template-columns:102px 154px;gap:7px;margin-left:auto}
+.port-sector-kpi{min-width:0;padding:7px 10px;border:1px solid #dbe3ef;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 3px 9px rgba(15,23,42,.045),inset 0 1px 0 #fff}
+.port-sector-kpi-label{font-size:9.2px;color:#7c899b;font-weight:800;letter-spacing:.035em;white-space:nowrap}
+.port-sector-kpi-value{margin-top:3px;color:#1d4ed8;font-size:18px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.035em;white-space:nowrap}
 .port-sector-kpi-value small{font-size:12px;font-weight:750;letter-spacing:0}
-.port-sector-kpi-meta{margin-top:4px;color:#94a3b8;font-size:8.5px;font-weight:700;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .port-sector-kpi-change{border-color:#d8e2ef;background:linear-gradient(145deg,#f8fafc,#fff)}
 .port-sector-kpi-change.is-up{border-color:#fecdd3;background:linear-gradient(145deg,#fff1f2,#fff);box-shadow:0 5px 13px rgba(225,29,72,.08)}
 .port-sector-kpi-change.is-up .port-sector-kpi-value{color:#be123c}
@@ -578,11 +577,15 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-sector-kpi-change.is-flat .port-sector-kpi-value{color:#475569}
 .port-sector-kpi-change.is-empty .port-sector-kpi-value{color:#64748b;font-size:16px;letter-spacing:0}
 .port-sector-actions{display:flex;align-items:center;gap:7px;flex:0 0 auto}
-.port-sector-action{display:inline-flex;align-items:center;justify-content:center;min-height:34px;border-radius:9px;padding:7px 12px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:800;white-space:nowrap;transition:transform .14s,box-shadow .14s,border-color .14s,background .14s}
-.port-sector-action:hover{transform:translateY(-1px)}
-.port-sector-action-add{border:1px solid color-mix(in srgb,var(--sector-accent) 78%,#000);background:linear-gradient(145deg,color-mix(in srgb,var(--sector-accent) 87%,#fff),var(--sector-accent));color:#fff;box-shadow:0 5px 12px color-mix(in srgb,var(--sector-accent) 20%,transparent)}
-.port-sector-action-delete{border:1px solid #d7dee8;background:#fff;color:#7c899b}
-.port-sector-action-delete:hover{border-color:#fda4af;background:#fff1f2;color:#be123c;box-shadow:0 4px 10px rgba(190,18,60,.07)}
+.port-sector-action{display:inline-flex;align-items:center;justify-content:center;min-height:32px;border-radius:9px;padding:6px 11px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:850;white-space:nowrap;transform:translateY(-1px);transition:transform .14s cubic-bezier(.2,.8,.2,1),box-shadow .14s,border-color .14s,background .14s;will-change:transform}
+.port-sector-action:hover{transform:translateY(-3px)}
+.port-sector-action:active{transform:translateY(2px)}
+.port-sector-action-add{border:1px solid color-mix(in srgb,var(--sector-accent) 78%,#111827);background:linear-gradient(155deg,color-mix(in srgb,var(--sector-accent) 70%,#fff) 0%,var(--sector-accent) 52%,color-mix(in srgb,var(--sector-accent) 86%,#111827) 100%);color:#fff;text-shadow:0 1px 1px rgba(15,23,42,.22);box-shadow:0 4px 0 color-mix(in srgb,var(--sector-accent) 62%,#111827),0 8px 14px color-mix(in srgb,var(--sector-accent) 22%,transparent),inset 0 1px 0 rgba(255,255,255,.48)}
+.port-sector-action-add:hover{box-shadow:0 5px 0 color-mix(in srgb,var(--sector-accent) 62%,#111827),0 11px 17px color-mix(in srgb,var(--sector-accent) 25%,transparent),inset 0 1px 0 rgba(255,255,255,.58)}
+.port-sector-action-add:active{box-shadow:0 1px 0 color-mix(in srgb,var(--sector-accent) 62%,#111827),0 3px 7px color-mix(in srgb,var(--sector-accent) 18%,transparent),inset 0 2px 3px rgba(15,23,42,.13)}
+.port-sector-action-delete{border:1px solid #d7dee8;background:linear-gradient(180deg,#fff,#f3f6fa);color:#64748b;box-shadow:0 4px 0 #cbd5e1,0 8px 13px rgba(15,23,42,.10),inset 0 1px 0 #fff}
+.port-sector-action-delete:hover{border-color:#fda4af;background:linear-gradient(180deg,#fff7f8,#ffecef);color:#be123c;box-shadow:0 5px 0 #fda4af,0 10px 15px rgba(190,18,60,.10),inset 0 1px 0 #fff}
+.port-sector-action-delete:active{box-shadow:0 1px 0 #fda4af,0 3px 6px rgba(190,18,60,.08),inset 0 2px 3px rgba(190,18,60,.08)}
 .port-sector-edit-box{width:420px}
 .port-sector-edit-note{margin:-4px 0 15px;padding:9px 11px;border:1px solid #dbeafe;border-radius:8px;background:#eff6ff;color:#475569;font-size:11px;line-height:1.55}
 
@@ -597,12 +600,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   display:grid;
   grid-template-columns:minmax(185px,1fr) auto auto;
   align-items:center;
-  padding:15px 18px;
+  padding:11px 16px;
   background:linear-gradient(105deg,color-mix(in srgb,var(--sector-accent) 7%,#fff) 0%,#fff 48%,#f8fafc 100%);
   border-radius:10px 10px 0 0;
   margin:-20px -20px 0 -20px;
   border-bottom:1px solid #dfe6ef;
-  gap:14px;
+  gap:10px;
 }
 #tPort .mtable th{font-size:12px;padding:12px 16px;letter-spacing:.04em}
 #tPort .mtable td{padding:14px 16px;font-size:14px}
@@ -679,8 +682,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   #tPort .kval{font-size:26px}
   #tPort .klabel{font-size:12px}
   /* 分类头部自适应 */
-  #tPort .sec-header{grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:12px 14px;margin:-14px -14px 0 -14px}
-  .port-sector-kpis{grid-column:1/-1;grid-template-columns:1fr 1.35fr;width:100%;margin:0}
+  #tPort .sec-header{grid-template-columns:minmax(0,1fr) auto;gap:9px;padding:10px 12px;margin:-14px -14px 0 -14px}
+  .port-sector-kpis{grid-column:1/-1;grid-template-columns:1fr 1.25fr;width:100%;margin:0}
   .port-sector-actions{grid-column:2;grid-row:1}
   .port-sector-action{padding:7px 10px}
   /* 表格紧凑 */
@@ -4782,12 +4785,10 @@ function renderPortfolio(){
           <div class="port-sector-kpi">
             <div class="port-sector-kpi-label">分类仓位</div>
             <div class="port-sector-kpi-value">${secW.toFixed(1)}<small>%</small></div>
-            <div class="port-sector-kpi-meta">占总资金比例</div>
           </div>
           <div class="port-sector-kpi port-sector-kpi-change ${secPerfClass}" title="${_escH(secPerfTitle)}">
             <div class="port-sector-kpi-label">实时加权涨跌幅</div>
             <div class="port-sector-kpi-value">${secPerfValue}</div>
-            <div class="port-sector-kpi-meta">${secPerfMeta}</div>
           </div>
         </div>
         <div class="port-sector-actions">
