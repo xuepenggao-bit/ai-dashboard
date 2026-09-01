@@ -673,6 +673,89 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-range-pill.is-flat{color:#475569;background:#f8fafc;border-color:#e2e8f0}
 .port-range-empty{font-size:12px;color:#94a3b8}
 
+/* ── 分类持仓明细：分组信息架构 + 克制的实时反馈 ───────────── */
+#tPort .port-holdings-table{min-width:1360px;border-collapse:separate;border-spacing:0;table-layout:auto;background:#fff}
+#tPort .port-holdings-table thead th{text-transform:none}
+#tPort .port-table-group-row th{
+  height:28px;padding:5px 12px;border-bottom:1px solid #d9e1ea;text-align:center;
+  font-size:9.5px;font-weight:850;letter-spacing:.075em;color:#64748b
+}
+.port-table-group-label{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.port-table-group-label::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.62;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 11%,transparent)}
+#tPort .port-table-group-identity{background:#f1f4f7;color:#5f6e80;border-radius:0}
+#tPort .port-table-group-market{background:#edf3f8;color:#42647f}
+#tPort .port-table-group-momentum{background:#f3f1f5;color:#6d6277}
+#tPort .port-table-group-actions{background:#f4f5f7;color:#727b87}
+#tPort .port-table-columns th{
+  padding:9px 12px;border-bottom:1px solid #cfd9e4;background:#fafbfc;
+  color:#687689;font-size:10.5px;font-weight:820;letter-spacing:.025em
+}
+#tPort .port-table-columns th:nth-child(-n+4){background:#fafbfc}
+#tPort .port-table-columns th:nth-child(n+5):nth-child(-n+8){background:#f7fafc;color:#506a80}
+#tPort .port-table-columns th:nth-child(n+9):nth-child(-n+11){background:#faf8fb;color:#6f6577}
+#tPort .port-table-columns th:nth-child(4),
+#tPort .port-holding-row td:nth-child(4){border-right:2px solid #d9e2eb}
+#tPort .port-table-columns th:nth-child(8),
+#tPort .port-holding-row td:nth-child(8){border-right:2px solid #d9e2eb}
+#tPort .port-table-columns th:nth-child(11),
+#tPort .port-holding-row td:nth-child(11){border-right:2px solid #e1dce4}
+#tPort .port-holding-row td{
+  height:58px;padding:9px 12px;border-bottom:1px solid #e9eef4;background:#fff;
+  transition:background-color .18s ease,border-color .18s ease
+}
+#tPort .port-holding-row:nth-child(even) td{background:#fcfdfe}
+#tPort .port-holding-row td.port-cell-market{background:#fbfdff}
+#tPort .port-holding-row:nth-child(even) td.port-cell-market{background:#f8fbfd}
+#tPort .port-holding-row td.port-cell-momentum{background:#fdfcfd}
+#tPort .port-holding-row:nth-child(even) td.port-cell-momentum{background:#faf9fb}
+#tPort .port-holding-row:hover td{background:#f3f7fb!important}
+.port-stock-cell{display:flex;align-items:center;gap:9px;min-width:120px}
+.port-stock-accent{width:4px;height:29px;flex:0 0 auto;border-radius:4px;background:var(--sector-accent);box-shadow:0 2px 6px color-mix(in srgb,var(--sector-accent) 22%,transparent)}
+.port-stock-primary{min-width:0;color:#172033;font-size:14px;font-weight:850;letter-spacing:-.012em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.port-code-link,.port-code-plain{
+  display:inline-flex;align-items:center;padding:3px 6px;border:1px solid #dbe3ec;border-radius:6px;
+  background:#fff;color:#47637e!important;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  font-size:11px!important;font-weight:700;text-decoration:none!important;letter-spacing:.02em
+}
+.port-code-link:hover{border-color:#9eb6cc;background:#f5f9fc;color:#234b70!important}
+.port-industry-tag{display:inline-flex;align-items:center;max-width:96px;padding:3px 7px;border:1px solid #e1e6ec;border-radius:999px;background:#f6f8fa;color:#667587;font-size:10.5px;font-weight:720;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.port-price-number,.port-metric-number,.port-weight-value{font-variant-numeric:tabular-nums;letter-spacing:-.018em;white-space:nowrap}
+.port-price-number{display:inline-flex;justify-content:flex-end;min-width:64px;color:#253247;font-size:14px;font-weight:850}
+.port-preopen-pill{display:inline-flex;color:#64748b;background:#f1f4f7;border:1px solid #dfe5eb;border-radius:7px;padding:3px 8px;font-size:10.5px;font-weight:750;white-space:nowrap}
+.port-data-empty{color:#a1adba;font-size:12px;font-weight:650}
+.port-change-pill{display:inline-flex;align-items:center;justify-content:flex-end;min-width:72px;padding:4px 8px;border:1px solid transparent;border-radius:8px;font-size:13px;font-weight:880;font-variant-numeric:tabular-nums;letter-spacing:-.015em}
+.port-change-pill.is-up{color:#a21d3d;background:#fff6f7;border-color:#f6d8de}
+.port-change-pill.is-down{color:#167153;background:#f3faf6;border-color:#d4ebdd}
+.port-change-pill.is-flat{color:#637083;background:#f5f7f9;border-color:#e1e6eb}
+#tPort .port-range-pill{min-width:72px;padding:4px 7px;border-radius:8px;font-size:12.5px;background:#fff}
+#tPort .port-range-pill.is-up{color:#96334a;border-color:#ecd9df;background:#fffafb}
+#tPort .port-range-pill.is-down{color:#2d715a;border-color:#d5e8df;background:#f9fcfa}
+#tPort .port-range-pill.is-flat{color:#64748b;border-color:#e2e8f0;background:#fafbfc}
+.port-weight-value{display:inline-flex;align-items:center;justify-content:flex-end;gap:5px;min-width:62px;color:#334e73;font-size:13.5px;font-weight:900}
+.port-weight-value::before{content:"";width:3px;height:16px;border-radius:3px;background:var(--sector-accent);opacity:.72}
+.port-metric-number{display:inline-flex;align-items:center;justify-content:flex-end;min-width:48px;font-size:12.5px;font-weight:820;color:#59677a}
+.port-metric-number.is-elevated{color:#9a6824}
+.port-metric-number.is-hot{color:#96334a;font-weight:900}
+.port-speed-value.is-up{color:#a21d3d}.port-speed-value.is-down{color:#167153}.port-speed-value.is-flat{color:#64748b}
+.port-row-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.port-row-action{min-width:42px;padding:5px 8px;border-radius:7px;cursor:pointer;font-family:inherit;font-size:10.5px;font-weight:780;transition:transform .14s,box-shadow .14s,border-color .14s,background .14s}
+.port-row-action:hover{transform:translateY(-1px)}
+.port-row-action-edit{border:1px solid #c8d8e8;background:linear-gradient(180deg,#fff,#f3f7fb);color:#315b82;box-shadow:0 2px 0 #d5e0ea,0 4px 8px rgba(45,78,110,.06)}
+.port-row-action-delete{border:1px solid #e4d7da;background:linear-gradient(180deg,#fff,#faf6f7);color:#8c5660;box-shadow:0 2px 0 #e6dadd,0 4px 8px rgba(120,73,83,.05)}
+.port-row-action:active{transform:translateY(1px);box-shadow:none}
+
+/* 只有实时值确实变化时才提示；环形扩散不改变列宽，避免刷新时抖动。 */
+.port-live-value{position:relative}
+.port-live-value.is-tick-up{animation:portTickUp .9s cubic-bezier(.2,.75,.25,1)}
+.port-live-value.is-tick-down{animation:portTickDown .9s cubic-bezier(.2,.75,.25,1)}
+.port-live-value.is-tick-up::after,.port-live-value.is-tick-down::after{position:absolute;right:-6px;top:-8px;font-size:8px;font-weight:900;line-height:1;opacity:0;animation:portTickMark .9s ease-out}
+.port-live-value.is-tick-up::after{content:"↗";color:#a21d3d}
+.port-live-value.is-tick-down::after{content:"↘";color:#167153}
+@keyframes portTickUp{0%,100%{transform:translateY(0);box-shadow:0 0 0 0 rgba(162,29,61,0)}35%{transform:translateY(-1px);box-shadow:0 0 0 4px rgba(162,29,61,.09)}}
+@keyframes portTickDown{0%,100%{transform:translateY(0);box-shadow:0 0 0 0 rgba(22,113,83,0)}35%{transform:translateY(1px);box-shadow:0 0 0 4px rgba(22,113,83,.09)}}
+@keyframes portTickMark{0%{opacity:0;transform:translateY(3px)}28%{opacity:.75;transform:translateY(0)}100%{opacity:0;transform:translateY(-3px)}}
+@media(prefers-reduced-motion:reduce){.port-live-value.is-tick-up,.port-live-value.is-tick-down,.port-live-value.is-tick-up::after,.port-live-value.is-tick-down::after{animation:none}}
+
 /* ── 移动端响应式：≤768px ────────────────────────────────── */
 @media(max-width:768px){
   /* KPI 4格变2列 */
@@ -686,6 +769,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .port-sector-kpis{grid-column:1/-1;grid-template-columns:1fr 1.25fr;width:100%;margin:0}
   .port-sector-actions{grid-column:2;grid-row:1}
   .port-sector-action{padding:7px 10px}
+  #tPort .port-table-group-row{display:none}
+  #tPort .port-holdings-table{min-width:980px}
   /* 表格紧凑 */
   #tPort .mtable th{font-size:11px;padding:7px 9px}
   #tPort .mtable td{font-size:13px;padding:9px 9px}
@@ -696,6 +781,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @media(max-width:600px){
   /* 再隐藏：当前股价 */
   #tPort .col-price,#tPort .th-price,#tPort .col-vr,#tPort .th-vr,#tPort .col-sp,#tPort .th-sp{display:none}
+  #tPort .port-holdings-table{min-width:760px}
 }
 @media(max-width:480px){
   /* 第二行 g4 → 单列 */
@@ -706,6 +792,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   /* 操作按钮缩短 */
   #tPort .btn-edit{font-size:11px;padding:4px 8px}
   #tPort .btn-del {font-size:11px;padding:4px 8px;margin-left:3px}
+  #tPort .port-row-actions .btn-del{margin-left:0}
+  #tPort .port-holdings-table{min-width:680px}
   .port-sector-name{max-width:170px;font-size:15px}
   .port-sector-rename{width:29px;height:29px}
   .port-sector-mark{width:34px;height:34px;border-radius:10px}
@@ -3863,6 +3951,8 @@ const GH_TOKEN_LOCAL_KEY = 'ai_dash_github_pat_v2';
 let _githubTokenMemory = '';
 let PORT = null;
 let _PORT_PRICES = {};
+let _PORT_RENDER_SNAPSHOT = {}; // 上一次已呈现的实时数值，仅用于判断本轮哪些单元格真正发生变化
+let _PORT_RENDER_MOVES = {};    // 短时保留变化方向，防止紧邻的二次渲染过早清除动画
 // v2 会主动淘汰旧的“5日高低点”缓存，保证新窗口首次打开即重新计算。
 const PORT_5D_CLOSE_KEY = 'aiDashboard.portfolioCloseRange.v2';
 let _PORT_5D_CLOSE = {}; // "市场:代码" → {high,low,highFrom,lowFrom,to,asOf,dayKey,updatedAt}
@@ -3885,6 +3975,38 @@ try{
 
 function _port5dKey(stock){
   return String(stock&&stock.mkt||'')+':'+String(stock&&stock.code||'');
+}
+
+function _portLiveMoveClass(stock,field,value,now){
+  const stockKey=_port5dKey(stock), moveKey=stockKey+':'+field;
+  const current=Number(value), previous=Number(_PORT_RENDER_SNAPSHOT[stockKey]?.[field]);
+  const currentOk=value!=null&&Number.isFinite(current);
+  const previousOk=_PORT_RENDER_SNAPSHOT[stockKey]?.[field]!=null&&Number.isFinite(previous);
+  if(currentOk&&previousOk&&Math.abs(current-previous)>0.000001){
+    _PORT_RENDER_MOVES[moveKey]={cls:current>previous?'is-tick-up':'is-tick-down',until:now+1100};
+  }
+  const move=_PORT_RENDER_MOVES[moveKey];
+  if(move&&move.until>now) return 'port-live-value '+move.cls;
+  if(move) delete _PORT_RENDER_MOVES[moveKey];
+  return 'port-live-value';
+}
+
+function _capturePortfolioRenderSnapshot(port,prices,now){
+  const next={};
+  (port?.sectors||[]).forEach(sec=>(sec.stocks||[]).forEach(stock=>{
+    const quote=prices?.[stock.code];
+    if(!quote) return;
+    const row={};
+    ['price','pct','volRatio','speedPct'].forEach(field=>{
+      const value=quote[field];
+      if(value!=null&&Number.isFinite(Number(value))) row[field]=Number(value);
+    });
+    next[_port5dKey(stock)]=row;
+  }));
+  _PORT_RENDER_SNAPSHOT=next;
+  Object.keys(_PORT_RENDER_MOVES).forEach(key=>{
+    if(!(_PORT_RENDER_MOVES[key]?.until>now)) delete _PORT_RENDER_MOVES[key];
+  });
 }
 
 function _portBeijingDate(){
@@ -4712,54 +4834,58 @@ function renderPortfolio(){
       const ki=sec.stocks.indexOf(sk);
       const pi = _PORT_PRICES[sk.code];
       const aPreOpen=_isPortfolioAStockPreOpen(sk.mkt,sk.code,portRenderNow);
+      const priceMoveClass=(!aPreOpen&&pi)?_portLiveMoveClass(sk,'price',pi.price,portRenderNow):'port-live-value';
       const priceCell = aPreOpen
-        ? `<span style="display:inline-block;color:#64748b;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:7px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap">未开盘</span>`
+        ? `<span class="port-preopen-pill">未开盘</span>`
         : pi
-        ? `<span style="font-weight:700;font-size:15px;color:var(--text)">${sk.mkt==='HK'?Number(pi.price).toFixed(3):Number(pi.price).toFixed(2)}</span>`
-        : `<span style="color:var(--text2);font-size:13px">—</span>`;
+        ? `<span class="port-price-number ${priceMoveClass}">${sk.mkt==='HK'?Number(pi.price).toFixed(3):Number(pi.price).toFixed(2)}</span>`
+        : `<span class="port-data-empty">—</span>`;
       const displayPct = pi ? _portfolioStockDisplayPct(sk.mkt,sk.code,pi.pct,portRenderNow) : null;
-      const pctBg  = displayPct!=null ? (displayPct>0?'#fee2e2':displayPct<0?'#d1fae5':'#f1f5f9') : '';
-      const pctCol = displayPct!=null ? (displayPct>0?'#991b1b':displayPct<0?'#065f46':'#475569') : '';
+      const pctState=displayPct==null?'':displayPct>0.005?'is-up':displayPct<-0.005?'is-down':'is-flat';
+      const pctMoveClass=(!aPreOpen&&pi)?_portLiveMoveClass(sk,'pct',pi.pct,portRenderNow):'port-live-value';
       const pctCell = displayPct!=null
-        ? `<span style="display:inline-block;background:${pctBg};color:${pctCol};font-weight:800;font-size:15px;padding:4px 10px;border-radius:7px;letter-spacing:-.01em">${displayPct>0?'+':''}${displayPct.toFixed(2)}%</span>`
-        : `<span style="color:var(--text2);font-size:13px">—</span>`;
+        ? `<span class="port-change-pill ${pctState} ${pctMoveClass}">${displayPct>0?'+':''}${displayPct.toFixed(2)}%</span>`
+        : `<span class="port-data-empty">—</span>`;
       const high20Cell=_renderCloseRangeDistance(sk,pi,'high');
       const low10Cell =_renderCloseRangeDistance(sk,pi,'low');
       const vr = pi?.volRatio;
-      const vrCol = !vr ? 'var(--text2)' : vr>=3 ? '#991b1b' : vr>=2 ? '#dc2626' : vr>=1.5 ? '#d97706' : vr>=1 ? 'var(--text)' : '#64748b';
-      const vrAnim = vr>=3 ? 'animation:vrBlink 1s ease-in-out infinite;font-weight:900;' : 'font-weight:700;';
+      const vrState=!vr?'':vr>=2.5?'is-hot':vr>=1.5?'is-elevated':'';
+      const vrMoveClass=pi?_portLiveMoveClass(sk,'volRatio',vr,portRenderNow):'port-live-value';
       const vrCell = vr!=null
-        ? `<span style="${vrAnim}font-size:14px;color:${vrCol}">${Number(vr).toFixed(2)}</span>`
-        : `<span style="color:var(--text2);font-size:13px">—</span>`;
+        ? `<span class="port-metric-number ${vrState} ${vrMoveClass}">${Number(vr).toFixed(2)}</span>`
+        : `<span class="port-data-empty">—</span>`;
       const sp = pi?.speedPct;
-      const spCol = sp==null ? 'var(--text2)' : sp>0 ? '#991b1b' : sp<0 ? '#065f46' : '#475569';
+      const spState=sp==null?'':sp>0.005?'is-up':sp<-0.005?'is-down':'is-flat';
+      const spMoveClass=pi?_portLiveMoveClass(sk,'speedPct',sp,portRenderNow):'port-live-value';
       const spCell = sp!=null
-        ? `<span style="font-weight:700;font-size:14px;color:${spCol}">${sp>0?'+':''}${Number(sp).toFixed(2)}%</span>`
-        : `<span style="color:var(--text2);font-size:13px">—</span>`;
+        ? `<span class="port-metric-number port-speed-value ${spState} ${spMoveClass}">${sp>0?'+':''}${Number(sp).toFixed(2)}%</span>`
+        : `<span class="port-data-empty">—</span>`;
       const _emUrl = sk.mkt==='SH' ? `https://quote.eastmoney.com/sh${sk.code}.html`
                    : sk.mkt==='SZ' ? `https://quote.eastmoney.com/sz${sk.code}.html`
                    : sk.mkt==='HK' ? `https://quote.eastmoney.com/hk/${String(sk.code).padStart(5,'0')}.html`
                    : null;
       const _codeCell = _emUrl
-        ? `<a href="${_emUrl}" target="_blank" rel="noopener"
-             style="font-family:monospace;font-size:13px;color:var(--blue);text-decoration:none;
-                    border-bottom:1px dashed var(--blue);padding-bottom:1px">${sk.code}</a>`
-        : `<span style="font-family:monospace;font-size:13px;color:var(--text2)">${sk.code}</span>`;
-      return `<tr>
-        <td style="font-weight:700;font-size:15px;color:var(--text)">${sk.name}</td>
-        <td class="col-code">${_codeCell}</td>
-        <td class="col-mkt"><span class="mkt-badge" style="${mktStyle[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span></td>
-        <td class="col-industry" style="color:var(--text2);font-size:13px">${sk.industry||''}</td>
-        <td class="col-price" style="text-align:right">${priceCell}</td>
-        <td style="text-align:right">${pctCell}</td>
-        <td class="col-range5">${high20Cell}</td>
-        <td class="col-range5">${low10Cell}</td>
-        <td style="text-align:right">${sk.w!=null?'<strong style="color:var(--blue);font-size:15px">'+sk.w.toFixed(1)+'%</strong>':'<span style="color:var(--text2);font-size:13px">—</span>'}</td>
-        <td class="col-vr" style="text-align:right">${vrCell}</td>
-        <td class="col-sp" style="text-align:right">${spCell}</td>
-        <td style="white-space:nowrap">
-          <button class="btn-edit" onclick="openPortModal('edit',${si},${ki})" style="background:none;border:1.5px solid var(--blue);color:var(--blue);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600">编辑</button>
-          <button class="btn-del"  onclick="delPortStock(${si},${ki})"         style="background:none;border:1.5px solid #fca5a5;color:var(--red);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;margin-left:5px">删除</button>
+        ? `<a class="port-code-link" href="${_emUrl}" target="_blank" rel="noopener">${sk.code}</a>`
+        : `<span class="port-code-plain">${sk.code}</span>`;
+      const stockNameHtml=_escH(sk.name||'—');
+      const industryHtml=_escH(sk.industry||'未标注');
+      return `<tr class="port-holding-row">
+        <td class="col-stock port-cell-identity"><div class="port-stock-cell"><span class="port-stock-accent"></span><span class="port-stock-primary" title="${stockNameHtml}">${stockNameHtml}</span></div></td>
+        <td class="col-code port-cell-identity">${_codeCell}</td>
+        <td class="col-mkt port-cell-identity"><span class="mkt-badge" style="${mktStyle[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span></td>
+        <td class="col-industry port-cell-identity"><span class="port-industry-tag" title="${industryHtml}">${industryHtml}</span></td>
+        <td class="col-price port-cell-market" style="text-align:right">${priceCell}</td>
+        <td class="col-pct port-cell-market" style="text-align:right">${pctCell}</td>
+        <td class="col-range5 port-cell-market">${high20Cell}</td>
+        <td class="col-range5 port-cell-market">${low10Cell}</td>
+        <td class="col-weight port-cell-momentum" style="text-align:right">${sk.w!=null?'<span class="port-weight-value">'+sk.w.toFixed(1)+'%</span>':'<span class="port-data-empty">—</span>'}</td>
+        <td class="col-vr port-cell-momentum" style="text-align:right">${vrCell}</td>
+        <td class="col-sp port-cell-momentum" style="text-align:right">${spCell}</td>
+        <td class="col-actions port-cell-actions">
+          <div class="port-row-actions">
+            <button class="port-row-action port-row-action-edit btn-edit" onclick="openPortModal('edit',${si},${ki})">编辑</button>
+            <button class="port-row-action port-row-action-delete btn-del" onclick="delPortStock(${si},${ki})">删除</button>
+          </div>
         </td>
       </tr>`;}).join('')
     : `<tr><td colspan="12" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
@@ -4799,24 +4925,34 @@ function renderPortfolio(){
       <!-- 卡片主体：删除分类饼图，完整宽度留给持仓明细 -->
       <div style="margin:0 -20px -20px -20px">
         <div class="overflow" style="border-radius:0">
-          <table class="mtable" style="min-width:1320px"><thead><tr>
-            <th>股票名称</th>
-            <th class="th-code">代码</th>
-            <th class="th-mkt">市场</th>
-            <th class="th-industry">行业</th>
-            <th class="th-price" style="text-align:right">当前股价</th>
-            <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
-            <th class="th-range5" title="当前股价相对前20个交易日最高收盘价的百分比距离">前20日最高收盘价</th>
-            <th class="th-range5" title="当前股价相对前10个交易日最低收盘价的百分比距离">前10日最低收盘价</th>
-            <th class="${wThCls}"   onclick="togglePortSort('w')"   style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
-            <th class="${vrThCls} th-vr" onclick="togglePortSort('vr')"    style="text-align:right;cursor:pointer">量比 ${vrArrow}</th>
-            <th class="${spThCls} th-sp" onclick="togglePortSort('speed')" style="text-align:right;cursor:pointer">5分钟 ${spArrow}</th>
-            <th>操作</th>
-          </tr></thead><tbody>${rows}</tbody></table>
+          <table class="mtable port-holdings-table"><thead>
+            <tr class="port-table-group-row">
+              <th colspan="4" class="port-table-group-identity"><span class="port-table-group-label">标的资料</span></th>
+              <th colspan="4" class="port-table-group-market"><span class="port-table-group-label">行情表现</span></th>
+              <th colspan="3" class="port-table-group-momentum"><span class="port-table-group-label">仓位与动量</span></th>
+              <th class="port-table-group-actions"><span class="port-table-group-label">管理</span></th>
+            </tr>
+            <tr class="port-table-columns">
+              <th>股票名称</th>
+              <th class="th-code">代码</th>
+              <th class="th-mkt">市场</th>
+              <th class="th-industry">行业</th>
+              <th class="th-price" style="text-align:right">当前股价</th>
+              <th class="${pctThCls}" onclick="togglePortSort('pct')" style="text-align:right;cursor:pointer">涨跌幅 ${pctArrow}</th>
+              <th class="th-range5" title="当前股价相对前20个交易日最高收盘价的百分比距离">前20日最高</th>
+              <th class="th-range5" title="当前股价相对前10个交易日最低收盘价的百分比距离">前10日最低</th>
+              <th class="${wThCls}" onclick="togglePortSort('w')" style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
+              <th class="${vrThCls} th-vr" onclick="togglePortSort('vr')" style="text-align:right;cursor:pointer">量比 ${vrArrow}</th>
+              <th class="${spThCls} th-sp" onclick="togglePortSort('speed')" style="text-align:right;cursor:pointer">5分钟 ${spArrow}</th>
+              <th class="th-actions" style="text-align:right">操作</th>
+            </tr>
+          </thead><tbody>${rows}</tbody></table>
         </div>
       </div>
     </div>`;
   }).join('');
+
+  _capturePortfolioRenderSnapshot(PORT,_PORT_PRICES,portRenderNow);
 
   // 每次渲染都刷新重仓TOP5（仓位数据不依赖股价）
   _renderPortTopW();
