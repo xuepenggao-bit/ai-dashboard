@@ -2067,6 +2067,25 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         <div class="kval" id="histUnderAvg" style="font-size:30px;color:#16a34a">—</div>
       </div>
     </div>
+    <!-- 持仓与中证全指方向相关统计：0 涨幅按非负方向处理 -->
+    <div class="g4 mb16" id="histCorrStats" style="display:none">
+      <div class="card" style="border-top:3px solid #4f46e5" title="持仓涨跌幅和中证全指同为非负，或同为负值的交易日数量">
+        <div class="klabel" style="color:#4338ca;font-size:12px">正相关天数</div>
+        <div class="kval" id="histPosCorrDays" style="font-size:30px;color:#4f46e5">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid #818cf8" title="正相关交易日的平均持仓涨跌幅">
+        <div class="klabel" style="color:#4338ca;font-size:12px">正相关平均收益</div>
+        <div class="kval" id="histPosCorrAvg" style="font-size:30px;color:#4f46e5">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid #d97706" title="持仓涨跌幅和中证全指方向相反的交易日数量">
+        <div class="klabel" style="color:#b45309;font-size:12px">负相关天数</div>
+        <div class="kval" id="histNegCorrDays" style="font-size:30px;color:#d97706">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid #fbbf24" title="负相关交易日的平均持仓涨跌幅">
+        <div class="klabel" style="color:#b45309;font-size:12px">负相关平均收益</div>
+        <div class="kval" id="histNegCorrAvg" style="font-size:30px;color:#d97706">—</div>
+      </div>
+    </div>
     <!-- 记录表格 -->
     <div class="card">
       <div class="ch">
@@ -8210,24 +8229,30 @@ function renderHistTable(){
     el.innerHTML='<div style="color:var(--text2);font-size:13px;text-align:center;padding:28px 0">切换到「投资组合」刷新股价后，点击「记录今日持仓」开始记录</div>';
     const statsEl=document.getElementById('histStats'); if(statsEl) statsEl.style.display='none';
     const excStatsEl=document.getElementById('histExcStats'); if(excStatsEl) excStatsEl.style.display='none';
+    const corrStatsEl=document.getElementById('histCorrStats'); if(corrStatsEl) corrStatsEl.style.display='none';
     return;
   }
 
   // 统计概览
   const statsEl=document.getElementById('histStats'); if(statsEl) statsEl.style.display='grid';
   const excStatsEl=document.getElementById('histExcStats'); if(excStatsEl) excStatsEl.style.display='grid';
+  const corrStatsEl=document.getElementById('histCorrStats'); if(corrStatsEl) corrStatsEl.style.display='grid';
   const vp=recs.filter(r=>r.portPct!=null&&isFinite(r.portPct));
   const vc=recs.filter(r=>r.csiPct!=null&&isFinite(r.csiPct));
   const avgPort=vp.length?vp.reduce((s,r)=>s+r.portPct,0)/vp.length:null;
   const avgCsi =vc.length?vc.reduce((s,r)=>s+r.csiPct,0)/vc.length:null;
-  const excVals=recs
-    .filter(r=>r.portPct!=null&&isFinite(r.portPct)&&r.csiPct!=null&&isFinite(r.csiPct))
-    .map(r=>r.portPct-r.csiPct);
+  const pairedRows=recs.filter(r=>r.portPct!=null&&isFinite(r.portPct)&&r.csiPct!=null&&isFinite(r.csiPct));
+  const excVals=pairedRows.map(r=>r.portPct-r.csiPct);
   const outVals=excVals.filter(v=>v>0);
   const underVals=excVals.filter(v=>v<0);
+  const sameDirection=r=>(r.portPct>=0&&r.csiPct>=0)||(r.portPct<0&&r.csiPct<0);
+  const posCorrRows=pairedRows.filter(sameDirection);
+  const negCorrRows=pairedRows.filter(r=>!sameDirection(r));
   const avgExc=excVals.length?excVals.reduce((s,v)=>s+v,0)/excVals.length:null;
   const outAvg=outVals.length?outVals.reduce((s,v)=>s+v,0)/outVals.length:null;
   const underAvg=underVals.length?underVals.reduce((s,v)=>s+v,0)/underVals.length:null;
+  const posCorrAvg=posCorrRows.length?posCorrRows.reduce((s,r)=>s+r.portPct,0)/posCorrRows.length:null;
+  const negCorrAvg=negCorrRows.length?negCorrRows.reduce((s,r)=>s+r.portPct,0)/negCorrRows.length:null;
   const _sf=v=>v!=null&&isFinite(v)?(v>0?'+':'')+v.toFixed(2)+'%':'—';
   const _sc=v=>!isFinite(v)||v==null?'var(--text)':v>0?'#dc2626':v<0?'#16a34a':'var(--text)';
   const _set=(id,v)=>{const e=document.getElementById(id);if(e){e.textContent=_sf(v);e.style.color=_sc(v);}};
@@ -8236,6 +8261,9 @@ function renderHistTable(){
   const outDaysEl=document.getElementById('histOutDays'); if(outDaysEl) outDaysEl.textContent=outVals.length+'天';
   const underDaysEl=document.getElementById('histUnderDays'); if(underDaysEl) underDaysEl.textContent=underVals.length+'天';
   _set('histOutAvg',outAvg); _set('histUnderAvg',underAvg);
+  const posCorrDaysEl=document.getElementById('histPosCorrDays'); if(posCorrDaysEl) posCorrDaysEl.textContent=posCorrRows.length+'天';
+  const negCorrDaysEl=document.getElementById('histNegCorrDays'); if(negCorrDaysEl) negCorrDaysEl.textContent=negCorrRows.length+'天';
+  _set('histPosCorrAvg',posCorrAvg); _set('histNegCorrAvg',negCorrAvg);
 
   const fmt=v=>v!=null&&isFinite(v)?(v>0?'+':'')+v.toFixed(2)+'%':'—';
   const pc =v=>!isFinite(v)||v==null?'var(--text2)':v>0?'#dc2626':v<0?'#16a34a':'var(--text2)';
