@@ -549,14 +549,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .mkt-badge{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600}
 .port-sector-card{--sector-accent:#2563eb;position:relative;border-color:color-mix(in srgb,var(--sector-accent) 17%,#dbe3ef)!important;box-shadow:0 8px 24px rgba(15,23,42,.07),0 1px 3px rgba(15,23,42,.04)!important}
 .port-sector-card::before{content:"";position:absolute;z-index:3;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,var(--sector-accent),color-mix(in srgb,var(--sector-accent) 44%,#fff),transparent 88%)}
-.port-sector-identity{display:flex;align-items:center;min-width:138px}
+.port-sector-identity{display:flex;align-items:center;min-width:170px}
 .port-sector-copy{min-width:0}
-.port-sector-name-wrap{display:flex;align-items:center;gap:6px;min-width:0}
-.port-sector-name{font-size:16px;font-weight:900;color:#172033;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.port-sector-subline{display:flex;align-items:center;gap:6px;margin-top:3px;color:#7c899b;font-size:10px;font-weight:700;white-space:nowrap}
-.port-sector-count{display:inline-flex;align-items:center;gap:3px;color:#475569}
-.port-sector-count strong{color:var(--sector-accent);font-size:12px;font-weight:900;font-variant-numeric:tabular-nums}
-.port-sector-separator{width:3px;height:3px;border-radius:50%;background:#cbd5e1}
+.port-sector-name-wrap{display:inline-flex;align-items:center;gap:7px;min-width:0;padding:7px 9px 7px 12px;border-radius:11px;background:color-mix(in srgb,var(--sector-accent) 7%,#fff);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--sector-accent) 15%,#e2e8f0),0 3px 9px rgba(15,23,42,.035)}
+.port-sector-name{font-size:18px;font-weight:920;color:#111827;letter-spacing:-.025em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .port-sector-rename{width:27px;height:27px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;border:1px solid #cbd5e1;border-radius:8px;background:linear-gradient(180deg,#fff,#f1f5f9);color:#475569;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.06);transition:background .15s,border-color .15s,color .15s,transform .12s}
 .port-sector-rename:hover{background:#eff6ff;border-color:#93c5fd;color:#2563eb}
 .port-sector-rename:active{transform:scale(.94)}
@@ -597,12 +593,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   display:grid;
   grid-template-columns:minmax(185px,1fr) auto auto;
   align-items:center;
-  padding:11px 16px;
-  background:linear-gradient(105deg,color-mix(in srgb,var(--sector-accent) 7%,#fff) 0%,#fff 48%,#f8fafc 100%);
+  padding:12px 16px;
+  background:linear-gradient(110deg,color-mix(in srgb,var(--sector-accent) 6%,#fff) 0%,#fff 50%,#f7f9fc 100%);
   border-radius:10px 10px 0 0;
   margin:-20px -20px 0 -20px;
   border-bottom:1px solid #dfe6ef;
-  gap:10px;
+  gap:12px;
 }
 #tPort .mtable th{font-size:12px;padding:12px 16px;letter-spacing:.04em}
 #tPort .mtable td{padding:14px 16px;font-size:14px}
@@ -770,7 +766,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   #tPort .btn-del {font-size:11px;padding:4px 8px;margin-left:3px}
   #tPort .port-row-actions .btn-del{margin-left:0}
   #tPort .port-holdings-table{min-width:680px}
-  .port-sector-name{max-width:170px;font-size:15px}
+  .port-sector-name{max-width:170px;font-size:17px}
   .port-sector-rename{width:29px;height:29px}
   .port-sector-action-delete{width:34px;padding:0;font-size:0}
   .port-sector-action-delete::before{content:"删";font-size:11px}
@@ -4893,11 +4889,6 @@ function renderPortfolio(){
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
               </button>
             </span>
-            <div class="port-sector-subline">
-              <span class="port-sector-count"><strong>${sec.stocks.length}</strong> 只持仓</span>
-              <span class="port-sector-separator" aria-hidden="true"></span>
-              <span>实时组合</span>
-            </div>
           </div>
         </div>
         <div class="port-sector-kpis">
