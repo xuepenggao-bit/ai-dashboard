@@ -2055,6 +2055,25 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         <div class="kval" id="histAvgExc" style="font-size:30px;color:var(--purple)">—</div>
       </div>
     </div>
+    <!-- 超额收益胜负统计：仅使用持仓涨跌与中证全指均完整的交易日 -->
+    <div class="g4 mb16" id="histExcStats" style="display:none">
+      <div class="card" style="border-top:3px solid #dc2626" title="当日持仓涨跌幅高于中证全指的交易日数量">
+        <div class="klabel" style="color:#b91c1c;font-size:12px">跑赢天数</div>
+        <div class="kval" id="histOutDays" style="font-size:30px;color:#dc2626">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid #f87171" title="跑赢交易日的平均超额收益">
+        <div class="klabel" style="color:#b91c1c;font-size:12px">跑赢平均比率</div>
+        <div class="kval" id="histOutAvg" style="font-size:30px;color:#dc2626">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid #16a34a" title="当日持仓涨跌幅低于中证全指的交易日数量">
+        <div class="klabel" style="color:#15803d;font-size:12px">跑输天数</div>
+        <div class="kval" id="histUnderDays" style="font-size:30px;color:#16a34a">—</div>
+      </div>
+      <div class="card" style="border-top:3px solid #4ade80" title="跑输交易日的平均超额收益">
+        <div class="klabel" style="color:#15803d;font-size:12px">跑输平均比率</div>
+        <div class="kval" id="histUnderAvg" style="font-size:30px;color:#16a34a">—</div>
+      </div>
+    </div>
     <!-- 记录表格 -->
     <div class="card">
       <div class="ch">
@@ -8202,21 +8221,33 @@ function renderHistTable(){
   if(!recs.length){
     el.innerHTML='<div style="color:var(--text2);font-size:13px;text-align:center;padding:28px 0">切换到「投资组合」刷新股价后，点击「记录今日持仓」开始记录</div>';
     const statsEl=document.getElementById('histStats'); if(statsEl) statsEl.style.display='none';
+    const excStatsEl=document.getElementById('histExcStats'); if(excStatsEl) excStatsEl.style.display='none';
     return;
   }
 
   // 统计概览
   const statsEl=document.getElementById('histStats'); if(statsEl) statsEl.style.display='grid';
+  const excStatsEl=document.getElementById('histExcStats'); if(excStatsEl) excStatsEl.style.display='grid';
   const vp=recs.filter(r=>r.portPct!=null&&isFinite(r.portPct));
   const vc=recs.filter(r=>r.csiPct!=null&&isFinite(r.csiPct));
   const avgPort=vp.length?vp.reduce((s,r)=>s+r.portPct,0)/vp.length:null;
   const avgCsi =vc.length?vc.reduce((s,r)=>s+r.csiPct,0)/vc.length:null;
-  const avgExc =(avgPort!=null&&avgCsi!=null)?avgPort-avgCsi:null;
+  const excVals=recs
+    .filter(r=>r.portPct!=null&&isFinite(r.portPct)&&r.csiPct!=null&&isFinite(r.csiPct))
+    .map(r=>r.portPct-r.csiPct);
+  const outVals=excVals.filter(v=>v>0);
+  const underVals=excVals.filter(v=>v<0);
+  const avgExc=excVals.length?excVals.reduce((s,v)=>s+v,0)/excVals.length:null;
+  const outAvg=outVals.length?outVals.reduce((s,v)=>s+v,0)/outVals.length:null;
+  const underAvg=underVals.length?underVals.reduce((s,v)=>s+v,0)/underVals.length:null;
   const _sf=v=>v!=null&&isFinite(v)?(v>0?'+':'')+v.toFixed(2)+'%':'—';
   const _sc=v=>!isFinite(v)||v==null?'var(--text)':v>0?'#dc2626':v<0?'#16a34a':'var(--text)';
   const _set=(id,v)=>{const e=document.getElementById(id);if(e){e.textContent=_sf(v);e.style.color=_sc(v);}};
   const dEl=document.getElementById('histDays'); if(dEl) dEl.textContent=recs.length+'天';
   _set('histAvgPort',avgPort); _set('histAvgCsi',avgCsi); _set('histAvgExc',avgExc);
+  const outDaysEl=document.getElementById('histOutDays'); if(outDaysEl) outDaysEl.textContent=outVals.length+'天';
+  const underDaysEl=document.getElementById('histUnderDays'); if(underDaysEl) underDaysEl.textContent=underVals.length+'天';
+  _set('histOutAvg',outAvg); _set('histUnderAvg',underAvg);
 
   const fmt=v=>v!=null&&isFinite(v)?(v>0?'+':'')+v.toFixed(2)+'%':'—';
   const pc =v=>!isFinite(v)||v==null?'var(--text2)':v>0?'#dc2626':v<0?'#16a34a':'var(--text2)';
