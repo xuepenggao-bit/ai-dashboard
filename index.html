@@ -549,10 +549,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .mkt-badge{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600}
 .port-sector-card{--sector-accent:#2563eb;position:relative;border-color:color-mix(in srgb,var(--sector-accent) 17%,#dbe3ef)!important;box-shadow:0 8px 24px rgba(15,23,42,.07),0 1px 3px rgba(15,23,42,.04)!important}
 .port-sector-card::before{content:"";position:absolute;z-index:3;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,var(--sector-accent),color-mix(in srgb,var(--sector-accent) 44%,#fff),transparent 88%)}
-.port-sector-identity{display:flex;align-items:center;gap:9px;min-width:170px}
-.port-sector-mark{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,color-mix(in srgb,var(--sector-accent) 90%,#fff),var(--sector-accent));box-shadow:0 6px 13px color-mix(in srgb,var(--sector-accent) 22%,transparent),inset 0 1px 0 rgba(255,255,255,.45)}
-.port-sector-mark::before{content:"";width:16px;height:11px;border-left:2px solid rgba(255,255,255,.95);border-bottom:2px solid rgba(255,255,255,.95);border-radius:2px;transform:skewY(-27deg) rotate(-4deg)}
-.port-sector-mark::after{content:"";position:absolute;width:5px;height:5px;right:8px;top:8px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.24)}
+.port-sector-identity{display:flex;align-items:center;min-width:138px}
 .port-sector-copy{min-width:0}
 .port-sector-name-wrap{display:flex;align-items:center;gap:6px;min-width:0}
 .port-sector-name{font-size:16px;font-weight:900;color:#172033;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -694,8 +691,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 #tPort .port-holding-row td.port-cell-momentum{background:#fcfafc}
 #tPort .port-holding-row:nth-child(even) td.port-cell-momentum{background:#f9f7fa}
 #tPort .port-holding-row:hover td{background:#f3f7fb!important}
-.port-stock-cell{display:flex;align-items:center;gap:9px;min-width:120px}
-.port-stock-monogram{display:inline-flex;align-items:center;justify-content:center;width:29px;height:29px;flex:0 0 auto;border:1px solid color-mix(in srgb,var(--sector-accent) 28%,#dbe3ec);border-radius:9px;background:color-mix(in srgb,var(--sector-accent) 10%,#fff);color:var(--sector-accent);font-size:11.5px;font-weight:900;box-shadow:0 2px 7px color-mix(in srgb,var(--sector-accent) 10%,transparent)}
+.port-stock-cell{display:flex;align-items:center;min-width:110px}
 .port-stock-primary{min-width:0;color:#172033;font-size:14.5px;font-weight:850;letter-spacing:-.012em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .port-code-link,.port-code-plain{
   display:inline-flex;align-items:center;padding:4px 7px;border:1px solid #d9e2eb;border-radius:7px;
@@ -779,7 +775,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   #tPort .port-holdings-table{min-width:680px}
   .port-sector-name{max-width:170px;font-size:15px}
   .port-sector-rename{width:29px;height:29px}
-  .port-sector-mark{width:34px;height:34px;border-radius:10px}
   .port-sector-action-delete{width:34px;padding:0;font-size:0}
   .port-sector-action-delete::before{content:"删";font-size:11px}
   .port-sector-kpi{padding:8px 9px}
@@ -4853,7 +4848,7 @@ function renderPortfolio(){
       const stockNameHtml=_escH(sk.name||'—');
       const industryHtml=_escH(sk.industry||'未标注');
       return `<tr class="port-holding-row">
-        <td class="col-stock port-cell-identity"><div class="port-stock-cell"><span class="port-stock-monogram" aria-hidden="true">${_escH(String(sk.name||'股').slice(0,1))}</span><span class="port-stock-primary" title="${stockNameHtml}">${stockNameHtml}</span></div></td>
+        <td class="col-stock port-cell-identity"><div class="port-stock-cell"><span class="port-stock-primary" title="${stockNameHtml}">${stockNameHtml}</span></div></td>
         <td class="col-code port-cell-identity">${_codeCell}</td>
         <td class="col-mkt port-cell-identity"><span class="mkt-badge" style="${mktStyle[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span></td>
         <td class="col-industry port-cell-identity"><span class="port-industry-tag" title="${industryHtml}">${industryHtml}</span></td>
@@ -4875,7 +4870,6 @@ function renderPortfolio(){
     return `<div class="card mb16 port-sector-card" style="overflow:hidden;--sector-accent:${secColor}">
       <div class="sec-header">
         <div class="port-sector-identity">
-          <span class="port-sector-mark" aria-hidden="true"></span>
           <div class="port-sector-copy">
             <span class="port-sector-name-wrap">
               <span class="port-sector-name">${secNameHtml}</span>
