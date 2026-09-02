@@ -1769,7 +1769,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div class="card mb16">
     <div class="ch">
       <span class="ct">沪深 A 股涨跌家数趋势（日频·家）</span>
-      <span class="cbadge" style="background:#eff6ff;color:#1d4ed8">60 交易日 · 盘中/午间快照</span>
+      <span class="cbadge" style="background:#eff6ff;color:#1d4ed8">60 交易日 · 实时更新</span>
     </div>
     <div style="display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
       <span id="breadthKpiDate" class="tx3" style="color:#64748b">加载中…</span>
@@ -6880,6 +6880,53 @@ function _breadthBeijingClock(nowMs=Date.now()){
   return{date,time,minute,weekday,phase,isTrading:weekdayOpen&&liveWindow};
 }
 
+// 东方财富牛熊风向标的 type=0 返回当天最新快照；直接取官方聚合值，
+// 比逐页拉取五千多只股票更快、更稳定。以数据源时间为准，避免节假日误把上一交易日写成今天。
+const _BREADTH_LIVE_URL='https://emdatah5.eastmoney.com/dc/NXFXB/GetUpDownData?type=0';
+let _breadthOfficialFetch=null;
+let _breadthOfficialTs=0;
+
+function _breadthSourceClock(rawTime,nowClock=_breadthBeijingClock()){
+  const m=String(rawTime||'').match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2})/);
+  if(!m||m[1]!==nowClock.date) return null;
+  const minute=Number(m[2])*60+Number(m[3]);
+  if(!Number.isFinite(minute)||minute<9*60+25) return null;
+  const phase=minute>=15*60?'收盘最新':minute>11*60+30&&minute<13*60?'午间最新':'盘中实时';
+  return{...nowClock,date:m[1],time:m[2]+':'+m[3],minute,phase,isTrading:true};
+}
+
+async function _fetchOfficialBreadthLive(force=false){
+  const nowClock=_breadthBeijingClock();
+  // 开盘前不取：接口可能仍保留上一交易日快照。节假日会因源日期不是今天而自动拒绝。
+  if(nowClock.weekday<1||nowClock.weekday>5||nowClock.minute<9*60+25) return false;
+  if(!force&&Date.now()-_breadthOfficialTs<45000){
+    return !!(_breadthLivePoint&&_breadthLivePoint.date===nowClock.date);
+  }
+  if(_breadthOfficialFetch) return _breadthOfficialFetch;
+  _breadthOfficialFetch=(async()=>{
+    try{
+      const payload=await _idxFetch(_BREADTH_LIVE_URL+'&_='+Date.now(),{timeout:5000,retries:2});
+      const rows=Array.isArray(payload)?payload:[];
+      const row=rows[rows.length-1]||null;
+      const sourceClock=_breadthSourceClock(row&&row.time,nowClock);
+      const up=Number(row&&row.up),down=Number(row&&row.down),flat=Number(row&&row.r0||0);
+      if(!sourceClock||!Number.isFinite(up)||!Number.isFinite(down)||up+down<1000){
+        throw new Error('官方实时快照日期或数值无效');
+      }
+      _breadthOfficialTs=Date.now();
+      _setBreadthTrendLivePoint(up,down,flat,sourceClock);
+      console.log('[Daily] 涨跌家数官方实时',sourceClock.date,sourceClock.time,'↑'+up,'↓'+down);
+      return true;
+    }catch(e){
+      console.warn('[Daily] 官方实时涨跌家数失败:',e.message);
+      return false;
+    }finally{
+      _breadthOfficialFetch=null;
+    }
+  })();
+  return _breadthOfficialFetch;
+}
+
 function _mergeBreadthTrendRows(historyRows,livePoint,today=_breadthBeijingClock().date){
   const byDate=new Map();
   (historyRows||[]).forEach(row=>{
@@ -6943,7 +6990,7 @@ function _renderBreadthTrend(){
   if(cntEl) cntEl.textContent=`${rows.length}交易日 · ${rows[0].date} 至 ${last.date}${last.live?' · 实时':''}`;
   const foot=document.getElementById('cUpDownFooter');
   if(foot) foot.textContent=last.live
-    ?`来源: 历史为东方财富牛熊风向标/个股日行情；今日为东方财富全市场实时行情 · ${last.status||'盘中实时'} ${last.asOf} · 实心点=今日最新值`
+    ?`来源: 历史为东方财富牛熊风向标/个股日行情；今日为东方财富牛熊风向标官方实时快照 · ${last.status||'盘中实时'} ${last.asOf} · 实心点=今日最新值`
     :`来源: 东方财富牛熊风向标 + 个股日行情汇总 · 沪深 A 股（不含北交所）· 折线=上涨/下跌家数 · 柱=上涨−下跌（正值红、负值绿）· 数据截至 ${last.date}`;
   console.log('[Daily] 涨跌家数',last.live?'盘中实时':'历史收盘',last.date,'↑'+last.up,'↓'+last.down,last.asOf||'');
   return true;
@@ -7394,7 +7441,7 @@ async function refreshMacro(){
   const jobs=[
     fetchMacroKpis(),
     fetchDailyCharts(),
-    refreshBreadthTrendLive(),
+    refreshBreadthTrendLive(true),
     fetchVixChart(),
   ];
   await Promise.allSettled(jobs);
@@ -8692,12 +8739,20 @@ async function fetchMarketStats(){
   }
 }
 
-// 宏观趋势打开/手动刷新时，在沪深 9:30–15:00（含午休）主动补取一次最新涨跌家数。
-// 若投资组合页的并行刷新仍在进行，则由那次请求完成后自动推送到趋势图，避免重复拉全市场分页。
-async function refreshBreadthTrendLive(){
-  if(!_breadthBeijingClock().isTrading||_mktStatsFetching) return false;
+// 宏观趋势打开、回到前台及每分钟定时刷新时，优先读取东方财富官方实时聚合值。
+// 官方接口失败后，盘中才回退到投资组合页使用的逐股统计；任一方式失败都保留最后成功值。
+async function refreshBreadthTrendLive(force=false){
+  if(await _fetchOfficialBreadthLive(force)) return true;
+  const clock=_breadthBeijingClock();
+  if(!clock.isTrading||_mktStatsFetching) return false;
   await _doFetchBreadth();
-  return !!_breadthLivePoint;
+  return !!(_breadthLivePoint&&_breadthLivePoint.date===clock.date);
+}
+
+function _refreshVisibleMacroBreadth(force=false){
+  const macro=document.getElementById('t0');
+  if(document.hidden||!macro||!macro.classList.contains('active')) return;
+  refreshBreadthTrendLive(force).catch(e=>console.warn('[Daily] 涨跌家数自动刷新:',e.message));
 }
 
 // ── 涨跌统计（东方财富 clist，分批分页拉取全量 f3 精确计数）────────
@@ -10939,11 +10994,20 @@ document.addEventListener('DOMContentLoaded',()=>{
   setInterval(function(){
     if(!document.hidden){ try{ fetchNews(false); }catch(e){} }
   }, 30000);          // 页面可见时每30秒检查新消息；与股价刷新相互独立
+  setInterval(function(){
+    _refreshVisibleMacroBreadth(false);
+  }, 60000);          // 宏观趋势停留期间每分钟更新当天最新涨跌家数
   document.addEventListener('visibilitychange',function(){
-    if(!document.hidden){ try{ fetchNews(true); }catch(e){} }
+    if(!document.hidden){
+      try{ fetchNews(true); }catch(e){}
+      _refreshVisibleMacroBreadth(true);
+    }
   });                 // 从后台切回时立即刷新，修复手机/Safari挂起定时器后的陈旧内容
   window.addEventListener('pageshow',function(e){
-    if(e.persisted){ try{ fetchNews(true); }catch(err){} }
+    if(e.persisted){
+      try{ fetchNews(true); }catch(err){}
+      _refreshVisibleMacroBreadth(true);
+    }
   });                 // Safari 通过前进/后退缓存恢复页面时，定时器可能未立即补跑
   fetchKolSummary();  // X关注意见领袖：从 data/twitter_kol_summary.json 加载
   // 30s 后检查是否成功，若仍是占位文字则自动重试一次
