@@ -327,10 +327,12 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @media(max-width:600px){.credit-ratings-grid{grid-template-columns:1fr}.credit-ratings-head{display:block}.credit-ratings-stamp{display:inline-flex;margin-top:8px}.credit-ratings-card{padding:14px}.credit-ratings-note{display:block}}
 .port-stock-name-line{display:flex;align-items:center;gap:6px;min-width:0}
 .port-stock-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--text)}
-.port-hk-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:19px;height:19px;border:1px solid rgba(59,130,246,.38);border-radius:50%;background:linear-gradient(145deg,#274690 0%,#2563eb 56%,#0ea5e9 100%);box-shadow:0 2px 5px rgba(37,99,235,.18),inset 0 1px 0 rgba(255,255,255,.34)}
-.port-hk-icon svg{width:13px;height:13px;overflow:visible;filter:drop-shadow(0 .5px .5px rgba(15,23,42,.18))}
-.port-hk-icon .hk-petal{fill:rgba(255,255,255,.94)}
-.port-hk-icon .hk-core{fill:#fde68a;stroke:rgba(120,53,15,.26);stroke-width:.45}
+.port-hk-icon{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:24px;height:16px;overflow:hidden;border:1px solid rgba(153,27,8,.28);border-radius:4.5px;background:#de2910;background:linear-gradient(145deg,#ee432c 0%,#de2910 53%,#c91f0c 100%);box-shadow:0 2px 5px rgba(153,27,8,.18),inset 0 1px 0 rgba(255,255,255,.25)}
+.port-hk-icon::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(155deg,rgba(255,255,255,.22),transparent 40%,rgba(89,12,4,.06));box-shadow:inset 0 0 0 .5px rgba(255,255,255,.16)}
+.port-hk-icon svg{position:relative;z-index:1;width:14px;height:14px;overflow:visible;filter:drop-shadow(0 .45px .45px rgba(89,12,4,.18))}
+.port-hk-icon .hk-petal{fill:#fff}
+.port-hk-icon .hk-style{fill:none;stroke:#de2910;stroke-width:.58;stroke-linecap:round}
+.port-hk-icon .hk-star{fill:#de2910}
 .port-top-row{align-items:stretch}
 .port-top-card{display:flex;min-height:0;flex-direction:column}
 .port-top-list{display:flex;flex:1;min-height:0;flex-direction:column}
@@ -7604,7 +7606,7 @@ function _isPortfolioHKStock(mkt,code){
 
 function _portTopMarketIcon(mkt,code){
   return _isPortfolioHKStock(mkt,code)
-    ? '<span class="port-hk-icon" title="港股" aria-label="港股"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="hk-petal" d="M12 11.7C9.3 9.2 9.5 5.4 12 3.4c2.5 2 2.7 5.8 0 8.3Z"/><path class="hk-petal" d="M12 11.7C9.3 9.2 9.5 5.4 12 3.4c2.5 2 2.7 5.8 0 8.3Z" transform="rotate(72 12 12)"/><path class="hk-petal" d="M12 11.7C9.3 9.2 9.5 5.4 12 3.4c2.5 2 2.7 5.8 0 8.3Z" transform="rotate(144 12 12)"/><path class="hk-petal" d="M12 11.7C9.3 9.2 9.5 5.4 12 3.4c2.5 2 2.7 5.8 0 8.3Z" transform="rotate(216 12 12)"/><path class="hk-petal" d="M12 11.7C9.3 9.2 9.5 5.4 12 3.4c2.5 2 2.7 5.8 0 8.3Z" transform="rotate(288 12 12)"/><circle class="hk-core" cx="12" cy="12" r="1.45"/></svg></span>'
+    ? '<span class="port-hk-icon" title="港股" aria-label="港股"><svg viewBox="0 0 24 24" aria-hidden="true"><g><path class="hk-petal" d="M12 11.8C9.25 9.55 9.15 5.75 11.85 3.35c2.45 1.75 2.95 5.35.15 8.45Z"/><path class="hk-style" d="M12 11.45c.05-1.35.2-2.7.05-3.85"/><path class="hk-star" d="M12.05 5.7l.31.91.96.02-.76.58.27.92-.78-.55-.79.55.28-.92-.77-.58.96-.02Z"/></g><g transform="rotate(72 12 12)"><path class="hk-petal" d="M12 11.8C9.25 9.55 9.15 5.75 11.85 3.35c2.45 1.75 2.95 5.35.15 8.45Z"/><path class="hk-style" d="M12 11.45c.05-1.35.2-2.7.05-3.85"/><path class="hk-star" d="M12.05 5.7l.31.91.96.02-.76.58.27.92-.78-.55-.79.55.28-.92-.77-.58.96-.02Z"/></g><g transform="rotate(144 12 12)"><path class="hk-petal" d="M12 11.8C9.25 9.55 9.15 5.75 11.85 3.35c2.45 1.75 2.95 5.35.15 8.45Z"/><path class="hk-style" d="M12 11.45c.05-1.35.2-2.7.05-3.85"/><path class="hk-star" d="M12.05 5.7l.31.91.96.02-.76.58.27.92-.78-.55-.79.55.28-.92-.77-.58.96-.02Z"/></g><g transform="rotate(216 12 12)"><path class="hk-petal" d="M12 11.8C9.25 9.55 9.15 5.75 11.85 3.35c2.45 1.75 2.95 5.35.15 8.45Z"/><path class="hk-style" d="M12 11.45c.05-1.35.2-2.7.05-3.85"/><path class="hk-star" d="M12.05 5.7l.31.91.96.02-.76.58.27.92-.78-.55-.79.55.28-.92-.77-.58.96-.02Z"/></g><g transform="rotate(288 12 12)"><path class="hk-petal" d="M12 11.8C9.25 9.55 9.15 5.75 11.85 3.35c2.45 1.75 2.95 5.35.15 8.45Z"/><path class="hk-style" d="M12 11.45c.05-1.35.2-2.7.05-3.85"/><path class="hk-star" d="M12.05 5.7l.31.91.96.02-.76.58.27.92-.78-.55-.79.55.28-.92-.77-.58.96-.02Z"/></g></svg></span>'
     : '';
 }
 
