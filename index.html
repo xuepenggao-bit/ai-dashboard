@@ -327,7 +327,10 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 @media(max-width:600px){.credit-ratings-grid{grid-template-columns:1fr}.credit-ratings-head{display:block}.credit-ratings-stamp{display:inline-flex;margin-top:8px}.credit-ratings-card{padding:14px}.credit-ratings-note{display:block}}
 .port-stock-name-line{display:flex;align-items:center;gap:6px;min-width:0}
 .port-stock-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--text)}
-.port-hk-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:25px;height:17px;padding:0 5px;border:1px solid rgba(0,113,227,.24);border-radius:5px;background:linear-gradient(180deg,#f2f8ff 0%,#e4f1ff 100%);color:#0667c9;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;font-size:9px;font-weight:800;letter-spacing:.06em;line-height:1;box-shadow:0 1px 2px rgba(0,102,204,.08),inset 0 1px 0 rgba(255,255,255,.9)}
+.port-hk-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:19px;height:19px;border:1px solid rgba(59,130,246,.38);border-radius:50%;background:linear-gradient(145deg,#274690 0%,#2563eb 56%,#0ea5e9 100%);box-shadow:0 2px 5px rgba(37,99,235,.18),inset 0 1px 0 rgba(255,255,255,.34)}
+.port-hk-icon svg{width:13px;height:13px;overflow:visible;filter:drop-shadow(0 .5px .5px rgba(15,23,42,.18))}
+.port-hk-icon .hk-petal{fill:rgba(255,255,255,.94)}
+.port-hk-icon .hk-core{fill:#fde68a;stroke:rgba(120,53,15,.26);stroke-width:.45}
 .port-top-row{align-items:stretch}
 .port-top-card{display:flex;min-height:0;flex-direction:column}
 .port-top-list{display:flex;flex:1;min-height:0;flex-direction:column}
@@ -881,10 +884,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     filter:saturate(1.24) contrast(1.12) drop-shadow(0 1px 1px rgba(88,28,135,.20));
     text-shadow:0 2px 4px rgba(88,28,135,.27),0 7px 14px rgba(190,24,93,.16);animation:portBrandFloat 4.8s ease-in-out infinite
   }
-  .port-brand-kicker{
-    color:#526174;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;
-    font-size:8.5px;font-weight:720;line-height:1.15;letter-spacing:.16em;white-space:nowrap
-  }
   .port-hero .tf-surf-travel{animation-duration:14s;opacity:.9}
   .port-hero .tf-surf{width:44px;height:auto;filter:drop-shadow(0 2px 2px rgba(161,98,7,.32))!important}
   @keyframes portBrandFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
@@ -1031,7 +1030,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           <path d="M2 31 L8 23 L13 27 L19 17 L25 23 L30 13 L34 19" fill="none" stroke="#f97316" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
         </svg>
       </div>
-      <div class="tf-swayx"><div class="port-brand-copy"><div class="tf-sway">Trend Following</div><div class="port-brand-kicker">PORTFOLIO · LIVE DASHBOARD</div></div><span class="tf-surf-travel"><svg class="tf-surf" width="54" height="41" viewBox="0 0 58 44" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;overflow:visible;filter:drop-shadow(0 1.4px 1.3px rgba(161,98,7,.5))"><defs><linearGradient id="tfSurfG" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fde047"/><stop offset="0.5" stop-color="#facc15"/><stop offset="1" stop-color="#eab308"/></linearGradient><linearGradient id="tfSurfBd" x1="0" y1="0" x2="1" y2="0.25"><stop offset="0" stop-color="#fef08a"/><stop offset="0.55" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs><path class="tf-wave" d="M0 33 Q11 26 21 32 Q30 37 40 31 Q49 26 58 32 L58 42 Q47 37 38 40 Q27 44 16 40 Q8 37 0 41 Z" fill="url(#tfSurfG)" opacity="0.4"/><g class="tf-spray" fill="#fde047"><circle cx="13.5" cy="33" r="1.4"/><circle cx="10" cy="31.2" r="1"/><circle cx="15.5" cy="30.4" r="0.9"/><circle cx="11.5" cy="34.6" r="0.7"/></g><g class="tf-board"><ellipse cx="31" cy="35.5" rx="18.5" ry="2.8" transform="rotate(-9 31 35.5)" fill="url(#tfSurfBd)"/></g><g stroke="url(#tfSurfG)" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M28 14 L31 23" stroke-width="5.2"/><path d="M31 23 L27 27 L24.5 32.5" stroke-width="3.6"/><path d="M31 23 L35 26.5 L38.5 32" stroke-width="3.6"/><path d="M28.5 16 L23 13 L19 9.5" stroke-width="3"/><path d="M28.5 16 L34.5 17.5 L40.5 16.5" stroke-width="3"/></g><circle cx="27" cy="10" r="3.4" fill="url(#tfSurfG)"/><path class="tf-pony" d="M24.6 9.2 Q17 5 12.5 8.4 Q18 7.6 24 11.2 Z" fill="url(#tfSurfG)"/></svg></span></div>
+      <div class="tf-swayx"><div class="port-brand-copy"><div class="tf-sway">Trend Following</div></div><span class="tf-surf-travel"><svg class="tf-surf" width="54" height="41" viewBox="0 0 58 44" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;overflow:visible;filter:drop-shadow(0 1.4px 1.3px rgba(161,98,7,.5))"><defs><linearGradient id="tfSurfG" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fde047"/><stop offset="0.5" stop-color="#facc15"/><stop offset="1" stop-color="#eab308"/></linearGradient><linearGradient id="tfSurfBd" x1="0" y1="0" x2="1" y2="0.25"><stop offset="0" stop-color="#fef08a"/><stop offset="0.55" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs><path class="tf-wave" d="M0 33 Q11 26 21 32 Q30 37 40 31 Q49 26 58 32 L58 42 Q47 37 38 40 Q27 44 16 40 Q8 37 0 41 Z" fill="url(#tfSurfG)" opacity="0.4"/><g class="tf-spray" fill="#fde047"><circle cx="13.5" cy="33" r="1.4"/><circle cx="10" cy="31.2" r="1"/><circle cx="15.5" cy="30.4" r="0.9"/><circle cx="11.5" cy="34.6" r="0.7"/></g><g class="tf-board"><ellipse cx="31" cy="35.5" rx="18.5" ry="2.8" transform="rotate(-9 31 35.5)" fill="url(#tfSurfBd)"/></g><g stroke="url(#tfSurfG)" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M28 14 L31 23" stroke-width="5.2"/><path d="M31 23 L27 27 L24.5 32.5" stroke-width="3.6"/><path d="M31 23 L35 26.5 L38.5 32" stroke-width="3.6"/><path d="M28.5 16 L23 13 L19 9.5" stroke-width="3"/><path d="M28.5 16 L34.5 17.5 L40.5 16.5" stroke-width="3"/></g><circle cx="27" cy="10" r="3.4" fill="url(#tfSurfG)"/><path class="tf-pony" d="M24.6 9.2 Q17 5 12.5 8.4 Q18 7.6 24 11.2 Z" fill="url(#tfSurfG)"/></svg></span></div>
     </div>
 
     <!-- 中：高清模拟时钟 + 数字时钟（绝对居中） -->
@@ -7605,7 +7604,7 @@ function _isPortfolioHKStock(mkt,code){
 
 function _portTopMarketIcon(mkt,code){
   return _isPortfolioHKStock(mkt,code)
-    ? '<span class="port-hk-icon" title="港股" aria-label="港股">HK</span>'
+    ? '<span class="port-hk-icon" title="港股" aria-label="港股"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="hk-petal" d="M12 11.7C9.3 9.2 9.5 5.4 12 3.4c2.5 2 2.7 5.8 0 8.3Z"/><path class="hk-petal" d="M12 11.7C9.3 9.2 9.5 5.4 12 3.4c2.5 2 2.7 5.8 0 8.3Z" transform="rotate(72 12 12)"/><path class="hk-petal" d="M12 11.7C9.3 9.2 9.5 5.4 12 3.4c2.5 2 2.7 5.8 0 8.3Z" transform="rotate(144 12 12)"/><path class="hk-petal" d="M12 11.7C9.3 9.2 9.5 5.4 12 3.4c2.5 2 2.7 5.8 0 8.3Z" transform="rotate(216 12 12)"/><path class="hk-petal" d="M12 11.7C9.3 9.2 9.5 5.4 12 3.4c2.5 2 2.7 5.8 0 8.3Z" transform="rotate(288 12 12)"/><circle class="hk-core" cx="12" cy="12" r="1.45"/></svg></span>'
     : '';
 }
 
