@@ -1160,6 +1160,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="card port-index-card" style="min-width:0;border-top:3px solid #f59e0b;background:linear-gradient(135deg,#fffbeb 0%,#fff 60%)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <span style="font-size:14px;font-weight:800;color:#92400e;letter-spacing:.02em">📊 主要指数</span>
+        <div style="display:flex;align-items:center;gap:6px;min-width:0">
+          <span id="idxTs" style="font-size:9.5px;color:#94a3b8;white-space:nowrap" aria-live="polite"></span>
+          <button id="idxRefBtn" type="button" onclick="fetchIndexPrices()" title="刷新主要指数" aria-label="刷新主要指数"
+            style="width:24px;height:24px;border:1px solid #fde68a;border-radius:7px;background:rgba(255,255,255,.9);color:#b45309;cursor:pointer;font:700 13px/1 inherit">↻</button>
+        </div>
       </div>
       <div id="portIndexList" class="port-index-list">
         <div style="color:var(--text2);font-size:12px;text-align:center;padding:10px 0">加载中…</div>
@@ -1792,6 +1797,24 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div style="height:225px"><canvas id="cUpDown"></canvas></div>
     <div style="height:135px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0"><canvas id="cUpDownDelta"></canvas></div>
     <div class="tx3 mt4" id="cUpDownFooter">来源: 东方财富 · 沪深 A 股（不含北交所）· 折线=上涨/下跌家数 · 柱=上涨家数−下跌家数 · 加载中…</div>
+  </div>
+
+  <!-- 日频：沪深 A 股涨跌停家数趋势（近 60 个交易日） -->
+  <div class="card mb16">
+    <div class="ch">
+      <span class="ct">沪深 A 股涨跌停家数趋势（日频·家）</span>
+      <span class="cbadge" style="background:#fff7ed;color:#c2410c">60 交易日 · 实时更新</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#fffaf5;border-radius:8px;border:1px solid #fed7aa">
+      <span id="limitKpiDate" class="tx3" style="color:#64748b">加载中…</span>
+      <div><span class="tx3">涨停&nbsp;</span><span id="limitKpiUp" style="font-size:18px;font-weight:800;color:#dc2626">—</span></div>
+      <div><span class="tx3">跌停&nbsp;</span><span id="limitKpiDown" style="font-size:18px;font-weight:800;color:#15803d">—</span></div>
+      <span id="limitKpiDelta" class="tx3" style="font-weight:800;color:#64748b">净涨停 —</span>
+      <span id="limitKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
+    </div>
+    <div style="height:225px"><canvas id="cLimitMoves"></canvas></div>
+    <div style="height:135px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0"><canvas id="cLimitDelta"></canvas></div>
+    <div class="tx3 mt4" id="cLimitFooter">来源: 东方财富 · 沪深 A 股官方分钟序列/个股日行情 · 折线=涨停/跌停家数 · 柱=涨停−跌停 · 加载中…</div>
   </div>
 
   <!-- 第一行：X关注意见领袖 -->
@@ -2634,6 +2657,8 @@ const BASE = {
     },
     // ── A股涨跌家数 (日频·家) — 由 fetchDailyCharts 动态填充，此处留空 ──
     updown:{ labels:[], up:[], down:[] },
+    // ── A股涨跌停家数 (日频·家) — 历史 JSON + 盘中官方分钟序列 ──
+    limitMoves:{ labels:[], up:[], down:[], dates:[] },
     // 前10成交占比静态数据已移除（无日频趋势数据源，区块已删除）
     cpi:{
       labels:['24-01','24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12','26-01','26-02','26-03','26-04'],
@@ -2971,7 +2996,8 @@ async function fetchMonLive(){
   // 重绘 & 更新平均动量
   renderMon();
   const avg=BASE.monitors.reduce((s,m)=>s+m.mom,0)/BASE.monitors.length;
-  document.getElementById('sAvgMom').textContent=(avg>=0?'+':'')+avg.toFixed(1)+'%';
+  const avgMomEl=document.getElementById('sAvgMom');
+  if(avgMomEl) avgMomEl.textContent=(avg>=0?'+':'')+avg.toFixed(1)+'%';
 
   // 更新信号统计
   const buyCnt  = BASE.monitors.filter(m=>m.sig==='buy'||m.sig==='buy+').length;
@@ -3320,6 +3346,9 @@ function updateRiskDashboard(){
 
 // ── RENDER ──────────────────────────────────────────────────
 function renderMon(){
+  const body=document.getElementById('monBody');
+  // 产业监控表格已从当前页面去除；后台行情回调仍可安全完成。
+  if(!body) return;
   const sigHtml={
     'buy' :'<span class="sig s-buy">▲ 买入</span>',
     'buy+':'<span class="sig s-buy">▲▲ 强买</span>',
@@ -3336,7 +3365,7 @@ function renderMon(){
     return s;
   };
   const dot='<span style="font-size:7px;vertical-align:super;color:#10b981;margin-left:1px">●</span>';
-  document.getElementById('monBody').innerHTML = BASE.monitors.map(r=>{
+  body.innerHTML = BASE.monitors.map(r=>{
     const m=r.mom, mc=m>5?'var(--green)':m>0?'var(--yellow)':'var(--red)';
     const liveNames=r._live&&r._liveNames
       ?`<div style="font-size:9px;color:#94a3b8;margin-top:1px;line-height:1.3">${r._liveNames.join(' / ')}</div>`:'';
@@ -5586,6 +5615,48 @@ function mkUpDown(){
   }});
 }
 
+function mkLimitMoves(){
+  const canvas=document.getElementById('cLimitMoves');
+  if(!canvas) return;
+  const d=BASE.ashare.limitMoves;
+  CH.limitMoves=new Chart(canvas.getContext('2d'),{type:'line',data:{labels:d.labels,datasets:[
+    {label:'涨停家数',data:d.up,borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,.06)',borderWidth:2.2,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#dc2626',tension:.18},
+    {label:'跌停家数',data:d.down,borderColor:'#15803d',backgroundColor:'rgba(21,128,61,.05)',borderWidth:2.2,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#15803d',tension:.18},
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{labels:{color:'#475569',font:{size:12,weight:'600'},usePointStyle:true,pointStyle:'line'}},
+      tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+Number(ctx.parsed.y||0).toLocaleString()+' 家'}},
+    },
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:10},maxTicksLimit:10,maxRotation:0}},
+      y:{beginAtZero:true,grid:{color:'rgba(226,232,240,.9)'},ticks:{color:'#64748b',font:{size:10},precision:0,callback:v=>Number(v).toLocaleString()+'家'}},
+    }
+  }});
+
+  const deltaCanvas=document.getElementById('cLimitDelta');
+  if(!deltaCanvas) return;
+  const delta=(d.up||[]).map((up,i)=>Number(up||0)-Number((d.down||[])[i]||0));
+  const maxAbs=Math.max(10,...delta.map(v=>Math.abs(v)));
+  CH.limitDelta=new Chart(deltaCanvas.getContext('2d'),{type:'bar',data:{labels:d.labels,datasets:[
+    {
+      label:'涨停−跌停',data:delta,
+      backgroundColor:delta.map(v=>v>0?'rgba(220,38,38,.76)':v<0?'rgba(21,128,61,.76)':'rgba(148,163,184,.65)'),
+      borderColor:delta.map(v=>v>0?'#dc2626':v<0?'#15803d':'#94a3b8'),borderWidth:1,borderRadius:2,
+      barPercentage:.82,categoryPercentage:.92,
+    },
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:ctx=>`涨停−跌停: ${ctx.parsed.y>=0?'+':''}${Number(ctx.parsed.y||0).toLocaleString()} 家`}},
+    },
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:9},maxTicksLimit:10,maxRotation:0}},
+      y:{min:-maxAbs,max:maxAbs,grid:{color:c=>c.tick.value===0?'#94a3b8':'rgba(226,232,240,.55)',lineWidth:c=>c.tick.value===0?1.5:1},
+         ticks:{color:'#64748b',font:{size:9},maxTicksLimit:5,precision:0,callback:v=>(v>0?'+':'')+Number(v).toLocaleString()}},
+    }
+  }});
+}
+
 function mkCpi(){
   const ctx=document.getElementById('cCpi').getContext('2d');
   const d=BASE.ashare.cpi;
@@ -6876,6 +6947,8 @@ function _isCurrentAAmountPartial(latestDate){
 // 涨跌家数趋势：历史 JSON 为稳定基线；交易时段把投资组合页实时全市场统计合并为“今日”最后一点。
 let _breadthHistoryRows=[];
 let _breadthLivePoint=null;
+let _limitHistoryRows=[];
+let _limitLivePoint=null;
 
 function _breadthBeijingClock(nowMs=Date.now()){
   const bj=new Date(nowMs+8*60*60*1000);
@@ -6936,6 +7009,56 @@ async function _fetchOfficialBreadthLive(force=false){
     }
   })();
   return _breadthOfficialFetch;
+}
+
+// 东方财富“牛熊风向标”的沪深分钟序列，字段依次为时间、涨停、跌停、触板、触及跌停。
+// 历史与实时都采用“全部涨跌停”口径，避免和“自然涨停池”混用造成曲线虚跳。
+const _LIMIT_TREND_URLS=[
+  'https://push2.eastmoney.com',
+  'https://push2delay.eastmoney.com',
+  'https://push2his.eastmoney.com',
+].map(host=>host+'/api/qt/stock/updown/trend/get?time=930&secids=0.399002%2C1.000002&ut=3fdae003f2fa8ed9a849bb70c93587d5&fields=f1%2Cf2%2Cf3%2Cf4%2Cf5');
+let _limitOfficialFetch=null;
+let _limitOfficialTs=0;
+
+async function _fetchOfficialLimitLive(force=false){
+  const nowClock=_breadthBeijingClock();
+  // 9:25 前源端可能仍是上一交易日；节假日则由 qdate 校验自动拒绝。
+  if(nowClock.weekday<1||nowClock.weekday>5||nowClock.minute<9*60+25) return false;
+  if(!force&&Date.now()-_limitOfficialTs<45000){
+    return !!(_limitLivePoint&&_limitLivePoint.date===nowClock.date);
+  }
+  if(_limitOfficialFetch) return _limitOfficialFetch;
+  _limitOfficialFetch=(async()=>{
+    try{
+      let limitUp=null,limitDown=null,sourceClock=null;
+      // 三个东财同源主机并行竞速，只接受完整的沪深官方分钟序列。
+      // 牛熊风向标的 t/b 与该序列存在 ST/市场范围差异，不再用它伪装成同口径回退。
+      const payload=await _idxFirstFulfilled(_LIMIT_TREND_URLS.map(url=>
+        _idxFetch(url+'&_='+Date.now(),{timeout:4500,retries:0}).then(value=>{
+          const trends=value&&value.data&&value.data.trends;
+          const last=Array.isArray(trends)&&trends.length?String(trends[trends.length-1]).split(','):null;
+          const clock=_breadthSourceClock(last&&last[0],nowClock);
+          const upText=last&&String(last[1]).trim(),downText=last&&String(last[2]).trim();
+          const up=upText!==''?Number(upText):NaN,down=downText!==''?Number(downText):NaN;
+          if(!clock||!Number.isInteger(up)||!Number.isInteger(down)||up<0||down<0)
+            throw new Error('官方沪深分钟序列无有效最新点');
+          return{up,down,clock};
+        })
+      ));
+      limitUp=payload.up;limitDown=payload.down;sourceClock=payload.clock;
+      _limitOfficialTs=Date.now();
+      _setLimitTrendLivePoint(limitUp,limitDown,sourceClock);
+      console.log('[Daily] 涨跌停官方实时',sourceClock.date,sourceClock.time,'涨停'+limitUp,'跌停'+limitDown);
+      return true;
+    }catch(e){
+      console.warn('[Daily] 官方实时涨跌停失败:',e.message);
+      return false;
+    }finally{
+      _limitOfficialFetch=null;
+    }
+  })();
+  return _limitOfficialFetch;
 }
 
 function _mergeBreadthTrendRows(historyRows,livePoint,today=_breadthBeijingClock().date){
@@ -7012,6 +7135,85 @@ function _setBreadthTrendLivePoint(up,down,flat,clock=_breadthBeijingClock()){
   if(!clock.isTrading||!Number.isFinite(nUp)||!Number.isFinite(nDown)||nUp+nDown<50) return false;
   _breadthLivePoint={date:clock.date,up:nUp,down:nDown,flat:Math.max(0,nFlat),asOf:clock.time,status:clock.phase};
   if(_breadthHistoryRows.length) _renderBreadthTrend();
+  return true;
+}
+
+function _mergeLimitTrendRows(historyRows,livePoint,today=_breadthBeijingClock().date){
+  const byDate=new Map();
+  (historyRows||[]).forEach(row=>{
+    if(!row||!/^\d{4}-\d{2}-\d{2}$/.test(row.date)) return;
+    const up=Number(row.up),down=Number(row.down);
+    if(Number.isFinite(up)&&Number.isFinite(down)&&up>=0&&down>=0){
+      byDate.set(row.date,{date:row.date,up,down,live:false,source:row.source||''});
+    }
+  });
+  if(livePoint&&livePoint.date===today&&/^\d{4}-\d{2}-\d{2}$/.test(livePoint.date)){
+    const up=Number(livePoint.up),down=Number(livePoint.down);
+    if(Number.isFinite(up)&&Number.isFinite(down)&&up>=0&&down>=0){
+      byDate.set(livePoint.date,{date:livePoint.date,up,down,live:true,asOf:livePoint.asOf||'',status:livePoint.status||'盘中实时',source:'eastmoney_hs_minute'});
+    }
+  }
+  return[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-60);
+}
+
+function _renderLimitTrend(){
+  const rows=_mergeLimitTrendRows(_limitHistoryRows,_limitLivePoint);
+  if(!rows.length) return false;
+  const labels=rows.map(row=>_fmtDayLabel(row.date));
+  const upVals=rows.map(row=>row.up),downVals=rows.map(row=>row.down);
+  const deltaVals=rows.map(row=>row.up-row.down);
+  const livePoints=rows.map(row=>row.live?4.5:0);
+  BASE.ashare.limitMoves={labels,up:upVals,down:downVals,delta:deltaVals,dates:rows.map(row=>row.date)};
+  if(CH.limitMoves){
+    CH.limitMoves.data.labels=labels;
+    CH.limitMoves.data.datasets[0].data=upVals;
+    CH.limitMoves.data.datasets[1].data=downVals;
+    CH.limitMoves.data.datasets[0].pointRadius=livePoints;
+    CH.limitMoves.data.datasets[1].pointRadius=livePoints;
+    CH.limitMoves.data.datasets[0].pointBackgroundColor=rows.map(row=>row.live?'#dc2626':'rgba(220,38,38,0)');
+    CH.limitMoves.data.datasets[1].pointBackgroundColor=rows.map(row=>row.live?'#15803d':'rgba(21,128,61,0)');
+    CH.limitMoves.data.datasets.forEach(ds=>{ ds.pointBorderColor='#fff'; ds.pointBorderWidth=rows.map(row=>row.live?2:0); });
+    CH.limitMoves.update('none');
+  }
+  if(CH.limitDelta){
+    const maxAbs=Math.max(10,...deltaVals.map(v=>Math.abs(v)));
+    CH.limitDelta.data.labels=labels;
+    CH.limitDelta.data.datasets[0].data=deltaVals;
+    CH.limitDelta.data.datasets[0].backgroundColor=deltaVals.map((v,i)=>{
+      const alpha=rows[i].live?'.58':'.76';
+      return v>0?`rgba(220,38,38,${alpha})`:v<0?`rgba(21,128,61,${alpha})`:'rgba(148,163,184,.65)';
+    });
+    CH.limitDelta.data.datasets[0].borderColor=deltaVals.map(v=>v>0?'#dc2626':v<0?'#15803d':'#94a3b8');
+    CH.limitDelta.options.scales.y.min=-maxAbs;
+    CH.limitDelta.options.scales.y.max=maxAbs;
+    CH.limitDelta.update('none');
+  }
+  const last=rows[rows.length-1],delta=last.up-last.down;
+  const liveSuffix=last.live?' · '+(last.status||'盘中实时')+' '+last.asOf:'';
+  const dateEl=document.getElementById('limitKpiDate'); if(dateEl) dateEl.textContent=last.date+liveSuffix;
+  const upEl=document.getElementById('limitKpiUp'); if(upEl) upEl.textContent=last.up.toLocaleString()+' 家';
+  const downEl=document.getElementById('limitKpiDown'); if(downEl) downEl.textContent=last.down.toLocaleString()+' 家';
+  const deltaEl=document.getElementById('limitKpiDelta');
+  if(deltaEl){
+    deltaEl.textContent=`净涨停 ${delta>0?'+':''}${delta.toLocaleString()} 家`;
+    deltaEl.style.color=delta>0?'#dc2626':delta<0?'#15803d':'#64748b';
+  }
+  const cntEl=document.getElementById('limitKpiCnt');
+  if(cntEl) cntEl.textContent=`${rows.length}交易日 · ${rows[0].date} 至 ${last.date}${last.live?' · 实时':''}`;
+  const reconstructed=rows.filter(row=>row.source==='eastmoney_daily_limit_rule_total').length;
+  const foot=document.getElementById('cLimitFooter');
+  if(foot) foot.textContent=last.live
+    ?`来源: 东方财富沪深涨跌停官方分钟序列 · 全部沪深 A 股口径（不含北交所）· ${last.status||'盘中实时'} ${last.asOf} · 实心点=今日最新值`
+    :`来源: 东方财富；${reconstructed} 个交易日按个股收盘价与交易所 5%/10%/20% 限价规则重建 · 全部沪深 A 股口径 · 柱=涨停−跌停 · 数据截至 ${last.date}`;
+  console.log('[Daily] 涨跌停家数',last.live?'盘中实时':'历史收盘',last.date,'涨停'+last.up,'跌停'+last.down,last.asOf||'');
+  return true;
+}
+
+function _setLimitTrendLivePoint(up,down,clock=_breadthBeijingClock()){
+  const nUp=Number(up),nDown=Number(down);
+  if(!clock.isTrading||!Number.isFinite(nUp)||!Number.isFinite(nDown)||nUp<0||nDown<0) return false;
+  _limitLivePoint={date:clock.date,up:nUp,down:nDown,asOf:clock.time,status:clock.phase};
+  if(_limitHistoryRows.length) _renderLimitTrend();
   return true;
 }
 
@@ -7125,6 +7327,28 @@ async function fetchDailyCharts(){
     if(rows.length<20) throw new Error('有效历史不足');
     _breadthHistoryRows=rows.map(row=>({date:row.date,up:+row.up,down:+row.down,flat:+(row.flat||0)}));
     _renderBreadthTrend();
+
+    // 同一份缓存同时承载涨跌停历史，避免宏观页重复请求 JSON。
+    const limitRows=(payload?.series||[]).filter(row=>{
+      if(!row||!/^\d{4}-\d{2}-\d{2}$/.test(row.date)||row.limitUp==null||row.limitDown==null) return false;
+      const limitUp=Number(row.limitUp),limitDown=Number(row.limitDown);
+      const up=Number(row.up),down=Number(row.down);
+      return Number.isInteger(limitUp)&&Number.isInteger(limitDown)&&limitUp>=0&&limitDown>=0
+        &&Number.isFinite(up)&&Number.isFinite(down)&&limitUp<=up&&limitDown<=down;
+    }).sort((a,b)=>a.date.localeCompare(b.date)).slice(-60);
+    if(limitRows.length>=20){
+      _limitHistoryRows=limitRows.map(row=>({
+        date:row.date,up:+row.limitUp,down:+row.limitDown,source:row.limitSource||'',
+      }));
+      _renderLimitTrend();
+    }else{
+      console.warn('[Daily] 涨跌停家数历史不足:',limitRows.length);
+      if(!_renderLimitTrend()){
+        const dateEl=document.getElementById('limitKpiDate'); if(dateEl) dateEl.textContent='等待后台生成历史';
+        const cntEl=document.getElementById('limitKpiCnt'); if(cntEl) cntEl.textContent='当日实时数据仍会自动更新';
+        const foot=document.getElementById('cLimitFooter'); if(foot) foot.textContent='涨跌停历史正在生成；交易时段优先显示东方财富沪深官方分钟序列';
+      }
+    }
   }catch(e){
     console.warn('[Daily] 涨跌家数失败:',e.message);
     // 历史文件偶发不可达时，交易时段仍可展示实时点；两者都没有才保留空图。
@@ -7134,6 +7358,13 @@ async function fetchDailyCharts(){
       const dateEl=document.getElementById('breadthKpiDate'); if(dateEl) dateEl.textContent='数据暂不可用';
       const cntEl=document.getElementById('breadthKpiCnt'); if(cntEl) cntEl.textContent='请稍后重新打开“宏观趋势”';
       const foot=document.getElementById('cUpDownFooter'); if(foot) foot.textContent='⚠️ 涨跌家数历史暂时取不到，已保留空图而不显示错误数值';
+    }
+    if(!_renderLimitTrend()){
+      if(CH.limitMoves){ CH.limitMoves.data.labels=[]; CH.limitMoves.data.datasets.forEach(ds=>ds.data=[]); CH.limitMoves.update('none'); }
+      if(CH.limitDelta){ CH.limitDelta.data.labels=[]; CH.limitDelta.data.datasets.forEach(ds=>ds.data=[]); CH.limitDelta.update('none'); }
+      const dateEl=document.getElementById('limitKpiDate'); if(dateEl) dateEl.textContent='数据暂不可用';
+      const cntEl=document.getElementById('limitKpiCnt'); if(cntEl) cntEl.textContent='请稍后重新打开“宏观趋势”';
+      const foot=document.getElementById('cLimitFooter'); if(foot) foot.textContent='⚠️ 涨跌停家数历史暂时取不到，已保留空图而不显示错误数值';
     }
   }
 }
@@ -7460,7 +7691,7 @@ async function refreshMacro(){
   // 月度宏观图表(CPI/社融/固投/社零/工业利润/电子利润/PE走势)已随"A股宏观"页删除，
   // 对应请求一并移除（refreshMacro 现仅刷新市场 KPI、两融、成交量、涨跌家数与 iVIX）。
   const timeStr=new Date().toLocaleString('zh-CN');
-  if(ts) ts.textContent=`已刷新 市值/PE/两融/成交额/涨跌家数 · ${timeStr}`;
+  if(ts) ts.textContent=`已刷新 市值/PE/两融/成交额/涨跌家数/涨跌停 · ${timeStr}`;
   if(btn){ btn.classList.remove('loading'); btn.disabled=false; }
   const macroIdx=TAB_ORDER.indexOf('t0');
   if(macroIdx>=0) _TAB_TS[macroIdx]=Date.now();
@@ -7493,7 +7724,7 @@ function _arToggle(e){
   m.classList.add('open');
   if(btn) btn.setAttribute('aria-expanded','true');
 }
-function _arPick(v,label){
+function _arPick(v,label,immediate=true){
   _arCur = +v;
   const lab=document.getElementById('arLabel'); if(lab) lab.textContent=label;
   const m=document.getElementById('arMenu'); if(m) m.classList.remove('open');
@@ -7503,7 +7734,7 @@ function _arPick(v,label){
     btn.classList.toggle('is-active',_arCur>0);
     btn.setAttribute('aria-expanded','false');
   }
-  setAutoRefresh(v);
+  setAutoRefresh(v,immediate);
 }
 document.addEventListener('click', function(){
   const m=document.getElementById('arMenu'),btn=document.getElementById('arBtn');
@@ -7511,7 +7742,7 @@ document.addEventListener('click', function(){
   if(btn) btn.setAttribute('aria-expanded','false');
 });
 
-function setAutoRefresh(val){
+function setAutoRefresh(val,immediate=true){
   // 清理旧定时器
   if(_arTimer)   { clearInterval(_arTimer);   _arTimer=null; }
   if(_arCdTimer) { clearInterval(_arCdTimer); _arCdTimer=null; }
@@ -7525,9 +7756,11 @@ function setAutoRefresh(val){
 
   const ms = sec * 1000;
 
-  // 立刻全刷一次，然后按周期持续刷。定时轮询仅在交易时段执行（收盘价不变，无谓轮询；
+  // 用户切换周期时立刻全刷一次，然后按周期持续刷。页面初始启用定时器时跳过这次立即刷新，
+  // 因为 portInit 已经发起首轮请求，避免两轮指数行情互相抢占并作废。
+  // 定时轮询仅在交易时段执行（收盘价不变，无谓轮询；
   //  港股盘中含 15:00-16:00 由 _isTradingNow 覆盖），且走轻量分支(仅价格+指数，重活 45s 节流)。
-  refreshPortAll(true);
+  if(immediate) refreshPortAll(true);
   _arNext = Date.now() + ms;
   _arTimer = setInterval(()=>{
     if(_isTradingNow()) refreshPortAll(false);
@@ -7895,6 +8128,8 @@ const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','�
 let _IDX_CACHE = {};   // label → {label, price, pct, delta, region, ts}
 let _IDX_REQ_SEQ = 0;  // 只允许最新一轮请求更新 DOM，避免慢响应覆盖新行情
 let _IDX_LAST_RENDER = 0;
+let _IDX_INFLIGHT = null; // 合并自动刷新请求；慢网络下不让新轮询持续作废旧请求
+let _IDX_PENDING = false; // 请求期间收到刷新信号时，完成后立即补一轮
 const _IDX_RATE_CACHE_KEY = 'aiDashboard.us10y.quote.v1';
 const _IDX_FX_CACHE_KEY = 'aiDashboard.usdcnh.quote.v1';
 const _IDX_HK_CACHE_KEY = 'aiDashboard.hkIndices.quote.v2';
@@ -7940,11 +8175,19 @@ function _idxShouldAcceptHkQuote(label,next,prev,nowMs){
   if(!_idxIsSaneHkQuote(label,next)) return false;
   const nextTs=Number(next.quoteTs)||0;
   const prevTs=Number(prev&&prev.quoteTs)||0;
+  if(!nextTs) return false;                              // 港指必须带可核验的行情时间
   if(nextTs>nowMs+5*60000) return false;                 // 服务器时钟/字段解析异常
   if(!prev) return true;
-  if(prevTs>0 && (!nextTs || nextTs<=prevTs)) return false; // 绝不允许时间倒退或同时刻改值
+  const sameDay=prevTs>0&&_idxBeijingDay(nextTs)===_idxBeijingDay(prevTs);
+  const nextPrimary=next.src==='em'||next.src==='sina';
+  const prevPrimary=prev.src==='em'||prev.src==='sina';
+  // 腾讯港指仅作无精确源时的快速兜底：它的更新时间有时晚于行情本身，
+  // 因此同一交易日不得用 tc 覆盖已有的东财/新浪精确值。
+  if(sameDay&&next.src==='tc'&&prevPrimary) return false;
+  const primaryUpgrade=sameDay&&nextPrimary&&prev.src==='tc';
+  if(prevTs>0 && nextTs<=prevTs && !primaryUpgrade) return false; // 精确源之间绝不允许时间倒退
 
-  if(nextTs>0 && prevTs>0 && _idxBeijingDay(nextTs)===_idxBeijingDay(prevTs)){
+  if(sameDay){
     const oldPrice=Number(prev.price), oldPct=Number(prev.pct);
     const gap=(nextTs-prevTs);
     // 5 分钟内指数突然跳动超过 4%，更像是字段错配/坏响应，留待下轮确认。
@@ -7965,6 +8208,126 @@ function _idxPersistHkCache(){
     _IDX_HK_LABELS.forEach(label=>{ if(_IDX_CACHE[label]) saved[label]=_IDX_CACHE[label]; });
     localStorage.setItem(_IDX_HK_CACHE_KEY,JSON.stringify(saved));
   }catch(e){}
+}
+
+function _idxValidHkCandidate(label,row,nowMs=Date.now()){
+  const quoteTs=Number(row&&row.quoteTs)||0;
+  return _idxIsSaneHkQuote(label,row)&&quoteTs>0&&quoteTs<=nowMs+5*60000;
+}
+
+function _idxChooseHkCandidate(label,candidates,nowMs=Date.now()){
+  return (candidates||[])
+    .filter(row=>_idxValidHkCandidate(label,row,nowMs))
+    .sort((a,b)=>(Number(b.quoteTs)||0)-(Number(a.quoteTs)||0))[0]||null;
+}
+
+// Promise.any 的轻量兼容版：覆盖旧 Safari 与部分华为内置浏览器。
+function _idxFirstFulfilled(promises){
+  return new Promise((resolve,reject)=>{
+    let pending=promises.length,lastError=new Error('no index endpoint');
+    if(!pending){ reject(lastError); return; }
+    promises.forEach(p=>Promise.resolve(p).then(resolve,error=>{
+      lastError=error||lastError;
+      pending-=1;
+      if(!pending) reject(lastError);
+    }));
+  });
+}
+
+function _idxUpdateTimestamp(rowMap,nowMs=Date.now()){
+  const tsEl=document.getElementById('idxTs');
+  if(!tsEl) return;
+  const stamps=_IDX_HK_LABELS.map(label=>Number((rowMap[label]||_IDX_CACHE[label])?.quoteTs)||0).filter(Boolean);
+  if(!stamps.length){ tsEl.textContent='等待港指'; return; }
+  // 两只都存在时取较早者，展示“共同保证”的行情新鲜度，不掩盖其中一只延迟。
+  const quoteTs=stamps.length===_IDX_HK_LABELS.length?Math.min(...stamps):Math.max(...stamps);
+  const sameDay=_idxBeijingDay(quoteTs)===_idxBeijingDay(nowMs);
+  const opts=sameDay
+    ?{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}
+    :{timeZone:'Asia/Shanghai',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false};
+  const quoteText=new Date(quoteTs).toLocaleString('zh-CN',opts);
+  const stale=_isTradingNow()&&nowMs-quoteTs>120000;
+  tsEl.textContent='港指 '+quoteText+(sameDay&&!stale?' 行情':' 沿用');
+}
+
+function _idxRowHtml(r,nowMs=Date.now()){
+  const unavailable=!(Number(r.price)>0);
+  const displayPct = _portfolioIndexDisplayPct(r.region,r.pct,nowMs) ?? 0;
+  const displayMove = r.region === 'rate' ? (Number(r.delta)||0)*100 : displayPct;
+  const up=displayMove>0,dn=displayMove<0;
+  const color=up?'#dc2626':dn?'#16a34a':'var(--text2)';
+  const arrow=up?'▲':dn?'▼':'─',sign=up?'+':'';
+  let accent=color,bg=up?'#fff5f5':dn?'#f0fdf4':'#f8fafc',badge='';
+  if(r.region==='hk'){
+    accent='#e11d48';bg='#fff5f7';
+    badge=' <span style="font-size:9px;background:#fee2e2;color:#9f1239;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">港</span>';
+  }else if(r.region==='ah'){
+    accent='#d97706';bg='#fffbeb';badge=' <span style="font-size:9px;background:#fef3c7;color:#92400e;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">溢价</span>';
+  }else if(r.region==='fut'){
+    accent='#7c3aed';bg='#f5f3ff';badge=' <span style="font-size:9px;background:#ede9fe;color:#5b21b6;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">期</span>';
+  }else if(r.region==='intl'){
+    accent='#0369a1';bg='#f0f9ff';badge=' <span style="font-size:9px;background:#e0f2fe;color:#075985;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">外盘</span>';
+  }else if(r.region==='rate'){
+    accent='#0f766e';bg='#f0fdfa';badge=' <span style="font-size:9px;background:#ccfbf1;color:#115e59;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">美债</span>';
+  }else if(r.region==='fx'){
+    accent='#2563eb';bg='#eff6ff';badge=' <span style="font-size:9px;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">离岸</span>';
+  }
+  const priceStr=unavailable?'暂缺':r.region==='hk'?Number(r.price).toFixed(0):r.region==='fut'?Number(r.price).toFixed(2):r.region==='rate'?Number(r.price).toFixed(3)+'%':r.region==='fx'?Number(r.price).toFixed(4):Number(r.price).toFixed(2);
+  const moveStr=unavailable?'自动重试':r.region==='rate'?`${arrow} ${sign}${displayMove.toFixed(1)}bp`:`${arrow} ${sign}${displayPct.toFixed(2)}%`;
+  const groupEnd=r.label==='A股平均股价'||r.label==='A/H溢价';
+  return `<div data-idx-label="${_escH(r.label)}" class="port-index-row${groupEnd?' port-index-group-end':''}" style="display:flex;align-items:center;flex-wrap:nowrap;padding:5px 8px;border-radius:8px;background:${bg};border-left:3px solid ${accent}">
+    <span style="flex:0 0 auto;font-size:12px;font-weight:700;color:var(--text);letter-spacing:.01em;white-space:nowrap;margin-right:6px">${r.label}${badge}</span>
+    <span style="flex:1;font-size:12px;font-weight:600;color:#475569;text-align:right;white-space:nowrap;margin-right:8px">${priceStr}</span>
+    <span style="font-size:13px;font-weight:900;color:${color};flex:0 0 auto;white-space:nowrap;letter-spacing:-.01em">${moveStr}</span>
+  </div>`;
+}
+
+function _idxRenderFastHk(rowMap,reqSeq){
+  if(reqSeq!==_IDX_REQ_SEQ) return;
+  const nowMs=Date.now(),accepted={};
+  _IDX_HK_LABELS.forEach(label=>{
+    const next=rowMap[label],cached=_IDX_CACHE[label];
+    if(next&&_idxShouldAcceptHkQuote(label,next,cached,nowMs)){
+      next.ts=nowMs;_IDX_CACHE[label]=next;accepted[label]=next;
+    }else if(cached){ accepted[label]=cached; }
+  });
+  _idxPersistHkCache();
+  const listEl=document.getElementById('portIndexList');
+  if(listEl){
+    const existingRows=[...listEl.querySelectorAll('[data-idx-label]')];
+    const onlyHkRows=existingRows.length&&existingRows.every(row=>_IDX_HK_LABELS.includes(row.getAttribute('data-idx-label')));
+    if(onlyHkRows){
+      const rows=_IDX_HK_LABELS.map(label=>accepted[label]).filter(Boolean);
+      if(rows.length) listEl.innerHTML=rows.map(row=>_idxRowHtml(row,nowMs)).join('');
+    }else if(existingRows.length){
+      _IDX_HK_LABELS.forEach(label=>{
+        const old=listEl.querySelector(`[data-idx-label="${label}"]`);
+        if(old&&accepted[label]) old.outerHTML=_idxRowHtml(accepted[label],nowMs);
+      });
+    }else{
+      const rows=_IDX_HK_LABELS.map(label=>accepted[label]).filter(Boolean);
+      if(rows.length) listEl.innerHTML=rows.map(row=>_idxRowHtml(row,nowMs)).join('');
+    }
+  }
+  _idxUpdateTimestamp(accepted,nowMs);
+  if(Object.keys(accepted).length) _IDX_LAST_RENDER=nowMs;
+}
+
+function _idxParseTencentHk(txt){
+  const result={};
+  [['恒生指数','hkHSI'],['恒生科技','hkHSTECH']].forEach(([label,code])=>{
+    const match=String(txt||'').match(new RegExp('v_'+code+'="([^"]+)"'));
+    if(!match) return;
+    const fields=match[1].split('~');
+    const price=parseFloat(fields[3]),previous=parseFloat(fields[4]);
+    let pct=parseFloat(fields[32]);
+    if(!Number.isFinite(pct)&&previous>0) pct=(price-previous)/previous*100;
+    const timeMatch=String(fields[30]||'').match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})\s+(\d{1,2}):(\d{2}):(\d{2})/);
+    const quoteTs=timeMatch?Date.UTC(+timeMatch[1],+timeMatch[2]-1,+timeMatch[3],+timeMatch[4]-8,+timeMatch[5],+timeMatch[6]):0;
+    const row={label,price,pct,region:'hk',src:'tc',quoteTs};
+    if(_idxValidHkCandidate(label,row)) result[label]=row;
+  });
+  return result;
 }
 
 // 带超时 + 重试的 fetch（gbk=true 时按 GBK 解码返回文本，否则返回 JSON）
@@ -8000,19 +8363,24 @@ async function _fetchEmIndexRow(idx){
     for(const host of hosts){
       tries.push((async()=>{
         const url=host+'/api/qt/ulist.np/get?secids='+secid
-          +'&fltt=2&invt=2&fields=f12,f14,f2,f3,f4,f124&_='+Date.now();
-        const j=await _idxFetch(url,{timeout:3500,retries:(realtimeOnly||idx.region==='rate')?1:0});
+          +'&fltt=2&invt=2&fields=f12,f14,f2,f3,f4,f86,f124&_='+Date.now();
+        // 港指每 10 秒有下一轮：单端点快速失败后交给同源 stock/get/新浪，
+        // 避免 3.5 秒重试把整轮拖到 7 秒以上。
+        const j=await _idxFetch(url,{timeout:realtimeOnly?2500:3500,retries:realtimeOnly?0:(idx.region==='rate'?1:0)});
         const diff=(j&&j.data&&j.data.diff)||[];
         const hit=diff.find(d=>{
           const c=String(d.f12).toUpperCase();
           return (allCodes.includes(c)||allCodes.includes(c.padStart(6,'0'))) && parseFloat(d.f2)>0;
         });
         if(!hit) throw new Error('no hit');
-        const quoteSec=parseFloat(hit.f124);
+        const price=parseFloat(hit.f2),pct=parseFloat(hit.f3);
+        if(!(price>0)||!isFinite(pct)) throw new Error('invalid quote');
+        const quoteSec=Number(hit.f124)>0?Number(hit.f124):Number(hit.f86);
+        if(realtimeOnly&&!(quoteSec>0)) throw new Error('missing quote time');
         return {
           label:idx.label,
-          price:parseFloat(hit.f2),
-          pct:parseFloat(hit.f3)||0,
+          price,
+          pct,
           delta:parseFloat(hit.f4)||0,
           region:idx.region||'a',
           src:'em',
@@ -8023,12 +8391,13 @@ async function _fetchEmIndexRow(idx){
       if(idx.region==='hk' || idx.region==='rate' || idx.region==='fx'){
         tries.push((async()=>{
           const url=host+'/api/qt/stock/get?secid='+secid
-            +'&fltt=2&invt=2&fields=f43,f57,f58,f124,f169,f170&_='+Date.now();
-          const j=await _idxFetch(url,{timeout:3500,retries:0});
+            +'&fltt=2&invt=2&fields=f43,f57,f58,f86,f124,f169,f170&_='+Date.now();
+          const j=await _idxFetch(url,{timeout:idx.region==='hk'?2500:3500,retries:0});
           const d=j&&j.data;
           const price=parseFloat(d&&d.f43), pct=parseFloat(d&&d.f170);
           if(!d || !(price>0) || !isFinite(pct)) throw new Error('no stock/get hit');
-          const quoteSec=parseFloat(d.f124);
+          const quoteSec=Number(d.f86)>0?Number(d.f86):Number(d.f124);
+          if(idx.region==='hk'&&!(quoteSec>0)) throw new Error('missing stock/get quote time');
           return {
             label:idx.label, price, pct, delta:idx.region==='rate'?(parseFloat(d.f169)||0):0,
             region:idx.region, src:'em',
@@ -8038,27 +8407,59 @@ async function _fetchEmIndexRow(idx){
       }
     }
   }
-  return Promise.any(tries);
+  return _idxFirstFulfilled(tries);
 }
 
-async function fetchIndexPrices(){
+async function _fetchIndexPricesOnce(){
   const reqSeq = ++_IDX_REQ_SEQ;
   const listEl = document.getElementById('portIndexList');
   const tsEl   = document.getElementById('idxTs');
   const btn    = document.getElementById('idxRefBtn');
   if(!listEl) return;
   if(btn) btn.disabled = true;
+  try{
+  // 先零等待回显本机保存的可信港指；弱网下也不会留在“加载中”。
+  _idxRenderFastHk({},reqSeq);
 
   const rowMap = {};   // label → {label, price, pct, region}
 
   // 腾讯、 新浪和东方财富全部并行发起。旧实现先等腾讯/新浪，再请求东财，
   // 在慢网络下会让恒指额外晚 3～6 秒才更新。
   const _idxTUrl = 'https://qt.gtimg.cn/q=' + _IDX_TENCENT.map(i=>i.tc).join(',') + '&_=' + Date.now();
-  const [_idxTTxt, _idxSina, _idxEmRows] = await Promise.all([
-    _idxFetch(_idxTUrl, {timeout:3000, retries:1, gbk:true}).catch(e=>{ console.warn('[IDX] 腾讯API失败（将回填缓存）:', e.message||e); return ''; }),
-    _fetchSinaRT(['rt_hkHSI','rt_hkHSTECH']).catch(e=>{ console.warn('[IDX] 新浪港股指数:', e.message); return {}; }),
-    Promise.all(_IDX_EM.map(idx=>_fetchEmIndexRow(idx).catch(()=>null)))
+  const _idxTPromise=_idxFetch(_idxTUrl,{timeout:3000,retries:1,gbk:true})
+    .catch(e=>{ console.warn('[IDX] 腾讯API失败（将回填缓存）:',e.message||e);return ''; });
+  const _idxSinaPromise=_fetchSinaRT(['rt_hkHSI','rt_hkHSTECH'])
+    .catch(e=>{ console.warn('[IDX] 新浪港股指数:',e.message);return {}; });
+  const _idxEmPromises=_IDX_EM.map(idx=>_fetchEmIndexRow(idx).catch(()=>null));
+  const _idxTencentHkPromise=_idxFetch('https://qt.gtimg.cn/q=hkHSI,hkHSTECH&_='+Date.now(),{timeout:3000,retries:1,gbk:true})
+    .then(_idxParseTencentHk)
+    .catch(e=>{ console.warn('[IDX] 腾讯港指兜底:',e.message||e);return {}; });
+
+  // 港指快速通道：新浪/两个东财请求谁先返回谁先渲染，
+  // 后到且行情时间更新的值再覆盖；美债、汇率等慢端点不再阻塞。
+  const _idxHkItems=[];
+  _IDX_EM.forEach((idx,i)=>{ if(idx.region==='hk') _idxHkItems.push({idx,promise:_idxEmPromises[i]}); });
+  const _idxFastTasks=[];
+  _idxFastTasks.push(_idxSinaPromise.then(sina=>{
+    const fastMap={};
+    [['恒生指数','rt_hkHSI'],['恒生科技','rt_hkHSTECH']].forEach(([label,code])=>{
+      const s=sina&&sina[code];
+      if(s) fastMap[label]={label,price:s.price,pct:s.pct,region:'hk',src:'sina',quoteTs:s.quoteTs||0};
+    });
+    _idxRenderFastHk(fastMap,reqSeq);
+  }));
+  _idxHkItems.forEach(item=>{
+    _idxFastTasks.push(item.promise.then(row=>{
+      if(row) _idxRenderFastHk({[row.label]:row},reqSeq);
+    }));
+  });
+  _idxFastTasks.push(_idxTencentHkPromise.then(rows=>_idxRenderFastHk(rows,reqSeq)));
+  const _idxHkFastPromise=Promise.all(_idxFastTasks).catch(e=>console.warn('[IDX] 港指快速通道:',e.message||e));
+
+  const [_idxTTxt,_idxSina,_idxEmRows,_idxTencentHk]=await Promise.all([
+    _idxTPromise,_idxSinaPromise,Promise.all(_idxEmPromises),_idxTencentHkPromise
   ]);
+  await _idxHkFastPromise;
   // 腾讯：A股 + 港股指数解析
   if(_idxTTxt){
     _IDX_TENCENT.forEach(idx=>{
@@ -8073,49 +8474,19 @@ async function fetchIndexPrices(){
         rowMap[idx.label] = {label:idx.label, price, pct:isFinite(pct)?pct:0, region:idx.region||'a'};
     });
   }
-  // 新浪港股指数实时值覆盖腾讯（恒生/恒生科技更实时）
-  if(_idxSina['rt_hkHSI'])    rowMap['恒生指数'] = {label:'恒生指数', price:_idxSina['rt_hkHSI'].price,    pct:_idxSina['rt_hkHSI'].pct,    region:'hk', src:'sina', quoteTs:_idxSina['rt_hkHSI'].quoteTs||0};
-  if(_idxSina['rt_hkHSTECH']) rowMap['恒生科技'] = {label:'恒生科技', price:_idxSina['rt_hkHSTECH'].price, pct:_idxSina['rt_hkHSTECH'].pct, region:'hk', src:'sina', quoteTs:_idxSina['rt_hkHSTECH'].quoteTs||0};
-
-  // 新浪带有可验证的行情时间：盘中 3 分钟内视为实时，优先采用；
-  // 新浪受限或返回旧数据时再采用东财双端点结果。
+  // 非港股东财指标直接合并；港指则先分别校验价格、涨跌幅和行情时间，
+  // 再在新浪/东财合格候选中选择时间戳最新的一份。
   _idxEmRows.filter(Boolean).forEach(row=>{
-    const old=rowMap[row.label];
-    if(row.region!=='hk'){
-      if(!old) rowMap[row.label]=row;
-      return;
-    }
-    const sinaFresh=old&&old.src==='sina'&&old.quoteTs&&Math.abs(Date.now()-old.quoteTs)<180000;
-    const emClearlyOlder=old&&old.quoteTs&&row.quoteTs&&row.quoteTs+60000<old.quoteTs;
-    if(!sinaFresh&&!emClearlyOlder) rowMap[row.label]=row;
+    if(row.region!=='hk'&&!rowMap[row.label]) rowMap[row.label]=row;
   });
-
-  // 港股指数兜底：东财 push2 优先(实时)；取不到恒生/恒生科技时用腾讯 hkHSI/hkHSTECH
-  // 保证有数据(盘中约延迟15分)，避免"取不到"；东财成功时仍是实时值。
-  const _hkMiss = [['恒生指数','hkHSI'],['恒生科技','hkHSTECH']].filter(x=>!rowMap[x[0]]);
-  if(_hkMiss.length){
-    try{
-      const tUrl = 'https://qt.gtimg.cn/q=' + _hkMiss.map(x=>x[1]).join(',') + '&_=' + Date.now();
-      const txt  = await _idxFetch(tUrl, {timeout:3000, retries:1, gbk:true});
-      _hkMiss.forEach(pair=>{
-        const m = txt.match(new RegExp('v_' + pair[1] + '="([^"]+)"'));
-        if(!m) return;
-        const p     = m[1].split('~');
-        const price = parseFloat(p[3]);
-        const prev  = parseFloat(p[4]);
-        let   pct   = parseFloat(p[32]);
-        if(!isFinite(pct) && isFinite(prev) && prev > 0) pct = (price - prev) / prev * 100;
-        if(isFinite(price) && price > 0){
-          const qm=String(p[30]||'').match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})\s+(\d{1,2}):(\d{2}):(\d{2})/);
-          const quoteTs=qm?Date.UTC(+qm[1],+qm[2]-1,+qm[3],+qm[4]-8,+qm[5],+qm[6]):0;
-          const candidate={label:pair[0],price,pct:isFinite(pct)?pct:0,region:'hk',src:'tc',quoteTs};
-          const cached=_IDX_CACHE[pair[0]];
-          // 腾讯港指约延迟 15 分钟；绝不允许其把缓存里时间更晚的实时行情倒退覆盖。
-          rowMap[pair[0]]=(cached&&cached.quoteTs&&quoteTs&&cached.quoteTs>quoteTs)?cached:candidate;
-        }
-      });
-    }catch(e){ /* 兜底失败则靠粘性缓存 */ }
-  }
+  [['恒生指数','rt_hkHSI'],['恒生科技','rt_hkHSTECH']].forEach(([label,sinaCode])=>{
+    const candidates=_idxEmRows.filter(row=>row&&row.region==='hk'&&row.label===label);
+    const s=_idxSina[sinaCode];
+    if(s) candidates.push({label,price:s.price,pct:s.pct,region:'hk',src:'sina',quoteTs:s.quoteTs||0});
+    // 精确源优先；腾讯仅在东财/新浪都缺失时兜底。
+    const chosen=_idxChooseHkCandidate(label,candidates)||_idxChooseHkCandidate(label,[_idxTencentHk[label]]);
+    if(chosen) rowMap[label]=chosen;
+  });
 
   // 旧请求即使较晚完成，也不能覆盖更新一轮已经显示的行情。
   if(reqSeq!==_IDX_REQ_SEQ) return;
@@ -8154,56 +8525,8 @@ async function fetchIndexPrices(){
   if(!rows.length){
     listEl.innerHTML = '<div style="color:var(--text2);font-size:12px;text-align:center;padding:8px">暂无数据</div>';
   } else {
-    listEl.innerHTML = rows.map(r=>{
-      const unavailable=!(Number(r.price)>0);
-      const displayPct = _portfolioIndexDisplayPct(r.region,r.pct,_now) ?? 0;
-      // 利率用基点表示当日绝对变动：东财 f4 为百分点，×100 后即 bp。
-      const displayMove = r.region === 'rate' ? (Number(r.delta)||0)*100 : displayPct;
-      const up    = displayMove > 0;
-      const dn    = displayMove < 0;
-      const color = up ? '#dc2626' : dn ? '#16a34a' : 'var(--text2)';
-      const arrow = up ? '▲' : dn ? '▼' : '─';
-      const sign  = up ? '+' : '';
-      let accent = color, bg = up ? '#fff5f5' : dn ? '#f0fdf4' : '#f8fafc', badge = '';
-      if(r.region === 'hk'){
-        accent = '#e11d48'; bg = '#fff5f7';
-        badge = ' <span style="font-size:9px;background:#fee2e2;color:#9f1239;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">港</span>';
-      } else if(r.region === 'ah'){
-        accent = '#d97706'; bg = '#fffbeb';
-        badge = ' <span style="font-size:9px;background:#fef3c7;color:#92400e;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">溢价</span>';
-      } else if(r.region === 'fut'){
-        accent = '#7c3aed'; bg = '#f5f3ff';
-        badge = ' <span style="font-size:9px;background:#ede9fe;color:#5b21b6;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">期</span>';
-      } else if(r.region === 'intl'){
-        accent = '#0369a1'; bg = '#f0f9ff';
-        badge = ' <span style="font-size:9px;background:#e0f2fe;color:#075985;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">外盘</span>';
-      } else if(r.region === 'rate'){
-        accent = '#0f766e'; bg = '#f0fdfa';
-        badge = ' <span style="font-size:9px;background:#ccfbf1;color:#115e59;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">美债</span>';
-      } else if(r.region === 'fx'){
-        accent = '#2563eb'; bg = '#eff6ff';
-        badge = ' <span style="font-size:9px;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">离岸</span>';
-      }
-      const priceStr = unavailable ? '暂缺'
-                     : (r.region === 'hk') ? r.price.toFixed(0)
-                     : (r.region === 'fut') ? r.price.toFixed(2)
-                     : (r.region === 'rate') ? r.price.toFixed(3)+'%'
-                     : (r.region === 'fx') ? r.price.toFixed(4)
-                     : r.price.toFixed(2);
-      const moveStr = unavailable ? '自动重试'
-        : r.region === 'rate'
-        ? `${arrow} ${sign}${displayMove.toFixed(1)}bp`
-        : `${arrow} ${sign}${displayPct.toFixed(2)}%`;
-      const groupEnd = r.label==='A股平均股价' || r.label==='A/H溢价';
-      return `<div class="port-index-row${groupEnd?' port-index-group-end':''}" style="display:flex;align-items:center;flex-wrap:nowrap;padding:5px 8px;border-radius:8px;
-                           background:${bg};border-left:3px solid ${accent}">
-        <span style="flex:0 0 auto;font-size:12px;font-weight:700;color:var(--text);letter-spacing:.01em;white-space:nowrap;margin-right:6px">${r.label}${badge}</span>
-        <span style="flex:1;font-size:12px;font-weight:600;color:#475569;text-align:right;white-space:nowrap;margin-right:8px">${priceStr}</span>
-        <span style="font-size:13px;font-weight:900;color:${color};flex:0 0 auto;white-space:nowrap;
-                     letter-spacing:-.01em">${moveStr}</span>
-      </div>`;
-    }).join('');
-    if(tsEl) tsEl.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) + ' 更新';
+    listEl.innerHTML=rows.map(r=>_idxRowHtml(r,_now)).join('');
+    _idxUpdateTimestamp(rowMap,_now);
     _IDX_LAST_RENDER = Date.now();
   }
   // 保存 A/H溢价 供风险仪表板监管/地缘政治指标使用
@@ -8215,7 +8538,26 @@ async function fetchIndexPrices(){
   if(rowMap['中证全指'] && isFinite(rowMap['中证全指'].pct)){
     _csiPct = _portfolioIndexDisplayPct(rowMap['中证全指'].region,rowMap['中证全指'].pct,_now);
   }
-  if(btn) btn.disabled = false;
+  }finally{
+    if(btn) btn.disabled=false;
+  }
+}
+
+// 自动刷新周期可能短于一次弱网请求。把并发调用合并为一轮，并在期间若又收到
+// 刷新信号，则当前轮完成后立即补一轮；这样 3/5/10 秒模式都不会持续饿死成功响应。
+function fetchIndexPrices(){
+  if(_IDX_INFLIGHT){
+    _IDX_PENDING=true;
+    return _IDX_INFLIGHT;
+  }
+  _IDX_INFLIGHT=_fetchIndexPricesOnce().finally(()=>{
+    _IDX_INFLIGHT=null;
+    if(_IDX_PENDING){
+      _IDX_PENDING=false;
+      Promise.resolve().then(()=>fetchIndexPrices().catch(e=>console.warn('[IDX] 补充刷新:',e)));
+    }
+  });
+  return _IDX_INFLIGHT;
 }
 
 // 从「主要指数」DOM 兜底读取中证全指涨跌幅（当 _csiPct 仍为空时使用，确保与用户看到的值一致）
@@ -8750,20 +9092,22 @@ async function fetchMarketStats(){
   }
 }
 
-// 宏观趋势打开、回到前台及每分钟定时刷新时，优先读取东方财富官方实时聚合值。
-// 官方接口失败后，盘中才回退到投资组合页使用的逐股统计；任一方式失败都保留最后成功值。
+// 宏观趋势打开、回到前台及每分钟定时刷新时，并行读取官方涨跌家数与涨跌停分钟序列。
+// 涨跌家数官方接口失败后才回退到逐股统计；涨跌停接口失败时保留最后一份精确值。
 async function refreshBreadthTrendLive(force=false){
-  if(await _fetchOfficialBreadthLive(force)) return true;
+  const [breadthOk,limitOk]=await Promise.all([
+    _fetchOfficialBreadthLive(force),
+    _fetchOfficialLimitLive(force),
+  ]);
   const clock=_breadthBeijingClock();
-  if(!clock.isTrading||_mktStatsFetching) return false;
-  await _doFetchBreadth();
-  return !!(_breadthLivePoint&&_breadthLivePoint.date===clock.date);
+  if(!breadthOk&&clock.isTrading&&!_mktStatsFetching) await _doFetchBreadth();
+  return breadthOk||limitOk||!!(_breadthLivePoint&&_breadthLivePoint.date===clock.date);
 }
 
 function _refreshVisibleMacroBreadth(force=false){
   const macro=document.getElementById('t0');
   if(document.hidden||!macro||!macro.classList.contains('active')) return;
-  refreshBreadthTrendLive(force).catch(e=>console.warn('[Daily] 涨跌家数自动刷新:',e.message));
+  refreshBreadthTrendLive(force).catch(e=>console.warn('[Daily] 涨跌家数/涨跌停自动刷新:',e.message));
 }
 
 // ── 涨跌统计（东方财富 clist，分批分页拉取全量 f3 精确计数）────────
@@ -10998,7 +11342,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   portInit();   // 优先从 GitHub 加载组合数据
   // 默认开启 10 秒自动刷新：确保盘中价格(尤其港股实时源)持续更新，不再停留在加载时刻；
   // 仅交易时段实际轮询(见 setAutoRefresh)，用户可在右上角下拉改回「手动」。
-  try{ _arPick(10, '10秒'); }catch(e){ console.warn('[default auto-refresh]', e); }
+  try{ _arPick(10, '10秒', false); }catch(e){ console.warn('[default auto-refresh]', e); }
   fetchMainFlow();      // 初始化时同时拉取主力净流入榜与净流出榜
   fetchMarketBreadth(); // 市场涨跌统计（主要用腾讯 API，极少命中东方财富限流）
   fetchNews(true);    // 首次打开立即强制读取最新要闻与7×24快讯
@@ -11007,7 +11351,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }, 30000);          // 页面可见时每30秒检查新消息；与股价刷新相互独立
   setInterval(function(){
     _refreshVisibleMacroBreadth(false);
-  }, 60000);          // 宏观趋势停留期间每分钟更新当天最新涨跌家数
+  }, 60000);          // 宏观趋势停留期间每分钟更新当天最新涨跌家数与涨跌停家数
   document.addEventListener('visibilitychange',function(){
     if(!document.hidden){
       try{ fetchNews(true); }catch(e){}
@@ -11042,7 +11386,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     // 其他标签页图表（宏观趋势/产业链监控等）
     _safe(mkCapex);_safe(mkTrend);_safe(mkCloudCompare);_safe(mkSig);_safe(mkStageC);
     _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);
-    _safe(mkArr);_safe(mkMargin);_safe(mkVolume);_safe(mkUpDown);
+    _safe(mkArr);_safe(mkMargin);_safe(mkVolume);_safe(mkUpDown);_safe(mkLimitMoves);
     _safe(mkStageMatrix);
     _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();});
     // 非首屏数据抓取（错开首屏行情请求，避免抢东财/腾讯连接）
@@ -11074,7 +11418,9 @@ function _refreshIndexAfterResume(){
     const portTab=document.getElementById('tPort');
     const now=Date.now();
     if(document.visibilityState!=='visible' || !portTab || !portTab.classList.contains('active')) return;
-    if(!_IDX_LAST_RENDER || now-_IDX_LAST_RENDER<5000 || now-_idxResumeRequestTs<1500) return;
+    // 从未成功渲染时 _IDX_LAST_RENDER=0，此时更应立即重试；
+    // 只对已有新鲜结果的页面做 5 秒防抖。
+    if((_IDX_LAST_RENDER && now-_IDX_LAST_RENDER<5000) || now-_idxResumeRequestTs<1500) return;
     _idxResumeRequestTs=now;
     fetchIndexPrices().catch(e=>console.warn('[IDX] 前台恢复刷新:',e));
   },180);

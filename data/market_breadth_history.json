@@ -1,337 +1,548 @@
 {
-  "updatedAt": "2026-09-04T20:05+08:00",
+  "updatedAt": "2026-09-06T20:08+08:00",
   "scope": "沪深 A 股（上海、深圳；不含北京证券交易所）",
-  "source": "东方财富牛熊风向标 + 东方财富个股日行情",
-  "method": "涨跌家数采用东方财富官方近月序列；更早日期按个股日涨跌幅汇总",
+  "source": "东方财富牛熊风向标 + 东方财富沪深涨跌停分钟序列 + 东方财富个股日行情",
+  "method": "涨跌家数采用官方近月序列；涨跌停统一为全部沪深A股口径，收盘日优先采用官方15:00分钟点，其余历史按个股收盘价及交易所5%/10%/20%限价规则重建（排除N/C新股及退市旧证券）",
   "series": [
     {
       "date": "2026-06-12",
       "up": 3705,
       "down": 1411,
-      "flat": 84
+      "flat": 84,
+      "limitUp": 100,
+      "limitDown": 22,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-06-15",
       "up": 3665,
       "down": 1401,
-      "flat": 134
+      "flat": 134,
+      "limitUp": 159,
+      "limitDown": 12,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-06-16",
       "up": 2624,
       "down": 2467,
-      "flat": 109
+      "flat": 109,
+      "limitUp": 138,
+      "limitDown": 11,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-06-17",
       "up": 1594,
       "down": 3549,
-      "flat": 57
+      "flat": 57,
+      "limitUp": 96,
+      "limitDown": 20,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-06-18",
       "up": 1958,
       "down": 3140,
-      "flat": 102
+      "flat": 102,
+      "limitUp": 100,
+      "limitDown": 43,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-06-22",
       "up": 2690,
       "down": 2372,
-      "flat": 138
+      "flat": 138,
+      "limitUp": 153,
+      "limitDown": 27,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-06-23",
       "up": 2549,
       "down": 2547,
-      "flat": 104
+      "flat": 104,
+      "limitUp": 121,
+      "limitDown": 51,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-06-24",
       "up": 1382,
       "down": 3766,
-      "flat": 53
+      "flat": 53,
+      "limitUp": 104,
+      "limitDown": 63,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-06-25",
       "up": 1198,
       "down": 3939,
-      "flat": 64
+      "flat": 64,
+      "limitUp": 94,
+      "limitDown": 85,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-06-26",
       "up": 754,
       "down": 4393,
-      "flat": 55
+      "flat": 55,
+      "limitUp": 72,
+      "limitDown": 45,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-06-29",
       "up": 2391,
       "down": 2689,
-      "flat": 122
+      "flat": 122,
+      "limitUp": 123,
+      "limitDown": 70,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-06-30",
       "up": 2902,
       "down": 2200,
-      "flat": 100
+      "flat": 100,
+      "limitUp": 165,
+      "limitDown": 21,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-01",
       "up": 4043,
       "down": 1110,
-      "flat": 49
+      "flat": 49,
+      "limitUp": 214,
+      "limitDown": 13,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-02",
       "up": 2113,
       "down": 2955,
-      "flat": 135
+      "flat": 135,
+      "limitUp": 149,
+      "limitDown": 44,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-03",
       "up": 3527,
       "down": 1584,
-      "flat": 92
+      "flat": 92,
+      "limitUp": 153,
+      "limitDown": 28,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-06",
       "up": 1817,
       "down": 3278,
-      "flat": 108
+      "flat": 108,
+      "limitUp": 68,
+      "limitDown": 51,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-07",
       "up": 639,
       "down": 4535,
-      "flat": 29
+      "flat": 29,
+      "limitUp": 34,
+      "limitDown": 37,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-08",
       "up": 1533,
       "down": 3532,
-      "flat": 138
+      "flat": 138,
+      "limitUp": 49,
+      "limitDown": 44,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-09",
       "up": 2382,
       "down": 2674,
-      "flat": 147
+      "flat": 147,
+      "limitUp": 75,
+      "limitDown": 16,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-10",
       "up": 3512,
       "down": 1612,
-      "flat": 79
+      "flat": 79,
+      "limitUp": 91,
+      "limitDown": 7,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-13",
       "up": 780,
       "down": 4377,
-      "flat": 46
+      "flat": 46,
+      "limitUp": 28,
+      "limitDown": 189,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-14",
       "up": 3919,
       "down": 1215,
-      "flat": 67
+      "flat": 67,
+      "limitUp": 82,
+      "limitDown": 26,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-15",
       "up": 3198,
       "down": 1930,
-      "flat": 73
+      "flat": 73,
+      "limitUp": 71,
+      "limitDown": 35,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-16",
       "up": 2344,
       "down": 2695,
-      "flat": 162
+      "flat": 162,
+      "limitUp": 42,
+      "limitDown": 36,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-17",
       "up": 405,
       "down": 4758,
-      "flat": 37
+      "flat": 37,
+      "limitUp": 32,
+      "limitDown": 212,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-20",
       "up": 1709,
       "down": 3415,
-      "flat": 76
+      "flat": 76,
+      "limitUp": 55,
+      "limitDown": 245,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-21",
       "up": 2871,
       "down": 2219,
-      "flat": 111
+      "flat": 111,
+      "limitUp": 120,
+      "limitDown": 22,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-22",
       "up": 1432,
       "down": 3650,
-      "flat": 119
+      "flat": 119,
+      "limitUp": 46,
+      "limitDown": 9,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-23",
       "up": 3997,
       "down": 1143,
-      "flat": 61
+      "flat": 61,
+      "limitUp": 116,
+      "limitDown": 2,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-07-24",
       "up": 534,
-      "down": 4631
+      "down": 4631,
+      "limitUp": 42,
+      "limitDown": 25,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-07-27",
       "up": 4884,
-      "down": 268
+      "down": 268,
+      "limitUp": 117,
+      "limitDown": 6,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-07-28",
       "up": 2372,
-      "down": 2673
+      "down": 2673,
+      "limitUp": 65,
+      "limitDown": 49,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-07-29",
       "up": 3967,
-      "down": 1173
+      "down": 1173,
+      "limitUp": 83,
+      "limitDown": 12,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-07-30",
       "up": 1635,
-      "down": 3447
+      "down": 3447,
+      "limitUp": 51,
+      "limitDown": 80,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-07-31",
       "up": 4394,
-      "down": 695
+      "down": 695,
+      "limitUp": 100,
+      "limitDown": 0,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-03",
       "up": 3866,
-      "down": 1278
+      "down": 1278,
+      "limitUp": 82,
+      "limitDown": 8,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-04",
       "up": 3406,
-      "down": 1663
+      "down": 1663,
+      "limitUp": 140,
+      "limitDown": 0,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-05",
       "up": 3427,
-      "down": 1598
+      "down": 1598,
+      "limitUp": 103,
+      "limitDown": 1,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-06",
       "up": 2638,
-      "down": 2416
+      "down": 2416,
+      "limitUp": 79,
+      "limitDown": 1,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-07",
       "up": 2671,
-      "down": 2398
+      "down": 2398,
+      "limitUp": 76,
+      "limitDown": 4,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-10",
       "up": 3877,
-      "down": 1253
+      "down": 1253,
+      "limitUp": 100,
+      "limitDown": 7,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-11",
       "up": 1559,
-      "down": 3506
+      "down": 3506,
+      "limitUp": 58,
+      "limitDown": 2,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-12",
       "up": 3860,
-      "down": 1216
+      "down": 1216,
+      "limitUp": 92,
+      "limitDown": 0,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-13",
       "up": 1084,
-      "down": 4041
+      "down": 4041,
+      "limitUp": 60,
+      "limitDown": 4,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-14",
       "up": 2322,
-      "down": 2719
+      "down": 2719,
+      "limitUp": 62,
+      "limitDown": 14,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-17",
       "up": 4067,
-      "down": 999
+      "down": 999,
+      "limitUp": 107,
+      "limitDown": 1,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-18",
       "up": 1840,
-      "down": 3240
+      "down": 3240,
+      "limitUp": 80,
+      "limitDown": 6,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-19",
       "up": 420,
-      "down": 4760
+      "down": 4760,
+      "limitUp": 38,
+      "limitDown": 136,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-20",
       "up": 3916,
-      "down": 1203
+      "down": 1203,
+      "limitUp": 81,
+      "limitDown": 11,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-21",
       "up": 2407,
-      "down": 2626
+      "down": 2626,
+      "limitUp": 57,
+      "limitDown": 14,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-24",
       "up": 1384,
-      "down": 3704
+      "down": 3704,
+      "flat": 122,
+      "limitUp": 46,
+      "limitDown": 15,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-08-25",
       "up": 3966,
-      "down": 1177
+      "down": 1177,
+      "limitUp": 67,
+      "limitDown": 4,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-26",
       "up": 2760,
-      "down": 2309
+      "down": 2309,
+      "limitUp": 53,
+      "limitDown": 0,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-27",
       "up": 3190,
-      "down": 1821
+      "down": 1821,
+      "limitUp": 76,
+      "limitDown": 3,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-28",
       "up": 2796,
-      "down": 2269
+      "down": 2269,
+      "limitUp": 82,
+      "limitDown": 2,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-08-31",
       "up": 3000,
-      "down": 2070
+      "down": 2070,
+      "limitUp": 88,
+      "limitDown": 11,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-09-01",
       "up": 3095,
-      "down": 1994
+      "down": 1994,
+      "limitUp": 82,
+      "limitDown": 0,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-09-02",
       "up": 1247,
-      "down": 3857
+      "down": 3857,
+      "limitUp": 52,
+      "limitDown": 10,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     },
     {
       "date": "2026-09-03",
       "up": 1804,
-      "down": 3275
+      "down": 3275,
+      "flat": 135,
+      "limitUp": 46,
+      "limitDown": 18,
+      "limitSource": "eastmoney_daily_limit_rule_total"
     },
     {
       "date": "2026-09-04",
       "up": 2249,
-      "down": 2772
+      "down": 2772,
+      "limitUp": 40,
+      "limitDown": 9,
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "flat": 0
     }
   ]
 }
