@@ -1817,6 +1817,25 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="tx3 mt4" id="cLimitFooter">来源: 东方财富 · 沪深 A 股官方分钟序列/个股日行情 · 折线=涨停/跌停家数 · 柱=涨停−跌停 · 加载中…</div>
   </div>
 
+  <!-- 日频：港股成交额趋势（近 60 个交易日） -->
+  <div class="card mb16">
+    <div class="ch">
+      <span class="ct">港股成交额趋势（日频·亿港元）</span>
+      <span class="cbadge" style="background:#fff1f2;color:#be123c">近 3 个月 · 60 交易日</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#fffafa;border-radius:8px;border:1px solid #ffe4e6">
+      <div>
+        <span class="tx3">最新成交额&nbsp;</span>
+        <span id="hkVolumeKpiVal" style="font-size:18px;font-weight:800;color:#be123c">—</span>
+      </div>
+      <span id="hkVolumeKpiDate" class="tx3" style="color:#94a3b8">加载中…</span>
+      <span id="hkVolumeKpiCompare" class="tx3" style="color:#64748b">5 日均额 —</span>
+      <span id="hkVolumeKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
+    </div>
+    <div style="height:220px"><canvas id="cHkVolume"></canvas></div>
+    <div class="tx3 mt4" id="hkVolumeKpiFooter">来源: 腾讯财经 · 港股主板成交额 · 柱=每日成交额 · 线=5日均额 · 加载中…</div>
+  </div>
+
   <!-- 第一行：X关注意见领袖 -->
   <div class="card mb16" style="border-top:3px solid #1d9bf0">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -2650,6 +2669,8 @@ const BASE = {
     },
     // ── 沪深 A 股成交额（日频·亿元）— 由 fetchDailyCharts 动态填充 ──
     volume:{ labels:[], vals:[], dates:[] },
+    // ── 港股成交额（日频·亿港元）— 由 fetchDailyCharts 动态填充 ──
+    hkVolume:{ labels:[], vals:[], dates:[] },
     // ── 北向资金净流入 (日频·亿元) 2026-03-10→2026-05-26 · 来源:沪深港通统计 ──
     north:{
       labels:['03-10','03-11','03-12','03-13','03-14','03-17','03-18','03-19','03-20','03-21','03-24','03-25','03-26','03-27','03-28','03-31','04-01','04-02','04-03','04-07','04-08','04-09','04-10','04-11','04-14','04-15','04-16','04-17','04-18','04-21','04-22','04-23','04-24','04-25','04-28','04-29','05-06','05-07','05-08','05-09','05-12','05-13','05-14','05-15','05-16','05-19','05-20','05-21','05-22','05-23','05-26'],
@@ -5570,6 +5591,33 @@ function mkVolume(){
   }});
 }
 
+function mkHkVolume(){
+  const canvas=document.getElementById('cHkVolume');
+  if(!canvas) return;
+  const d=BASE.ashare.hkVolume;
+  CH.hkVolume=new Chart(canvas.getContext('2d'),{data:{labels:d.labels,datasets:[
+    {
+      type:'bar',label:'港股成交额(亿港元)',data:d.vals,
+      backgroundColor:'rgba(225,29,72,.62)',borderColor:'rgba(190,18,60,.82)',
+      borderWidth:1,borderRadius:2,barPercentage:.82,categoryPercentage:.9,order:2,
+    },
+    {
+      type:'line',label:'5日均额(亿港元)',data:_movingAverage(d.vals,5),
+      borderColor:'#d97706',backgroundColor:'rgba(217,119,6,.08)',
+      borderWidth:2,pointRadius:0,pointHoverRadius:4,tension:.3,spanGaps:false,order:1,
+    },
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{labels:{color:'#64748b',font:{size:11},usePointStyle:true}},
+      tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+(ctx.parsed.y==null?'—':Number(ctx.parsed.y).toLocaleString('zh-CN',{maximumFractionDigits:2})+' 亿港元')}},
+    },
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#64748b',font:{size:9},maxTicksLimit:10,maxRotation:0}},
+      y:{beginAtZero:true,grid:{color:'rgba(226,232,240,1)'},ticks:{color:'#64748b',callback:v=>v>=10000?(v/10000).toFixed(1)+'万亿':Number(v).toLocaleString('zh-CN')+'亿'}},
+    }
+  }});
+}
+
 // mkNorth 已移除（北向资金净流入官方停止披露）
 
 function mkUpDown(){
@@ -6887,11 +6935,13 @@ async function _fetchIndexAmount(secid){
     fields2:'f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61',
   });
   let lastError=null;
-  for(let attempt=0;attempt<2;attempt++){
+  // 历史主机偶发空响应；延迟行情主机提供相同日 K 字段，仅在主源失败时接替。
+  const hosts=['https://push2his.eastmoney.com','https://push2delay.eastmoney.com'];
+  for(const host of hosts){
     const ctrl=new AbortController();
     const timer=setTimeout(()=>ctrl.abort(),8000);
     try{
-      const res=await fetch('https://push2his.eastmoney.com/api/qt/stock/kline/get?'+params.toString()+'&_='+Date.now(),{
+      const res=await fetch(host+'/api/qt/stock/kline/get?'+params.toString()+'&_='+Date.now(),{
         cache:'no-store',signal:ctrl.signal,
       });
       if(!res.ok) throw new Error('HTTP '+res.status);
@@ -6936,12 +6986,149 @@ async function _fetchMarketAmountSeries(){
   };
 }
 
+async function _fetchHkMarketAmountSeries(){
+  // 腾讯恒指日 K 的成交额字段为港股主板全市场成交额；盘中最后一行是当日累计值。
+  try{
+    const url='https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=hkHSI,day,,,60,qfq&_='+Date.now();
+    const json=await _idxFetch(url,{timeout:7000,retries:1});
+    const block=json?.data?.hkHSI;
+    const rows=block?.day||block?.qfqday||[];
+    const byDate=new Map();
+    rows.forEach(row=>{
+      const date=String(row?.[0]||'').slice(0,10);
+      const amount=Number(row?.[5]);
+      if(/^\d{4}-\d{2}-\d{2}$/.test(date)&&Number.isFinite(amount)&&amount>=0){
+        byDate.set(date,+(amount/1e8).toFixed(2));
+      }
+    });
+    const dates=[...byDate.keys()].sort().slice(-60);
+    if(dates.length<20) throw new Error('腾讯港股有效交易日不足');
+    const latestDate=dates[dates.length-1];
+    const latestVal=byDate.get(latestDate);
+    if(!Number.isFinite(latestVal)||latestVal<0) throw new Error('腾讯港股最新成交额无效');
+    const quoteTime=String(block?.qt?.hkHSI?.[30]||'');
+    return{
+      dates,
+      labels:dates.map(_fmtDayLabel),
+      vals:dates.map(date=>byDate.get(date)),
+      latestDate,
+      latestVal,
+      asOf:quoteTime,
+      source:'腾讯财经',
+    };
+  }catch(primaryError){
+    console.warn('[Daily] 腾讯港股成交额失败，切换东方财富:',primaryError.message);
+    const market=await _fetchIndexAmount('100.HSI');
+    const dates=[...market.keys()].sort().slice(-60);
+    if(dates.length<20) throw new Error('港股有效交易日不足');
+    const vals=dates.map(date=>+(market.get(date)/1e8).toFixed(2));
+    const latestVal=vals[vals.length-1];
+    if(!Number.isFinite(latestVal)||latestVal<0) throw new Error('港股最新成交额无效');
+    return{
+      dates,
+      labels:dates.map(_fmtDayLabel),
+      vals,
+      latestDate:dates[dates.length-1],
+      latestVal,
+      asOf:'',
+      source:'东方财富',
+    };
+  }
+}
+
 function _isCurrentAAmountPartial(latestDate){
   const bj=new Date(Date.now()+8*60*60*1000);
   const today=bj.getUTCFullYear()+'-'+String(bj.getUTCMonth()+1).padStart(2,'0')+'-'+String(bj.getUTCDate()).padStart(2,'0');
   const minute=bj.getUTCHours()*60+bj.getUTCMinutes();
   const weekday=bj.getUTCDay();
   return latestDate===today&&weekday>=1&&weekday<=5&&minute>=9*60+30&&minute<15*60;
+}
+
+function _isCurrentHkAmountPartial(latestDate){
+  const hk=new Date(Date.now()+8*60*60*1000);
+  const today=hk.getUTCFullYear()+'-'+String(hk.getUTCMonth()+1).padStart(2,'0')+'-'+String(hk.getUTCDate()).padStart(2,'0');
+  const minute=hk.getUTCHours()*60+hk.getUTCMinutes();
+  const weekday=hk.getUTCDay();
+  // 港股收市竞价约至 16:10；午休时仍展示上午收市累计值。
+  return latestDate===today&&weekday>=1&&weekday<=5&&minute>=9*60+30&&minute<16*60+10;
+}
+
+let _hkVolumeFetch=null;
+let _hkVolumeTs=0;
+
+async function _refreshHkVolumeChart(force=false){
+  if(!force&&Date.now()-_hkVolumeTs<45000&&BASE.ashare.hkVolume?.dates?.length) return true;
+  if(_hkVolumeFetch) return _hkVolumeFetch;
+  _hkVolumeFetch=(async()=>{
+    try{
+      const d=await _fetchHkMarketAmountSeries();
+      BASE.ashare.hkVolume=d;
+      const ma5=_movingAverage(d.vals,5);
+      const partial=_isCurrentHkAmountPartial(d.latestDate);
+      // 盘中成交额仍在累积，不将未完成交易日混入 5 日均额。
+      if(partial) ma5[ma5.length-1]=null;
+      if(CH.hkVolume){
+        CH.hkVolume.data.labels=d.labels;
+        CH.hkVolume.data.datasets[0].data=d.vals;
+        CH.hkVolume.data.datasets[0].backgroundColor=d.vals.map((_,i)=>
+          partial&&i===d.vals.length-1?'rgba(251,113,133,.38)':'rgba(225,29,72,.62)'
+        );
+        CH.hkVolume.data.datasets[1].data=ma5;
+        CH.hkVolume.update('none');
+      }
+      const kv=document.getElementById('hkVolumeKpiVal');
+      const kd=document.getElementById('hkVolumeKpiDate');
+      const kc=document.getElementById('hkVolumeKpiCnt');
+      const kcmp=document.getElementById('hkVolumeKpiCompare');
+      const kf=document.getElementById('hkVolumeKpiFooter');
+      const timeMatch=String(d.asOf||'').match(/\s(\d{2}:\d{2})/);
+      if(kv) kv.textContent=d.latestVal.toLocaleString('zh-CN',{maximumFractionDigits:0})+' 亿港元';
+      if(kd) kd.textContent=d.latestDate+(partial?' · 盘中累计'+(timeMatch?' '+timeMatch[1]:''):'');
+      if(kc) kc.textContent=`${d.labels.length}交易日 · ${d.dates[0]} 至 ${d.latestDate}`;
+      if(kcmp){
+        if(partial){
+          kcmp.textContent='盘中累计 · 收盘后比较 5 日均额';
+          kcmp.style.color='#64748b';
+        }else{
+          const avg=ma5[ma5.length-1];
+          const pct=avg?((d.latestVal/avg-1)*100):null;
+          kcmp.textContent=pct==null?'5 日均额 —':`较 5 日均额 ${pct>=0?'+':''}${pct.toFixed(1)}%`;
+          kcmp.style.color=pct==null?'#64748b':pct>=0?'#dc2626':'#059669';
+        }
+      }
+      if(kf) kf.textContent=`来源: ${d.source} · 港股主板成交额 · 柱=每日成交额 · 线=5日均额 · 数据截至 ${d.latestDate}${partial?'（盘中累计）':''}`;
+      _hkVolumeTs=Date.now();
+      console.log('[Daily] 港股成交额 OK | 最新:',d.latestDate,d.latestVal+'亿港元',partial?'盘中':'收盘',d.source);
+      return true;
+    }catch(e){
+      console.warn('[Daily] 港股成交额失败:',e.message);
+      const hasPrior=!!(CH.hkVolume&&CH.hkVolume.data.labels?.length);
+      const kv=document.getElementById('hkVolumeKpiVal');
+      const kd=document.getElementById('hkVolumeKpiDate');
+      const kc=document.getElementById('hkVolumeKpiCnt');
+      const kcmp=document.getElementById('hkVolumeKpiCompare');
+      const kf=document.getElementById('hkVolumeKpiFooter');
+      if(hasPrior){
+        if(kc) kc.textContent='本次刷新失败 · 已保留上次成功数据';
+        if(kf) kf.textContent='⚠️ 港股成交额数据源暂不可用，图表保留上次成功结果';
+      }else{
+        if(CH.hkVolume){
+          CH.hkVolume.data.labels=[];
+          CH.hkVolume.data.datasets.forEach(ds=>ds.data=[]);
+          CH.hkVolume.update('none');
+        }
+        if(kv) kv.textContent='—';
+        if(kd) kd.textContent='无法取得';
+        if(kc) kc.textContent='实时数据源暂不可用';
+        if(kcmp) kcmp.textContent='5 日均额 —';
+        if(kf) kf.textContent='⚠️ 港股成交额趋势暂时取不到，请稍后重新打开“宏观趋势”标签页';
+      }
+      return false;
+    }finally{
+      _hkVolumeFetch=null;
+    }
+  })();
+  return _hkVolumeFetch;
 }
 
 // 涨跌家数趋势：历史 JSON 为稳定基线；交易时段把投资组合页实时全市场统计合并为“今日”最后一点。
@@ -7218,6 +7405,8 @@ function _setLimitTrendLivePoint(up,down,clock=_breadthBeijingClock()){
 }
 
 async function fetchDailyCharts(){
+  // 港股成交额与两融、A 股成交额并行读取，避免额外增加宏观页等待时间。
+  const hkVolumeJob=_refreshHkVolumeChart(true);
   // ── 1. 融资融券余额 ──────────────────────────────────────────────
   try{
     const d=await _fetchDailySeries(
@@ -7367,6 +7556,7 @@ async function fetchDailyCharts(){
       const foot=document.getElementById('cLimitFooter'); if(foot) foot.textContent='⚠️ 涨跌停家数历史暂时取不到，已保留空图而不显示错误数值';
     }
   }
+  await hkVolumeJob;
 }
 const MACRO_CFGS={
   cpi:{
@@ -7691,7 +7881,7 @@ async function refreshMacro(){
   // 月度宏观图表(CPI/社融/固投/社零/工业利润/电子利润/PE走势)已随"A股宏观"页删除，
   // 对应请求一并移除（refreshMacro 现仅刷新市场 KPI、两融、成交量、涨跌家数与 iVIX）。
   const timeStr=new Date().toLocaleString('zh-CN');
-  if(ts) ts.textContent=`已刷新 市值/PE/两融/成交额/涨跌家数/涨跌停 · ${timeStr}`;
+  if(ts) ts.textContent=`已刷新 市值/PE/两融/A股成交额/港股成交额/涨跌家数/涨跌停 · ${timeStr}`;
   if(btn){ btn.classList.remove('loading'); btn.disabled=false; }
   const macroIdx=TAB_ORDER.indexOf('t0');
   if(macroIdx>=0) _TAB_TS[macroIdx]=Date.now();
@@ -9107,7 +9297,10 @@ async function refreshBreadthTrendLive(force=false){
 function _refreshVisibleMacroBreadth(force=false){
   const macro=document.getElementById('t0');
   if(document.hidden||!macro||!macro.classList.contains('active')) return;
-  refreshBreadthTrendLive(force).catch(e=>console.warn('[Daily] 涨跌家数/涨跌停自动刷新:',e.message));
+  Promise.allSettled([
+    refreshBreadthTrendLive(force),
+    _refreshHkVolumeChart(force),
+  ]).catch(e=>console.warn('[Daily] 宏观趋势盘中数据自动刷新:',e.message));
 }
 
 // ── 涨跌统计（东方财富 clist，分批分页拉取全量 f3 精确计数）────────
@@ -11351,7 +11544,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }, 30000);          // 页面可见时每30秒检查新消息；与股价刷新相互独立
   setInterval(function(){
     _refreshVisibleMacroBreadth(false);
-  }, 60000);          // 宏观趋势停留期间每分钟更新当天最新涨跌家数与涨跌停家数
+  }, 60000);          // 宏观趋势停留期间每分钟更新涨跌家数、涨跌停与港股成交额
   document.addEventListener('visibilitychange',function(){
     if(!document.hidden){
       try{ fetchNews(true); }catch(e){}
@@ -11386,7 +11579,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     // 其他标签页图表（宏观趋势/产业链监控等）
     _safe(mkCapex);_safe(mkTrend);_safe(mkCloudCompare);_safe(mkSig);_safe(mkStageC);
     _safe(mkRadar);_safe(mkGauge);_safe(mkBubble);
-    _safe(mkArr);_safe(mkMargin);_safe(mkVolume);_safe(mkUpDown);_safe(mkLimitMoves);
+    _safe(mkArr);_safe(mkMargin);_safe(mkVolume);_safe(mkHkVolume);_safe(mkUpDown);_safe(mkLimitMoves);
     _safe(mkStageMatrix);
     _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();});
     // 非首屏数据抓取（错开首屏行情请求，避免抢东财/腾讯连接）
