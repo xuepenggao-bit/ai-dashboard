@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-09-07T21:27+08:00",
+  "updatedAt": "2026-09-08T10:21+08:00",
   "scope": "沪深 A 股（上海、深圳；不含北京证券交易所）",
-  "source": "东方财富牛熊风向标 + 东方财富沪深涨跌停分钟序列 + 东方财富个股日行情",
-  "method": "涨跌家数采用官方近月序列；涨跌停统一为全部沪深A股口径，收盘日优先采用官方15:00分钟点，其余历史按个股收盘价及交易所5%/10%/20%限价规则重建（排除N/C新股及退市旧证券）",
+  "source": "东方财富牛熊风向标 + 东方财富沪深指数成交额/涨跌停分钟序列 + 腾讯指数收盘行情 + 东方财富个股日行情",
+  "method": "涨跌家数采用官方近月序列；涨跌停统一为全部沪深A股口径；沪深成交额为上证综指与深证综指成交额之和，历史取东方财富f57，最新收盘以腾讯指数行情交叉补齐",
   "series": [
     {
       "date": "2026-06-15",
@@ -11,7 +11,9 @@
       "flat": 134,
       "limitUp": 159,
       "limitDown": 12,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 30311.99,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-06-16",
@@ -20,7 +22,9 @@
       "flat": 109,
       "limitUp": 138,
       "limitDown": 11,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 30646.96,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-06-17",
@@ -29,7 +33,9 @@
       "flat": 57,
       "limitUp": 96,
       "limitDown": 20,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 30917.64,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-06-18",
@@ -38,7 +44,9 @@
       "flat": 102,
       "limitUp": 100,
       "limitDown": 43,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 33100.89,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-06-22",
@@ -47,7 +55,9 @@
       "flat": 138,
       "limitUp": 153,
       "limitDown": 27,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 37371.92,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-06-23",
@@ -56,7 +66,9 @@
       "flat": 104,
       "limitUp": 121,
       "limitDown": 51,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 34407.4,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-06-24",
@@ -65,7 +77,9 @@
       "flat": 53,
       "limitUp": 104,
       "limitDown": 63,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 32843.17,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-06-25",
@@ -74,7 +88,9 @@
       "flat": 64,
       "limitUp": 94,
       "limitDown": 85,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 35942.8,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-06-26",
@@ -83,7 +99,9 @@
       "flat": 55,
       "limitUp": 72,
       "limitDown": 45,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 35523.96,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-06-29",
@@ -92,7 +110,9 @@
       "flat": 122,
       "limitUp": 123,
       "limitDown": 70,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 35177.44,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-06-30",
@@ -101,7 +121,9 @@
       "flat": 100,
       "limitUp": 165,
       "limitDown": 21,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 32737.45,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-01",
@@ -110,7 +132,9 @@
       "flat": 49,
       "limitUp": 214,
       "limitDown": 13,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 36599.91,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-02",
@@ -119,7 +143,9 @@
       "flat": 135,
       "limitUp": 149,
       "limitDown": 44,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 34505.35,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-03",
@@ -128,7 +154,9 @@
       "flat": 92,
       "limitUp": 153,
       "limitDown": 28,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 31824.44,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-06",
@@ -137,7 +165,9 @@
       "flat": 108,
       "limitUp": 68,
       "limitDown": 51,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 30911.12,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-07",
@@ -146,7 +176,9 @@
       "flat": 29,
       "limitUp": 34,
       "limitDown": 37,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 25811.49,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-08",
@@ -155,7 +187,9 @@
       "flat": 138,
       "limitUp": 49,
       "limitDown": 44,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 25635.16,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-09",
@@ -164,7 +198,9 @@
       "flat": 147,
       "limitUp": 75,
       "limitDown": 16,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 29137.22,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-10",
@@ -173,7 +209,9 @@
       "flat": 79,
       "limitUp": 91,
       "limitDown": 7,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 33885.44,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-13",
@@ -182,7 +220,9 @@
       "flat": 46,
       "limitUp": 28,
       "limitDown": 189,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 28177.52,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-14",
@@ -191,7 +231,9 @@
       "flat": 67,
       "limitUp": 82,
       "limitDown": 26,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 27039.65,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-15",
@@ -200,7 +242,9 @@
       "flat": 73,
       "limitUp": 71,
       "limitDown": 35,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 25711.51,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-16",
@@ -209,7 +253,9 @@
       "flat": 162,
       "limitUp": 42,
       "limitDown": 36,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 24035.61,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-17",
@@ -218,7 +264,9 @@
       "flat": 37,
       "limitUp": 32,
       "limitDown": 212,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 26549.59,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-20",
@@ -227,7 +275,9 @@
       "flat": 76,
       "limitUp": 55,
       "limitDown": 245,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 27021.27,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-21",
@@ -236,7 +286,9 @@
       "flat": 111,
       "limitUp": 120,
       "limitDown": 22,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 29570.93,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-22",
@@ -245,7 +297,9 @@
       "flat": 119,
       "limitUp": 46,
       "limitDown": 9,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 26533.45,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-23",
@@ -254,7 +308,9 @@
       "flat": 61,
       "limitUp": 116,
       "limitDown": 2,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 21953.01,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-24",
@@ -263,7 +319,9 @@
       "limitUp": 42,
       "limitDown": 25,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 19311.4,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-27",
@@ -272,7 +330,9 @@
       "limitUp": 117,
       "limitDown": 6,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 20766.2,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-28",
@@ -281,7 +341,9 @@
       "limitUp": 65,
       "limitDown": 49,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 20257.81,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-29",
@@ -290,7 +352,9 @@
       "limitUp": 83,
       "limitDown": 12,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 22965.79,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-30",
@@ -299,7 +363,9 @@
       "limitUp": 51,
       "limitDown": 80,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 23428.09,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-07-31",
@@ -308,7 +374,9 @@
       "limitUp": 100,
       "limitDown": 0,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 25419.48,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-03",
@@ -317,7 +385,9 @@
       "limitUp": 82,
       "limitDown": 8,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 19973.86,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-04",
@@ -326,7 +396,9 @@
       "limitUp": 140,
       "limitDown": 0,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 22135.92,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-05",
@@ -335,7 +407,9 @@
       "limitUp": 103,
       "limitDown": 1,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 26596.35,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-06",
@@ -344,7 +418,9 @@
       "limitUp": 79,
       "limitDown": 1,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 25287.81,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-07",
@@ -353,7 +429,9 @@
       "limitUp": 76,
       "limitDown": 4,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 26644.2,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-10",
@@ -362,7 +440,9 @@
       "limitUp": 100,
       "limitDown": 7,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 25231.03,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-11",
@@ -371,7 +451,9 @@
       "limitUp": 58,
       "limitDown": 2,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 23209.86,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-12",
@@ -380,7 +462,9 @@
       "limitUp": 92,
       "limitDown": 0,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 21524.23,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-13",
@@ -389,7 +473,9 @@
       "limitUp": 60,
       "limitDown": 4,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 25509.17,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-14",
@@ -398,7 +484,9 @@
       "limitUp": 62,
       "limitDown": 14,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 21428.43,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-17",
@@ -407,7 +495,9 @@
       "limitUp": 107,
       "limitDown": 1,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 23874.57,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-18",
@@ -416,7 +506,9 @@
       "limitUp": 80,
       "limitDown": 6,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 24007.75,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-19",
@@ -425,7 +517,9 @@
       "limitUp": 38,
       "limitDown": 136,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 25110.43,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-20",
@@ -434,7 +528,9 @@
       "limitUp": 81,
       "limitDown": 11,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 20793.63,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-21",
@@ -443,7 +539,9 @@
       "limitUp": 57,
       "limitDown": 14,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 18792.64,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-24",
@@ -452,7 +550,9 @@
       "flat": 122,
       "limitUp": 46,
       "limitDown": 15,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 20074.56,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-25",
@@ -461,7 +561,9 @@
       "limitUp": 67,
       "limitDown": 4,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 18318.44,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-26",
@@ -470,7 +572,9 @@
       "limitUp": 53,
       "limitDown": 0,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 18087.23,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-27",
@@ -479,7 +583,9 @@
       "limitUp": 76,
       "limitDown": 3,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 21259.27,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-28",
@@ -488,7 +594,9 @@
       "limitUp": 82,
       "limitDown": 2,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 21017.15,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-08-31",
@@ -497,7 +605,9 @@
       "limitUp": 88,
       "limitDown": 11,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 21310.3,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-09-01",
@@ -506,7 +616,9 @@
       "limitUp": 82,
       "limitDown": 0,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 20334.03,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-09-02",
@@ -515,7 +627,9 @@
       "limitUp": 52,
       "limitDown": 10,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 17911.78,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-09-03",
@@ -524,7 +638,9 @@
       "flat": 135,
       "limitUp": 46,
       "limitDown": 18,
-      "limitSource": "eastmoney_daily_limit_rule_total"
+      "limitSource": "eastmoney_daily_limit_rule_total",
+      "amountYi": 17589.16,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-09-04",
@@ -533,7 +649,9 @@
       "limitUp": 40,
       "limitDown": 9,
       "limitSource": "eastmoney_daily_limit_rule_total",
-      "flat": 0
+      "flat": 0,
+      "amountYi": 20306.68,
+      "amountSource": "eastmoney_index_kline"
     },
     {
       "date": "2026-09-07",
@@ -542,7 +660,10 @@
       "limitUp": 94,
       "limitDown": 2,
       "limitSource": "eastmoney_hs_minute_close",
-      "limitAsOf": "2026-09-07 15:00"
+      "limitAsOf": "2026-09-07 15:00",
+      "flat": 0,
+      "amountYi": 19460.19,
+      "amountSource": "eastmoney_index_kline"
     }
   ]
 }
