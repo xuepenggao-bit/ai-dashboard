@@ -164,5 +164,74 @@ class LimitMoveTests(unittest.TestCase):
         self.assertIn('2026-09-03', rows)
 
 
+class MarketAmountTests(unittest.TestCase):
+    def test_index_amount_uses_f57(self):
+        payload = {
+            'data': {
+                'klines': [
+                    f'2026-08-{day:02d},1,2,3,0,999999,{day * 100000000},0,0,0,0'
+                    for day in range(1, 22)
+                ]
+            }
+        }
+        with mock.patch.object(BREADTH, '_get_json', return_value=payload):
+            result = BREADTH._index_daily_amounts('1.000001')
+        self.assertEqual(result['2026-08-21'], 2_100_000_000)
+
+    def test_tencent_quote_parses_date_time_and_amount(self):
+        def quote(code, amount_wan, stamp):
+            fields = ['0'] * 38
+            fields[30] = stamp
+            fields[37] = str(amount_wan)
+            return f'v_{code}="' + '~'.join(fields) + '";'
+
+        raw = quote('sh000001', 89_790_401, '20260907150001')
+        raw += '\n' + quote('sz399106', 104_811_488, '20260907150009')
+        with mock.patch.object(BREADTH, '_get_text', return_value=raw):
+            date, amount_yi, as_of = BREADTH._tencent_current_market_amount()
+        self.assertEqual(date, '2026-09-07')
+        self.assertEqual(amount_yi, 19_460.19)
+        self.assertEqual(as_of, '15:00')
+
+    def test_existing_amount_survives_normalization(self):
+        row = BREADTH._normalize_existing_row({
+            'date': '2026-09-04', 'up': 2249, 'down': 2772, 'flat': 0,
+            'limitUp': 40, 'limitDown': 9,
+            'amountYi': 18_234.56, 'amountSource': 'eastmoney_index_kline',
+        })
+        self.assertEqual(row['amountYi'], 18_234.56)
+        self.assertEqual(row['amountSource'], 'eastmoney_index_kline')
+
+    def test_invalid_amount_is_removed(self):
+        row = BREADTH._normalize_existing_row({
+            'date': '2026-09-04', 'up': 2249, 'down': 2772, 'flat': 0,
+            'amountYi': 'not-a-number', 'amountSource': 'bad',
+        })
+        self.assertNotIn('amountYi', row)
+        self.assertNotIn('amountSource', row)
+
+    def test_preclose_tencent_amount_is_not_persisted_as_close(self):
+        rows = [{
+            'date': '2026-09-08', 'up': 2200, 'down': 2800, 'flat': 0,
+            'amountYi': 17_000.0, 'amountSource': 'existing',
+        }]
+        now = dt.datetime(2026, 9, 8, 15, 5, tzinfo=BREADTH.BEIJING_TZ)
+        # A valid-looking Eastmoney daily kline must also be ignored for today
+        # until the independent quote timestamp confirms that trading closed.
+        with mock.patch.object(
+            BREADTH,
+            '_index_daily_amounts',
+            return_value={'2026-09-08': 900_000_000_000},
+        ):
+            with mock.patch.object(
+                BREADTH,
+                '_tencent_current_market_amount',
+                return_value=('2026-09-08', 12_345.67, '14:59'),
+            ):
+                BREADTH._collect_market_amounts(rows, now)
+        self.assertEqual(rows[0]['amountYi'], 17_000.0)
+        self.assertEqual(rows[0]['amountSource'], 'existing')
+
+
 if __name__ == '__main__':
     unittest.main()

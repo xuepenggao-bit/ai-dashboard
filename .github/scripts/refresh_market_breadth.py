@@ -18,6 +18,7 @@ import concurrent.futures
 import datetime as dt
 import json
 import math
+import re
 import time
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
@@ -30,6 +31,8 @@ OUTPUT = ROOT / "data" / "market_breadth_history.json"
 HISTORY_URL = "https://emdatah5.eastmoney.com/dc/NXFXB/GetUpDownData"
 DAILY_URL = "https://datacenter-web.eastmoney.com/api/data/v1/get"
 LIMIT_TREND_URL = "https://push2.eastmoney.com/api/qt/stock/updown/trend/get"
+INDEX_KLINE_URL = "https://push2his.eastmoney.com/api/qt/stock/kline/get"
+TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q=sh000001,sz399106"
 TARGET_DAYS = 60
 MIN_HS_SECURITIES = 4000
 UA = (
@@ -53,6 +56,20 @@ def _get_json(url: str, *, params: dict, attempts: int = 3) -> dict | list:
             request = Request(f"{url}?{urlencode(params)}", headers=HEADERS)
             with urlopen(request, timeout=35) as response:
                 return json.loads(response.read().decode("utf-8"))
+        except Exception as exc:  # pragma: no cover - network-dependent retry
+            last_error = exc
+            if attempt + 1 < attempts:
+                time.sleep(1.2 * (attempt + 1))
+    raise RuntimeError(f"GET {url} failed: {last_error}")
+
+
+def _get_text(url: str, *, attempts: int = 3, encoding: str = "utf-8") -> str:
+    last_error: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            request = Request(url, headers=HEADERS)
+            with urlopen(request, timeout=35) as response:
+                return response.read().decode(encoding, errors="replace")
         except Exception as exc:  # pragma: no cover - network-dependent retry
             last_error = exc
             if attempt + 1 < attempts:
@@ -132,6 +149,21 @@ def _nonnegative_int(value) -> int | None:
     return int(number)
 
 
+def _valid_amount_yi(value) -> float | None:
+    """Normalize a Shanghai+Shenzhen daily turnover value in CNY 100m."""
+    if isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    # Wide sanity band: rejects missing/unit-corrupted observations while
+    # allowing both quiet historical sessions and future market growth.
+    if not math.isfinite(number) or number < 100 or number > 100_000:
+        return None
+    return round(number, 2)
+
+
 def _normalize_existing_row(raw: dict) -> dict | None:
     """Validate persisted data so a damaged JSON value cannot become sticky."""
     if not isinstance(raw, dict):
@@ -158,7 +190,125 @@ def _normalize_existing_row(raw: dict) -> dict | None:
     else:
         row["limitUp"] = limit_up
         row["limitDown"] = limit_down
+    amount_yi = _valid_amount_yi(raw.get("amountYi"))
+    if amount_yi is None:
+        row.pop("amountYi", None)
+        row.pop("amountSource", None)
+    else:
+        row["amountYi"] = amount_yi
     return row
+
+
+def _index_daily_amounts(secid: str) -> dict[str, float]:
+    """Return recent index daily turnover from Eastmoney, raw unit CNY."""
+    payload = _get_json(
+        INDEX_KLINE_URL,
+        params={
+            "secid": secid,
+            "klt": 101,
+            "fqt": 0,
+            "lmt": 90,
+            "end": "20500101",
+            "iscca": 1,
+            "fields1": "f1,f2,f3,f4,f5,f6",
+            "fields2": "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61",
+        },
+    )
+    klines = (payload.get("data") or {}).get("klines") if isinstance(payload, dict) else None
+    if not isinstance(klines, list):
+        raise RuntimeError(f"Eastmoney {secid} returned no klines")
+    result: dict[str, float] = {}
+    for raw in klines:
+        parts = str(raw).split(",")
+        if len(parts) < 7:
+            continue
+        date = parts[0][:10]
+        try:
+            amount = float(parts[6])  # requested fields2: f57 = turnover amount (CNY)
+        except (TypeError, ValueError):
+            continue
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) and math.isfinite(amount) and amount >= 0:
+            result[date] = amount
+    if len(result) < 20:
+        raise RuntimeError(f"Eastmoney {secid} returned only {len(result)} valid sessions")
+    return result
+
+
+def _tencent_current_market_amount() -> tuple[str, float, str]:
+    """Return quote date, Shanghai+Shenzhen turnover (CNY 100m), and time."""
+    text = _get_text(TENCENT_QUOTE_URL, encoding="gb18030")
+    parsed: list[tuple[str, float, str]] = []
+    for code in ("sh000001", "sz399106"):
+        match = re.search(rf'v_{code}="([^"]+)"', text)
+        if not match:
+            raise RuntimeError(f"Tencent quote missing {code}")
+        fields = match.group(1).split("~")
+        if len(fields) <= 37:
+            raise RuntimeError(f"Tencent quote malformed for {code}")
+        stamp = fields[30]
+        if not re.fullmatch(r"\d{14}", stamp):
+            raise RuntimeError(f"Tencent quote timestamp invalid for {code}")
+        try:
+            amount_wan = float(fields[37])
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError(f"Tencent quote turnover invalid for {code}") from exc
+        parsed.append((stamp[:8], amount_wan, stamp[8:12]))
+    dates = {item[0] for item in parsed}
+    if len(dates) != 1:
+        raise RuntimeError("Tencent Shanghai/Shenzhen quote dates differ")
+    raw_date = parsed[0][0]
+    date = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:8]}"
+    amount_yi = _valid_amount_yi(sum(item[1] for item in parsed) / 10_000)
+    if amount_yi is None:
+        raise RuntimeError("Tencent market turnover outside sanity range")
+    as_of = max(item[2] for item in parsed)
+    return date, amount_yi, as_of[:2] + ":" + as_of[2:]
+
+
+def _collect_market_amounts(rows: list[dict], now: dt.datetime) -> None:
+    """Enrich persisted breadth rows with reliable daily market turnover."""
+    by_date = {str(row["date"]): row for row in rows}
+    today = now.date().isoformat()
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            sh_future = executor.submit(_index_daily_amounts, "1.000001")
+            sz_future = executor.submit(_index_daily_amounts, "0.399106")
+            sh, sz = sh_future.result(), sz_future.result()
+        updated = 0
+        for date in sorted(set(sh).intersection(sz)):
+            # Eastmoney's newest daily kline is cumulative during trading and
+            # can still lag for a few minutes after the close. Historical days
+            # are safe; today's value is written only by a 15:00+ Tencent quote.
+            if date == today:
+                continue
+            row = by_date.get(date)
+            amount_yi = _valid_amount_yi((sh[date] + sz[date]) / 100_000_000)
+            if row is not None and amount_yi is not None:
+                row["amountYi"] = amount_yi
+                row["amountSource"] = "eastmoney_index_kline"
+                updated += 1
+        print(f"Eastmoney market turnover: enriched {updated} sessions")
+    except Exception as exc:  # preserve previously persisted values
+        print(f"Eastmoney market turnover unavailable: {exc}")
+
+    # The full Tencent quote is a source-independent closing fallback. It also
+    # corrects the newest point when Eastmoney's daily kline publishes late.
+    if now.time() >= MARKET_CLOSE:
+        try:
+            date, amount_yi, as_of = _tencent_current_market_amount()
+            # Workflow may start after 15:00 while the upstream quote is still
+            # carrying a pre-close timestamp. Never persist that partial value
+            # as the daily close; the next scheduled run will retry it.
+            if as_of < "15:00":
+                raise RuntimeError(f"Tencent quote is not closed yet ({as_of})")
+            row = by_date.get(date)
+            if row is not None:
+                row["amountYi"] = amount_yi
+                row["amountSource"] = "tencent_index_quote_close"
+                row["amountAsOf"] = as_of
+                print(f"Tencent market turnover: {date} {amount_yi} CNY 100m at {as_of}")
+        except Exception as exc:
+            print(f"Tencent market turnover unavailable: {exc}")
 
 
 def _official_intraday_limit_counts(day: dt.date) -> dict | None:
@@ -434,6 +584,7 @@ def refresh() -> dict:
         raise RuntimeError(f"only {len(ordered)} valid trading sessions collected")
 
     ordered = _collect_limit_counts(ordered, now.date())
+    _collect_market_amounts(ordered, now)
     invalid_limits = []
     for row in ordered:
         limit_up = _nonnegative_int(row.get("limitUp"))
@@ -456,8 +607,8 @@ def refresh() -> dict:
     payload = {
         "updatedAt": dt.datetime.now(BEIJING_TZ).isoformat(timespec="minutes"),
         "scope": "沪深 A 股（上海、深圳；不含北京证券交易所）",
-        "source": "东方财富牛熊风向标 + 东方财富沪深涨跌停分钟序列 + 东方财富个股日行情",
-        "method": "涨跌家数采用官方近月序列；涨跌停统一为全部沪深A股口径，收盘日优先采用官方15:00分钟点，其余历史按个股收盘价及交易所5%/10%/20%限价规则重建（排除N/C新股及退市旧证券）",
+        "source": "东方财富牛熊风向标 + 东方财富沪深指数成交额/涨跌停分钟序列 + 腾讯指数收盘行情 + 东方财富个股日行情",
+        "method": "涨跌家数采用官方近月序列；涨跌停统一为全部沪深A股口径；沪深成交额为上证综指与深证综指成交额之和，历史取东方财富f57，最新收盘以腾讯指数行情交叉补齐",
         "series": ordered,
     }
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
