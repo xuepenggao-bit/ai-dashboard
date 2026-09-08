@@ -1,20 +1,9 @@
 {
-  "updatedAt": "2026-09-08T10:21+08:00",
+  "updatedAt": "2026-09-08T20:05+08:00",
   "scope": "沪深 A 股（上海、深圳；不含北京证券交易所）",
   "source": "东方财富牛熊风向标 + 东方财富沪深指数成交额/涨跌停分钟序列 + 腾讯指数收盘行情 + 东方财富个股日行情",
   "method": "涨跌家数采用官方近月序列；涨跌停统一为全部沪深A股口径；沪深成交额为上证综指与深证综指成交额之和，历史取东方财富f57，最新收盘以腾讯指数行情交叉补齐",
   "series": [
-    {
-      "date": "2026-06-15",
-      "up": 3665,
-      "down": 1401,
-      "flat": 134,
-      "limitUp": 159,
-      "limitDown": 12,
-      "limitSource": "eastmoney_daily_limit_rule_total",
-      "amountYi": 30311.99,
-      "amountSource": "eastmoney_index_kline"
-    },
     {
       "date": "2026-06-16",
       "up": 2624,
@@ -664,6 +653,18 @@
       "flat": 0,
       "amountYi": 19460.19,
       "amountSource": "eastmoney_index_kline"
+    },
+    {
+      "date": "2026-09-08",
+      "up": 3257,
+      "down": 1858,
+      "limitUp": 73,
+      "limitDown": 0,
+      "limitSource": "eastmoney_hs_minute_close",
+      "limitAsOf": "2026-09-08 15:00",
+      "amountYi": 19603.35,
+      "amountSource": "tencent_index_quote_close",
+      "amountAsOf": "16:14"
     }
   ]
 }
