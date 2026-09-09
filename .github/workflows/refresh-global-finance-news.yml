@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/scripts/refresh_global_finance_news.py'
       - '.github/workflows/refresh-global-finance-news.yml'
+      - 'tests/test_refresh_global_finance_news.py'
   schedule:
     # Twice an hour; the page itself reads the same-origin committed cache.
     - cron: '7,37 * * * *'
@@ -30,6 +31,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Test headline translation and cache handling
+        run: python -m unittest tests/test_refresh_global_finance_news.py -v
 
       - name: Refresh Reuters and Substack finance news
         run: python .github/scripts/refresh_global_finance_news.py

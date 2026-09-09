@@ -10825,7 +10825,7 @@ async function _fetchNewsFlash(){
 var _globalNewsAttemptTS = 0;
 var _globalNewsInflight = null;
 var _GLOBAL_NEWS_THROTTLE = 45000;
-var _GLOBAL_NEWS_CACHE = 'global_finance_news_cache_v1';
+var _GLOBAL_NEWS_CACHE = 'global_finance_news_cache_v2';
 
 function _globalNewsStamp(value){
   const d=new Date(value||0);
@@ -10839,7 +10839,7 @@ function _globalNewsStamp(value){
 function _globalNewsItems(value){
   return _newsCleanItems(Array.isArray(value)?value.map(function(item){
     return{
-      title:_newsClip(item&&item.title,180),
+      title:_newsClip((item&&item.titleZh)||(item&&item.title_zh)||(item&&item.title),180),
       url:_newsSafeUrl(item&&item.url),
       publisher:_newsClip((item&&item.publisher)||'',70),
       ts:_newsParseTime(item&&item.ts),

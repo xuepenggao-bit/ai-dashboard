@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Refresh Reuters finance headlines and Substack Finance recent posts.
 
-Only public headline metadata is stored: title, link, publication and time.
+Only public headline metadata is stored: original title, Chinese title, link,
+publication and time.
 The browser reads the committed JSON from the same GitHub Pages origin, so it
 never needs to connect directly to Reuters or Substack.
 
@@ -27,6 +28,9 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / "data" / "global_finance_news.json"
 LIMIT = 5
+TRANSLATE_BATCH_URL = "https://clients5.google.com/translate_a/t"
+MYMEMORY_URL = "https://api.mymemory.translated.net/get"
+TRANSLATE_BATCH_SIZE = 5
 UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -34,7 +38,14 @@ UA = (
 )
 
 
-def _request(url: str, *, accept: str, referer: str, attempts: int = 3) -> bytes:
+def _request(
+    url: str,
+    *,
+    accept: str,
+    referer: str,
+    attempts: int = 3,
+    timeout: int = 35,
+) -> bytes:
     last_error: Exception | None = None
     headers = {
         "User-Agent": UA,
@@ -48,7 +59,7 @@ def _request(url: str, *, accept: str, referer: str, attempts: int = 3) -> bytes
     }
     for attempt in range(attempts):
         try:
-            with urlopen(Request(url, headers=headers), timeout=35) as response:
+            with urlopen(Request(url, headers=headers), timeout=timeout) as response:
                 return response.read()
         except Exception as exc:  # pragma: no cover - network-dependent retry
             last_error = exc
@@ -57,8 +68,20 @@ def _request(url: str, *, accept: str, referer: str, attempts: int = 3) -> bytes
     raise RuntimeError(f"GET {url} failed: {last_error}")
 
 
-def _get_json(url: str, *, referer: str) -> Any:
-    raw = _request(url, accept="application/json, text/plain, */*", referer=referer)
+def _get_json(
+    url: str,
+    *,
+    referer: str,
+    attempts: int = 3,
+    timeout: int = 35,
+) -> Any:
+    raw = _request(
+        url,
+        accept="application/json, text/plain, */*",
+        referer=referer,
+        attempts=attempts,
+        timeout=timeout,
+    )
     return json.loads(raw.decode("utf-8"))
 
 
@@ -94,6 +117,22 @@ def _clean_text(value: Any) -> str:
     text = html.unescape(str(value or ""))
     text = re.sub(r"<[^>]+>", " ", text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+def _has_han(value: Any) -> bool:
+    return bool(re.search(r"[\u3400-\u9fff]", _clean_text(value)))
+
+
+def _usable_translation(original: Any, translated: Any) -> str:
+    source = _clean_text(original)
+    target = _clean_text(translated)
+    if not source or not target:
+        return ""
+    if _has_han(source):
+        return source
+    if target.casefold() == source.casefold() or not _has_han(target):
+        return ""
+    return target[:240]
 
 
 def _bad_reuters_title(title: str) -> bool:
@@ -134,17 +173,148 @@ def _clean_items(items: Iterable[dict], limit: int = LIMIT) -> list[dict]:
         if len(title) < 8 or not url.startswith("http") or not key or key in seen:
             continue
         seen.add(key)
-        cleaned.append(
-            {
-                "title": title[:240],
-                "url": url,
-                "publisher": _clean_text(item.get("publisher"))[:80],
-                "ts": int(item.get("ts") or 0),
-            }
+        row = {
+            "title": title[:240],
+            "url": url,
+            "publisher": _clean_text(item.get("publisher"))[:80],
+            "ts": int(item.get("ts") or 0),
+        }
+        title_zh = _usable_translation(
+            title,
+            item.get("titleZh") or item.get("title_zh") or (title if _has_han(title) else ""),
         )
+        if title_zh:
+            row["titleZh"] = title_zh
+        cleaned.append(row)
         if len(cleaned) >= limit:
             break
     return cleaned
+
+
+def _google_translation_text(value: Any) -> str:
+    """Normalize the two response shapes used by the Chrome translate API."""
+    if isinstance(value, str):
+        return _clean_text(value)
+    if isinstance(value, list):
+        if value and isinstance(value[0], str):
+            return _clean_text(value[0])
+        for child in value:
+            text = _google_translation_text(child)
+            if text:
+                return text
+    return ""
+
+
+def _google_translate_batch(titles: list[str]) -> list[str]:
+    if not titles:
+        return []
+    params: list[tuple[str, str]] = [
+        ("client", "dict-chrome-ex"),
+        ("sl", "auto"),
+        ("tl", "zh-CN"),
+    ]
+    params.extend(("q", title) for title in titles)
+    raw = _request(
+        TRANSLATE_BATCH_URL + "?" + urlencode(params),
+        accept="application/json, text/plain, */*",
+        referer="https://translate.google.com/",
+        attempts=2,
+        timeout=12,
+    )
+    payload = json.loads(raw.decode("utf-8"))
+    if not isinstance(payload, list) or len(payload) != len(titles):
+        raise RuntimeError("Google translation returned an unexpected batch shape")
+    return [_google_translation_text(row) for row in payload]
+
+
+def _mymemory_translate(title: str) -> str:
+    payload = _get_json(
+        MYMEMORY_URL + "?" + urlencode({"q": title, "langpair": "en|zh-CN"}),
+        referer="https://mymemory.translated.net/",
+        attempts=2,
+        timeout=15,
+    )
+    status = int(payload.get("responseStatus") or 0) if isinstance(payload, dict) else 0
+    translated = ((payload.get("responseData") or {}).get("translatedText")) if isinstance(payload, dict) else ""
+    if status != 200:
+        raise RuntimeError(f"MyMemory translation HTTP {status}")
+    return _clean_text(translated)
+
+
+def _translation_cache(previous: dict) -> dict[str, str]:
+    cache: dict[str, str] = {}
+    for key in ("reuters", "substack"):
+        rows = previous.get(key) if isinstance(previous.get(key), list) else []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            title = _clean_text(row.get("title"))
+            translated = _usable_translation(
+                title,
+                row.get("titleZh") or row.get("title_zh") or (title if _has_han(title) else ""),
+            )
+            if title and translated:
+                cache[title] = translated
+    return cache
+
+
+def _apply_title_translations(output: dict, previous: dict) -> dict:
+    """Attach titleZh to every headline, reusing old translations first."""
+    cache = _translation_cache(previous)
+    pending: list[str] = []
+    for key in ("reuters", "substack"):
+        for item in output.get(key) or []:
+            title = _clean_text(item.get("title"))
+            if _has_han(title):
+                cache[title] = title
+            elif title not in cache and title not in pending:
+                pending.append(title)
+
+    providers: set[str] = set()
+    translated_now = 0
+    for offset in range(0, len(pending), TRANSLATE_BATCH_SIZE):
+        batch = pending[offset : offset + TRANSLATE_BATCH_SIZE]
+        google_results: list[str] = [""] * len(batch)
+        try:
+            google_results = _google_translate_batch(batch)
+        except Exception as exc:
+            print(f"Google batch translation unavailable: {exc}")
+        for title, candidate in zip(batch, google_results):
+            translated = _usable_translation(title, candidate)
+            if translated:
+                cache[title] = translated
+                providers.add("Google Translate")
+                translated_now += 1
+                continue
+            try:
+                translated = _usable_translation(title, _mymemory_translate(title))
+            except Exception as exc:
+                print(f"MyMemory translation unavailable for {title[:60]!r}: {exc}")
+                translated = ""
+            if translated:
+                cache[title] = translated
+                providers.add("MyMemory")
+                translated_now += 1
+
+    total = 0
+    translated_total = 0
+    for key in ("reuters", "substack"):
+        for item in output.get(key) or []:
+            total += 1
+            translated = cache.get(_clean_text(item.get("title")), "")
+            if translated:
+                item["titleZh"] = translated
+                translated_total += 1
+            else:
+                item.pop("titleZh", None)
+                item.pop("title_zh", None)
+    return {
+        "status": "fresh" if translated_total == total else "partial",
+        "translated": translated_total,
+        "total": total,
+        "translatedNow": translated_now,
+        "providers": sorted(providers),
+    }
 
 
 def _reuters_api() -> list[dict]:
@@ -475,11 +645,12 @@ def refresh() -> dict:
     now = dt.datetime.now(dt.timezone.utc)
     previous_reuters = _clean_items(previous.get("reuters") if isinstance(previous.get("reuters"), list) else [])
     previous_reuters = [item for item in previous_reuters if not _bad_reuters_title(item.get("title", ""))]
+    previous_substack = _clean_items(previous.get("substack") if isinstance(previous.get("substack"), list) else [])
     output: dict[str, Any] = {
         "updatedAt": now.isoformat(timespec="seconds").replace("+00:00", "Z"),
         "sources": {},
         "reuters": previous_reuters,
-        "substack": previous.get("substack") if isinstance(previous.get("substack"), list) else [],
+        "substack": previous_substack,
     }
     fresh = 0
     for key, fetcher in (("reuters", fetch_reuters), ("substack", fetch_substack)):
@@ -501,6 +672,12 @@ def refresh() -> dict:
 
     if fresh == 0 and not output["reuters"] and not output["substack"]:
         raise RuntimeError("both English finance sources failed and no cache exists")
+    output["translation"] = _apply_title_translations(output, previous)
+    print(
+        "Chinese titles: "
+        f"{output['translation']['translated']}/{output['translation']['total']} "
+        f"({', '.join(output['translation']['providers']) or 'cache'})"
+    )
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return output
