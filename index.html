@@ -1549,7 +1549,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- Row 4.5: 财经要闻 + 7×24 快讯 -->
+  <!-- Row 4.5: 财经要闻 + 自选股资讯 -->
   <style>
   .news-card{position:relative;padding:0;overflow:hidden;border:1px solid #d8e0eb;border-radius:14px;background:#fff;box-shadow:0 8px 24px rgba(15,23,42,.07),0 1px 3px rgba(15,23,42,.04)}
   .news-card::before{content:"";position:absolute;z-index:2;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,#dc2626 0%,#f97316 34%,#0ea5e9 68%,#2563eb 100%)}
@@ -1574,8 +1574,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .news-colhd .lbl{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;font-size:11.5px;font-weight:800;letter-spacing:.035em}
   .news-colhd .cnt{font-size:9.5px;color:#8491a4;font-weight:700;margin-left:auto;letter-spacing:.02em;white-space:nowrap}
   /* 桌面端统一为 5 行 × 58px，紧凑呈现并保持横向严格对齐。 */
-  #newsTop,#newsFlash,#reutersNewsList,#substackNewsList{display:grid;grid-template-rows:repeat(5,58px);min-width:0;padding:4px 7px 6px}
-  #newsTop>.news-empty,#newsFlash>.news-empty,#reutersNewsList>.news-empty,#substackNewsList>.news-empty{grid-row:1/-1;align-self:center}
+  #newsTop,#newsWatchlist,#reutersNewsList,#substackNewsList{display:grid;grid-template-rows:repeat(5,58px);min-width:0;padding:4px 7px 6px}
+  #newsTop>.news-empty,#newsWatchlist>.news-empty,#reutersNewsList>.news-empty,#substackNewsList>.news-empty{grid-row:1/-1;align-self:center}
   /* 要闻：排名榜（序号色块，Top1-3 红→橙→金，4-5 灰）*/
   .nrow{display:flex;gap:9px;align-items:flex-start;height:58px;box-sizing:border-box;overflow:hidden;padding:6px;border-radius:8px;text-decoration:none;transition:background .15s}
   .nrow+.nrow{border-top:1px solid #edf1f5}
@@ -1585,14 +1585,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .nttl{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;font-size:12.5px;line-height:1.38;font-weight:700;color:#172033;letter-spacing:.005em;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
   .nrow:hover .nttl{color:#0369a1}
   .nmeta{font-size:9.5px;color:#8b98a9;margin-top:2px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  /* 快讯：时间线（蓝色时间胶囊，最新一条标红）*/
-  .frow{display:flex;gap:9px;align-items:flex-start;height:58px;box-sizing:border-box;overflow:hidden;padding:6px;border-radius:8px;text-decoration:none;transition:background .15s}
-  .frow+.frow{border-top:1px solid #edf1f5}
-  .frow:hover{background:#f0f9ff}
-  .ftime{flex:0 0 auto;font-size:10px;font-weight:800;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:3px 6px;margin-top:1px;font-variant-numeric:tabular-nums;letter-spacing:.015em}
-  .frow.fresh .ftime{background:#fee2e2;color:#dc2626}
-  .fttl{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;font-size:12.5px;line-height:1.38;color:#273449;font-weight:650;letter-spacing:.005em;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-  .frow:hover .fttl{color:#0369a1}
+  #newsWatchlist .nrk{background:#0ea5e9;color:#fff}
+  #newsWatchlist .nrk.r1{background:#0369a1}#newsWatchlist .nrk.r2{background:#0284c7}#newsWatchlist .nrk.r3{background:#0ea5e9}
   .news-empty{color:#9aa7b5;font-size:11px;text-align:center;padding:20px 0}
   .news-card-global{margin-top:-2px;border-color:#d9e0ea}
   .news-card-global::before{background:linear-gradient(90deg,#0f172a 0%,#334155 36%,#f97316 70%,#ff6719 100%)}
@@ -1610,19 +1604,19 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   @media(max-width:820px){
     .news-hd{flex-wrap:wrap;padding:13px 13px 11px}.news-hd .bdg{margin-left:auto}.news-actions{width:100%;justify-content:flex-end;margin-left:0;padding-top:1px}
     .news-grid{grid-template-columns:1fr;gap:10px;padding:10px}.news-subtitle{white-space:normal}
-    #newsTop,#newsFlash,#reutersNewsList,#substackNewsList{grid-template-rows:repeat(5,64px)}.nrow,.frow{height:64px;padding:7px 6px}
+    #newsTop,#newsWatchlist,#reutersNewsList,#substackNewsList{grid-template-rows:repeat(5,64px)}.nrow{height:64px;padding:7px 6px}
   }
   </style>
   <div class="card mb16 news-card">
     <div class="news-hd">
       <div class="news-heading">
         <span class="news-title-icon">闻</span>
-        <div class="news-title-copy"><div class="t">财经要闻</div><div class="news-subtitle">实时精选与 7×24 市场快讯</div></div>
+        <div class="news-title-copy"><div class="t">财经要闻</div><div class="news-subtitle">实时精选与自选股最新资讯</div></div>
       </div>
       <span class="bdg">多源实时</span>
       <div class="news-actions">
         <span id="newsTs" class="news-timestamp"></span>
-        <button id="newsRefreshBtn" class="news-refresh" onclick="fetchNews(true)" title="立即读取最新财经要闻和7×24快讯"><span class="news-refresh-icon">↻</span> 刷新</button>
+        <button id="newsRefreshBtn" class="news-refresh" onclick="fetchNews(true)" title="立即读取最新财经要闻和自选股资讯"><span class="news-refresh-icon">↻</span> 刷新</button>
       </div>
     </div>
     <div class="news-grid">
@@ -1631,8 +1625,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         <div id="newsTop"><div class="news-empty">加载中…</div></div>
       </div>
       <div class="news-col-r">
-        <div class="news-colhd"><span class="dot" style="background:#0ea5e9"></span><span class="lbl" style="color:#0369a1">7×24 快讯</span><span class="cnt" id="newsFlashSource">加载中</span></div>
-        <div id="newsFlash"><div class="news-empty">加载中…</div></div>
+        <div class="news-colhd"><span class="dot" style="background:#0ea5e9"></span><span class="lbl" style="color:#0369a1">自选股资讯</span><span class="cnt" id="newsWatchlistSource">加载中</span></div>
+        <div id="newsWatchlist"><div class="news-empty">加载中…</div></div>
       </div>
     </div>
   </div>
@@ -10517,7 +10511,7 @@ var _newsSuccessTS = 0;
 var _newsInflight = null;
 var _NEWS_THROTTLE = 25000; // 页面可见时每30秒检查，留5秒余量避免边界重复请求
 var _NEWS_TOP_CACHE = 'news_top_cache_v2';
-var _NEWS_FLASH_CACHE = 'news_flash_cache_v2';
+var _NEWS_WATCHLIST_CACHE = 'news_watchlist_cache_v1';
 
 async function fetchNews(force){
   // 英文资讯使用同源 JSON 缓存，和中文实时源一起响应总刷新、页面恢复与定时检查。
@@ -10532,7 +10526,7 @@ async function fetchNews(force){
   if(ts) ts.textContent='正在刷新…';
   if(btn){ btn.disabled=true; btn.classList.add('loading'); }
 
-  _newsInflight=Promise.allSettled([_fetchNewsTop(),_fetchNewsFlash()])
+  _newsInflight=Promise.allSettled([_fetchNewsTop(),_fetchNewsWatchlist()])
     .then(function(results){
       const sources=results
         .filter(function(r){ return r.status==='fulfilled'&&r.value; })
@@ -10566,12 +10560,6 @@ function _newsTopRow(url,title,src,time,rank){
              : '<div class="nrow">'+inner+'</div>';
 }
 
-// 快讯：时间线行（fresh=最新一条标红）
-function _flashRow(url,title,time,fresh){
-  const inner='<span class="ftime">'+_escH(time||'--:--')+'</span><div class="fttl" style="min-width:0">'+_escH(title)+'</div>';
-  return url ? '<a class="frow'+(fresh?' fresh':'')+'" href="'+_escH(url)+'" target="_blank" rel="noopener">'+inner+'</a>'
-             : '<div class="frow'+(fresh?' fresh':'')+'">'+inner+'</div>';
-}
 function _newsEmpty(msg){ return '<div class="news-empty">'+msg+'</div>'; }
 
 function _newsSafeUrl(url){
@@ -10700,58 +10688,15 @@ async function _newsEastmoneyArticles(){
     };
   });
 }
-async function _newsWscnLives(){
-  const ts=Date.now();
-  const j=await _newsFetchJson(
-    'https://api-one.wallstcn.com/apiv1/content/lives?channel=global-channel&client=pc&limit=16&_='+ts,
-    2,7000
-  );
-  if(j&&j.code!==20000) throw new Error('接口代码 '+j.code);
-  return ((j&&j.data&&j.data.items)||[]).map(function(n){
-    return{
-      title:_newsClip(n.title||n.highlight_title||n.content_text||n.content,120),
-      url:_newsSafeUrl(n.uri||n.global_more_uri),
-      publisher:'华尔街见闻',
-      ts:_newsParseTime(n.display_time),
-    };
-  });
-}
-async function _newsEastmoneyLives(column){
-  const ts=Date.now();
-  if(column==='fast'){
-    const u='https://np-weblist.eastmoney.com/comm/web/getFastNewsList?client=web&biz=web_news'
-      +'&fastColumn=102&sortEnd=&pageSize=16&req_trace='+ts+'&_='+ts;
-    const j=await _newsFetchJson(u,2,5500);
-    return ((j&&j.data&&j.data.fastNewsList)||[]).map(function(n){
-      return{
-        title:_newsClip(n.title||n.summary,120),
-        url:_newsSafeUrl((n.uniqueUrl||n.url_w)||(n.code?('https://finance.eastmoney.com/a/'+n.code+'.html'):'')),
-        publisher:'东方财富',
-        ts:_newsParseTime(n.showTime),
-      };
-    });
-  }
-  const u='https://np-listapi.eastmoney.com/comm/web/getNewsByColumns?client=web&biz=web_news'
-    +'&column=349&order=1&needInteractData=0&page_index=1&page_size=16&req_trace='+ts+'&fields=&types=1,20&_='+ts;
-  const j=await _newsFetchJson(u,1,5500);
-  return ((j&&j.data&&j.data.list)||[]).map(function(n){
-    return{
-      title:_newsClip(n.title,120),
-      url:_newsSafeUrl(n.uniqueUrl||n.url),
-      publisher:n.mediaName||'东方财富',
-      ts:_newsParseTime(n.showTime),
-    };
-  });
-}
-
 function _newsRenderTop(el,items){
   el.innerHTML=items.map(function(item,i){
     return _newsTopRow(item.url,item.title,item.publisher,_newsTime(item.ts,true),i+1);
   }).join('');
 }
-function _newsRenderFlash(el,items){
+function _newsRenderWatchlist(el,items){
   el.innerHTML=items.slice(0,5).map(function(item,i){
-    return _flashRow(item.url,item.title,_newsTime(item.ts,false),i===0);
+    const source=[item.stockName,item.publisher].filter(Boolean).join(' · ');
+    return _newsTopRow(item.url,item.title,source,_newsTime(item.ts,true),i+1);
   }).join('');
 }
 function _newsSaveCache(key,items,source){
@@ -10766,7 +10711,7 @@ function _newsRestoreCache(el,sourceEl,key,legacyKey,renderer){
       return true;
     }
     // 兼容升级前保存的 HTML 缓存；成功获取新数据后会自动迁移为结构化缓存。
-    const old=JSON.parse(localStorage.getItem(legacyKey)||'null');
+    const old=legacyKey?JSON.parse(localStorage.getItem(legacyKey)||'null'):null;
     if(old&&old.html){
       el.innerHTML=old.html;
       if(sourceEl) sourceEl.textContent='旧缓存 · 最近';
@@ -10798,25 +10743,34 @@ async function _fetchNewsTop(){
   return '';
 }
 
-async function _fetchNewsFlash(){
-  const el=document.getElementById('newsFlash');
-  const sourceEl=document.getElementById('newsFlashSource');
+async function _fetchNewsWatchlist(){
+  const el=document.getElementById('newsWatchlist');
+  const sourceEl=document.getElementById('newsWatchlistSource');
   if(!el) return '';
   try{
-    const result=await _newsFirstAvailable([
-      {name:'华尔街见闻',load:_newsWscnLives},
-      {name:'东方财富',load:function(){ return _newsEastmoneyLives('fast'); }},
-      {name:'东方财富资讯',load:function(){ return _newsEastmoneyLives('column'); }},
-    ],5);
-    _newsRenderFlash(el,result.items);
-    _newsSaveCache(_NEWS_FLASH_CACHE,result.items,result.source);
-    if(sourceEl) sourceEl.textContent=result.source+' · 5 条';
-    return result.source;
+    const payload=await _newsFetchJson('data/watchlist_news.json?_='+Date.now(),2,6500);
+    const items=_newsCleanItems(((payload||{}).items||[]).map(function(item){
+      return{
+        title:_newsClip(item&&item.title,180),
+        url:_newsSafeUrl(item&&item.url),
+        publisher:_newsClip((item&&item.publisher)||'',60),
+        ts:_newsParseTime(item&&item.ts),
+        stockName:_newsClip((item&&item.stockName)||'',40),
+        provider:_newsClip((item&&item.provider)||'',40),
+      };
+    }),5);
+    if(!items.length) throw new Error('空数据');
+    const providers=[...new Set(items.map(function(item){return item.provider;}).filter(Boolean))];
+    const source=providers.join(' + ')||'自选股资讯';
+    _newsRenderWatchlist(el,items);
+    _newsSaveCache(_NEWS_WATCHLIST_CACHE,items,source);
+    if(sourceEl) sourceEl.textContent=source+' · '+items.length+' 条';
+    return source;
   }catch(e){
-    console.warn('[快讯] 全部实时源失败:',e.message);
+    console.warn('[自选股资讯] 同源缓存读取失败:',e.message);
   }
-  if(_newsRestoreCache(el,sourceEl,_NEWS_FLASH_CACHE,'news_flash_cache',_newsRenderFlash)) return '';
-  el.innerHTML=_newsEmpty('快讯暂时无法取得');
+  if(_newsRestoreCache(el,sourceEl,_NEWS_WATCHLIST_CACHE,'',_newsRenderWatchlist)) return '';
+  el.innerHTML=_newsEmpty('自选股资讯暂时无法取得');
   if(sourceEl) sourceEl.textContent='暂无数据';
   return '';
 }
@@ -12046,7 +12000,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   try{ _arPick(10, '10秒', false); }catch(e){ console.warn('[default auto-refresh]', e); }
   fetchMainFlow();      // 初始化时同时拉取主力净流入榜与净流出榜
   fetchMarketBreadth(); // 市场涨跌统计（主要用腾讯 API，极少命中东方财富限流）
-  fetchNews(true);    // 首次打开立即强制读取最新要闻与7×24快讯
+  fetchNews(true);    // 首次打开立即强制读取最新要闻与自选股资讯
   setInterval(function(){
     if(!document.hidden){ try{ fetchNews(false); }catch(e){} }
   }, 30000);          // 页面可见时每30秒检查新消息；与股价刷新相互独立

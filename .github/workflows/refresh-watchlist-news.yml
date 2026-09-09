@@ -1,0 +1,50 @@
+name: Refresh Watchlist News
+
+on:
+  push:
+    paths:
+      - 'portfolio.json'
+      - '.github/scripts/refresh_watchlist_news.py'
+      - '.github/workflows/refresh-watchlist-news.yml'
+      - 'tests/test_refresh_watchlist_news.py'
+  schedule:
+    # Every 15 minutes, offset from the top of the hour to reduce queue delays.
+    - cron: '8,23,38,53 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-watchlist-news
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Test portfolio-news parsing and cache handling
+        run: python -m unittest tests/test_refresh_watchlist_news.py -v
+
+      - name: Refresh current portfolio news
+        run: python .github/scripts/refresh_watchlist_news.py
+
+      - name: Commit and push data file
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/watchlist_news.json
+          git diff --staged --quiet && echo "No changes." && exit 0
+          git commit -m "chore: refresh watchlist news $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git pull --rebase origin main
+          git push
