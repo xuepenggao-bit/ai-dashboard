@@ -29,8 +29,9 @@ ROOT = Path(__file__).resolve().parents[2]
 PORTFOLIO = Path(os.environ.get("PORTFOLIO_PATH", ROOT / "portfolio.json"))
 OUTPUT = Path(os.environ.get("WATCHLIST_NEWS_OUTPUT", ROOT / "data" / "watchlist_news.json"))
 LIMIT = 5
-PER_STOCK_LIMIT = 8
+PER_STOCK_LIMIT = 20
 EASTMONEY_SEARCH = "https://search-api-web.eastmoney.com/search/jsonp"
+EASTMONEY_LATEST = "https://np-listapi.eastmoney.com/comm/web/getNewsByColumns"
 GOOGLE_NEWS_RSS = "https://news.google.com/rss/search"
 UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -130,6 +131,21 @@ def _portfolio_stocks(payload: dict) -> list[dict]:
     return sorted(stocks.values(), key=lambda row: row["name"])
 
 
+def _matches_stock(text: Any, stock: dict) -> bool:
+    """Return whether text explicitly mentions a holding's name or code."""
+    value = _clean_text(text).casefold()
+    if not value:
+        return False
+    name = _clean_text(stock.get("name")).casefold()
+    if name and name in value:
+        return True
+    return any(
+        _clean_text(code).casefold() in value
+        for code in stock.get("codes") or []
+        if _clean_text(code)
+    )
+
+
 def _eastmoney_stock_news(stock: dict) -> list[dict]:
     name = stock["name"]
     query = {
@@ -168,10 +184,16 @@ def _eastmoney_stock_news(stock: dict) -> list[dict]:
         if not isinstance(row, dict):
             continue
         title = _clean_text(row.get("title"))
-        # The search endpoint occasionally returns a broad article that only
-        # mentions the company deep in its body. A watchlist headline should be
-        # directly about the stock, so require its name/code in the headline.
-        if name not in title and not any(code and code in title for code in stock["codes"]):
+        # Eastmoney can expose an article in full-text search before its
+        # stock-title relation index catches up. An exact match in the returned
+        # summary is therefore valid too; unrelated broad results still fail.
+        summary = _clean_text(
+            row.get("content")
+            or row.get("summary")
+            or row.get("digest")
+            or row.get("description")
+        )
+        if not _matches_stock(f"{title} {summary}", stock):
             continue
         article_url = str(row.get("url") or "").strip()
         if article_url.startswith("http://") and ".eastmoney.com/" in article_url:
@@ -185,6 +207,61 @@ def _eastmoney_stock_news(stock: dict) -> list[dict]:
                 "stockName": name,
                 "stockCodes": stock["codes"],
                 "provider": "东方财富",
+            }
+        )
+    return items
+
+
+def _eastmoney_latest_news(stocks: list[dict]) -> list[dict]:
+    """Scan Eastmoney's minute-updated feed before search indexing catches up."""
+    now_ms = int(time.time() * 1000)
+    url = EASTMONEY_LATEST + "?" + urlencode(
+        {
+            "client": "web",
+            "biz": "web_news",
+            "column": "350",
+            "order": "1",
+            "needInteractData": "0",
+            "page_index": "1",
+            "page_size": "100",
+            "req_trace": str(now_ms),
+            "fields": "",
+            "types": "1,20",
+            "_": str(now_ms),
+        }
+    )
+    payload = json.loads(
+        _request_text(url, referer="https://roll.eastmoney.com/", attempts=2, timeout=16)
+    )
+    rows = ((payload.get("data") or {}).get("list") or []) if isinstance(payload, dict) else []
+    items: list[dict] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        title = _clean_text(row.get("title"))
+        summary = _clean_text(
+            row.get("summary")
+            or row.get("digest")
+            or row.get("content")
+            or row.get("description")
+        )
+        haystack = f"{title} {summary}"
+        matches = [stock for stock in stocks if _matches_stock(haystack, stock)]
+        if not matches:
+            continue
+        stock = next((entry for entry in matches if _matches_stock(title, entry)), matches[0])
+        article_url = str(row.get("uniqueUrl") or row.get("url") or "").strip()
+        if article_url.startswith("http://") and ".eastmoney.com/" in article_url:
+            article_url = "https://" + article_url[len("http://") :]
+        items.append(
+            {
+                "title": title[:180],
+                "url": article_url,
+                "publisher": _clean_text(row.get("mediaName"))[:60] or "东方财富",
+                "ts": _to_epoch(row.get("showTime") or row.get("date")),
+                "stockName": stock["name"],
+                "stockCodes": stock["codes"],
+                "provider": "东方财富实时流",
             }
         )
     return items
@@ -254,7 +331,10 @@ def _same_event(left: dict, right: dict) -> bool:
     if not a or not b:
         return False
     shared = len(a & b)
-    return shared >= 3 and shared / min(len(a), len(b)) >= 0.24
+    # Only collapse almost identical rewrites. The previous loose threshold
+    # removed distinct, newer updates about the same company and forced older
+    # rows back into the visible five.
+    return shared >= 5 and shared / min(len(a), len(b)) >= 0.35
 
 
 def _clean_items(items: Iterable[dict], limit: int = LIMIT) -> list[dict]:
@@ -264,10 +344,11 @@ def _clean_items(items: Iterable[dict], limit: int = LIMIT) -> list[dict]:
     for item in sorted(items, key=lambda row: int(row.get("ts") or 0), reverse=True):
         title = _clean_text(item.get("title"))
         url = str(item.get("url") or "").strip()
+        timestamp = int(item.get("ts") or 0)
         if url.startswith("http://") and "eastmoney.com/" in url:
             url = "https://" + url[len("http://") :]
         key = _item_key(item)
-        if len(title) < 4 or not url.startswith("http") or not key:
+        if len(title) < 4 or not url.startswith("http") or not key or timestamp <= 0:
             continue
         if key in seen_titles or url in seen_urls:
             continue
@@ -280,7 +361,7 @@ def _clean_items(items: Iterable[dict], limit: int = LIMIT) -> list[dict]:
                 "title": title[:180],
                 "url": url,
                 "publisher": _clean_text(item.get("publisher"))[:60],
-                "ts": int(item.get("ts") or 0),
+                "ts": timestamp,
                 "stockName": _clean_text(item.get("stockName"))[:40],
                 "stockCodes": [
                     _clean_text(code)[:12] for code in (item.get("stockCodes") or []) if _clean_text(code)
@@ -316,8 +397,10 @@ def refresh() -> dict:
         raise RuntimeError("portfolio.json contains no stocks")
 
     eastmoney_items: list[dict] = []
+    latest_feed_items: list[dict] = []
     errors: list[str] = []
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        latest_feed_job = pool.submit(_eastmoney_latest_news, stocks)
         jobs = {pool.submit(_eastmoney_stock_news, stock): stock for stock in stocks}
         for future in as_completed(jobs):
             stock = jobs[future]
@@ -325,19 +408,28 @@ def refresh() -> dict:
                 eastmoney_items.extend(future.result())
             except Exception as exc:  # pragma: no cover - network-dependent
                 errors.append(f"{stock['name']}: {exc}")
+        try:
+            latest_feed_items = latest_feed_job.result()
+        except Exception as exc:  # pragma: no cover - network-dependent
+            errors.append(f"东方财富实时流: {exc}")
 
-    live_items = _clean_items(eastmoney_items, LIMIT)
+    live_items = _clean_items([*latest_feed_items, *eastmoney_items], LIMIT)
     fallback_items: list[dict] = []
     if len(live_items) < LIMIT:
         fallback_items = _google_news_fallback(stocks)
-        live_items = _clean_items([*eastmoney_items, *fallback_items], LIMIT)
+        live_items = _clean_items(
+            [*latest_feed_items, *eastmoney_items, *fallback_items], LIMIT
+        )
 
     previous_items = _clean_items(previous.get("items") or [], LIMIT)
-    items = live_items if len(live_items) >= LIMIT else _clean_items([*live_items, *previous_items], LIMIT)
+    # Never mix old cache rows into a partly successful live result. Doing so
+    # made the last few visible rows look frozen even after a new scan. The
+    # previous cache is now an outage-only fallback.
+    items = live_items or previous_items
     if not items:
         raise RuntimeError("all watchlist news sources failed and no previous cache exists")
 
-    # Avoid creating a Git commit every 15 minutes when the visible five rows
+    # Avoid creating a Git commit every five minutes when the visible rows
     # did not change. In that case, leave the existing JSON byte-for-byte intact.
     if _content_signature(items) == _content_signature(previous.get("items") or []):
         print("No new watchlist headlines; keeping the existing cache.")
@@ -347,10 +439,11 @@ def refresh() -> dict:
     now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
     payload = {
         "updatedAt": now.isoformat().replace("+00:00", "Z"),
-        "status": "fresh" if len(live_items) >= LIMIT else "partial",
+        "status": "fresh" if len(live_items) >= LIMIT else "partial" if live_items else "stale",
         "watchlistCount": len(stocks),
         "count": len(items),
         "providers": providers,
+        "latestFeedArticlesScanned": len(latest_feed_items),
         "eastmoneyArticlesScanned": len(eastmoney_items),
         "fallbackArticlesScanned": len(fallback_items),
         "failedStocks": len(errors),
@@ -360,7 +453,8 @@ def refresh() -> dict:
     OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(
         f"Wrote {len(items)} watchlist headlines for {len(stocks)} companies "
-        f"({len(eastmoney_items)} Eastmoney rows, {len(errors)} failed searches)."
+        f"({len(latest_feed_items)} live-feed rows, {len(eastmoney_items)} search rows, "
+        f"{len(errors)} failed sources)."
     )
     if errors:
         print("Failed Eastmoney searches: " + " | ".join(errors[:6]))
