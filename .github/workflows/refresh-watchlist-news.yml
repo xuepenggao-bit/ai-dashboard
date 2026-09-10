@@ -8,13 +8,15 @@ on:
       - '.github/workflows/refresh-watchlist-news.yml'
       - 'tests/test_refresh_watchlist_news.py'
   schedule:
-    # Every 15 minutes, offset from the top of the hour to reduce queue delays.
-    - cron: '8,23,38,53 * * * *'
+    # Every 5 minutes. The browser only reads the tiny same-origin JSON cache;
+    # Eastmoney collection stays fully asynchronous in GitHub Actions.
+    - cron: '2,7,12,17,22,27,32,37,42,47,52,57 * * * *'
   workflow_dispatch:
 
 concurrency:
   group: refresh-watchlist-news
-  cancel-in-progress: false
+  # If GitHub has delayed an older scheduled run, keep the newest refresh only.
+  cancel-in-progress: true
 
 jobs:
   refresh:
