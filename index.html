@@ -1785,34 +1785,34 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="klabel">沪深A股总市值 <span id="kTmcDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
       <div class="kval tb" id="kTmc" style="color:#94a3b8;font-size:18px">--</div>
       <div class="kchange neu" id="kTmcChange">--</div>
-      <div class="tx3 mt4">沪市+深市，含科创/创业板 · 日频估算</div>
+      <div class="tx3 mt4">右侧四板块合计 · 不含B股、北交所<br>显示值四舍五入，可能有尾差</div>
     </div>
     <div class="card">
       <div class="klabel">上证综指 PE(TTM) <span id="kSsePeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
       <div class="kval" id="kSsePe" style="color:#94a3b8;font-size:18px">--</div>
       <div class="kchange neu" id="kSsePeHint">历史均值 ~12x</div>
-      <div class="macro-market-cap" title="沪市股票总市值，包含科创板；采用行情源上证综指市场统计口径。"><div class="macro-market-cap-line"><span class="macro-market-cap-label">沪市总市值</span><strong id="kSseMc" class="macro-market-cap-value">—</strong></div><div id="kSseMcDate" class="macro-market-cap-date">正在获取…</div></div>
+      <div class="macro-market-cap" title="市值口径：沪市A股总市值减去科创板；上方PE仍为上证综指PE。"><div class="macro-market-cap-line"><span class="macro-market-cap-label">沪市主板A股</span><strong id="kSseMc" class="macro-market-cap-value">—</strong></div><div id="kSseMcDate" class="macro-market-cap-date">正在获取…</div></div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
     <div class="card">
       <div class="klabel">深证成指 PE(TTM) <span id="kSzePeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
       <div class="kval ty" id="kSzePe" style="color:#94a3b8;font-size:18px">--</div>
       <div class="kchange neu" id="kSzePeHint">历史均值 ~25x</div>
-      <div class="macro-market-cap" title="深市股票总市值，包含创业板；采用深证综指市场统计口径。"><div class="macro-market-cap-line"><span class="macro-market-cap-label">深市总市值</span><strong id="kSzeMc" class="macro-market-cap-value">—</strong></div><div id="kSzeMcDate" class="macro-market-cap-date">正在获取…</div></div>
+      <div class="macro-market-cap" title="市值口径：深市A股总市值减去创业板；上方PE仍为深证成指PE。"><div class="macro-market-cap-line"><span class="macro-market-cap-label">深市主板A股</span><strong id="kSzeMc" class="macro-market-cap-value">—</strong></div><div id="kSzeMcDate" class="macro-market-cap-date">正在获取…</div></div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
     <div class="card">
       <div class="klabel">创业板指 PE(TTM) <span id="kGemPeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
       <div class="kval tp" id="kGemPe" style="color:#94a3b8;font-size:18px">--</div>
       <div class="kchange neu" id="kGemPeHint">历史均值 ~35x</div>
-      <div class="macro-market-cap" title="创业板全板股票总市值，采用创业板综指口径；已包含在深市总市值中。"><div class="macro-market-cap-line"><span class="macro-market-cap-label">创业板总市值</span><strong id="kGemMc" class="macro-market-cap-value">—</strong></div><div id="kGemMcDate" class="macro-market-cap-date">正在获取…</div></div>
+      <div class="macro-market-cap" title="创业板全板股票总市值，采用创业板综指口径；与深市主板A股互不重叠。"><div class="macro-market-cap-line"><span class="macro-market-cap-label">创业板总市值</span><strong id="kGemMc" class="macro-market-cap-value">—</strong></div><div id="kGemMcDate" class="macro-market-cap-date">正在获取…</div></div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
     <div class="card">
       <div class="klabel">科创50 PE(TTM) <span id="kStarPeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
       <div class="kval tp" id="kStarPe" style="color:#94a3b8;font-size:18px">--</div>
       <div class="kchange neu" id="kStarPeHint">历史均值 ~45x</div>
-      <div class="macro-market-cap" title="科创板全板股票总市值，采用科创综指口径而非科创50样本市值；已包含在沪市总市值中。"><div class="macro-market-cap-line"><span class="macro-market-cap-label">科创板总市值</span><strong id="kStarMc" class="macro-market-cap-value">—</strong></div><div id="kStarMcDate" class="macro-market-cap-date">正在获取…</div></div>
+      <div class="macro-market-cap" title="科创板全板股票总市值，采用科创综指口径；与沪市主板A股互不重叠。"><div class="macro-market-cap-line"><span class="macro-market-cap-label">科创板总市值</span><strong id="kStarMc" class="macro-market-cap-value">—</strong></div><div id="kStarMcDate" class="macro-market-cap-date">正在获取…</div></div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
   </div>
@@ -7894,8 +7894,8 @@ async function fetchMacroApi(key){
 
 // 板块总市值：腾讯完整行情固定字段 45（亿元），不能扫描数值猜测字段/单位。
 const _MACRO_CAP_CONFIG=[
-  {code:'sh000001',id:'kSseMc'},
-  {code:'sz399106',id:'kSzeMc'},
+  {code:'sh000002',id:'kSseMc'},
+  {code:'sz399107',id:'kSzeMc'},
   {code:'sz399102',id:'kGemMc'},
   {code:'sh000680',id:'kStarMc'},
 ];
@@ -7911,28 +7911,47 @@ function _parseMacroMarketCaps(text){
   });
   return result;
 }
+function _macroCapBreakdown(rows){
+  const codes=_MACRO_CAP_CONFIG.map(c=>c.code),values=codes.map(c=>rows[c]);
+  if(values.some(r=>!r||!Number.isFinite(r.yi)||r.yi<100||r.yi>3000000||!/^\d{14}$/.test(r.stamp))) return null;
+  if(new Set(values.map(r=>r.stamp.slice(0,8))).size!==1) return null;
+  // 用百分之一亿元整数计算，保证板块拆分与总额严格守恒。
+  const [sh,sz,gem,star]=values.map(r=>Math.round(r.yi*100));
+  if(sh<=star||sz<=gem) return null;
+  return {totalYi:(sh+sz)/100,stamp:values.map(r=>r.stamp).sort()[0],parts:{
+    sh000002:(sh-star)/100,sz399107:(sz-gem)/100,sz399102:gem/100,sh000680:star/100,
+  }};
+}
 function _renderMacroMarketCaps(cached){
+  const snapshot=_macroCapBreakdown(_macroCapState.rows);
+  if(!snapshot){
+    ['kTmcDate',..._MACRO_CAP_CONFIG.map(c=>c.id+'Date')].forEach(id=>{const el=document.getElementById(id);if(el) el.textContent='等待完整市值数据';});
+    return;
+  }
   _MACRO_CAP_CONFIG.forEach(cfg=>{
     const row=_macroCapState.rows[cfg.code],value=document.getElementById(cfg.id),date=document.getElementById(cfg.id+'Date');
     if(!value||!date) return;
     if(!row){date.textContent='市值暂不可用 · 稍后重试';return;}
-    value.textContent=(row.yi/10000).toFixed(2)+'万亿元';
-    value.title=row.yi.toLocaleString('zh-CN',{maximumFractionDigits:2})+'亿元';
+    const yi=snapshot.parts[cfg.code];
+    value.textContent=(yi/10000).toFixed(2)+'万亿元';
+    value.title=yi.toLocaleString('zh-CN',{maximumFractionDigits:2})+'亿元';
     const s=row.stamp;
     date.textContent=s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8)+' '+s.slice(8,10)+':'+s.slice(10,12)+' · 腾讯财经'+(cached?' · 缓存':'');
   });
+  const total=document.getElementById('kTmc'),date=document.getElementById('kTmcDate'),hint=document.getElementById('kTmcChange');
+  if(total){total.textContent='¥'+(snapshot.totalYi/10000).toFixed(2)+'万亿';total.title=snapshot.totalYi.toLocaleString('zh-CN',{maximumFractionDigits:2})+'亿元';total.style.color='';total.style.fontSize='';}
+  const s=snapshot.stamp;
+  if(date){date.textContent=s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8)+' '+s.slice(8,10)+':'+s.slice(10,12)+(cached?' 缓存':'');date.style.background=cached?'#fef9c3':'#d1fae5';date.style.color=cached?'#92400e':'#065f46';}
+  if(hint) hint.textContent='沪深主板 + 创业板 + 科创板';
 }
 async function fetchMacroMarketCaps(){
-  const key='macro_board_market_caps_v1';
+  const key='macro_board_market_caps_v2_ashare';
   if(!_macroCapState.loaded){
     _macroCapState.loaded=true;
     try{
       const saved=JSON.parse(localStorage.getItem(key)||'null');
       if(saved&&Date.now()-saved.savedAt<7*86400000){
-        _MACRO_CAP_CONFIG.forEach(cfg=>{
-          const row=saved.rows&&saved.rows[cfg.code];
-          if(row&&Number.isFinite(row.yi)&&row.yi>=100&&row.yi<=3000000&&/^\d{14}$/.test(row.stamp)) _macroCapState.rows[cfg.code]=row;
-        });
+        if(saved.rows&&_macroCapBreakdown(saved.rows)) _macroCapState.rows=saved.rows;
       }
     }catch(_){}
     _renderMacroMarketCaps(true);
@@ -7946,12 +7965,11 @@ async function fetchMacroMarketCaps(){
       const response=await fetch('https://qt.gtimg.cn/q='+_MACRO_CAP_CONFIG.map(c=>c.code).join(',')+'&_='+Date.now(),{signal:controller.signal,cache:'no-store'});
       if(!response.ok) throw new Error('HTTP '+response.status);
       const incoming=_parseMacroMarketCaps(new TextDecoder('gbk').decode(await response.arrayBuffer()));
-      Object.entries(incoming).forEach(([code,row])=>{
-        const old=_macroCapState.rows[code];
-        if(!old||row.stamp>=old.stamp) _macroCapState.rows[code]=row;
-      });
-      _renderMacroMarketCaps(Object.keys(incoming).length===0);
-      if(Object.keys(incoming).length){try{localStorage.setItem(key,JSON.stringify({savedAt:Date.now(),rows:_macroCapState.rows}));}catch(_){}}
+      const next=_macroCapBreakdown(incoming),old=_macroCapBreakdown(_macroCapState.rows);
+      const accepted=next&&(!old||next.stamp>=old.stamp);
+      if(accepted) _macroCapState.rows=incoming;
+      _renderMacroMarketCaps(!accepted);
+      if(accepted){try{localStorage.setItem(key,JSON.stringify({savedAt:Date.now(),rows:_macroCapState.rows}));}catch(_){}}
     }catch(e){_renderMacroMarketCaps(true);console.warn('[板块总市值]',e.message);}
     finally{clearTimeout(timer);}
   })();
@@ -7971,86 +7989,7 @@ async function fetchMacroKpis(){
     if(el){ el.textContent='加载中…'; el.style.background='#e0e7ff'; el.style.color='#3730a3'; }
   });
 
-  // ── 1. 沪深A股总市值（日频，localStorage 缓存当日数据）────────────
-  // 策略：① 先读本地缓存立即渲染；② 后台拉新数据更新并写缓存
-  // 数据源A: EM ulist.np f116(总市值)；数据源B: 腾讯行情字段扫描
-  try{
-    const MC_KEY = 'aShare_mktCap_v2';
-
-    // ① 今日本地缓存→即时显示（无网络延迟）
-    try{
-      const cached = JSON.parse(localStorage.getItem(MC_KEY)||'null');
-      if(cached?.date === todayStr && cached.wanYi > 30){
-        const el = document.getElementById('kTmc');
-        if(el){ el.textContent = '¥' + Math.round(cached.wanYi) + '万亿'; el.style.color=''; el.style.fontSize=''; }
-        const de = document.getElementById('kTmcDate');
-        if(de){ de.textContent = todayStr+' 缓存'; de.style.background='#fef9c3'; de.style.color='#92400e'; }
-      }
-    }catch(e2){}
-
-    // ② 后台拉取最新数据（更新缓存和显示）
-    let wanYi = 0;
-
-    // 数据源A: EM ulist.np — 上证A股(1.000002) + 深证综合(0.399107) — f116=总市值
-    const rEm = await fetch(
-      `https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&np=1`
-      +`&secids=1.000002,0.399107&fields=f116&_=${Date.now()}`
-    ).then(r=>r.ok?r.json():null).catch(()=>null);
-    const emD  = rEm?.data?.diff;
-    const emMc1 = parseFloat(emD?.[0]?.f116)||0;
-    const emMc2 = parseFloat(emD?.[1]?.f116)||0;
-    console.log('[MacroKpi] EM f116 mc1=', emMc1, 'mc2=', emMc2);
-    if(emMc1 > 0 && emMc2 > 0){
-      // 自适应单位：依次尝试 元/亿元/万亿元，取落在30~500万亿的结果
-      const s = emMc1 + emMc2;
-      for(const div of [1e12, 1e8, 1e4, 1]){
-        const v = s / div;
-        if(v > 30 && v < 500){ wanYi = v; break; }
-      }
-    }
-
-    // 数据源B: 腾讯行情全量 sh000002+sz399107（备用，扫字段找合理市值范围）
-    if(!wanYi){
-      const txRaw = await fetch('https://qt.gtimg.cn/q=sh000002,sz399107&_='+Date.now())
-        .then(r=>r.arrayBuffer()).catch(()=>null);
-      if(txRaw){
-        const txTxt = new TextDecoder('gbk').decode(txRaw);
-        const _scan = code => {
-          const m = txTxt.match(new RegExp('v_'+code+'="([^"]+)"'));
-          if(!m) return 0;
-          const f = m[1].split('~');
-          // 单市场总市值约40~200万亿元 → 亿元: 400000~2000000
-          for(let i=38;i<=60;i++){
-            const v=parseFloat(f[i]);
-            if(v>300000 && v<2500000) return v;
-          }
-          console.log('[MacroKpi] TX '+code+' f38-60:', f.slice(38,61).join('|'));
-          return 0;
-        };
-        const txMc1=_scan('sh000002'), txMc2=_scan('sz399107');
-        if(txMc1>0 && txMc2>0) wanYi=(txMc1+txMc2)/10000;
-      }
-    }
-
-    if(wanYi > 30 && wanYi < 500){
-      const el = document.getElementById('kTmc');
-      if(el){ el.textContent = '¥' + Math.round(wanYi) + '万亿'; el.style.color=''; el.style.fontSize=''; }
-      const de = document.getElementById('kTmcDate');
-      if(de){
-        const t2=new Date();
-        const hms2=`${String(t2.getHours()).padStart(2,'0')}:${String(t2.getMinutes()).padStart(2,'0')}:${String(t2.getSeconds()).padStart(2,'0')}`;
-        de.textContent = todayStr+' '+hms2+'获取';
-        de.style.background='#d1fae5'; de.style.color='#065f46';
-      }
-      try{ localStorage.setItem(MC_KEY, JSON.stringify({date:todayStr, wanYi})); }catch(e2){}
-    } else {
-      console.warn('[MacroKpi] 总市值未获取到有效数据 wanYi=', wanYi);
-      const el = document.getElementById('kTmc');
-      if(el && el.textContent==='--'){ el.textContent='获取失败'; el.style.color='#dc2626'; el.style.fontSize='14px'; }
-      const de = document.getElementById('kTmcDate');
-      if(de && de.textContent==='加载中…'){ de.textContent='获取失败'; de.style.background='#fee2e2'; de.style.color='#991b1b'; }
-    }
-  }catch(e){ console.warn('[MacroKpi] 总市值:', e.message); }
+  // 总额与四个不重叠板块由 fetchMacroMarketCaps 的同源完整快照统一更新。
 
   // ── 2. 指数 PE(TTM) — 多数据源日频 ──────────────────────────────
   // 主数据源: 腾讯行情 qt.gtimg.cn field[39] = PE（每日盘后更新，经验证有效）
