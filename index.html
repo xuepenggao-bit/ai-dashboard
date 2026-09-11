@@ -213,8 +213,16 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .sector-volume-card .market-turnover-chart-box{margin-top:8px;padding:8px 8px 6px;border-color:color-mix(in srgb,var(--sector-volume-accent) 16%,#e2e8f0);background:rgba(255,255,255,.8)}
 .sector-volume-card .market-turnover-chart-canvas,.sector-volume-card .market-turnover-chart-canvas svg{height:138px;min-height:138px}
 .sector-volume-card .market-turnover-chart-empty{height:138px}
+.sector-index-trend{margin-top:9px;padding:9px 9px 7px;border:1px solid #e3e8ef;border-color:color-mix(in srgb,var(--sector-volume-accent) 15%,#e2e8f0);border-radius:10px;background:linear-gradient(180deg,rgba(248,250,252,.96),rgba(255,255,255,.98))}
+.sector-index-trend-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.sector-index-trend-title{color:#475569;font-size:10px;font-weight:800;letter-spacing:.01em;white-space:nowrap}
+.sector-index-trend-change{padding:3px 7px;border-radius:999px;font-size:11px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sector-index-trend-change.up{color:#c52222;background:#fff0f0}.sector-index-trend-change.down{color:#078445;background:#ecfdf3}.sector-index-trend-change.flat{color:#64748b;background:#eef2f7}
+.sector-index-trend-canvas{position:relative;height:105px;min-height:105px}
+.sector-index-trend-canvas svg{display:block;width:100%;height:105px;overflow:visible}
+.sector-index-trend-empty{height:105px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px}
 .sector-volume-foot{margin-top:6px;color:#94a3b8;font-size:9px;font-weight:600;text-align:center;white-space:nowrap}
-.sector-volume-loading,.sector-volume-error{min-height:278px;display:flex;align-items:center;justify-content:center;padding:18px;color:#94a3b8;font-size:10.5px;line-height:1.7;text-align:center}
+.sector-volume-loading,.sector-volume-error{min-height:407px;display:flex;align-items:center;justify-content:center;padding:18px;color:#94a3b8;font-size:10.5px;line-height:1.7;text-align:center}
 .market-style-card{
   grid-column:1;grid-row:3;display:flex;flex-direction:column;min-width:0;min-height:410px;
   border-top:3px solid #7c3aed!important;background:linear-gradient(150deg,#faf8ff 0%,#fff 50%)!important
@@ -1305,21 +1313,21 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div id="sectorVolumeRow" class="sector-volume-row">
       <div class="card sector-volume-card" style="--sector-volume-accent:#7c3aed">
         <div class="sector-volume-head">
-          <span class="sector-volume-title"><i class="sector-volume-dot"></i>光模块成交额</span>
+          <span class="sector-volume-title"><i class="sector-volume-dot"></i>光模块</span>
           <span id="sectorVolumeTs-BK1136" class="sector-volume-ts"></span>
         </div>
         <div id="sectorVolumeBody-BK1136" class="sector-volume-loading">加载中…</div>
       </div>
       <div class="card sector-volume-card" style="--sector-volume-accent:#2563eb">
         <div class="sector-volume-head">
-          <span class="sector-volume-title"><i class="sector-volume-dot"></i>PCB成交额</span>
+          <span class="sector-volume-title"><i class="sector-volume-dot"></i>PCB</span>
           <span id="sectorVolumeTs-BK0877" class="sector-volume-ts"></span>
         </div>
         <div id="sectorVolumeBody-BK0877" class="sector-volume-loading">加载中…</div>
       </div>
       <div class="card sector-volume-card" style="--sector-volume-accent:#d97706">
         <div class="sector-volume-head">
-          <span class="sector-volume-title"><i class="sector-volume-dot"></i>存储芯片成交额</span>
+          <span class="sector-volume-title"><i class="sector-volume-dot"></i>存储芯片</span>
           <span id="sectorVolumeTs-BK1137" class="sector-volume-ts"></span>
         </div>
         <div id="sectorVolumeBody-BK1137" class="sector-volume-loading">加载中…</div>
@@ -9939,12 +9947,12 @@ async function _doFetchTurnover(){
   }
 }
 
-// ── 细分板块成交额（东方财富：今日累计 vs 前一交易日同期）────────────
-// 使用板块分钟成交额 f57；三个板块独立渲染，任一接口失败不会拖累其他卡片。
+// ── 细分板块（东方财富：成交额对比 + 指数今日涨跌走势）────────────
+// 同一次分钟请求读取指数点位 f53 与成交额 f57；任一板块失败不会拖累其他卡片。
 const _SECTOR_VOLUME_META = [
-  {title:'光模块成交额',sourceName:'光通信模块',code:'BK1136',color:'#7c3aed'},
-  {title:'PCB成交额',sourceName:'PCB',code:'BK0877',color:'#2563eb'},
-  {title:'存储芯片成交额',sourceName:'存储芯片',code:'BK1137',color:'#d97706'},
+  {title:'光模块',sourceName:'光通信模块',code:'BK1136',color:'#7c3aed'},
+  {title:'PCB',sourceName:'PCB',code:'BK0877',color:'#2563eb'},
+  {title:'存储芯片',sourceName:'存储芯片',code:'BK1137',color:'#d97706'},
 ];
 var _sectorVolumeCache = {};
 var _sectorVolumeFetching = false;
@@ -9955,9 +9963,9 @@ function _sectorVolumeParse(raw){
     const p=String(row||'').split(','),stamp=String(p[0]||''),splitAt=stamp.lastIndexOf(' ');
     if(splitAt<0) return;
     const date=stamp.slice(0,splitAt),tod=stamp.slice(splitAt+1,splitAt+6);
-    const amount=parseFloat(p[1]);
+    const price=parseFloat(p[1]),amount=parseFloat(p[2]);
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^\d{2}:\d{2}$/.test(tod)||!isFinite(amount)||amount<0) return;
-    (byDay[date]=byDay[date]||[]).push({tod,amount});
+    (byDay[date]=byDay[date]||[]).push({tod,amount,price:isFinite(price)&&price>0?price:null});
   });
   Object.keys(byDay).forEach(date=>{
     const unique=new Map();
@@ -9968,8 +9976,13 @@ function _sectorVolumeParse(raw){
 }
 
 async function _sectorVolumeRequest(meta){
-  const query='?secid=90.'+meta.code+'&fields1=f1&fields2=f51,f57&iscr=0&ndays=';
-  let raw=null,lastError=null;
+  const query='?secid=90.'+meta.code+'&fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11&fields2=f51,f53,f57&iscr=0&ndays=';
+  let raw=null,preClose=null,lastError=null;
+  const readPayload=j=>{
+    const data=j&&j.data,rows=data&&data.trends,base=Number(data&&data.preClose);
+    if(!Array.isArray(rows)||!rows.length) throw new Error('实时分钟数据为空');
+    return {rows,preClose:isFinite(base)&&base>0?base:null};
+  };
   const fetchRealtime=async()=>{
     const urls=[
       'https://push2.eastmoney.com/api/qt/stock/trends2/get'+query+'1&_='+Date.now(),
@@ -9980,9 +9993,7 @@ async function _sectorVolumeRequest(meta){
     for(const url of urls){
       try{
         const j=await _idxFetch(url,{timeout:4200,retries:0});
-        const rows=j&&j.data&&j.data.trends;
-        if(Array.isArray(rows)&&rows.length) return rows;
-        throw new Error('实时分钟数据为空');
+        return readPayload(j);
       }catch(e){fallbackError=e;}
     }
     throw fallbackError||new Error('实时分钟数据为空');
@@ -9990,13 +10001,13 @@ async function _sectorVolumeRequest(meta){
   // 历史域名通常一次返回最近两个交易日，能够做严格的同一时刻比较。
   try{
     const j=await _idxFetch('https://push2his.eastmoney.com/api/qt/stock/trends2/get'+query+'2&_='+Date.now(),{timeout:5200,retries:1});
-    const rows=j&&j.data&&j.data.trends;
-    if(Array.isArray(rows)&&rows.length>1) raw=rows;
+    const payload=readPayload(j);
+    if(payload.rows.length>1){raw=payload.rows;preClose=payload.preClose;}
     else throw new Error('历史分钟数据为空');
   }catch(e){ lastError=e; }
   // 弱网或历史域名受限时，退回实时域名；至少保留今日曲线和累计成交额。
   if(!raw){
-    try{raw=await fetchRealtime();}catch(e){lastError=e;}
+    try{const payload=await fetchRealtime();raw=payload.rows;preClose=payload.preClose;}catch(e){lastError=e;}
   }
   if(!raw) throw lastError||new Error('板块分钟成交额为空');
 
@@ -10005,8 +10016,9 @@ async function _sectorVolumeRequest(meta){
   // 盘中若历史域名仍停留在上一交易日，再向实时域名补取当日数据；补取失败则明确标为源延迟。
   if(clock.isTrading&&dates[dates.length-1]!==clock.date){
     try{
-      const liveByDay=_sectorVolumeParse(await fetchRealtime());
+      const livePayload=await fetchRealtime(),liveByDay=_sectorVolumeParse(livePayload.rows);
       if(liveByDay[clock.date]) byDay[clock.date]=liveByDay[clock.date];
+      if(livePayload.preClose) preClose=livePayload.preClose;
       dates=Object.keys(byDay).sort();
     }catch(e){lastError=e;}
   }
@@ -10019,11 +10031,20 @@ async function _sectorVolumeRequest(meta){
   const todayAmount=labels.map((_,i)=>{todayRun+=todayRows[i].amount;return todayRun;});
   const yesterdayAmount=labels.map(tod=>{yesterdayRun+=yesterdayMap.get(tod)||0;return yesterdayRun;});
   const yesterdayFull=yesterdayRows.reduce((sum,point)=>sum+point.amount,0);
+  const previousClose=[...yesterdayRows].reverse().find(point=>point.price!=null);
+  const priceBase=previousClose&&previousClose.price>0?previousClose.price:preClose;
+  const todayPct=todayRows.map(point=>priceBase&&point.price!=null?(point.price/priceBase-1)*100:null);
+  const latestPricePoint=[...todayRows].reverse().find(point=>point.price!=null);
+  const latestPctPoint=[...todayPct].reverse().find(value=>typeof value==='number'&&Number.isFinite(value));
   const out={
     todayDate,yesterdayDate,labels,todayAmount,yesterdayAmount,
     todayCum:todayRun,yesterdaySame:yesterdayRun,yesterdayFull,tod:labels[labels.length-1],
+    todayPct,lastPrice:latestPricePoint?latestPricePoint.price:null,lastPct:Number.isFinite(latestPctPoint)?latestPctPoint:null,
     delayed:clock.isTrading&&todayDate!==clock.date,
   };
+  // 接口短暂回退到旧快照时，不用旧交易日或更早分钟覆盖已显示的新数据。
+  const existing=_sectorVolumeCache[meta.code]&&_sectorVolumeCache[meta.code].data;
+  if(existing&&String(existing.todayDate||'')+' '+String(existing.tod||'')>String(out.todayDate||'')+' '+String(out.tod||'')) return existing;
   _sectorVolumeCache[meta.code]={ts:Date.now(),data:out};
   return out;
 }
@@ -10080,6 +10101,40 @@ function _sectorVolumeChartSvg(meta,data){
     +`</svg>`;
 }
 
+function _sectorPriceChartSvg(meta,data){
+  const labels=data.labels||[],values=data.todayPct||[];
+  const points=values.map((value,index)=>({index,value:value==null?NaN:Number(value)})).filter(point=>Number.isFinite(point.value));
+  if(labels.length<2||points.length<2) return '';
+  const W=410,H=105,L=36,R=8,T=7,B=20,pw=W-L-R,ph=H-T-B;
+  let minVal=Math.min(0,...points.map(point=>point.value));
+  let maxVal=Math.max(0,...points.map(point=>point.value));
+  const rawSpan=maxVal-minVal;
+  const pad=Math.max(.08,rawSpan*.12);
+  minVal-=pad;maxVal+=pad;
+  if(maxVal-minVal<.24){const middle=(maxVal+minVal)/2;minVal=middle-.12;maxVal=middle+.12;}
+  const x=index=>L+(index/(labels.length-1))*pw;
+  const y=value=>T+(1-(value-minVal)/(maxVal-minVal))*ph;
+  const zeroY=y(0),lineColor=(data.lastPct||0)>0?'#dc2626':(data.lastPct||0)<0?'#16a34a':'#64748b';
+  const linePath=points.map((point,i)=>(i?'L':'M')+x(point.index).toFixed(2)+' '+y(point.value).toFixed(2)).join(' ');
+  const first=points[0],last=points[points.length-1];
+  const areaPath=linePath+' L '+x(last.index).toFixed(2)+' '+zeroY.toFixed(2)+' L '+x(first.index).toFixed(2)+' '+zeroY.toFixed(2)+' Z';
+  const gradientId='sectorPriceArea'+meta.code;
+  const levels=[maxVal,0,minVal].filter((value,index,list)=>list.findIndex(item=>Math.abs(item-value)<.001)===index);
+  const grid=levels.map(value=>{
+    const gy=y(value),isZero=Math.abs(value)<.0001;
+    return `<line x1="${L}" y1="${gy.toFixed(2)}" x2="${W-R}" y2="${gy.toFixed(2)}" stroke="${isZero?'#b8c2cf':'#e7ebf1'}" stroke-width="${isZero?'1.15':'1'}" ${isZero?'stroke-dasharray="4 3"':''} vector-effect="non-scaling-stroke"/>`
+      +`<text x="${L-5}" y="${gy.toFixed(2)}" text-anchor="end" dominant-baseline="central" fill="${isZero?'#7b8797':'#94a3b8'}" font-size="8.5">${value>0?'+':''}${value.toFixed(1)}%</text>`;
+  }).join('');
+  const tickIndexes=[0,Math.round((labels.length-1)/2),labels.length-1].filter((value,index,list)=>list.indexOf(value)===index);
+  const ticks=tickIndexes.map(index=>`<text x="${x(index).toFixed(2)}" y="${H-5}" text-anchor="${index===0?'start':index===labels.length-1?'end':'middle'}" fill="#94a3b8" font-size="8.5">${labels[index]}</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${meta.title}指数日内涨跌走势">`
+    +`<defs><linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lineColor}" stop-opacity=".13"/><stop offset="1" stop-color="${lineColor}" stop-opacity=".01"/></linearGradient></defs>`
+    +grid+ticks+`<path d="${areaPath}" fill="url(#${gradientId})"/>`
+    +`<path d="${linePath}" fill="none" stroke="${lineColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`
+    +`<circle cx="${x(last.index).toFixed(2)}" cy="${y(last.value).toFixed(2)}" r="2.6" fill="#fff" stroke="${lineColor}" stroke-width="1.7" vector-effect="non-scaling-stroke"/>`
+    +`</svg>`;
+}
+
 function _sectorAmountShare(data){
   const market=_marketTurnoverSnapshot;
   if(!data||!market||!(market.yi>0)||!data.todayDate||!market.date||data.todayDate!==market.date) return null;
@@ -10129,9 +10184,14 @@ function _renderSectorVolume(meta,data,cached){
   const growthText=growth==null?'前一日同期暂缺':(growth>=0?'+':'')+growth.toFixed(2)+'% '+(growth>=0?'增加':'减少');
   const hasYesterday=data.yesterdayDate&&data.yesterdaySame>0;
   const chart=_sectorVolumeChartSvg(meta,data);
+  const priceChart=_sectorPriceChartSvg(meta,data);
   const todayLast=data.todayAmount[data.todayAmount.length-1]||0;
   const yesterdayLast=hasYesterday?(data.yesterdayAmount[data.yesterdayAmount.length-1]||0):0;
   const primaryLabel=data.delayed?'最近交易日累计':'本交易日累计';
+  const priceClass=data.lastPct==null?'flat':data.lastPct>0?'up':data.lastPct<0?'down':'flat';
+  const priceText=data.lastPct==null?'—':(data.lastPct>0?'+':'')+data.lastPct.toFixed(2)+'%';
+  const priceTitle=sameTradingDay?'指数今日涨跌走势':'指数最近交易日走势 · '+(data.todayDate?data.todayDate.slice(5):'');
+  const pricePointText=data.lastPrice==null?'':` title="最新点位 ${Number(data.lastPrice).toLocaleString('zh-CN',{maximumFractionDigits:2})}"`;
   body.className='';
   body.innerHTML=`<div class="sector-volume-kpis">`
     +`<div class="sector-volume-kpi primary"><div class="sector-volume-kpi-label">${primaryLabel}</div><div class="sector-volume-kpi-value">${_sectorAmountFmt(data.todayCum,false)}</div><div class="sector-volume-kpi-note">截至 ${data.tod}</div></div>`
@@ -10143,7 +10203,9 @@ function _renderSectorVolume(meta,data,cached){
     +`<div class="market-turnover-chart-legend"><span class="market-turnover-legend-item"><i class="market-turnover-legend-line" style="--turn-color:${meta.color}"></i>本日 ${_sectorAmountFmt(todayLast,true)}</span>`
     +(hasYesterday?`<span class="market-turnover-legend-item"><i class="market-turnover-legend-line yesterday" style="--turn-color:#94a3b8"></i>前日 ${_sectorAmountFmt(yesterdayLast,true)}</span>`:'')
     +`</div></div><div class="market-turnover-chart-canvas">${chart||'<div class="market-turnover-chart-empty">分钟曲线暂不可用</div>'}</div></div>`
-    +`<div class="sector-volume-foot">${meta.sourceName} · ${meta.code} · 东方财富分钟成交额${data.delayed?' · 源延迟':''}${cached?' · 缓存':''}</div>`;
+    +`<div class="sector-index-trend"><div class="sector-index-trend-head"><span class="sector-index-trend-title">${priceTitle}</span><strong class="sector-index-trend-change ${priceClass}"${pricePointText}>${priceText}</strong></div>`
+    +`<div class="sector-index-trend-canvas">${priceChart||'<div class="sector-index-trend-empty">指数走势暂不可用</div>'}</div></div>`
+    +`<div class="sector-volume-foot">${meta.sourceName} · ${meta.code} · 东方财富分钟行情${data.delayed?' · 源延迟':''}${cached?' · 缓存':''}</div>`;
   _updateSectorAmountShare(meta,data);
   const dateLabel=data.todayDate?data.todayDate.slice(5):'';
   if(ts) ts.textContent=(dateLabel?dateLabel+' ':'')+data.tod+(data.delayed?' · 源延迟':'')+(cached?' · 缓存':'');
