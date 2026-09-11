@@ -9747,69 +9747,138 @@ async function _doFetchBreadth(){
   }
 }
 
-// 成交额「同期对比」：用东财分时(trends2, ndays=2)取得每分钟成交额。
-// 日内量能不均(早盘尾盘重、午间轻)，必须「今日此刻累计 vs 昨日同一时刻累计」才是正确的相对增速。
-// 返回成交额 KPI 以及今日/昨日同期累计成交额曲线（均为亿元）；缺昨日数据返回 null。
-// 25s 短缓存：同期增速分钟级才变，无需每次刷新都拉分时。
+// 成交额分时每 3 分钟更新；逐市场保留最近交易日分钟数据，失败时继续显示有效快照。
 var _turnoverCmpCache = { ts:0, data:null };
-// 上方“成交分析”的沪深两市累计成交额快照（亿元）。细分板块卡片只在交易日一致时使用，
-// 避免东财板块数据延迟时拿上一交易日分子除以当日分母。
+var _turnoverCmpPending = null;
+var _turnoverCmpAttempt = 0;
+var _turnoverMinuteDays = {};
+var _turnoverStorageLoaded = false;
+var _turnoverRenderPending = null;
 var _marketTurnoverSnapshot = { yi:0, date:'', tod:'', ts:0 };
-async function _turnoverCompare(){
-  if(_turnoverCmpCache.data && Date.now()-_turnoverCmpCache.ts < 25000) return _turnoverCmpCache.data;
-  const fetchT = async secid=>{
-    const u='https://push2his.eastmoney.com/api/qt/stock/trends2/get?secid='+secid
-          +'&fields1=f1&fields2=f51,f57&iscr=0&ndays=2&_='+Date.now();
-    const j=await _idxFetch(u,{timeout:5000,retries:1});
-    return (j&&j.data&&j.data.trends)||[];        // 每行 "YYYY-MM-DD HH:MM,成交额(元)"
-  };
-  const arrs = await Promise.all([fetchT('1.000001'), fetchT('0.399106')]);  // 上证综指 + 深证综指
-  const parse = arr=>{
-    const d={};
-    arr.forEach(s=>{
-      const p=s.split(','), sp=p[0].split(' ');
-      if(sp.length<2) return;
-      (d[sp[0]]=d[sp[0]]||[]).push({tod:sp[1],amt:parseFloat(p[1])||0});
-    });
-    Object.keys(d).forEach(day=>d[day].sort((a,b)=>a.tod.localeCompare(b.tod)));
-    return d;
-  };
-  const days = arrs.map(parse);
-  const ds = Object.keys(days[0]||{}).sort();
-  if(ds.length<2) return null;                    // 缺昨日（如长假后首日分时未含昨日）则不对比
-  const yDay=ds[0], tDay=ds[ds.length-1];
-  const tArr=days[0][tDay];
-  const tod = tArr[tArr.length-1].tod;            // 今日最新时分（用市场时间，比墙钟更准）
-  const sumBy=(d,day,upto,key)=> (d[day]||[]).filter(x=>!upto||x.tod<=upto).reduce((s,x)=>s+(x[key]||0),0);
-  let todayCum=0, yestSame=0, yestFull=0;
-  days.forEach(d=>{
-    todayCum+=sumBy(d,tDay,null,'amt');
-    yestSame+=sumBy(d,yDay,tod,'amt');
-    yestFull+=sumBy(d,yDay,null,'amt');
-  });
+const _TURNOVER_STORAGE_KEY='market_turnover_minutes_v2';
 
-  // 以今天已经出现的分钟为横轴；昨日曲线也截到相同交易分钟，严格进行同期比较。
-  const labels=[...new Set(days.flatMap(d=>(d[tDay]||[]).map(x=>x.tod)))].sort().filter(t=>t<=tod);
-  const cumulativeAmount=(day)=>{
-    const marketMaps=days.map(d=>new Map((d[day]||[]).map(x=>[x.tod,x.amt||0])));
-    let cumulative=0;
+function _turnoverParseRows(rows){
+  const days={};
+  (Array.isArray(rows)?rows:[]).forEach(row=>{
+    const parts=String(row).split(','),match=/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})/.exec(parts[0]);
+    const amount=Number(parts[1]);
+    if(!match||!parts[1]||!Number.isFinite(amount)||amount<0) return;
+    const date=match[1],tod=match[2];
+    if(tod<'09:30'||tod>'15:00'||(tod>'11:30'&&tod<'13:00')) return;
+    if(!days[date]) days[date]=new Map();
+    days[date].set(tod,{tod,amt:amount});
+  });
+  return Object.fromEntries(Object.entries(days).map(([date,points])=>[date,[...points.values()].sort((a,b)=>a.tod.localeCompare(b.tod))]));
+}
+
+function _turnoverLoadSaved(){
+  if(_turnoverStorageLoaded) return;
+  _turnoverStorageLoaded=true;
+  try{
+    const saved=JSON.parse(localStorage.getItem(_TURNOVER_STORAGE_KEY)||'null');
+    if(!saved||!saved.markets||Date.now()-saved.savedAt>10*86400000) return;
+    ['1.000001','0.399106'].forEach(secid=>{
+      const rows=[];
+      Object.entries(saved.markets[secid]||{}).forEach(([date,points])=>{
+        if(Array.isArray(points)) points.forEach(p=>rows.push(date+' '+p.tod+','+p.amt));
+      });
+      _turnoverMinuteDays[secid]=_turnoverParseRows(rows);
+    });
+    _turnoverCmpCache.data=_turnoverBuildCompare();
+  }catch(e){console.warn('[成交分时缓存]',e.message);}
+}
+
+function _turnoverMergeDays(secid,incoming){
+  const current=_turnoverMinuteDays[secid]||{};
+  Object.entries(incoming).forEach(([date,rows])=>{
+    const previous=current[date]||[];
+    // 整日分钟序列完整替换，避免混入源撤回的点；更短/更旧的序列不覆盖。
+    if(rows.length>=previous.length&&(!previous.length||rows[rows.length-1].tod>=previous[previous.length-1].tod)) current[date]=rows;
+  });
+  const keep=Object.keys(current).sort().slice(-4);
+  _turnoverMinuteDays[secid]=Object.fromEntries(keep.map(date=>[date,current[date]]));
+}
+
+function _turnoverBuildCompare(){
+  const days=['1.000001','0.399106'].map(id=>_turnoverMinuteDays[id]||{});
+  const common=Object.keys(days[0]).filter(date=>(days[0][date]||[]).length>1&&(days[1][date]||[]).length>1).sort();
+  if(!common.length) return null;
+  const tDay=common[common.length-1];
+  const tod=days.map(d=>d[tDay][d[tDay].length-1].tod).sort()[0];
+  const priorDate=[...new Set(days.flatMap(d=>Object.keys(d)))].filter(date=>date<tDay).sort().pop();
+  const yDay=priorDate&&days.every(d=>d[priorDate]&&d[priorDate].length>1&&d[priorDate][d[priorDate].length-1].tod==='15:00')?priorDate:'';
+  const labels=[...new Set(days.flatMap(d=>d[tDay].map(p=>p.tod)))].sort().filter(time=>time<=tod);
+  if(labels.length<2) return null;
+  const cumulative=day=>{
+    if(!day) return [];
+    const maps=days.map(d=>new Map(d[day].map(p=>[p.tod,p.amt])));
+    let total=0;
     return labels.map(time=>{
-      marketMaps.forEach(m=>{ cumulative+=m.get(time)||0; });
-      return +(cumulative/1e8).toFixed(2);          // 元→亿元
+      maps.forEach(m=>{total+=m.get(time)||0;});
+      return +(total/1e8).toFixed(2);
     });
   };
-  const out={
-    todayCumYi:todayCum/1e8,yestSameYi:yestSame/1e8,yestFullYi:yestFull/1e8,tod,
-    labels,todayAmountYi:cumulativeAmount(tDay),yestAmountYi:cumulativeAmount(yDay),
-    todayDate:tDay,yestDate:yDay,
+  const today=cumulative(tDay),yesterday=cumulative(yDay);
+  return {
+    todayDate:tDay,yestDate:yDay,tod,labels,todayAmountYi:today,yestAmountYi:yesterday,
+    todayCumYi:today[today.length-1],yestSameYi:yesterday.length?yesterday[yesterday.length-1]:0,
+    yestFullYi:yDay?days.reduce((sum,d)=>sum+d[yDay].reduce((s,p)=>s+p.amt,0),0)/1e8:0,
   };
-  if(out.yestSameYi>0 && out.yestFullYi>0) _turnoverCmpCache={ ts:Date.now(), data:out };
-  return out;
+}
+
+async function _turnoverFetchMinutes(url){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),4500);
+  try{
+    const response=await fetch(url,{signal:controller.signal,cache:'no-store'});
+    if(!response.ok) throw new Error('HTTP '+response.status);
+    return await response.json();
+  }finally{clearTimeout(timer);}
+}
+
+async function _turnoverCompare(){
+  _turnoverLoadSaved();
+  if(_turnoverCmpPending) return _turnoverCmpPending;
+  if(Date.now()-_turnoverCmpAttempt<180000) return _turnoverCmpCache.data;
+  _turnoverCmpAttempt=Date.now();
+  _turnoverCmpPending=(async()=>{
+    const fetchMarket=async secid=>{
+      const query='?secid='+secid+'&fields1=f1&fields2=f51,f57&iscr=0&ndays=';
+      const targets=[
+        ['push2his.eastmoney.com',2],
+        ['push2delay.eastmoney.com',1],
+        ['push2.eastmoney.com',1],
+      ];
+      let gotRows=false;
+      for(const [host,ndays] of targets){
+        try{
+          const j=await _turnoverFetchMinutes('https://'+host+'/api/qt/stock/trends2/get'+query+ndays+'&_='+Date.now());
+          const parsed=_turnoverParseRows(j&&j.data&&j.data.trends);
+          if(!Object.keys(parsed).some(date=>parsed[date].length>1)) continue;
+          _turnoverMergeDays(secid,parsed);
+          gotRows=true;
+          const clock=_breadthBeijingClock(),latest=Object.keys(parsed).sort().pop();
+          if(latest===clock.date||!clock.isTrading) break;
+        }catch(e){console.warn('[成交分时]',secid,host,e.message);}
+      }
+      return gotRows;
+    };
+    const results=await Promise.allSettled(['1.000001','0.399106'].map(fetchMarket));
+    const candidate=_turnoverBuildCompare(),previous=_turnoverCmpCache.data;
+    if(candidate&&(!previous||candidate.todayDate+' '+candidate.tod>=previous.todayDate+' '+previous.tod)){
+      _turnoverCmpCache={ts:Date.now(),data:candidate};
+    }
+    if(results.some(r=>r.status==='fulfilled'&&r.value)){
+      try{localStorage.setItem(_TURNOVER_STORAGE_KEY,JSON.stringify({savedAt:Date.now(),markets:_turnoverMinuteDays}));}catch(_){}
+    }
+    return _turnoverCmpCache.data;
+  })();
+  try{return await _turnoverCmpPending;}finally{_turnoverCmpPending=null;}
 }
 
 function _turnoverAmountChartSvg(cmp){
   const labels=cmp&&cmp.labels||[], today=cmp&&cmp.todayAmountYi||[], yesterday=cmp&&cmp.yestAmountYi||[];
-  if(labels.length<2||today.length!==labels.length||yesterday.length!==labels.length) return '';
+  if(labels.length<2||today.length!==labels.length) return '';
+  const hasYesterday=!!cmp.yestDate&&yesterday.length===labels.length;
   const W=620,H=132,L=48,R=9,T=7,B=21,pw=W-L-R,ph=H-T-B;
   const maxVal=Math.max(1,...today,...yesterday)*1.06;
   const x=i=>L+(i/(labels.length-1))*pw;
@@ -9831,43 +9900,72 @@ function _turnoverAmountChartSvg(cmp){
     +`<defs><linearGradient id="mktTurnArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b82f6" stop-opacity=".16"/><stop offset="1" stop-color="#3b82f6" stop-opacity="0"/></linearGradient></defs>`
     +grid+xTicks
     +`<path d="${areaPath}" fill="url(#mktTurnArea)"/>`
-    +`<path d="${yesterdayPath}" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="6 4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`
+    +(hasYesterday?`<path d="${yesterdayPath}" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="6 4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`:'')
     +`<path d="${todayPath}" fill="none" stroke="#2563eb" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`
-    +`<circle cx="${x(labels.length-1).toFixed(2)}" cy="${y(yesterday[yesterday.length-1]).toFixed(2)}" r="2.5" fill="#fff" stroke="#94a3b8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`
+    +(hasYesterday?`<circle cx="${x(labels.length-1).toFixed(2)}" cy="${y(yesterday[yesterday.length-1]).toFixed(2)}" r="2.5" fill="#fff" stroke="#94a3b8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`:'')
     +`<circle cx="${x(labels.length-1).toFixed(2)}" cy="${y(today[today.length-1]).toFixed(2)}" r="2.7" fill="#fff" stroke="#2563eb" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`
     +`</svg>`;
 }
 
 // ── 成交分析（腾讯行情，完全独立）────────────────────────────────
 async function _doFetchTurnover(){
+  if(_turnoverRenderPending) return _turnoverRenderPending;
+  _turnoverRenderPending=_renderTurnoverRefresh();
+  try{return await _turnoverRenderPending;}finally{_turnoverRenderPending=null;}
+}
+
+function _turnoverChartBox(cmp){
+  const svg=_turnoverAmountChartSvg(cmp);
+  if(!svg) return '<div class="market-turnover-chart-box"><div class="market-turnover-chart-empty">正在获取分时曲线，稍后自动重试</div></div>';
+  const isToday=cmp.todayDate===_breadthBeijingClock().date;
+  const fmt=v=>Math.round(v).toLocaleString('zh-CN')+'亿元';
+  const previous=cmp.yestDate&&cmp.yestAmountYi.length===cmp.labels.length;
+  return '<div class="market-turnover-chart-box"><div class="market-turnover-chart-head"><span class="market-turnover-chart-title">盘中累计成交额（亿元）</span>'
+    +'<div class="market-turnover-chart-legend"><span class="market-turnover-legend-item"><i class="market-turnover-legend-line" style="--turn-color:#2563eb"></i>'
+    +(isToday?'今日':cmp.todayDate.slice(5))+' '+fmt(cmp.todayCumYi)+'</span>'
+    +(previous?'<span class="market-turnover-legend-item"><i class="market-turnover-legend-line yesterday" style="--turn-color:#94a3b8"></i>前日同期 '+fmt(cmp.yestSameYi)+'</span>':'')
+    +'</div></div><div class="market-turnover-chart-canvas">'+svg+'</div>'
+    +'<div style="font-size:9px;color:#94a3b8;text-align:right">'+cmp.todayDate+' '+cmp.tod+' · 约3分钟更新'
+    +(isToday?'':' · 最近有效交易日')+(previous?'':' · 前日分时暂缺')+'</div></div>';
+}
+
+async function _renderTurnoverRefresh(){
   const tTs   = document.getElementById('mktTurnTs');
   const bodyEl= document.getElementById('mktTurnoverBody');
-  if(tTs) tTs.textContent='加载中…';
+  _turnoverLoadSaved();
+  if(bodyEl&&!bodyEl.querySelector('#mktTurnoverChart')&&_turnoverCmpCache.data) bodyEl.innerHTML=_turnoverChartBox(_turnoverCmpCache.data);
+  if(tTs&&!tTs.textContent) tTs.textContent='加载中…';
   try{
+    const quoteController=new AbortController();
+    const quoteTimeout=setTimeout(()=>quoteController.abort(),6500);
     const [raw, cmp] = await Promise.all([
-      fetch('https://qt.gtimg.cn/q=s_sh000001,s_sz399106&_='+Date.now()).then(r=>r.arrayBuffer()),
-      _turnoverCompare().catch(()=>null)   // 分时同期对比数据；失败回退 null → 不显示对比
+      fetch('https://qt.gtimg.cn/q=s_sh000001,s_sz399106&_='+Date.now(),{signal:quoteController.signal})
+        .then(r=>{if(!r.ok) throw new Error('成交额行情请求失败');return r.arrayBuffer();}).catch(()=>null).finally(()=>clearTimeout(quoteTimeout)),
+      _turnoverCompare().catch(()=>_turnoverCmpCache.data)
     ]);
-    const txt = new TextDecoder('gbk').decode(raw);
+    const txt = raw?new TextDecoder('gbk').decode(raw):'';
     const _wan = code=>{
       const m=txt.match(new RegExp('v_s_'+code+'="([^"]+)"'));
       return m?(parseFloat(m[1].split('~')[7])||0):0;
     };
-    const totalYi=(_wan('sh000001')+_wan('sz399106'))/10000;   // 今日实时累计成交额（腾讯）
+    const shWan=_wan('sh000001'),szWan=_wan('sz399106');
+    const quoteValid=shWan>0&&szWan>0;
+    const totalYi=quoteValid?(shWan+szWan)/10000:(cmp&&cmp.todayCumYi)||0;
+    if(!(totalYi>0)) throw new Error('成交额数据暂未返回');
     const now=new Date();
     const timeStr=now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
     const marketClock=_breadthBeijingClock();
     if(totalYi>0){
       _marketTurnoverSnapshot={
         yi:totalYi,
-        date:(cmp&&cmp.todayDate)||marketClock.date,
-        tod:(cmp&&cmp.tod)||marketClock.time,
+        date:quoteValid?marketClock.date:cmp.todayDate,
+        tod:quoteValid?marketClock.time:cmp.tod,
         ts:Date.now(),
       };
       // “成交分析”和三张板块卡片并发刷新；无论谁先返回，占比都能随即补齐。
       _updateAllSectorAmountShares();
     }
-    const curMin=now.getHours()*60+now.getMinutes();
+    const curMin=marketClock.minute;
     let elapsed=0;
     if(curMin<570)       elapsed=0;
     else if(curMin<=690) elapsed=curMin-570;
@@ -9879,7 +9977,7 @@ async function _doFetchTurnover(){
     // 同期对比：今日累计 vs 昨日「同一时刻」累计（量能 U 型不均，必须同期比才准）；
     // 预测全天 = 昨日全天 × 今日同期放量倍数（按昨日日内形态推算，比线性外推更贴近真实）。
     let growthPct=null, predYi=0;
-    if(cmp && cmp.yestSameYi>0 && cmp.todayCumYi>0 && elapsed>0){
+    if(cmp && cmp.todayDate===marketClock.date && cmp.yestSameYi>0 && cmp.todayCumYi>0 && elapsed>0){
       const ratio=cmp.todayCumYi/cmp.yestSameYi;
       growthPct=(ratio-1)*100;
       predYi   = cmp.yestFullYi*ratio;
@@ -9889,7 +9987,7 @@ async function _doFetchTurnover(){
       +`<div style="background:#dbeafe;border-radius:10px;padding:11px 12px">`
       +`<div style="font-size:10px;color:#1d4ed8;font-weight:700;margin-bottom:6px">沪深两市成交额</div>`
       +`<div style="font-size:22px;font-weight:900;color:#1e40af;line-height:1.1;letter-spacing:-.02em">${fmt(totalYi)}</div>`
-      +`<div style="font-size:10px;color:#3b82f6;margin-top:5px">实时 · ${timeStr}</div></div>`;
+      +`<div style="font-size:10px;color:#3b82f6;margin-top:5px">${quoteValid?'实时 · '+timeStr:cmp.todayDate+' '+cmp.tod+' · 分时快照'}</div></div>`;
     if(elapsed>0 && elapsed<235 && predYi>0){
       html+=`<div style="background:#e0f2fe;border-radius:10px;padding:11px 12px">`
         +`<div style="font-size:10px;color:#0369a1;font-weight:700;margin-bottom:6px">预测全天成交额</div>`
@@ -9920,30 +10018,14 @@ async function _doFetchTurnover(){
         +`<span style="font-size:13px;font-weight:800;color:#475569;margin-left:6px">${fmt(cmp.yestFullYi)}</span></div>`
         +`<div style="text-align:right">${cmpHtml}</div></div>`;
     }
-    // 两条累计成交额曲线：今日实线 vs 昨日同期虚线；只展示到今天最新交易分钟。
-    const hasAmountCurve=cmp&&cmp.labels&&cmp.labels.length>1
-      &&cmp.todayAmountYi&&cmp.todayAmountYi.length===cmp.labels.length
-      &&cmp.yestAmountYi&&cmp.yestAmountYi.length===cmp.labels.length;
-    if(hasAmountCurve){
-      const tAmt=cmp.todayAmountYi[cmp.todayAmountYi.length-1]||0;
-      const yAmt=cmp.yestAmountYi[cmp.yestAmountYi.length-1]||0;
-      html+=`<div class="market-turnover-chart-box">`
-        +`<div class="market-turnover-chart-head"><span class="market-turnover-chart-title">盘中累计成交额（亿元）</span>`
-        +`<div class="market-turnover-chart-legend">`
-        +`<span class="market-turnover-legend-item"><i class="market-turnover-legend-line" style="--turn-color:#2563eb"></i>今日 ${fmt(tAmt)}</span>`
-        +`<span class="market-turnover-legend-item"><i class="market-turnover-legend-line yesterday" style="--turn-color:#94a3b8"></i>昨日同期 ${fmt(yAmt)}</span>`
-        +`</div></div><div class="market-turnover-chart-canvas">${_turnoverAmountChartSvg(cmp)}</div></div>`;
-    }else{
-      html+=`<div class="market-turnover-chart-box"><div class="market-turnover-chart-head"><span class="market-turnover-chart-title">盘中累计成交额（亿元）</span></div>`
-        +`<div class="market-turnover-chart-empty">分时曲线暂不可用，请稍后刷新</div></div>`;
-    }
+    html+=_turnoverChartBox(cmp);
     html+=`<div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:6px">沪综指+深综指 · 腾讯实时成交额 + 东财分钟成交额</div>`;
     if(bodyEl) bodyEl.innerHTML=html;
     if(tTs)    tTs.textContent=timeStr;
   }catch(e){
     console.warn('[成交分析]', e.message);
-    if(bodyEl) bodyEl.innerHTML=`<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">获取失败：${e.message}<br><span style="font-size:10px">请点击↻重试</span></div>`;
-    if(tTs) tTs.textContent='';
+    if(bodyEl&&!bodyEl.querySelector('#mktTurnoverChart')) bodyEl.innerHTML=_turnoverChartBox(_turnoverCmpCache.data);
+    if(tTs) tTs.textContent='更新稍后重试';
   }
 }
 
