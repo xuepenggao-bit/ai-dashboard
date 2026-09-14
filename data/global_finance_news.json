@@ -1,10 +1,11 @@
 {
-  "updatedAt": "2026-09-14T20:29:37Z",
+  "updatedAt": "2026-09-14T23:24:22Z",
   "sources": {
     "reuters": {
       "label": "Reuters latest via Google News index",
-      "status": "fresh",
-      "count": 5
+      "status": "cached",
+      "count": 5,
+      "error": "Reuters market APIs returned no usable articles: /markets: GET https://www.reuters.com/pf/api/v3/content/fetch/articles-by-section-alias-or-id-v1?query=%7B%22section_id%22%3A%22%2Fmarkets%22%2C%22size%22%3A30%2C%22website%22%3A%22reuters%22"
     },
     "substack": {
       "label": "Substack Finance Recent via Google News index",
@@ -51,6 +52,27 @@
   ],
   "substack": [
     {
+      "title": "CASTING REAL PEOPLE IN TORONTO AREA",
+      "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTFBNYU56RU5zbENiel9KZWZTemRxbzhidUF4Q3hpZm5xQmJjemtnekFuQ24yaUJFSEJKbDFWOWNDUkV4dzRxaUhmdm92dVlGMDRoSlF0NDc2ME5RVzIzbklOU05LSjVBdVlBNmMxZE01Q1BRS1VFMllFU012aDc?oc=5",
+      "publisher": "Substack",
+      "ts": 1789419812,
+      "titleZh": "在多伦多地区拍摄真实人物"
+    },
+    {
+      "title": "10 Year Yield Prints Above 5%, AI Trade Sees Rotations on Buildout Questions.",
+      "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE5EeHhKVHNUNDJBa1hSTlcxUDhnX0hWSXN0bGthX2hwU0xzc2lSUXFvS3RDbkZGUjVQellsdXRfMDg2d1VfeDl2M0pvdVZKcnJua2xpNFdRZW1COWFCSG94QTltYXFLaGZOdFppN05TaEFlbDZ2b1JwSUM4TzhLdw?oc=5",
+      "publisher": "Substack",
+      "ts": 1789417555,
+      "titleZh": "10 年期收益率超过 5%，AI 贸易面临扩建问题的轮换。"
+    },
+    {
+      "title": "The Fence",
+      "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxPM0tVTXZtYWpNUk5XY0pMYW45RVVlSWk2Y1I1bVMzS0dIOWc1Szc2T1V0V2hfTnd5SlB1MGdwNWNVTGx2d0VBRk1LaGdXZFlCajRZZnhwcXhZOVdXX0hyVEk5MDZQZ3FMZlotUmdlU29vSG5Wek9zcDVqSnNYZlJOZg?oc=5",
+      "publisher": "Substack",
+      "ts": 1789412522,
+      "titleZh": "栅栏"
+    },
+    {
       "title": "Weekly Briefing: Anthropic Researcher Quits Over AI Fears, AI Creates 1 Million Jobs, and U.S. Student Scores Hit New Lows",
       "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNME9YSFdUX180LTItTno0S3pCaXJubmZId2l6Sy1Hb0JoWkhITkwyN1FGdXp4YTZvd05qbUltTlRSNlZiMWFYNWdoTHV5V0NOT2FRQzNTY3lZZWRZX0xSTVZaTEJMMnNfbU5hQ0wtNWczdVFOdmNKSV9fT1N2MVY3UHMxY3BNajg2bnVWcndscnA0UmtSWVFtdVlmbC1vam5HUlVRaWNCV09RWkJVd2tSYmRXSFc?oc=5",
       "publisher": "Substack",
@@ -63,34 +85,13 @@
       "publisher": "The Closing Line",
       "ts": 1789411451,
       "titleZh": "请停止将体育博彩手柄与娱乐支出混为一谈"
-    },
-    {
-      "title": "A Viral Breakfast, Made More Macro Friendly",
-      "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTFBnNDJ2ZGpPSHRRQVVycDhQbHBfTEdmRzkyQWpRRWpEdlRBcnFla3NuZnc2NVZ6ZTh5WE92R3o2Ry15Rk56QVBrU0J6UGpvWFZnbFl3MzVSVHpTN2otcVpvREVyOVN2WW1WeE01Vi1zeW9fNHpDNDhuRzA4eDhnQQ?oc=5",
-      "publisher": "2explorewellness.substack.com",
-      "ts": 1789410987,
-      "titleZh": "病毒式早餐，更加宏观友好"
-    },
-    {
-      "title": "Weighing a tough decision",
-      "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTE9QVldsQlpLUHB1TlhoM04wRkQ0aWJPdHk0Y1Vvd2s3UWxycTVoeWtla29MUExXTUM5QjdtTHEycHNtUVZOcVpXRWp1UFV1Z2FTZ2JfVXY1ZWJPckNGSXhtbDNCYVdtQ1hhYXpiYw?oc=5",
-      "publisher": "Substack",
-      "ts": 1789408935,
-      "titleZh": "权衡一个艰难的决定"
-    },
-    {
-      "title": "Don't mix fiscal and monetary policy",
-      "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE5ZSlJtODhCVGh5MEFOQVhlVmVxWGJmdUV5eE1NRnJRUWtRNHJDOFJSaGFISXRsbUxUQl9qOFZyX3JIS0NNNEl2QnN4cHdmcVBwTjhSc0FUSmpOY3FycGhxcGdNSkhvN3JSakxpa0J1eUV1UDEtT0lDWHh3?oc=5",
-      "publisher": "Scott Sumner | Substack",
-      "ts": 1789406969,
-      "titleZh": "不要混合财政政策和货币政策"
     }
   ],
   "translation": {
     "status": "fresh",
     "translated": 10,
     "total": 10,
-    "translatedNow": 10,
+    "translatedNow": 3,
     "providers": [
       "Google Translate"
     ]
