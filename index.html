@@ -10685,7 +10685,7 @@ async function fetchNews(force){
   if(ts) ts.textContent='正在刷新…';
   if(btn){ btn.disabled=true; btn.classList.add('loading'); }
 
-  _newsInflight=Promise.allSettled([_fetchNewsTop(),_fetchNewsWatchlist()])
+  _newsInflight=Promise.allSettled([_fetchNewsTop(),_fetchNewsWatchlist(!!force)])
     .then(function(results){
       const sources=results
         .filter(function(r){ return r.status==='fulfilled'&&r.value; })
@@ -10902,11 +10902,97 @@ async function _fetchNewsTop(){
   return '';
 }
 
-async function _fetchNewsWatchlist(){
+var _watchlistLiveAttempt=0;
+var _watchlistLiveKey='';
+var _watchlistInflight=null;
+var _watchlistJsonpSeq=0;
+var _watchlistItems=[];
+var _WATCHLIST_INTERVAL=5*60*1000;
+
+function _watchlistStocks(){
+  const names=new Map();
+  ((typeof PORT!=='undefined'&&PORT&&PORT.sectors)||[]).forEach(function(sec){
+    (sec.stocks||[]).forEach(function(stock){
+      const name=_newsPlainText(stock.name);
+      if(name&&!names.has(name)) names.set(name,{name:name});
+    });
+  });
+  return [...names.values()];
+}
+function _watchlistEpoch(value){
+  if(typeof value==='number') return _newsParseTime(value);
+  const text=String(value||'').trim();
+  // 东方财富无时区时间是北京时间，不应按 Safari/手机的本地时区解释。
+  const china=/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(text);
+  const ts=Date.parse(china?text.replace(' ','T')+'+08:00':text);
+  return isFinite(ts)?Math.floor(ts/1000):0;
+}
+function _watchlistSearch(stock){
+  return new Promise(function(resolve,reject){
+    const cb='__watchlistNews_'+Date.now()+'_'+(++_watchlistJsonpSeq);
+    const script=document.createElement('script');
+    const query={uid:'',keyword:stock.name,type:['cmsArticleWebOld'],client:'web',clientType:'web',clientVersion:'curr',
+      param:{cmsArticleWebOld:{searchScope:'default',sort:'time',pageIndex:1,pageSize:20,preTag:'',postTag:''}}};
+    let done=false;
+    const timer=setTimeout(function(){finish(new Error('资讯查询超时'));},8000);
+    function finish(error,payload){
+      if(done) return;
+      done=true; clearTimeout(timer); script.remove(); delete window[cb];
+      if(error){reject(error);return;}
+      let rows=payload&&payload.result&&payload.result.cmsArticleWebOld;
+      if(rows&&!Array.isArray(rows)) rows=rows.list;
+      if(!Array.isArray(rows)){reject(new Error('资讯响应无效'));return;}
+      resolve(rows.filter(function(row){
+        return _newsPlainText((row.title||'')+' '+(row.content||'')).includes(stock.name);
+      }).map(function(row){
+        return {title:_newsPlainText(row.title),url:_newsSafeUrl(row.url).replace(/^http:\/\//,'https://'),
+          publisher:_newsPlainText(row.mediaName)||'东方财富',ts:_watchlistEpoch(row.date),
+          stockName:stock.name,provider:'东方财富直连'};
+      }).filter(function(row){return row.ts>0&&row.url;}));
+    }
+    window[cb]=function(payload){finish(null,payload);};
+    script.onerror=function(){finish(new Error('东方财富连接失败'));};
+    script.src='https://search-api-web.eastmoney.com/search/jsonp?cb='+cb+'&param='+encodeURIComponent(JSON.stringify(query))+'&_='+Date.now();
+    document.head.appendChild(script);
+  });
+}
+async function _watchlistScan(stocks,onBatch){
+  // 最多三个异步请求并行，不占用行情请求队列，也不阻塞页面渲染。
+  let next=0,success=0;
+  await Promise.all(Array.from({length:Math.min(3,stocks.length)},async function(){
+    while(next<stocks.length){
+      const stock=stocks[next++];
+      try{const items=await _watchlistSearch(stock);success++;onBatch(items);}
+      catch(e){console.warn('[自选股资讯]',stock.name,e.message);}
+    }
+  }));
+  return success;
+}
+function _watchlistMerge(items,stocks){
+  const names=new Set(stocks.map(function(stock){return stock.name;}));
+  _watchlistItems=_newsCleanItems(_watchlistItems.concat(items||[]).filter(function(item){
+    return item&&item.ts>0&&(!names.size||names.has(item.stockName));
+  }),5);
+  return _watchlistItems;
+}
+async function _fetchNewsWatchlist(force){
+  if(_watchlistInflight) return _watchlistInflight;
+  _watchlistInflight=_fetchNewsWatchlistNow(force).finally(function(){_watchlistInflight=null;});
+  return _watchlistInflight;
+}
+async function _fetchNewsWatchlistNow(force){
   const el=document.getElementById('newsWatchlist');
   const sourceEl=document.getElementById('newsWatchlistSource');
   if(!el) return '';
-  try{
+  const stocks=_watchlistStocks();
+  const key=stocks.map(function(stock){return stock.name;}).sort().join('|');
+  function show(items){
+    const merged=_watchlistMerge(items,stocks);
+    if(merged.length) _newsRenderWatchlist(el,merged);
+  }
+  try{show((JSON.parse(localStorage.getItem(_NEWS_WATCHLIST_CACHE)||'null')||{}).items||[]);}catch(_){}
+  // 缓存先呈现；直连与同源缓存并行，晚到的旧 JSON 不得覆盖刚查到的新新闻。
+  const cached=(async function(){try{
     const payload=await _newsFetchJson('data/watchlist_news.json?_='+Date.now(),2,6500);
     const items=_newsCleanItems(((payload||{}).items||[]).map(function(item){
       return{
@@ -10919,16 +11005,30 @@ async function _fetchNewsWatchlist(){
       };
     }),5);
     if(!items.length) throw new Error('空数据');
-    const providers=[...new Set(items.map(function(item){return item.provider;}).filter(Boolean))];
-    const source=providers.join(' + ')||'自选股资讯';
-    _newsRenderWatchlist(el,items);
-    _newsSaveCache(_NEWS_WATCHLIST_CACHE,items,source);
-    if(sourceEl) sourceEl.textContent=source+' · '+items.length+' 条';
-    return source;
+    show(items);
+    return payload;
   }catch(e){
     console.warn('[自选股资讯] 同源缓存读取失败:',e.message);
+    return null;
+  }})();
+  const due=stocks.length&&(key!==_watchlistLiveKey||Date.now()-_watchlistLiveAttempt>=_WATCHLIST_INTERVAL||
+    (force&&Date.now()-_watchlistLiveAttempt>=30000));
+  let success=0;
+  if(due){
+    _watchlistLiveAttempt=Date.now();_watchlistLiveKey=key;
+    if(sourceEl) sourceEl.textContent='正在查询最新自选股资讯…';
+    success=await _watchlistScan(stocks,show);
   }
-  if(_newsRestoreCache(el,sourceEl,_NEWS_WATCHLIST_CACHE,'',_newsRenderWatchlist)) return '';
+  const payload=await cached;
+  if(success){
+    if(sourceEl) sourceEl.textContent='东方财富 · '+(success===stocks.length?'已核查 ':'部分核查 ')+_newsTime(Date.now()/1000,true);
+  }else if(due||!_watchlistLiveAttempt){
+    if(sourceEl) sourceEl.textContent='缓存 · '+(payload&&payload.updatedAt?_newsTime(_watchlistEpoch(payload.updatedAt),true):'最近内容')+(due?' · 直连暂不可达':'');
+  }
+  if(_watchlistItems.length){
+    _newsSaveCache(_NEWS_WATCHLIST_CACHE,_watchlistItems,'东方财富');
+    return success?'东方财富直连':'自选股缓存';
+  }
   el.innerHTML=_newsEmpty('自选股资讯暂时无法取得');
   if(sourceEl) sourceEl.textContent='暂无数据';
   return '';
