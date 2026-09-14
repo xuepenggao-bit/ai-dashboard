@@ -8554,7 +8554,7 @@ async function fetchVixRow(listEl){
 // ── 主要指数实时行情 ────────────────────────────────────────
 // ── 主要指数配置 ──────────────────────────────────────────────
 // 腾讯 API（GBK解码，连通性最稳定）：仅 A股指数
-// 注意：港股指数已改用东方财富实时源（腾讯港股延迟约15分钟）
+// 港股指数走独立通道：腾讯 r_hk / 新浪 rt_hk / 东方财富；普通腾讯 hk 仅为延迟兜底。
 const _IDX_TENCENT = [
   {tc:'sh000001', label:'上证指数', region:'a'},
   {tc:'sz399001', label:'深证成指', region:'a'},
@@ -8638,8 +8638,8 @@ function _idxShouldAcceptHkQuote(label,next,prev,nowMs){
   if(nextTs>nowMs+5*60000) return false;                 // 服务器时钟/字段解析异常
   if(!prev) return true;
   const sameDay=prevTs>0&&_idxBeijingDay(nextTs)===_idxBeijingDay(prevTs);
-  const nextPrimary=next.src==='em'||next.src==='sina';
-  const prevPrimary=prev.src==='em'||prev.src==='sina';
+  const nextPrimary=['em','sina','tc_rt'].includes(next.src);
+  const prevPrimary=prev&&['em','sina','tc_rt'].includes(prev.src);
   // 腾讯港指约延迟 15 分钟，仅在明显晚于已停更的主源时兜底，并在界面标注延迟。
   if(sameDay&&next.src==='tc'&&prevPrimary&&nextTs<=prevTs+5*60000) return false;
   const primaryUpgrade=sameDay&&nextPrimary&&prev.src==='tc';
@@ -8780,10 +8780,10 @@ function _idxRenderFastHk(rowMap,reqSeq){
   if(Object.keys(accepted).length) _IDX_LAST_RENDER=nowMs;
 }
 
-function _idxParseTencentHk(txt){
+function _idxParseTencentHk(txt,realtime=false){
   const result={};
   [['恒生指数','hkHSI'],['恒生科技','hkHSTECH']].forEach(([label,code])=>{
-    const match=String(txt||'').match(new RegExp('v_'+code+'="([^"]+)"'));
+    const match=String(txt||'').match(new RegExp('v_'+(realtime?'r_':'')+code+'="([^"]+)"'));
     if(!match) return;
     const fields=match[1].split('~');
     const price=parseFloat(fields[3]),previous=parseFloat(fields[4]);
@@ -8791,7 +8791,7 @@ function _idxParseTencentHk(txt){
     if(!Number.isFinite(pct)&&previous>0) pct=(price-previous)/previous*100;
     const timeMatch=String(fields[30]||'').match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})\s+(\d{1,2}):(\d{2}):(\d{2})/);
     const quoteTs=timeMatch?Date.UTC(+timeMatch[1],+timeMatch[2]-1,+timeMatch[3],+timeMatch[4]-8,+timeMatch[5],+timeMatch[6]):0;
-    const row={label,price,pct,region:'hk',src:'tc',quoteTs};
+    const row={label,price,pct,region:'hk',src:realtime?'tc_rt':'tc',quoteTs};
     if(_idxValidHkCandidate(label,row)) result[label]=row;
   });
   return result;
@@ -8896,8 +8896,13 @@ function _fetchHkIndices(){
       if(s) publish({label,price:s.price,pct:s.pct,region:'hk',src:'sina',quoteTs:s.quoteTs});
     });
   }));
-  jobs.push(_idxFetch('https://qt.gtimg.cn/q=hkHSI,hkHSTECH&_='+Date.now(),{timeout:2500,retries:0,gbk:true})
-    .then(_idxParseTencentHk).then(rows=>Object.values(rows).forEach(publish)));
+  // r_hk 实测为当前秒行情，普通 hk 约落后 15 分钟。两者必须分开解析、标识，
+  // 先发布实时结果，普通通道只能在没有较新可信值时补位。
+  jobs.push(_idxFetch('https://qt.gtimg.cn/q=r_hkHSI,r_hkHSTECH,hkHSI,hkHSTECH&_='+Date.now(),{timeout:2500,retries:0,gbk:true})
+    .then(txt=>{
+      Object.values(_idxParseTencentHk(txt,true)).forEach(publish);
+      Object.values(_idxParseTencentHk(txt,false)).forEach(publish);
+    }));
   _IDX_HK_INFLIGHT=Promise.allSettled(jobs).finally(()=>{_IDX_HK_INFLIGHT=null;});
   return _IDX_HK_INFLIGHT;
 }

@@ -20,6 +20,15 @@ module.exports=(async()=>{
   assert.equal(ctx._idxShouldAcceptHkQuote('恒生指数',row(now+3600000),null,now),false);
   assert.ok(ctx._idxRowHtml(row(now),now).includes('24919.40'),'Do not round index points to integers');
   assert.ok(ctx._idxRowHtml(row(now-900000,24901.08,'tc'),now).includes('延迟'));
+  assert.ok(!ctx._idxRowHtml(row(now,24919.4,'tc_rt'),now).includes('延迟'),'Realtime Tencent must not be labelled as the delayed feed');
+  assert.equal(ctx._idxShouldAcceptHkQuote('恒生指数',row(now-900000,24901.08,'tc'),row(now,24919.4,'tc_rt'),now),false);
+  const fields=Array(33).fill('');
+  fields[3]='24897.990';fields[4]='24805.630';fields[30]='2026/09/14 15:52:06';fields[32]='0.37';
+  const rt=ctx._idxParseTencentHk('v_r_hkHSI="'+fields.join('~')+'";',true);
+  assert.equal(rt['恒生指数'].src,'tc_rt');
+  assert.equal(rt['恒生指数'].price,24897.99);
+  assert.equal(rt['恒生指数'].quoteTs,Date.parse('2026-09-14T15:52:06+08:00'));
+  assert.equal(Object.keys(ctx._idxParseTencentHk('v_r_hkHSI="'+fields.join('~')+'";',false)).length,0);
   assert.equal(ctx._idxChooseHkCandidate('恒生指数',[row(now-1000),row(now)]).quoteTs,now);
   const originalFetch=ctx._idxFetch;
   ctx.fetch=async(url,{signal})=>({ok:true,json:()=>new Promise((resolve,reject)=>{
