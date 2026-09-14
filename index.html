@@ -920,28 +920,28 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     transform:translateZ(14px);transform-style:preserve-3d
   }
   .port-brand-mark{
-    position:relative;width:52px;height:52px;flex:0 0 52px;padding:7px;border-radius:17px;overflow:hidden;
-    background:linear-gradient(145deg,#263b5c 0%,#16263f 57%,#0d1829 100%);
+    position:relative;width:52px;height:52px;flex:0 0 52px;padding:0;border-radius:15px;overflow:hidden;
+    background:#30251f;
     border:1px solid rgba(255,255,255,.7);
     box-shadow:0 11px 20px rgba(29,46,72,.22),0 3px 6px rgba(29,46,72,.16),inset 0 1px 1px rgba(255,255,255,.32),inset 0 -2px 5px rgba(0,0,0,.18);
-    transform:translateZ(16px) rotateY(4deg)
+    transform:translateZ(16px)
   }
   .port-brand-mark::after{
-    content:'';position:absolute;inset:1px;border-radius:15px;pointer-events:none;
-    background:linear-gradient(135deg,rgba(255,255,255,.28),rgba(255,255,255,0) 38%);
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)
+    content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.24)
   }
-  .port-brand-mark svg{position:relative;z-index:1;width:100%;height:100%;filter:drop-shadow(0 2px 2px rgba(0,0,0,.15))}
+  /* 原图 888 × 498：取 (320,8) 起的 300px 方形，聚焦面部、保留完整发顶。 */
+  .port-brand-mark img{position:absolute;display:block;width:296%;max-width:none;height:auto;left:-106.6667%;top:-2.6667%}
   .port-brand-copy{display:flex;flex-direction:column;justify-content:center;min-width:0;gap:2px}
   .port-hero .tf-swayx{gap:7px;min-width:0}
   .port-hero .tf-sway{
     font-family:'Monotype Corsiva','Snell Roundhand','Segoe Script','Lucida Handwriting','Brush Script MT',cursive;
     font-size:25px;font-weight:750;line-height:1.08;letter-spacing:.005em;white-space:nowrap;
-    color:#be185d;background:linear-gradient(105deg,#d11d5d 0%,#b525c7 52%,#7138d1 100%);
+    color:#bd3037;background:linear-gradient(105deg,#d44842 0%,#c13238 52%,#a92732 100%);
     -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-    -webkit-text-stroke:.4px rgba(88,28,135,.55);
-    filter:saturate(1.24) contrast(1.12) drop-shadow(0 1px 1px rgba(88,28,135,.20));
-    text-shadow:0 2px 4px rgba(88,28,135,.27),0 7px 14px rgba(190,24,93,.16);animation:portBrandFloat 4.8s ease-in-out infinite
+    -webkit-text-stroke:.25px rgba(133,35,42,.28);
+    filter:drop-shadow(0 1px 1px rgba(133,35,42,.12));
+    text-shadow:0 2px 4px rgba(133,35,42,.12),0 7px 14px rgba(193,50,56,.08);animation:portBrandFloat 4.8s ease-in-out infinite
   }
   .port-hero .tf-surf-travel{animation-duration:14s;opacity:.9}
   .port-hero .tf-surf{width:44px;height:auto;filter:drop-shadow(0 2px 2px rgba(161,98,7,.32))!important}
@@ -1077,17 +1077,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <!-- 左：Logo + 标题 -->
     <div class="port-hero-title">
       <div class="port-brand-mark">
-        <svg width="35" height="35" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" style="display:block">
-          <defs>
-            <linearGradient id="lgOrg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb923c"/><stop offset="1" stop-color="#fde6d3"/></linearGradient>
-            <linearGradient id="lgGrn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#d7f5e6"/></linearGradient>
-          </defs>
-          <rect x="0" y="0" width="36" height="36" rx="8" fill="#ffffff"/>
-          <path d="M2 31 L8 23 L13 27 L19 17 L25 23 L30 13 L34 19 L34 34 L2 34 Z" fill="url(#lgOrg)"/>
-          <path d="M2 27 L8 19 L13 23 L19 13 L25 19 L30 9 L34 15 L34 34 L2 34 Z" fill="url(#lgGrn)" opacity=".82"/>
-          <path d="M2 27 L8 19 L13 23 L19 13 L25 19 L30 9 L34 15" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M2 31 L8 23 L13 27 L19 17 L25 23 L30 13 L34 19" fill="none" stroke="#f97316" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
-        </svg>
+        <img src="images/portfolio-portrait.png" alt="人物头像标识" width="888" height="498" decoding="async" fetchpriority="high">
       </div>
       <div class="tf-swayx"><div class="port-brand-copy"><div class="tf-sway">Trend Following</div></div><span class="tf-surf-travel"><svg class="tf-surf" width="54" height="41" viewBox="0 0 58 44" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;overflow:visible;filter:drop-shadow(0 1.4px 1.3px rgba(161,98,7,.5))"><defs><linearGradient id="tfSurfG" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fde047"/><stop offset="0.5" stop-color="#facc15"/><stop offset="1" stop-color="#eab308"/></linearGradient><linearGradient id="tfSurfBd" x1="0" y1="0" x2="1" y2="0.25"><stop offset="0" stop-color="#fef08a"/><stop offset="0.55" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs><path class="tf-wave" d="M0 33 Q11 26 21 32 Q30 37 40 31 Q49 26 58 32 L58 42 Q47 37 38 40 Q27 44 16 40 Q8 37 0 41 Z" fill="url(#tfSurfG)" opacity="0.4"/><g class="tf-spray" fill="#fde047"><circle cx="13.5" cy="33" r="1.4"/><circle cx="10" cy="31.2" r="1"/><circle cx="15.5" cy="30.4" r="0.9"/><circle cx="11.5" cy="34.6" r="0.7"/></g><g class="tf-board"><ellipse cx="31" cy="35.5" rx="18.5" ry="2.8" transform="rotate(-9 31 35.5)" fill="url(#tfSurfBd)"/></g><g stroke="url(#tfSurfG)" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M28 14 L31 23" stroke-width="5.2"/><path d="M31 23 L27 27 L24.5 32.5" stroke-width="3.6"/><path d="M31 23 L35 26.5 L38.5 32" stroke-width="3.6"/><path d="M28.5 16 L23 13 L19 9.5" stroke-width="3"/><path d="M28.5 16 L34.5 17.5 L40.5 16.5" stroke-width="3"/></g><circle cx="27" cy="10" r="3.4" fill="url(#tfSurfG)"/><path class="tf-pony" d="M24.6 9.2 Q17 5 12.5 8.4 Q18 7.6 24 11.2 Z" fill="url(#tfSurfG)"/></svg></span></div>
     </div>
