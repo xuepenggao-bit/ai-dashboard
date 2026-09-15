@@ -10225,13 +10225,47 @@ function _sectorPriceChartSvg(meta,data){
     +`</svg>`;
 }
 
-function _sectorAmountShare(data){
+var _sectorShareLastGood={};
+function _sectorAmountShareSnapshot(data){
+  if(!data||!data.todayDate) return null;
+  const points=new Map();
+  (data.labels||[]).forEach((tod,i)=>{
+    const amount=Number((data.todayAmount||[])[i]);
+    if(Number.isFinite(amount)&&amount>=0) points.set(tod,amount);
+  });
+  if(data.tod&&Number.isFinite(Number(data.todayCum))) points.set(data.tod,Number(data.todayCum));
+  const candidates=[];
+  function add(amount,yi,sectorTime,marketTime){
+    if(!(yi>0)||!Number.isFinite(amount)||amount<0) return;
+    const pct=amount/(yi*1e8)*100;
+    if(!Number.isFinite(pct)||pct<0||pct>100) return;
+    candidates.push({pct,date:data.todayDate,tod:sectorTime<marketTime?sectorTime:marketTime,
+      sectorTime,marketTime,aligned:sectorTime===marketTime});
+  }
+  // 分钟缓存已随成交分析持久化；首次载入也可先算，不必等实时请求全部结束。
+  const cmp=_turnoverCmpCache.data;
+  if(cmp&&cmp.todayDate===data.todayDate){
+    (cmp.labels||[]).forEach((tod,i)=>{
+      if(points.has(tod)) add(points.get(tod),Number((cmp.todayAmountYi||[])[i]),tod,tod);
+    });
+  }
   const market=_marketTurnoverSnapshot;
-  if(!data||!market||!(market.yi>0)||!data.todayDate||!market.date||data.todayDate!==market.date) return null;
-  // 分子若比上方两市成交额快照更新，先等待成交分析追上，避免短暂高估占比。
-  if(data.tod&&market.tod&&data.tod>market.tod) return null;
-  const pct=data.todayCum/(market.yi*1e8)*100;
-  return isFinite(pct)&&pct>=0?pct:null;
+  if(market&&market.date===data.todayDate&&market.yi>0&&market.tod){
+    const rawTime=market.tod.slice(0,5);
+    const time=rawTime>'15:00'?'15:00':rawTime>'11:30'&&rawTime<'13:00'?'11:30':rawTime;
+    if(points.has(time)) add(points.get(time),market.yi,time,time);
+    else if(!candidates.length){
+      // 无共同分钟序列时允许近时快照兜底，但不得拿较新分子除以较旧分母。
+      const prior=[...points.keys()].filter(t=>t<=time).sort().pop();
+      const minutes=t=>Number(t.slice(0,2))*60+Number(t.slice(3,5));
+      if(prior&&minutes(time)-minutes(prior)<=3) add(points.get(prior),market.yi,prior,time);
+    }
+  }
+  return candidates.sort((a,b)=>b.tod.localeCompare(a.tod))[0]||null;
+}
+function _sectorAmountShare(data){
+  const snapshot=_sectorAmountShareSnapshot(data);
+  return snapshot?snapshot.pct:null;
 }
 
 function _updateSectorAmountShare(meta,data){
@@ -10239,16 +10273,22 @@ function _updateSectorAmountShare(meta,data){
   const value=document.getElementById('sectorAmountShareValue-'+meta.code);
   const note=document.getElementById('sectorAmountShareNote-'+meta.code);
   if(!box||!value||!note||!data) return;
-  const pct=_sectorAmountShare(data),market=_marketTurnoverSnapshot;
-  if(pct==null){
+  const fresh=_sectorAmountShareSnapshot(data),previous=_sectorShareLastGood[meta.code];
+  // 同日有效值粘性保留；不同交易日绝不混算或冒充今日占比。
+  if(fresh&&(!previous||previous.date!==fresh.date||fresh.tod>=previous.tod)) _sectorShareLastGood[meta.code]=fresh;
+  const saved=_sectorShareLastGood[meta.code];
+  const snapshot=saved&&saved.date===data.todayDate?saved:null;
+  if(!snapshot){
     box.classList.add('is-pending');
     value.textContent='—';
     note.textContent='等待同日两市成交额口径';
     return;
   }
   box.classList.remove('is-pending');
-  value.textContent=pct.toFixed(2)+'%';
-  note.textContent='同日累计口径 · 截至 '+(market.tod||data.tod);
+  value.textContent=snapshot.pct.toFixed(2)+'%';
+  const retained=!fresh||fresh.tod<snapshot.tod;
+  note.textContent=(retained?'最近有效 · ':snapshot.aligned?'同刻累计 · ':'近时快照 · ')+snapshot.tod;
+  if(!snapshot.aligned) note.textContent+=' / 两市 '+snapshot.marketTime;
 }
 
 function _updateAllSectorAmountShares(){
