@@ -8731,10 +8731,8 @@ function _idxRowHtml(r,nowMs=Date.now()){
     accent='#2563eb';bg='#eff6ff';badge=' <span style="font-size:9px;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">离岸</span>';
   }
   const priceStr=unavailable?'暂缺':r.region==='rate'?Number(r.price).toFixed(3)+'%':r.region==='fx'?Number(r.price).toFixed(4):Number(r.price).toFixed(2);
-  const hkStamp=_IDX_HK_LABELS.includes(r.label)&&r.quoteTs
-    ?new Date(r.quoteTs).toLocaleTimeString('zh-CN',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'';
-  const delayed=hkStamp&&(r.src==='tc'||(_isTradingNow(nowMs)&&nowMs-r.quoteTs>120000));
-  if(hkStamp) badge+='<small style="display:block;margin-top:2px;font-size:10px;font-weight:500;color:'+(delayed?'#a16207':'#64748b')+'">'+(delayed?'延迟 ':'')+hkStamp+'</small>';
+  const delayed=_IDX_HK_LABELS.includes(r.label)&&r.quoteTs&&(r.src==='tc'||(_isTradingNow(nowMs)&&nowMs-r.quoteTs>120000));
+  if(delayed) badge+=' <small style="font-size:10px;font-weight:500;color:#a16207">延迟</small>';
   const moveStr=unavailable?'自动重试':r.region==='rate'?`${arrow} ${sign}${displayMove.toFixed(1)}bp`:`${arrow} ${sign}${displayPct.toFixed(2)}%`;
   const groupEnd=r.label==='A股平均股价'||r.label==='A/H溢价';
   return `<div data-idx-label="${_escH(r.label)}" class="port-index-row${groupEnd?' port-index-group-end':''}" style="display:flex;align-items:center;flex-wrap:nowrap;padding:5px 8px;border-radius:8px;background:${bg};border-left:3px solid ${accent}">

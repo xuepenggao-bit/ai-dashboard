@@ -19,6 +19,11 @@ module.exports=(async()=>{
   assert.equal(ctx._idxShouldAcceptHkQuote('恒生指数',row(now,999999),null,now),false);
   assert.equal(ctx._idxShouldAcceptHkQuote('恒生指数',row(now+3600000),null,now),false);
   assert.ok(ctx._idxRowHtml(row(now),now).includes('24919.40'),'Do not round index points to integers');
+  for(const label of ['恒生指数','恒生科技','A/H溢价']){
+    const markup=ctx._idxRowHtml({...row(now),label},now);
+    assert.ok(!/\d{2}:\d{2}:\d{2}/.test(markup),'No synchronization time beneath HK-related indices');
+    assert.ok(!markup.includes('display:block'),'No second timestamp line');
+  }
   assert.ok(ctx._idxRowHtml(row(now-900000,24901.08,'tc'),now).includes('延迟'));
   assert.ok(!ctx._idxRowHtml(row(now,24919.4,'tc_rt'),now).includes('延迟'),'Realtime Tencent must not be labelled as the delayed feed');
   assert.equal(ctx._idxShouldAcceptHkQuote('恒生指数',row(now-900000,24901.08,'tc'),row(now,24919.4,'tc_rt'),now),false);
