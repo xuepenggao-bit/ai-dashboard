@@ -857,6 +857,23 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .hist-trend-footer{border-top:1px solid var(--border);padding-top:12px;margin-top:14px;font-size:12px;color:var(--text2)}
 .hist-trend-footer span{padding:0 8px}
 .hist-trend-empty{grid-column:1/-1;text-align:center;padding:30px 12px;color:var(--text2);font-size:13px}
+.hist-stock-tile{background:linear-gradient(145deg,rgba(100,134,181,.055),transparent 55%),var(--card)}
+.hist-stock-metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0 16px}
+.hist-stock-metric{min-width:0;padding:12px;border-radius:12px;background:rgba(100,134,181,.07)}
+.hist-stock-metric.price{background:rgba(184,135,56,.07)}
+.hist-stock-metric strong{display:block;color:var(--text);font-size:26px;line-height:1.15;font-weight:750;letter-spacing:-.7px;font-variant-numeric:tabular-nums}
+.hist-stock-metric strong small{font-size:13px;letter-spacing:0;margin-left:3px}
+.hist-stock-metric .hist-stock-sub{display:block;color:var(--text2);font-size:11px;line-height:1.6;margin-top:7px;overflow-wrap:anywhere}
+.hist-stock-legend{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--text2);margin-bottom:8px}
+.hist-stock-legend span{display:flex;align-items:center;gap:5px}
+.hist-stock-legend i{display:inline-block;width:16px;border-top:2px solid #6486b5}
+.hist-stock-legend .price i{border-color:#b88738;border-top-style:dashed}
+.hist-stock-chart{display:block;width:100%;height:136px;overflow:visible}
+.hist-stock-chart text{fill:var(--text2);font-size:10px;font-variant-numeric:tabular-nums}
+.hist-stock-chart .hist-chart-hit{fill:transparent;stroke:none;cursor:crosshair}
+.hist-stock-chart .hist-chart-hit:hover,.hist-stock-chart .hist-chart-hit:focus{fill:rgba(100,134,181,.12);outline:none;stroke:#6486b5;stroke-width:1}
+.hist-stock-note{font-size:10px;line-height:1.6;color:var(--text2);border-top:1px solid var(--border);margin-top:12px;padding-top:10px}
+.hist-stock-note b{font-weight:500;color:var(--text)}
 @media(max-width:1050px){.hist-trend-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.hist-trend-grid{grid-template-columns:1fr}.hist-trend-tile{padding:18px}.hist-trend-heading .cbadge{white-space:normal}}
 </style>
@@ -2248,7 +2265,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
     <!-- TOP6 股票仓位变化 -->
     <div class="card mt16">
-      <div class="ch hist-trend-heading"><span class="ct">TOP6 股票仓位变化</span><span class="cbadge">近20个记录日 · 按最新个股仓位排序</span></div>
+      <div class="ch hist-trend-heading"><span class="ct">TOP6 股票仓位变化</span><span class="cbadge">近20个记录日 · 仓位 × 股价</span></div>
       <div id="histTopStk" class="hist-trend-grid">
         <div class="hist-trend-empty">记录持仓后显示个股仓位 TOP6 及其近20个记录日变化</div>
       </div>
@@ -9210,6 +9227,59 @@ function _hsSpark(vals){
     +(vals.length>1?'<polygon points="6,76 '+line+' 294,76" fill="currentColor" opacity=".07"/><polyline points="'+line+'" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>':'')
     +'<circle cx="'+last[0]+'" cy="'+last[1]+'" r="4" fill="currentColor"/></svg>';
 }
+// 只使用同日持仓快照中的有效价格；缺失值和冲突价格不补零、不插值。
+function _histStockPrices(hist,key){
+  return hist.map(rec=>{
+    const rows=(rec.stocks||[]).filter(s=>(s.mkt||'')+':'+(s.code||s.name||'?')===key);
+    const prices=rows.map(s=>s.price==null||s.price===''?NaN:Number(s.price)).filter(p=>Number.isFinite(p)&&p>0);
+    return prices.length&&prices.every(p=>p===prices[0])?prices[0]:null;
+  });
+}
+function _histStockChart(weights,prices,dates,currency){
+  const left=40,right=280,top=14,bottom=112;
+  const valid=prices.filter(p=>p!=null),wMax=Math.max(...weights,1)*1.12;
+  const pMin=valid.length?Math.min(...valid):0,pMax=valid.length?Math.max(...valid):1;
+  const padding=(pMax-pMin)*.15||pMax*.02||1,lo=pMin-padding,hi=pMax+padding;
+  const x=i=>weights.length===1?(left+right)/2:left+i/(weights.length-1)*(right-left);
+  const wy=v=>bottom-v/wMax*(bottom-top),py=v=>bottom-(v-lo)/(hi-lo)*(bottom-top);
+  const wp=weights.map((v,i)=>x(i)+','+wy(v)).join(' ');
+  let svg='<svg class="hist-stock-chart" viewBox="0 0 320 132" role="group" aria-label="仓位与股价双轴趋势：左轴仓位百分比，右轴'+_histEscape(currency)+'，两轴独立刻度">';
+  [0,.5,1].forEach(t=>{
+    const y=bottom-t*(bottom-top);
+    svg+='<path d="M'+left+' '+y+'H'+right+'" stroke="var(--border)" stroke-dasharray="3 5"/>'
+      +'<text x="34" y="'+(y+3)+'" text-anchor="end">'+(wMax*t).toFixed(1)+'%</text>'
+      +'<text x="286" y="'+(y+3)+'">'+(valid.length?(lo+(hi-lo)*t).toFixed(1):'—')+'</text>';
+  });
+  if(weights.length>1) svg+='<polygon points="'+left+','+bottom+' '+wp+' '+right+','+bottom+'" fill="#6486b5" opacity=".09"/><polyline points="'+wp+'" fill="none" stroke="#6486b5" stroke-width="2.3" stroke-linejoin="round"/>';
+  // 价格分段绘制，遇到空值立即断线。
+  let segment=[];
+  const flush=()=>{if(segment.length>1)svg+='<polyline points="'+segment.join(' ')+'" fill="none" stroke="#b88738" stroke-width="2.3" stroke-dasharray="5 3" stroke-linejoin="round"/>';segment=[];};
+  prices.forEach((p,i)=>{if(p==null){flush();return;}segment.push(x(i)+','+py(p));});flush();
+  weights.forEach((w,i)=>{
+    const p=prices[i],label=dates[i]+' · 仓位 '+w.toFixed(2)+'% · 记录价 '+(p==null?'缺失':p.toFixed(3)+' '+currency);
+    svg+='<circle cx="'+x(i)+'" cy="'+wy(w)+'" r="2.3" fill="#6486b5"/>';
+    if(p!=null)svg+='<circle cx="'+x(i)+'" cy="'+py(p)+'" r="2.3" fill="#b88738"/>';
+    svg+='<rect class="hist-chart-hit" x="'+(x(i)-5)+'" y="10" width="10" height="106" rx="4" tabindex="0" aria-label="'+_histEscape(label)+'"><title>'+_histEscape(label)+'</title></rect>';
+  });
+  return svg+'</svg>';
+}
+function _histStockCard(hist,key,series,name,code,rank){
+  const prices=_histStockPrices(hist,key),first=series[0],last=series[series.length-1];
+  const start=prices[0],end=prices[prices.length-1],count=prices.filter(p=>p!=null).length;
+  const complete=hist.length>1&&start!=null&&end!=null;
+  const pct=complete?(end/start-1)*100:null;
+  const currency=key.startsWith('HK:')?'港元':/^(SH|SZ|BJ):/.test(key)?'元':'原币';
+  const change=last-first,delta=hist.length<2?'等待更多记录':(change>0?'+':'')+change.toFixed(2)+' 个百分点';
+  const priceChange=pct==null?'—':(pct>0?'+':'')+pct.toFixed(2);
+  const priceDetail=complete?start.toFixed(2)+' → '+end.toFixed(2)+' '+currency:(hist.length<2?'至少需要两个记录日':'区间起点或终点价格缺失');
+  return '<article class="hist-trend-tile hist-stock-tile"><div class="hist-trend-top"><div class="hist-trend-identity"><h3>'+_histEscape(name)+'</h3><span>'+_histEscape(code)+' · 按最新仓位排序</span></div><span class="hist-trend-rank">0'+rank+'</span></div>'
+    +'<div class="hist-stock-metrics"><div class="hist-stock-metric"><span class="hist-trend-label">最新仓位</span><strong>'+last.toFixed(2)+'<small>%</small></strong><span class="hist-stock-sub">区间变化 '+delta+'</span></div>'
+    +'<div class="hist-stock-metric price"><span class="hist-trend-label">区间股价变化</span><strong>'+priceChange+(pct==null?'':'<small>%</small>')+'</strong><span class="hist-stock-sub">'+priceDetail+'</span></div></div>'
+    +'<div class="hist-stock-legend"><span><i></i>仓位 · 左轴 %</span><span class="price"><i></i>记录股价 · 右轴 '+currency+'</span></div>'
+    +_histStockChart(series,prices,hist.map(r=>r.date),currency)
+    +'<div class="hist-trend-dates"><span>'+_histEscape(hist[0].date)+'</span><span>'+hist.length+' 个记录日</span><span>'+_histEscape(hist[hist.length-1].date)+'</span></div>'
+    +'<div class="hist-stock-note"><b>价格记录 '+count+'/'+hist.length+'</b> · '+(count<hist.length?'缺失处断线 · ':'')+'双轴独立刻度<br>历史记录价，未复权；非投资收益率。悬停查看当日数值。</div></article>';
+}
 function _renderHistoryLeaders(id,industry,limit){
   const el=document.getElementById(id);
   if(!el) return;
@@ -9232,6 +9302,7 @@ function _renderHistoryLeaders(id,industry,limit){
   if(!leaders.length){el.innerHTML='<div class="hist-trend-empty">最新记录暂无正仓位数据</div>';return;}
   el.innerHTML=leaders.map(([key,weight],i)=>{
     const series=days.map(day=>day.get(key)||0),first=series[0],change=weight-first;
+    if(!industry)return _histStockCard(hist,key,series,names.get(key),codes.get(key),i+1);
     const delta=hist.length<2?'等待更多记录':(change>0?'增加 ':change<0?'减少 ':'持平 ')+Math.abs(change).toFixed(2)+' 个百分点';
     return '<article class="hist-trend-tile"><div class="hist-trend-top"><div class="hist-trend-identity"><h3>'+_histEscape(names.get(key))+'</h3><span>'+ (industry?'行业合计':_histEscape(codes.get(key)))+'</span></div><span class="hist-trend-rank">0'+(i+1)+'</span></div>'
       +'<div class="hist-trend-metrics"><div><span class="hist-trend-label">最新仓位</span><strong>'+weight.toFixed(2)+'<small>%</small></strong></div><div class="hist-trend-delta"><span class="hist-trend-label">较区间起点</span><b>'+delta+'</b></div></div>'
