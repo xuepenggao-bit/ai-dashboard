@@ -838,6 +838,27 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   .port-overview-total .kval{font-size:38px!important}
   .port-overview-change .port-overview-stat-value{font-size:19px}
 }
+.hist-trend-heading{flex-wrap:wrap;gap:10px}
+.hist-trend-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:8px}
+.hist-trend-tile{min-width:0;padding:20px;border:1px solid var(--border);border-radius:16px;background:var(--card);box-shadow:0 3px 14px rgba(15,23,42,.035)}
+.hist-trend-top,.hist-trend-metrics,.hist-trend-dates{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hist-trend-identity{min-width:0}
+.hist-trend-identity h3{margin:0 0 5px;font-size:16px;line-height:1.4;font-weight:750;color:var(--text);overflow-wrap:anywhere}
+.hist-trend-identity>span,.hist-trend-label{font-size:12px;color:var(--text2)}
+.hist-trend-rank{font-size:22px;font-weight:700;color:var(--text2);opacity:.55;font-variant-numeric:tabular-nums}
+.hist-trend-metrics{align-items:flex-end;margin:20px 0 16px;flex-wrap:wrap}
+.hist-trend-label{display:block;margin-bottom:7px}
+.hist-trend-metrics strong{display:block;font-size:32px;line-height:1;letter-spacing:-1px;font-weight:750;color:var(--text);font-variant-numeric:tabular-nums}
+.hist-trend-metrics small{font-size:16px;letter-spacing:0;margin-left:3px;color:var(--text2)}
+.hist-trend-delta{text-align:right}
+.hist-trend-delta b{font-size:13px;font-weight:650;color:var(--text)}
+.hist-trend-chart{display:block;width:100%;height:76px;color:#6486b5;overflow:visible}
+.hist-trend-dates{font-size:10px;color:var(--text2);margin-top:8px;font-variant-numeric:tabular-nums}
+.hist-trend-footer{border-top:1px solid var(--border);padding-top:12px;margin-top:14px;font-size:12px;color:var(--text2)}
+.hist-trend-footer span{padding:0 8px}
+.hist-trend-empty{grid-column:1/-1;text-align:center;padding:30px 12px;color:var(--text2);font-size:13px}
+@media(max-width:1050px){.hist-trend-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.hist-trend-grid{grid-template-columns:1fr}.hist-trend-tile{padding:18px}.hist-trend-heading .cbadge{white-space:normal}}
 </style>
 </head>
 <body>
@@ -2219,17 +2240,17 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
     <!-- TOP3 行业仓位变化 -->
     <div class="card mt16">
-      <div class="ch"><span class="ct">TOP3 行业仓位变化</span><span class="cbadge">近10天 · 按行业加总</span></div>
-      <div id="histTopInd" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:4px">
-        <div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">记录持仓后显示行业仓位 TOP3 及其近 10 天变化</div>
+      <div class="ch hist-trend-heading"><span class="ct">TOP3 行业仓位变化</span><span class="cbadge">近20个记录日 · 按最新行业仓位排序</span></div>
+      <div id="histTopInd" class="hist-trend-grid">
+        <div class="hist-trend-empty">记录持仓后显示行业仓位 TOP3 及其近20个记录日变化</div>
       </div>
     </div>
 
-    <!-- TOP3 股票仓位变化 -->
+    <!-- TOP6 股票仓位变化 -->
     <div class="card mt16">
-      <div class="ch"><span class="ct">TOP3 股票仓位变化</span><span class="cbadge">近10天 · 按个股</span></div>
-      <div id="histTopStk" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:4px">
-        <div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">记录持仓后显示个股仓位 TOP3 及其近 10 天变化</div>
+      <div class="ch hist-trend-heading"><span class="ct">TOP6 股票仓位变化</span><span class="cbadge">近20个记录日 · 按最新个股仓位排序</span></div>
+      <div id="histTopStk" class="hist-trend-grid">
+        <div class="hist-trend-empty">记录持仓后显示个股仓位 TOP6 及其近20个记录日变化</div>
       </div>
     </div>
   </div>
@@ -9176,114 +9197,51 @@ function renderHistTable(){
   renderTopStocks();
 }
 
-// 迷你折线 SVG（行业仓位近5天趋势）
-function _hsSpark(vals, color, w, h){
-  w=w||128; h=h||40;
-  const valid=vals.filter(v=>v!=null&&isFinite(v));
-  if(valid.length<2) return '<div style="height:'+h+'px"></div>';
-  const min=Math.min(...vals), max=Math.max(...vals), range=(max-min)||1, n=vals.length;
-  const pts=vals.map((v,i)=>{
-    const x=(n===1?0:(i/(n-1))*(w-6))+3;
-    const y=h-3-((v-min)/range)*(h-8);
-    return [x,y];
-  });
-  const line=pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
-  const area='3,'+(h-3)+' '+line+' '+pts[pts.length-1][0].toFixed(1)+','+(h-3);
-  const last=pts[pts.length-1];
-  return '<svg width="100%" height="'+h+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" style="display:block">'
-    +'<polygon points="'+area+'" fill="'+color+'14"/>'
-    +'<polyline points="'+line+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-    +'<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="2.6" fill="'+color+'"/></svg>';
+// 历史仓位趋势：最近20个记录日，按最新仓位排序。
+function _histEscape(value){
+  return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-
-// 历史持仓底部：TOP3 行业仓位变化（最近一天按行业加总取 top3，展示近5天趋势与变化）
-function renderTopIndustries(){
-  const el=document.getElementById('histTopInd');
-  if(!el) return;
-  const hist=(PORT&&Array.isArray(PORT.history))?PORT.history.slice():[];
-  if(!hist.length){ el.innerHTML='<div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">记录持仓后显示行业仓位 TOP3 及其近 10 天变化</div>'; return; }
-  hist.sort((a,b)=>a.date.localeCompare(b.date));
-  const last10=hist.slice(-10);
-  // 每天按行业(industry优先，空则用分类sector)加总仓位
-  const dayInd=last10.map(rec=>{
-    const m={};
-    (rec.stocks||[]).forEach(s=>{
-      const k=(s.industry&&s.industry.trim())?s.industry.trim():(s.sector||'其他');
-      m[k]=(m[k]||0)+(+s.w||0);
-    });
-    return m;
-  });
-  const lastM=dayInd[dayInd.length-1];
-  const top3=Object.keys(lastM).map(k=>[k,lastM[k]]).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3);
-  if(!top3.length){ el.innerHTML='<div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">暂无行业仓位数据</div>'; return; }
-  const colors=['#dc2626','#d97706','#7c3aed'];
-  el.innerHTML=top3.map(function(pair,i){
-    const ind=pair[0], curW=pair[1], color=colors[i]||'#64748b';
-    const series=dayInd.map(m=>+((m[ind]||0)).toFixed(2));
-    const first=series[0], last=series[series.length-1];
-    const chg=+(last-first).toFixed(1);
-    const chgCol=chg>0?'#dc2626':chg<0?'#16a34a':'#94a3b8';
-    const arrow=chg>0?'▲':chg<0?'▼':'─';
-    return '<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid '+color+';border-radius:10px;padding:12px 14px;min-width:0">'
-      +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:9px">'
-        +'<span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:'+color+'1a;color:'+color+';font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center">'+(i+1)+'</span>'
-        +'<span style="font-size:13px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+ind+'">'+ind+'</span>'
-      +'</div>'
-      +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">'
-        +'<span style="font-size:23px;font-weight:900;color:'+color+';letter-spacing:-.02em;line-height:1">'+curW.toFixed(1)+'%</span>'
-        +'<span style="font-size:12px;font-weight:800;color:'+chgCol+';white-space:nowrap">'+arrow+' '+Math.abs(chg).toFixed(1)+'%</span>'
-      +'</div>'
-      +_hsSpark(series,color)
-      +'<div style="font-size:10px;color:var(--text2);margin-top:5px">近'+series.length+'天 '+first.toFixed(1)+'% → '+last.toFixed(1)+'%</div>'
-    +'</div>';
-  }).join('');
+function _hsSpark(vals){
+  const w=300,h=76,p=6,min=Math.min(...vals),max=Math.max(...vals),range=max-min;
+  const pts=vals.map((v,i)=>[vals.length===1?w/2:p+i/(vals.length-1)*(w-2*p),range?h-p-(v-min)/range*(h-2*p):h/2]);
+  const line=pts.map(p=>p.join(',')).join(' '),last=pts[pts.length-1];
+  return '<svg class="hist-trend-chart" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="仓位趋势，'+vals.length+'个记录日">'
+    +'<path d="M6 38H294 M6 70H294" stroke="var(--border)" stroke-dasharray="3 5" fill="none"/>'
+    +(vals.length>1?'<polygon points="6,76 '+line+' 294,76" fill="currentColor" opacity=".07"/><polyline points="'+line+'" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>':'')
+    +'<circle cx="'+last[0]+'" cy="'+last[1]+'" r="4" fill="currentColor"/></svg>';
 }
-
-// 历史持仓底部：TOP3 股票仓位变化（最近一天按个股取 top3，展示近10天趋势与变化；逻辑同行业版）
-function renderTopStocks(){
-  const el=document.getElementById('histTopStk');
+function _renderHistoryLeaders(id,industry,limit){
+  const el=document.getElementById(id);
   if(!el) return;
-  const hist=(PORT&&Array.isArray(PORT.history))?PORT.history.slice():[];
-  if(!hist.length){ el.innerHTML='<div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">记录持仓后显示个股仓位 TOP3 及其近 10 天变化</div>'; return; }
-  hist.sort((a,b)=>a.date.localeCompare(b.date));
-  const last10=hist.slice(-10);
-  // 每天按个股(code)汇总仓位，并记录名称
-  const nameByCode={};
-  const dayStk=last10.map(rec=>{
-    const m={};
+  const hist=(PORT&&Array.isArray(PORT.history)?PORT.history:[]).slice().sort((a,b)=>a.date.localeCompare(b.date)).slice(-20);
+  if(!hist.length){el.innerHTML='<div class="hist-trend-empty">暂无持仓记录 · 记录后展示最近20个记录日的仓位变化</div>';return;}
+  const names=new Map(),codes=new Map();
+  const days=hist.map(rec=>{
+    const weights=new Map();
     (rec.stocks||[]).forEach(s=>{
       const code=s.code||s.name||'?';
-      m[code]=(m[code]||0)+(+s.w||0);
-      if(s.name) nameByCode[code]=s.name;
+      const key=industry?((s.industry||'').trim()||s.sector||'其他'):(s.mkt||'')+':'+code;
+      const weight=Number(s.w);
+      weights.set(key,(weights.get(key)||0)+(Number.isFinite(weight)?weight:0));
+      names.set(key,industry?key:(s.name||code));
+      codes.set(key,code);
     });
-    return m;
+    return weights;
   });
-  const lastM=dayStk[dayStk.length-1];
-  const top3=Object.keys(lastM).map(k=>[k,lastM[k]]).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3);
-  if(!top3.length){ el.innerHTML='<div style="grid-column:1/-1;color:var(--text2);font-size:12px;text-align:center;padding:18px 0">暂无个股仓位数据</div>'; return; }
-  const colors=['#dc2626','#d97706','#7c3aed'];
-  el.innerHTML=top3.map(function(pair,i){
-    const code=pair[0], curW=pair[1], color=colors[i]||'#64748b';
-    const nm=nameByCode[code]||code;
-    const series=dayStk.map(m=>+((m[code]||0)).toFixed(2));
-    const first=series[0], last=series[series.length-1];
-    const chg=+(last-first).toFixed(1);
-    const chgCol=chg>0?'#dc2626':chg<0?'#16a34a':'#94a3b8';
-    const arrow=chg>0?'▲':chg<0?'▼':'─';
-    return '<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid '+color+';border-radius:10px;padding:12px 14px;min-width:0">'
-      +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:9px">'
-        +'<span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:'+color+'1a;color:'+color+';font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center">'+(i+1)+'</span>'
-        +'<span style="font-size:13px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+nm+'">'+nm+'</span>'
-      +'</div>'
-      +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">'
-        +'<span style="font-size:23px;font-weight:900;color:'+color+';letter-spacing:-.02em;line-height:1">'+curW.toFixed(1)+'%</span>'
-        +'<span style="font-size:12px;font-weight:800;color:'+chgCol+';white-space:nowrap">'+arrow+' '+Math.abs(chg).toFixed(1)+'%</span>'
-      +'</div>'
-      +_hsSpark(series,color)
-      +'<div style="font-size:10px;color:var(--text2);margin-top:5px">近'+series.length+'天 '+first.toFixed(1)+'% → '+last.toFixed(1)+'%</div>'
-    +'</div>';
+  const leaders=[...days[days.length-1]].filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,limit);
+  if(!leaders.length){el.innerHTML='<div class="hist-trend-empty">最新记录暂无正仓位数据</div>';return;}
+  el.innerHTML=leaders.map(([key,weight],i)=>{
+    const series=days.map(day=>day.get(key)||0),first=series[0],change=weight-first;
+    const delta=hist.length<2?'等待更多记录':(change>0?'增加 ':change<0?'减少 ':'持平 ')+Math.abs(change).toFixed(2)+' 个百分点';
+    return '<article class="hist-trend-tile"><div class="hist-trend-top"><div class="hist-trend-identity"><h3>'+_histEscape(names.get(key))+'</h3><span>'+ (industry?'行业合计':_histEscape(codes.get(key)))+'</span></div><span class="hist-trend-rank">0'+(i+1)+'</span></div>'
+      +'<div class="hist-trend-metrics"><div><span class="hist-trend-label">最新仓位</span><strong>'+weight.toFixed(2)+'<small>%</small></strong></div><div class="hist-trend-delta"><span class="hist-trend-label">较区间起点</span><b>'+delta+'</b></div></div>'
+      +_hsSpark(series)
+      +'<div class="hist-trend-dates"><span>'+_histEscape(hist[0].date)+'</span><span>'+hist.length+' 个记录日</span><span>'+_histEscape(hist[hist.length-1].date)+'</span></div>'
+      +'<div class="hist-trend-footer">起点仓位 '+first.toFixed(2)+'% <span>→</span> 最新 '+weight.toFixed(2)+'%</div></article>';
   }).join('');
 }
+function renderTopIndustries(){_renderHistoryLeaders('histTopInd',true,3);}
+function renderTopStocks(){_renderHistoryLeaders('histTopStk',false,6);}
 
 function showHistDetail(date){
   const main=document.getElementById('histMain');
