@@ -41,24 +41,40 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .ricon{display:inline-block;transition:transform .3s}
 .rbtn.loading .ricon{animation:spin 1s linear infinite}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-/* Trend Following：稳定标题、缓慢漂移；人物与冲浪板同向轻摆。 */
-.tf-swayx{display:inline-flex;align-items:center;gap:10px}
+/* Trend Following：沿标题下方巡游，随浪变速并在时钟前柔和掉头。 */
+.port-hero-title{align-items:flex-start!important}
+.tf-swayx{display:inline-flex;align-items:flex-start;padding-bottom:58px;gap:10px}
 .tf-sway{display:inline-block}
-.tf-surf-travel{display:inline-flex;align-items:center;flex-shrink:0;width:76px;height:62px;animation:tfSurfDrift 12s cubic-bezier(.45,0,.55,1) infinite;--tf-amp:0px}
-.tf-surf{display:block;width:76px;height:60px;overflow:visible}
+.tf-surf-travel{position:absolute;left:var(--tf-start,80px);top:var(--tf-top,40px);display:block;width:76px;height:60px;pointer-events:none;--tf-amp:0px;--tf-duration:26s;animation:tfSurfCruise var(--tf-duration) cubic-bezier(.37,.08,.63,.92) infinite}
+.tf-surf-facing{display:block;width:100%;height:100%;transform-origin:center;animation:tfSurfTurn var(--tf-duration) ease-in-out infinite}
+.tf-surf{display:block;width:76px;height:60px;overflow:visible;animation:tfSurfSwell 7.3s ease-in-out infinite}
 .tf-surf .tf-rider{transform-origin:48px 52px;animation:tfSurfFloat 4.8s cubic-bezier(.45,0,.55,1) infinite}
 .tf-surf .tf-wave-front{transform-origin:48px 61px;animation:tfSeaFlow 7.2s ease-in-out infinite}
 .tf-surf .tf-wave-back{transform-origin:48px 58px;animation:tfSeaFlow 7.2s ease-in-out -3.6s infinite}
 .tf-surf .tf-spray{animation:tfSeaMist 4.8s ease-in-out infinite}
-@keyframes tfSurfDrift{0%,100%{transform:translateX(0)}50%{transform:translateX(var(--tf-amp,0px))}}
+@keyframes tfSurfCruise{
+  0%,100%{transform:translateX(0)}
+  9%{transform:translateX(calc(var(--tf-amp)*.08))}
+  18%{transform:translateX(calc(var(--tf-amp)*.31))}
+  27%{transform:translateX(calc(var(--tf-amp)*.43))}
+  37%{transform:translateX(calc(var(--tf-amp)*.80))}
+  46%,50%{transform:translateX(var(--tf-amp))}
+  58%{transform:translateX(calc(var(--tf-amp)*.94))}
+  69%{transform:translateX(calc(var(--tf-amp)*.64))}
+  77%{transform:translateX(calc(var(--tf-amp)*.51))}
+  86%{transform:translateX(calc(var(--tf-amp)*.17))}
+  96%{transform:translateX(0)}
+}
+@keyframes tfSurfTurn{0%,46%{transform:rotateY(0deg)}50%,96%{transform:rotateY(180deg)}100%{transform:rotateY(360deg)}}
+@keyframes tfSurfSwell{0%,100%{transform:translateY(0)}22%{transform:translateY(-3px)}53%{transform:translateY(1px)}78%{transform:translateY(-1.5px)}}
 @keyframes tfSurfFloat{0%,100%{transform:translateY(.5px) rotate(-1deg)}50%{transform:translateY(-1.5px) rotate(1deg)}}
 @keyframes tfSeaFlow{0%,100%{transform:translateX(-1px) translateY(0)}50%{transform:translateX(1px) translateY(.7px)}}
 @keyframes tfSeaMist{0%,100%{opacity:.4}50%{opacity:.7}}
-@media(max-width:1080px){.tf-surf-travel{animation:none}}
-@media(max-width:400px){.tf-swayx{gap:6px}.tf-sway{font-size:23px!important}.tf-surf-travel{width:64px}.tf-surf{width:64px;height:54px}}
-@media(max-width:400px){.port-hero-title{gap:8px!important}.port-hero-title>div:first-child{width:32px!important;height:32px!important;padding:3px!important;border-radius:9px!important}.port-hero-title>div:first-child svg{width:26px;height:26px}.port-hero-title .tf-sway{font-size:20px!important}.port-hero-title .tf-surf-travel{width:56px}.port-hero-title .tf-surf{width:56px;height:50px}}
-@media(max-width:360px){.port-hero-title .tf-sway{font-size:18px!important}.port-hero-title .tf-surf-travel{width:50px}.port-hero-title .tf-surf{width:50px;height:46px}}
-@media(prefers-reduced-motion:reduce){.tf-surf-travel,.tf-surf .tf-rider,.tf-surf .tf-wave-front,.tf-surf .tf-wave-back,.tf-surf .tf-spray{animation:none!important}}
+.port-hero[data-tf-still] .tf-surf-travel,.port-hero[data-tf-still] .tf-surf-facing{animation:none}
+.port-hero[data-tf-paused] .tf-surf-travel,.port-hero[data-tf-paused] .tf-surf-facing,.port-hero[data-tf-paused] .tf-surf,.port-hero[data-tf-paused] .tf-surf .tf-rider,.port-hero[data-tf-paused] .tf-surf .tf-wave-front,.port-hero[data-tf-paused] .tf-surf .tf-wave-back,.port-hero[data-tf-paused] .tf-surf .tf-spray{animation-play-state:paused}
+@media(max-width:400px){.port-hero-title{gap:8px!important}.port-hero-title>div:first-child{width:32px!important;height:32px!important;padding:3px!important;border-radius:9px!important}.port-hero-title>div:first-child svg{width:26px;height:26px}.tf-swayx{gap:6px;padding-bottom:52px}.port-hero-title .tf-sway{font-size:20px!important}.tf-surf-travel{width:56px;height:50px}.tf-surf{width:56px;height:50px}}
+@media(max-width:360px){.port-hero-title .tf-sway{font-size:18px!important}.tf-surf-travel{width:50px;height:46px}.tf-surf{width:50px;height:46px}}
+@media(prefers-reduced-motion:reduce){.tf-surf-travel,.tf-surf-facing,.tf-surf,.tf-surf .tf-rider,.tf-surf .tf-wave-front,.tf-surf .tf-wave-back,.tf-surf .tf-spray{animation:none!important}}
 /* ── Tabs ── */
 .tabs{
   background:rgba(252,252,253,.80);
@@ -1119,6 +1135,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
         <img src="images/portfolio-portrait.png" alt="人物头像标识" width="888" height="498" decoding="async" fetchpriority="high">
       </div>
       <div class="tf-swayx"><div class="port-brand-copy"><div class="tf-sway">Trend Following</div></div><span class="tf-surf-travel" aria-hidden="true">
+        <span class="tf-surf-facing">
         <svg class="tf-surf" width="76" height="60" viewBox="0 0 96 76" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
           <defs>
             <linearGradient id="tfSea" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#91d3d8"/><stop offset="1" stop-color="#d9eff0"/></linearGradient>
@@ -1150,6 +1167,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
           <path class="tf-wave-front" d="M9 61C23 62 29 55 39 57C49 60 56 63 67 58C76 54 83 55 88 57C77 56 78 66 62 67C43 69 27 64 9 64Z" fill="url(#tfSea)" opacity=".8"/>
           <path d="M18 62C28 61 31 58 38 59M54 64C64 65 71 59 78 58" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>
         </svg>
+        </span>
       </span></div>
     </div>
 
@@ -12340,21 +12358,47 @@ document.addEventListener('DOMContentLoaded',()=>{
     tick();
   })();
 
-  // 漂移最多16px；空间不足或时钟隐藏时停留原位，避免小屏重叠。
+  // 标题下方的巡游路线：从文字左端到时钟前，紧凑布局避开操作栏。
   function _tfSwayAmp(){
-    const wx=document.querySelector('.tf-swayx'), c=document.getElementById('portAnalog');
+    const hero=document.querySelector('.port-hero'), title=document.querySelector('.tf-sway');
     const surfer=document.querySelector('.tf-surf-travel');
-    if(!wx||!surfer) return;
-    if(!c||!c.getClientRects().length||window.innerWidth<=1080){
-      surfer.style.setProperty('--tf-amp','0px');return;
+    if(!hero||!title||!surfer) return;
+    const hr=hero.getBoundingClientRect(),tr=title.getBoundingClientRect();
+    if(!hr.width||!tr.width)return;
+    const width=surfer.offsetWidth,height=surfer.offsetHeight;
+    const start=Math.max(12,Math.min(tr.left-hr.left,hr.width-width-16));
+    const top=tr.bottom-hr.top+1,trackBottom=top+height+4;
+    let boundary=hr.width-16;
+    for(const el of [document.getElementById('portAnalog'),document.querySelector('.port-actions')]){
+      if(!el||!el.getClientRects().length)continue;
+      const r=el.getBoundingClientRect();
+      if(r.bottom>hr.top+top-4&&r.top<hr.top+trackBottom&&r.left>=hr.left+start){
+        boundary=Math.min(boundary,r.left-hr.left-16);
+      }
     }
-    const tr=wx.getBoundingClientRect(), cr=c.getBoundingClientRect();
-    const amp=Math.max(0,Math.min(16,Math.floor(cr.left-tr.right-24)));
+    const amp=Math.max(0,Math.floor(boundary-start-width));
+    surfer.style.setProperty('--tf-start',start+'px');
+    surfer.style.setProperty('--tf-top',top+'px');
     surfer.style.setProperty('--tf-amp',amp+'px');
+    surfer.style.setProperty('--tf-duration',Math.max(20,Math.min(32,amp/18+8)).toFixed(1)+'s');
+    hero.toggleAttribute('data-tf-still',amp<12);
+    hero.toggleAttribute('data-tf-paused',document.hidden);
   }
   _tfSwayAmp();
-  window.addEventListener('resize', _tfSwayAmp);
-  if(document.fonts)document.fonts.ready.then(_tfSwayAmp);
+  let _tfResizeFrame=0;
+  const _tfSchedule=()=>{
+    if(_tfResizeFrame)return;
+    _tfResizeFrame=requestAnimationFrame(()=>{_tfResizeFrame=0;_tfSwayAmp();});
+  };
+  window.addEventListener('resize',_tfSchedule);
+  document.addEventListener('visibilitychange',_tfSchedule);
+  if(document.fonts)document.fonts.ready.then(_tfSchedule);
+  if(typeof ResizeObserver!=='undefined'){
+    const observer=new ResizeObserver(_tfSchedule);
+    for(const el of [document.querySelector('.port-hero'),document.querySelector('.tf-sway'),document.getElementById('portAnalog'),document.querySelector('.port-actions')]){
+      if(el)observer.observe(el);
+    }
+  }
 
   portInit();   // 优先从 GitHub 加载组合数据
   // 默认开启 10 秒自动刷新：确保盘中价格(尤其港股实时源)持续更新，不再停留在加载时刻；
