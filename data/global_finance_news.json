@@ -1,10 +1,11 @@
 {
-  "updatedAt": "2026-09-19T06:33:28Z",
+  "updatedAt": "2026-09-19T11:29:01Z",
   "sources": {
     "reuters": {
       "label": "Reuters latest via Google News index",
-      "status": "fresh",
-      "count": 5
+      "status": "cached",
+      "count": 5,
+      "error": "Reuters market APIs returned no usable articles: /markets: GET https://www.reuters.com/pf/api/v3/content/fetch/articles-by-section-alias-or-id-v1?query=%7B%22section_id%22%3A%22%2Fmarkets%22%2C%22size%22%3A30%2C%22website%22%3A%22reuters%22"
     },
     "substack": {
       "label": "Substack Finance Recent via Google News index",
@@ -51,46 +52,46 @@
   ],
   "substack": [
     {
-      "title": "UK Productivity: The Longer Holiday Solution",
-      "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE9EV2pRWGxjd29XSHlzR21MaTJRNzlGb1d4bWNFd2d3ZmtZdVRGeFNaazc3blNZRmpkZVNpYURkaHhQUEFFZE1xZEtuNnlMQVlpeThJUGw2Q0xsOG9Tamxnak1QQnlyZW9FejBuYjNCelI1OFhZQ1JMUFhCVWhDQQ?oc=5",
+      "title": "How High Achievers Learn",
+      "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE9YU3l2X1NMcFJhYURnekFDR3FYR1ByZ0RUMXlJaGxQRlU0dFJad201cU11ODd1OHZnVDZDWTlxazhFY0JtSE8wWnBzSHNzOVNJdWoxY3ExRTBwdFF0WTBiUUVIOV9NR0h4a1Fpc3NVM04wVGYw?oc=5",
       "publisher": "Substack",
-      "ts": 1789797091,
-      "titleZh": "英国生产力：更长假期解决方案"
+      "ts": 1789817079,
+      "titleZh": "高成就者如何学习"
     },
     {
-      "title": "AI Transformation Is Not a Product Launch",
-      "url": "https://news.google.com/rss/articles/CBMi-AFBVV95cUxPamNKMFdseWhETUhSV2FvanJBbHRmb0NCZTlPM3hHUjN3UTVCd05tNzg1UDBHNWFaOVhhaGR6T25aVXFjM2xwbUpJVGNBVTk0U0dZTWZYYXR3dUZsZHl6Wmo2YjJYVGdzVEs4OTk1Snc2VmplRGgwZi1janR6RXRFa1cya1dGeElqWWVwTUZmMkdUZjY4ZEkxVE9fOTBuVnhmcW1VckZYZmpXOTlqelc3N0N2NkJyN21lYmgyWjF1Z0QydUFWMU9adC1xZWx3SnBqYzF0eFZIN0VPMGNsOEN2bnhyMExxSEJONGNfQXVRSFdqZmkyeFo1Wg?oc=5",
-      "publisher": "theaieconomy.substack.com",
-      "ts": 1789795457,
-      "titleZh": "人工智能转型不是产品发布"
-    },
-    {
-      "title": "In your 20s and earning? Start here",
-      "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTFBHU0lDTmFxS0EyQUIzcWstWE5EYXhaeUtCZzFsQ0RpTm85OGtvS2NsNWdtU0FvUThjV3NwX2xhZHBfT21JbDFzTXBkYm9CYlBVMm5xNjJTZUZNRW1FNURxVVJVa3o3NlYzREMxRTUyVy1XeTlvY1I0YlM5dHI?oc=5",
-      "publisher": "Mind Over Markets by Zerodha Varsity",
-      "ts": 1789785089,
-      "titleZh": "20多岁，挣钱吗？从这里开始"
-    },
-    {
-      "title": "The Passive Investing Endgame",
-      "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTE9HOGhfcmlIUUs5d0dramN5dktiT29jTjRsY1VISm5FNjZvajNLaEYzMTlqel85WVZPaFRoZExJNURMd2dleElaOGFFbERDYjU5ajJkSHFYclpfM3dnSm84SVZXUTRZei1UYVMzQ3gtTkZ6VllMQnc?oc=5",
+      "title": "⚠️CHART OF THE WEEK: This is one of the biggest macro themes of this decade",
+      "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPVW9ORnlaNnZqVTA5VllXQkUyazl4RjRjY3N6ek9objN4TGhUSWlGaDNLM0tTS3puVnpETm9HVXVZZ2NIZ2hzRjdjMXFWYWs0S1RZNG5QaEpQYURwSFl2ZHVXSDRLWHVWZG42YklkRHA2ekZUNTRIbF85azF3bTFXREEzOA?oc=5",
       "publisher": "Substack",
-      "ts": 1789775115,
-      "titleZh": "被动投资的结局"
+      "ts": 1789816972,
+      "titleZh": "⚠️本周图表：这是本十年最大的宏观主题之一"
     },
     {
-      "title": "Amazon is Making All the Right Moves in Streaming",
-      "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTFBoNHBMTmZEUW85cTI3NjJzZ3I5MzdTc19oTTdwWXVLQ1F2Tmw5MWR1cmZaUHdhR3Rib2hkZGU2RlBzTDVXbHJKem01WmVPWTNwRnk5VDE0ZFpkd04zZE9wSEpGY0FiYmxPQ2h1b3FNQlc5MUZKaTRqLUVFa2I?oc=5",
-      "publisher": "nScreenMedia",
-      "ts": 1789774944,
-      "titleZh": "亚马逊在流媒体领域采取了所有正确的举措"
+      "title": "Top Links 1229 Wood in the US economy. China investing in people. Deciphering Rivera & From Clive to Keynes.",
+      "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTFB6Q0NQaFJKYXVqZlJVWFRqZHR4R3VTQ0lOczlBZlRWRTUwaXBQamJUTE81aHB4cllmUnNKV202OTJYMEZ3Q2l3b0xkeE56UUFVeEN6NFB2ZVl0aUpranVRTDdsd3FWZWVOcnVVTXpETG9UNTF6SVJXTkZn?oc=5",
+      "publisher": "Adam Tooze | Substack",
+      "ts": 1789814746,
+      "titleZh": "热门链接 1229 木材在美国经济中的地位。中国投资于人。解读里维拉以及从克莱夫到凯恩斯。"
+    },
+    {
+      "title": "Wood in the US economy. China investing in people. Deciphering Rivera & From Clive to Keynes.",
+      "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE1ucThUcTVaOWZhdGRHeFE2eFpKaWNXTEZyc0lVSGhSZklvaEpPU21HNGlBdEVFTWhEQVF6NUFBNU85MnpzRVpHQ1VabUNzMXBTVWVneXBJUU9vY2kwWHBxQzZUUDE0Qk9PVE5Sa1Q0aGZzTktsQkg3V2EyYw?oc=5",
+      "publisher": "Adam Tooze | Substack",
+      "ts": 1789814745,
+      "titleZh": "木材在美国经济中的地位。中国投资于人。解读里维拉以及从克莱夫到凯恩斯。"
+    },
+    {
+      "title": "Just Go for It: Rainnie’s Journey of Curiosity, Investing, and Putting Herself Out There",
+      "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE9RR256MlhMN1ZqbVVLalhVUlhiT1dObDdyM2wxUDQtVmdsZDBkQ04yU1VGVVBIWTZPR1U5V2UzbTJfZXFTbExDMFFBTjhGbV9nbWliZkpKLUVTMkhxS01IRXB3cWF2dDAwNURIMDJYWC1CempvRjZEQ2JYWENHaHM?oc=5",
+      "publisher": "Next Gen Investors Endowment",
+      "ts": 1789813789,
+      "titleZh": "放手去做：Rainnie 的好奇心、投资和自我实践之旅"
     }
   ],
   "translation": {
     "status": "fresh",
     "translated": 10,
     "total": 10,
-    "translatedNow": 9,
+    "translatedNow": 5,
     "providers": [
       "Google Translate"
     ]
