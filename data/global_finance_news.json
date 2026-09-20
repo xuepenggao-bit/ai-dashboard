@@ -1,10 +1,11 @@
 {
-  "updatedAt": "2026-09-20T20:44:22Z",
+  "updatedAt": "2026-09-20T23:10:38Z",
   "sources": {
     "reuters": {
       "label": "Reuters latest via Reuters Markets + Google News index",
-      "status": "fresh",
-      "count": 5
+      "status": "cached",
+      "count": 5,
+      "error": "Reuters market APIs returned no usable articles: /markets: GET https://www.reuters.com/pf/api/v3/content/fetch/articles-by-section-alias-or-id-v1?query=%7B%22section_id%22%3A%22%2Fmarkets%22%2C%22size%22%3A30%2C%22website%22%3A%22reuters%22"
     },
     "substack": {
       "label": "Substack Finance Recent via Google News index",
@@ -51,46 +52,46 @@
   ],
   "substack": [
     {
+      "title": "The Industrialisation of Cognition",
+      "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTFBndHRWSXhKQ1VPR3lWaGRNTEpfR0VNa1RkbHV2eUw0eHhCdVhuUnBBV3Noei1RR1ZILTRLbk9qeWIwUUgwWm13dlJYOGNhTmlvcExyY0IxSzNsaExNdkwyX0FhMmNwRTE3WnRlX2g1cDk5RTZNRmc?oc=5",
+      "publisher": "Substack",
+      "ts": 1789942993,
+      "titleZh": "认知的工业化"
+    },
+    {
+      "title": "The Week Ahead 2026.09.20",
+      "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTFBfcmt4Y3pLcWt0R2RYdVNVVk1uLWZod0dyZ2V5dzRQU1I4bFhIeERxRklZZ0NWSkVFdkhXSXAtQW15N19uWFVGSjZkcEtiQ19sczkwd1c1NWlTX1RwU214VTNkemdvQzhRZW15dg?oc=5",
+      "publisher": "Nonconsensus | Bob Elliott",
+      "ts": 1789942010,
+      "titleZh": "未来一周 2026.09.20"
+    },
+    {
+      "title": "How NZ’s captured economy is eroding democracy & choking progress",
+      "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE13Tm1penVxellsR3A0eHptdGp3QzhJRTFIZWJrcmc3OVNfek1BbmdXNDlLT1dDUUc3dE5hLXJGelBKejJYU2VwSWR6ZlFCMUQ0djRmX2l4VjJlYUlXVGZoaERiVlMzTHJsZENoYzVBN1NXbkxE?oc=5",
+      "publisher": "The Kākā by Bernard Hickey",
+      "ts": 1789938282,
+      "titleZh": "新西兰被俘获的经济如何侵蚀民主并阻碍进步"
+    },
+    {
+      "title": "This Week in Marketing: Meta’s One Plan, Pinterest’s Visual Ads, and Google’s AI Hack",
+      "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE5sV1cyNTZZNTRiTXhMZl9Cbl92SmZWMDA3RXBHNVkxaTU0Q1dOOElUQ01qR01qbnJfYkpuYURQeklQMXJ3a3owSk9NX205YXNMYml6NjBqaUZUMEtOeUNTRHR6cm5FV2pZZVhITERzVk5oYWFjZjBXS0hB?oc=5",
+      "publisher": "The Social Juice",
+      "ts": 1789938043,
+      "titleZh": "本周营销：Meta 的 One Plan、Pinterest 的视觉广告和 Google 的 AI Hack"
+    },
+    {
       "title": "Financials Unshackled | After The Noise (Revolut, European Bank Regulation, AND Much More)",
       "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE5HZHEyTm9uR0tGTEJJbWNEckxjZkRlSmxGVE9vcDIwT1NsU0dBQ29EaHpxYUwxNGdEa1NBUXg0bTdvLTZ4VU9adXJJSFE1Vl9QcjFNZzFrRi1ibVlXSjBZM0VpT2lCdHZ3SkhzbmphY21xQ3h2NDU1QU1PdHU?oc=5",
       "publisher": "Substack",
       "ts": 1789935896,
       "titleZh": "摆脱束缚的财务|喧嚣之后（Revolut、欧洲银行监管等等）"
-    },
-    {
-      "title": "What we discussed in Dublin Castle and what it means for your job, your money, and your future",
-      "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPWnh5aU42Q0FDNEtsR1RiTGFvRU1nWFktWEFzYlhhYllIOFNoU0c3RnJ5Tkx5bnhrWlJQaC11N3dITDN4WVZTbUhHYmhYY0M4M3JvRkVNZTNYZ1lKMzRXTmt2ekpIWENiclpoZWZya2NtclYxM0dXVzVCTDlJcGVHS1U4NA?oc=5",
-      "publisher": "Simon Harris | Substack",
-      "ts": 1789931954,
-      "titleZh": "我们在都柏林城堡讨论的内容以及这对您的工作、金钱和未来意味着什么"
-    },
-    {
-      "title": "GMM Pfaudler: What Do You Do When Your Stock Falls?",
-      "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE9lVGR6ZzNOTnBIbkwteWczT0tnS3d2dnpRVlQ4RlVvS3QzRzZjbDR6U3h6YUM4Rk5pc1JSSGprdWswWW5QZTBfLVJ4Tm5DMURfMFpYbXc5ZXI1MzFKYjBPd3dhNHFkVVpuVVpieUpYNEN1azY2N0JVaWtOX09LQQ?oc=5",
-      "publisher": "Substack",
-      "ts": 1789931252,
-      "titleZh": "GMM Pfaudler：当你的股票下跌时你会做什么？"
-    },
-    {
-      "title": "New masterclass: THRILLS AND CHILLS: Writing Horror and Suspense with NY Times bestseller JONATHAN MABERRY",
-      "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE4xT2tPLWhQa0RjVmI3SlpxZl9iR2o0eTRCZjhfSjc3MGxneERnYUtwN1FJWU96amhOZEpUR3l3Nl9RVXRESnhPb0h5S2N6YlVIQXBOb3o0RVkyRjRiamxTY2pkNlpWbXNGMWNBNlNRbmlVZ1UtQ1RqMDRBY3A0dw?oc=5",
-      "publisher": "Substack",
-      "ts": 1789930904,
-      "titleZh": "新大师班：惊悚与寒冷：与《纽约时报》畅销书乔纳森·马伯里一起写作恐怖与悬疑"
-    },
-    {
-      "title": "After Entering the Marketplace",
-      "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxQOGpTbkc1UUUzR2ZFSGc3UkQtd3A3dVlaMEg2QmMtTHl4Q29iYmVlRndCYUtyTnhVY01XaDdMQzMtSDAwOGV5TE41OG56ZTJzbnVKX3EwbDBYMk5MUlNjc0dXaG1rbFd6NUJodXRqVFdVZlExcHVUQzJEckUzckE4OFB3bE41N1pFQnlyQmhVbw?oc=5",
-      "publisher": "artofchristopherpadgetthunnicutt.substack.com",
-      "ts": 1789930437,
-      "titleZh": "进入市场后"
     }
   ],
   "translation": {
     "status": "fresh",
     "translated": 10,
     "total": 10,
-    "translatedNow": 8,
+    "translatedNow": 4,
     "providers": [
       "Google Translate"
     ]
