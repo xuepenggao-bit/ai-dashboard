@@ -756,8 +756,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 }
 #tPort .port-table-columns th:nth-child(-n+4){background:#edf1f5;color:#334155;box-shadow:inset 0 4px 0 #98a9bb}
 #tPort .port-table-columns th:nth-child(n+5):nth-child(-n+8){background:#e7f0f6;color:#284b67;box-shadow:inset 0 4px 0 #6f91aa}
-#tPort .port-table-columns th:nth-child(n+9):nth-child(-n+11){background:#f0ebf2;color:#594960;box-shadow:inset 0 4px 0 #9988a2}
-#tPort .port-table-columns th:nth-child(12){background:#edf1f5;color:#455468;box-shadow:inset 0 4px 0 #99a8b7}
+#tPort .port-table-columns th:nth-child(n+9):nth-child(-n+12){background:#f0ebf2;color:#594960;box-shadow:inset 0 4px 0 #9988a2}
+#tPort .port-table-columns th:nth-child(13){background:#edf1f5;color:#455468;box-shadow:inset 0 4px 0 #99a8b7}
+#tPort .col-turnover,#tPort .th-turnover{min-width:88px;text-align:right;white-space:nowrap}
 #tPort .port-holding-row td{
   height:61px;padding:9px 12px;border-bottom:1px solid #dce5ee;background:#fff;
   transition:background-color .18s ease,box-shadow .18s ease
@@ -4333,6 +4334,24 @@ async function fetchPortFiveDayRanges(){
   return _port5dInflight;
 }
 
+function _portTurnoverRate(value){
+  if(value==null||String(value).trim()==='') return null;
+  const number=Number(value);
+  return Number.isFinite(number)&&number>=0?number:null;
+}
+function _portTurnoverCell(pi,preOpen){
+  const rate=preOpen?null:_portTurnoverRate(pi&&pi.turnoverRate);
+  if(rate==null) return '<span class="port-data-empty">—</span>';
+  const note=(pi.turnoverSource||'行情源')+(pi.stale?' · 沿用最近行情':'');
+  return '<span class="port-metric-number" title="'+_escH(note)+'">'+rate.toFixed(2)+'%</span>';
+}
+function _portTurnoverCompare(a,b,dir){
+  const x=_portTurnoverRate(a),y=_portTurnoverRate(b);
+  if(x==null) return y==null?0:1;
+  if(y==null) return -1;
+  return (y-x)*dir;
+}
+
 function togglePortSort(col){
   // 首次点击某列：降序（dir=1，即 b-a，由高到低）
   // 已是降序时再次点击：切换为升序（dir=-1，由低到高）
@@ -4999,6 +5018,7 @@ function renderPortfolio(){
   const mktLabel = {SH:'沪A',SZ:'深A',HK:'港股'};
   const pctArrow  = _portSort.col==='pct' ? (_portSort.dir>0?'↓':'↑') : '↕';
   const wArrow    = _portSort.col==='w'   ? (_portSort.dir>0?'↓':'↑') : '↕';
+  const turnoverArrow=_portSort.col==='turnover'?(_portSort.dir>0?'↓':'↑'):'↕';
   const vrArrow   = _portSort.col==='vr'    ? (_portSort.dir>0?'↓':'↑') : '↕';
   const spArrow   = _portSort.col==='speed' ? (_portSort.dir>0?'↓':'↑') : '↕';
   const pctThCls  = 'th-sort'+(_portSort.col==='pct'  ?(_portSort.dir>0?' th-desc':' th-asc'):'');
@@ -5048,6 +5068,8 @@ function renderPortfolio(){
       disp.sort((a,b)=>((_PORT_PRICES[b.code]?.pct??-9999)-(_PORT_PRICES[a.code]?.pct??-9999))*_portSort.dir);
     } else if(_portSort.col==='w'){
       disp.sort((a,b)=>((b.w??-1)-(a.w??-1))*_portSort.dir);
+    } else if(_portSort.col==='turnover'){
+      disp.sort((a,b)=>_portTurnoverCompare(_PORT_PRICES[a.code]?.turnoverRate,_PORT_PRICES[b.code]?.turnoverRate,_portSort.dir));
     } else if(_portSort.col==='vr'){
       disp.sort((a,b)=>((_PORT_PRICES[b.code]?.volRatio??-1)-(_PORT_PRICES[a.code]?.volRatio??-1))*_portSort.dir);
     } else if(_portSort.col==='speed'){
@@ -5102,6 +5124,7 @@ function renderPortfolio(){
         <td class="col-range5 port-cell-market">${high20Cell}</td>
         <td class="col-range5 port-cell-market">${low10Cell}</td>
         <td class="col-weight port-cell-momentum" style="text-align:right">${sk.w!=null?'<span class="port-weight-value">'+sk.w.toFixed(1)+'%</span>':'<span class="port-data-empty">—</span>'}</td>
+        <td class="col-turnover port-cell-momentum">${_portTurnoverCell(pi,aPreOpen)}</td>
         <td class="col-vr port-cell-momentum" style="text-align:right">${vrCell}</td>
         <td class="col-sp port-cell-momentum" style="text-align:right">${spCell}</td>
         <td class="col-actions port-cell-actions">
@@ -5111,7 +5134,7 @@ function renderPortfolio(){
           </div>
         </td>
       </tr>`;}).join('')
-    : `<tr><td colspan="12" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
+    : `<tr><td colspan="13" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
     return `<div class="card mb16 port-sector-card" style="overflow:hidden;--sector-accent:${secColor}">
       <div class="sec-header">
         <div class="port-sector-identity">
@@ -5153,6 +5176,7 @@ function renderPortfolio(){
               <th class="th-range5" title="当前股价相对前20个交易日最高收盘价的百分比距离">前20日最高</th>
               <th class="th-range5" title="当前股价相对前10个交易日最低收盘价的百分比距离">前10日最低</th>
               <th class="${wThCls}" onclick="togglePortSort('w')" style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
+              <th class="th-sort th-turnover" onclick="togglePortSort('turnover')" style="cursor:pointer" title="行情源返回的个股换手率（%）">换手率 ${turnoverArrow}</th>
               <th class="${vrThCls} th-vr" onclick="togglePortSort('vr')" style="text-align:right;cursor:pointer">量比 ${vrArrow}</th>
               <th class="${spThCls} th-sp" onclick="togglePortSort('speed')" style="text-align:right;cursor:pointer">5分钟 ${spArrow}</th>
               <th class="th-actions" style="text-align:right">操作</th>
@@ -11677,12 +11701,12 @@ async function fetchPortPrices(){
     var ts0 = Date.now();
     var qUrl  = aStocks.length  ? 'https://qt.gtimg.cn/q=' + aStocks.map(function(s){ return s.tc; }).join(',') + '&_=' + ts0 : null;
     var aSids = aStocks.length  ? aStocks.map(function(s){ return (s.mkt==='SH'?'1.':'0.')+s.code; }).join(',') : null;
-    var mcUrl = aSids           ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f12,f20,f11&secids='+aSids+'&_='+ts0 : null;
+    var mcUrl = aSids           ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f12,f20,f11,f8&secids='+aSids+'&_='+ts0 : null;
     var hkSids= hkStocks.length ? hkStocks.map(function(s){ return '116.'+s.code; }).join(',') : null;
     // 腾讯港股返回结构与 A 股不同：量比位于 ~ 分隔后的第 50 号字段。
     // 价格仍以东财实时源为准；这一路只补齐东财港股经常为空的量比字段。
-    var hkMetricUrl = hkStocks.length ? 'https://qt.gtimg.cn/q=' + hkStocks.map(function(s){ return 'hk'+s.code; }).join(',') + '&_=' + ts0 : null;
-    var hkFields = 'f12,f14,f2,f3,f20,f50,f11,f124';
+    var hkMetricUrl = hkStocks.length ? 'https://qt.gtimg.cn/q=' + hkStocks.map(function(s){ return 'r_hk'+s.code+',hk'+s.code; }).join(',') + '&_=' + ts0 : null;
+    var hkFields = 'f12,f14,f2,f3,f20,f50,f11,f124,f8';
     var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields='+hkFields+'&_='+ts0 : null;
     // push2 主域名在部分网络/早盘时段会返回空响应；push2delay 在港股开市前竞价阶段
     // 能返回带当日 f124 时间戳的 IEP 行情，因此并行请求作为同源实时冗余。
@@ -11735,6 +11759,7 @@ async function fetchPortPrices(){
         var cur = parseFloat(p[3]), pct = parseFloat(p[32]), vr = parseFloat(p[49]), sp = parseFloat(p[80]), txMc = parseFloat(p[45]);
         if(cur > 0 && isFinite(pct))
           _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w,
+            turnoverRate:_portTurnoverRate(p[38]),turnoverSource:'腾讯行情',
             volRatio: isFinite(vr)&&vr>0 ? vr : null,
             speedPct: isFinite(sp) ? sp : null,
             // 腾讯行情 field[45] 已是亿元，可在东财市值接口超时/限流时直接兜底。
@@ -11750,6 +11775,10 @@ async function fetchPortPrices(){
         var mc   = parseFloat(d.f20);
         var sp   = parseFloat(d.f11);
         if(_PORT_PRICES[code]){
+          if(_PORT_PRICES[code].turnoverRate==null&&_portTurnoverRate(d.f8)!=null){
+            _PORT_PRICES[code].turnoverRate=_portTurnoverRate(d.f8);
+            _PORT_PRICES[code].turnoverSource='东方财富';
+          }
           if(isFinite(mc) && mc > 0) _PORT_PRICES[code].mktCap   = mc / 100000000;
           if(isFinite(sp))           _PORT_PRICES[code].speedPct  = sp; // fltt=2 已是 %，直接使用
         }
@@ -11784,6 +11813,7 @@ async function fetchPortPrices(){
             var vr = parseFloat(d.f50);
             var sp = parseFloat(d.f11);
             _PORT_PRICES[matched.code] = {price:price, pct:pct, name:matched.name, mkt:matched.mkt, w:matched.w, src:source, _t:Date.now(),
+              turnoverRate:_portTurnoverRate(d.f8),turnoverSource:'东方财富',
               quoteTs:  quoteTs,
               mktCap:   (isFinite(mc)&&mc>0) ? mc/100000000 : null,
               volRatio: isFinite(vr)&&vr>0   ? vr           : null,
@@ -11828,6 +11858,7 @@ async function fetchPortPrices(){
               var mc = parseFloat(d.f20), vr = parseFloat(d.f50), sp = parseFloat(d.f11);
               var quoteSec=parseFloat(d.f124);
               _PORT_PRICES[matched.code] = {price:price, pct:pct, name:matched.name, mkt:matched.mkt, w:matched.w, src:'em', _t:Date.now(),
+                turnoverRate:_portTurnoverRate(d.f8),turnoverSource:'东方财富',
                 quoteTs:  isFinite(quoteSec)&&quoteSec>0 ? quoteSec*1000 : 0,
                 mktCap:   (isFinite(mc)&&mc>0) ? mc/100000000 : null,
                 volRatio: isFinite(vr)&&vr>0   ? vr           : null,
@@ -11862,6 +11893,7 @@ async function fetchPortPrices(){
               pv.stale = true; _PORT_PRICES[s.code] = pv;
             } else {
               _PORT_PRICES[s.code] = {price:cur, pct:pct, name:s.name, mkt:s.mkt, w:s.w, src:'tc', _t:Date.now(), quoteTs:quoteTs,
+                turnoverRate:_portTurnoverRate(p[59]),turnoverSource:'腾讯延迟行情',
                 mktCap:isFinite(txMc)&&txMc>0 ? txMc : null};
             }
           });
@@ -11872,10 +11904,16 @@ async function fetchPortPrices(){
       // 仅合并指标，绝不改写东财/新浪取得的实时价格、涨跌幅和行情时间。
       if(hkMetricTxt){
         hkStocks.forEach(function(s){
-          var m = hkMetricTxt.match(new RegExp('v_hk' + s.code + '="([^"]+)"'));
+          var realtimeMatch=hkMetricTxt.match(new RegExp('v_r_hk' + s.code + '="([^"]+)"'));
+          var m = realtimeMatch||hkMetricTxt.match(new RegExp('v_hk' + s.code + '="([^"]+)"'));
           if(!m || !_PORT_PRICES[s.code]) return;
           var p = m[1].split('~');
           var vr = parseFloat(p[50]);
+          // 港股换手率位于 59；38 是占位 0，不能套用 A 股字段。
+          if(_PORT_PRICES[s.code].turnoverRate==null&&_portTurnoverRate(p[59])!=null){
+            _PORT_PRICES[s.code].turnoverRate=_portTurnoverRate(p[59]);
+            _PORT_PRICES[s.code].turnoverSource=realtimeMatch?'腾讯实时':'腾讯延迟行情';
+          }
           if(isFinite(vr) && vr > 0) _PORT_PRICES[s.code].volRatio = vr;
         });
       }
