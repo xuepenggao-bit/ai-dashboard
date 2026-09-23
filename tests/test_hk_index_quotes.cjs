@@ -2,7 +2,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
-const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+const html=fs.readFileSync(process.env.TEST_HTML||path.join(__dirname,'../index.html'),'utf8');
 const source=html.slice(html.indexOf('const _IDX_TENCENT ='),html.indexOf('// 从「主要指数」DOM'));
 const sina=html.slice(html.indexOf('const _sinaRtInflight='),html.indexOf('async function fetchPortPrices()'));
 const ctx=vm.createContext({Date,Map,Set,Promise,AbortController,TextDecoder,setTimeout,clearTimeout,
