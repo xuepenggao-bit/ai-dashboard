@@ -7,7 +7,7 @@ const source=html.slice(html.indexOf('const _IDX_TENCENT ='),html.indexOf('// â”
 function context(saved={}){
   const storage={...saved};
   const ctx=vm.createContext({Date,Map,Set,Promise,AbortController,TextDecoder,setTimeout,clearTimeout,
-    console:{warn(){}},window:{},localStorage:{getItem:k=>storage[k]||null,setItem:(k,v)=>storage[k]=v},
+    console:{warn(){}},window:{},_ahPrem:null,_csiPct:null,updateRiskDashboard(){},localStorage:{getItem:k=>storage[k]||null,setItem:(k,v)=>storage[k]=v},
     document:{getElementById:()=>null},_escH:String,_portfolioIndexDisplayPct:(r,p)=>p,_isTradingNow:()=>true});
   vm.runInContext(source,ctx);
   return {ctx,storage};
