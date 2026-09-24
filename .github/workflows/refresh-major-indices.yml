@@ -1,0 +1,51 @@
+name: Refresh Major Indices
+
+on:
+  push:
+    paths:
+      - '.github/scripts/refresh_major_indices.py'
+      - '.github/workflows/refresh-major-indices.yml'
+      - 'tests/test_refresh_major_indices.py'
+  schedule:
+    - cron: '3,13,23,33,43,53 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-major-indices
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test quote parsing and safe cache merging
+        run: python -m unittest discover -s tests -p test_refresh_major_indices.py -v
+      - name: Refresh shared index snapshot
+        run: python .github/scripts/refresh_major_indices.py
+      # GITHUB_TOKEN data commits do not start Pages builds. The frontend also
+      # reads this JSON directly from raw.githubusercontent.com once per minute.
+      - name: Commit and push updated quotes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/major_indices.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: refresh major indices $(date -u '+%Y-%m-%d %H:%M UTC')"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
