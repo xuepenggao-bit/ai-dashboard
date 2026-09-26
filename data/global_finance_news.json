@@ -1,10 +1,11 @@
 {
-  "updatedAt": "2026-09-25T23:29:30Z",
+  "updatedAt": "2026-09-26T01:55:35Z",
   "sources": {
     "reuters": {
       "label": "Reuters latest via Reuters Markets + Google News index",
-      "status": "fresh",
-      "count": 5
+      "status": "cached",
+      "count": 5,
+      "error": "Reuters market APIs returned no usable articles: /markets: GET https://www.reuters.com/pf/api/v3/content/fetch/articles-by-section-alias-or-id-v1?query=%7B%22section_id%22%3A%22%2Fmarkets%22%2C%22size%22%3A30%2C%22website%22%3A%22reuters%22"
     },
     "substack": {
       "label": "Substack Finance Recent via Google News index",
@@ -51,11 +52,25 @@
   ],
   "substack": [
     {
+      "title": "#66: Why does 36% of India generate 60% of its GDP?",
+      "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE83bDliUFN1cmNRaXBYUWdKa3N2Q2oySFhjOUlPYWNYaHVwYU1NQzIzaWFCelRpR0xZY2gtNGpCWWZnWnVtY0pIS3B1V1lLM1Rac0tuaHItQVBIOTI0WmJ3ZWxQa3dwbFdib1VDOHVRdUlidHU5?oc=5",
+      "publisher": "BharatNama",
+      "ts": 1790386259,
+      "titleZh": "#66：为什么印度 36% 的地区创造了 60% 的 GDP？"
+    },
+    {
       "title": "We are measuring the wrong thing",
       "url": "https://news.google.com/rss/articles/CBMicEFVX3lxTE5jOTJqd2FJSlk3R25SWFBCUVhKcFhRNi1lRXI1MXo5TmlrRnJ5azMySTZ6QWgzaXVTZXVkVExSdVMzU2dGT09JRXQtS19CN1NPa2V0WkpFRjRTV0JfS1oxYzR5VnNzalNKRzkwaFhJbUU?oc=5",
-      "publisher": "matusik.substack.com",
+      "publisher": "Matusik Missive",
       "ts": 1790373672,
       "titleZh": "我们测量的是错误的东西"
+    },
+    {
+      "title": "BREAKING: OpenAI’s epic meltdown — and how Sam Altman is blowing up Jensen Huang’s reputation",
+      "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTFA3d0pHSHNsZFhwenpiY2hIRWRaMVNpSEttQnl6SUVLM2tzYVFLQnNrdnRTR1BiZWRaM2FPeGVBWnhiTFNjUUdfd185ZkVCMng1cWVWeWlqTDg4TVYzZkE4cy1QaVRCOGRqbUVDa3hLdU14R2tC?oc=5",
+      "publisher": "Marcus on AI",
+      "ts": 1790373522,
+      "titleZh": "突发新闻：OpenAI 的史诗般的崩溃——以及 Sam Altman 如何毁掉黄仁勋的声誉"
     },
     {
       "title": "NIH’s $2.50 Return Doesn’t Add Up",
@@ -70,27 +85,13 @@
       "publisher": "Substack",
       "ts": 1790370404,
       "titleZh": "现代投资组合理论：各部分实际上如何组合在一起"
-    },
-    {
-      "title": "7 Biggest Investing Mistakes to Avoid Now",
-      "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE5jeDhhM1RCMlVGUEtubW5PeW15QXlrWDlsS2pDdnZUY2hVMHZfVDhseW9wQXJrSUlEXzF2TTY2QXFqTzYxaE10RV9hcnNNdmNwczc4MjlWVFMzbUdNRHpNRnpINWRDNGN6dWEyZWdZRjRjU0V5cGY2RWZ2akw?oc=5",
-      "publisher": "Substack",
-      "ts": 1790370075,
-      "titleZh": "现在要避免的 7 个最大投资错误"
-    },
-    {
-      "title": "Weekly Digest: September 19-25, 2026",
-      "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxNeTZmZUx4dkYwMTVkalFMVlFzaXZUaDlxVFJ4ZTllTkdTbzZGWGw0ZU9DMjBhcGk5eU1iTEZWUVJJRnZySXM3TFZfZlAtRm1ROHRRZUFpNjFmWGNucUR1MFBWTXFtR3czeDVMM2lXbldjVFI5MjhWa0FjenFUOVo3QnVuaw?oc=5",
-      "publisher": "Substack",
-      "ts": 1790367338,
-      "titleZh": "每周摘要： 2026年9月19-25日"
     }
   ],
   "translation": {
     "status": "fresh",
     "translated": 10,
     "total": 10,
-    "translatedNow": 8,
+    "translatedNow": 2,
     "providers": [
       "Google Translate"
     ]
