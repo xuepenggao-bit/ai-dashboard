@@ -1,4 +1,5 @@
 import copy
+import json
 import datetime as dt
 import importlib.util
 import pathlib
@@ -29,6 +30,25 @@ def flow(direction='inflow'):
 
 
 class MarketPanelTests(unittest.TestCase):
+    def test_official_h5_gateway_preserves_percentage_units_and_pool(self):
+        payload={'data':{'total':1000,'diff':rows(100)}}
+        response=mock.MagicMock()
+        response.__enter__.return_value.read.return_value=json.dumps(payload).encode()
+        with mock.patch.object(PANELS,'urlopen',return_value=response) as opened:
+            result=PANELS.request_any({'fs':PANELS.BREADTH_POOL,'fltt':2})
+        self.assertEqual(result,payload)
+        url=opened.call_args.args[0].full_url
+        self.assertTrue(url.startswith(PANELS.H5_LIST_URL))
+        self.assertIn('%2B',url)
+        self.assertEqual(result['data']['diff'][0]['f3'],9.5)
+
+    def test_h5_failure_falls_back_to_direct_source(self):
+        payload={'data':{'total':1000,'diff':rows(100)}}
+        with mock.patch.object(PANELS,'urlopen',side_effect=OSError('offline')), \
+                mock.patch.object(PANELS,'request_json',return_value=payload) as direct:
+            self.assertEqual(PANELS.request_any({'fltt':2}),payload)
+        direct.assert_called_once()
+
     def test_timestamp_uses_provider_not_receipt(self):
         result = breadth()
         self.assertEqual(result['quoteTs'], CLOSE)

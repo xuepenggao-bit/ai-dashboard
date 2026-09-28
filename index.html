@@ -9863,13 +9863,17 @@ function _refreshVisibleMacroBreadth(force=false){
 }
 
 // ── 涨跌统计（东方财富 clist，分批分页拉取全量 f3 精确计数）────────
-// 策略：先取第1页获得 total，再按 total 算出页数，
-//        每8页一批顺序拉取（避免55+并发触发限流），前端对 f3 精确分档
-// ── 涨跌统计：9 档区间计数法 ────────────────────────────────────────
-// 策略：不拉取逐股数据，改为 9 次 pz=1 的区间查询，每次只取 total 计数。
-// EM 内部 f3 单位为整数 centipercent（9.5% = 950），过滤器值须与之一致。
-// 东财 clist 请求：多域名 + 重试（_idxFetch 带超时与退避），单次成功率大幅提升
+// 同一股票池完整分页并去重；任何一页失败都保留上次完整快照。
+// 官网 H5 通道始终使用小数百分比，转换为旧直连源的 centipercent 再统一分档。
 async function _emClistGet(qs){
+  try{
+    const encoded=qs.replace(/\+/g,'%2B');
+    const d=await _idxFetch('https://emdatah5.eastmoney.com/dc/ZJLX/getZDYLBData?'+encoded+'&fltt=2&_='+Date.now(),{timeout:3500,retries:0});
+    if(Array.isArray(d?.data?.diff)&&d.data.diff.length){
+      d.data.diff=d.data.diff.map(row=>({...row,f3:typeof row.f3==='number'?Math.round(row.f3*100):row.f3}));
+      return d;
+    }
+  }catch(e){ /* 官网通道不可用再尝试直连 */ }
   const hosts = ['https://push2.eastmoney.com','https://push2delay.eastmoney.com'];
   for(const h of hosts){
     try{
@@ -9880,7 +9884,132 @@ async function _emClistGet(qs){
   return null;
 }
 
-let _breadthCache = null;   // 上次成功的渲染结果（粘性缓存，失败时保留不消失）
+// 保存结构化行情而非 HTML：午休、收盘、刷新页面以及跨设备均可恢复有效快照。
+const _MARKET_PANEL_KEY='aiDashboard.marketPanels.v1';
+// 真实采集的发布快照仅用于首次离线启动；本地/后台的新数据会按源时间覆盖它。
+const _MARKET_PANEL_BOOTSTRAP=/* MARKET_PANELS_SNAPSHOT_START */ {"schema_version":1,"breadth":{"counts":[34,40,338,483,110,907,2512,671,115],"total":5227,"quoteTs":1790577171000,"observedAt":1790577168942,"source":"东方财富","timeBasis":"provider"},"inflow":{"rows":[{"f12":"600707","f13":1,"f14":"彩虹股份","f3":8.54,"f62":671620256.0,"f184":19.1},{"f12":"600418","f13":1,"f14":"江淮汽车","f3":9.99,"f62":525322016.0,"f184":12.09},{"f12":"002342","f13":0,"f14":"巨力索具","f3":10.01,"f62":427470329.0,"f184":21.45},{"f12":"600206","f13":1,"f14":"有研新材","f3":3.79,"f62":414259728.0,"f184":8.27},{"f12":"000980","f13":0,"f14":"众泰汽车","f3":9.8,"f62":354167939.0,"f184":34.26},{"f12":"300776","f13":0,"f14":"帝尔激光","f3":0.05,"f62":341224589.0,"f184":15.12},{"f12":"003006","f13":0,"f14":"百亚股份","f3":-0.88,"f62":340692716.0,"f184":33.9},{"f12":"000513","f13":0,"f14":"丽珠集团","f3":10.01,"f62":289162525.0,"f184":35.84},{"f12":"002640","f13":0,"f14":"跨境通","f3":10.0,"f62":281141615.0,"f184":27.09},{"f12":"601579","f13":1,"f14":"会稽山","f3":8.07,"f62":237797644.0,"f184":11.83},{"f12":"600488","f13":1,"f14":"津药药业","f3":10.0,"f62":235220227.0,"f184":38.81},{"f12":"601766","f13":1,"f14":"中国中车","f3":2.35,"f62":200718290.0,"f184":19.11},{"f12":"601816","f13":1,"f14":"京沪高铁","f3":1.92,"f62":185323836.0,"f184":18.96},{"f12":"000333","f13":0,"f14":"美的集团","f3":-0.93,"f62":168610903.0,"f184":8.89},{"f12":"600059","f13":1,"f14":"古越龙山","f3":6.45,"f62":167635577.0,"f184":12.19},{"f12":"300750","f13":0,"f14":"宁德时代","f3":-0.76,"f62":165949760.0,"f184":1.86},{"f12":"002714","f13":0,"f14":"牧原股份","f3":3.14,"f62":141156320.0,"f184":8.21},{"f12":"300207","f13":0,"f14":"欣旺达","f3":4.38,"f62":141035568.0,"f184":4.92},{"f12":"300454","f13":0,"f14":"深信服","f3":-2.06,"f62":139641970.0,"f184":7.77},{"f12":"600733","f13":1,"f14":"北汽蓝谷","f3":5.13,"f62":139496249.0,"f184":14.09}],"quoteTs":1790577165000,"observedAt":1790577168942,"source":"东方财富","timeBasis":"provider"},"outflow":{"rows":[{"f12":"300308","f13":0,"f14":"中际旭创","f3":-8.95,"f62":-3041504768.0,"f184":-13.03},{"f12":"600487","f13":1,"f14":"亨通光电","f3":-10.0,"f62":-1887109440.0,"f184":-26.93},{"f12":"600522","f13":1,"f14":"中天科技","f3":-9.14,"f62":-1743178816.0,"f184":-24.78},{"f12":"603986","f13":1,"f14":"兆易创新","f3":-6.23,"f62":-1677679648.0,"f184":-17.89},{"f12":"002384","f13":0,"f14":"东山精密","f3":-9.45,"f62":-1543720176.0,"f184":-17.04},{"f12":"300502","f13":0,"f14":"新易盛","f3":-8.01,"f62":-1533964608.0,"f184":-10.62},{"f12":"688825","f13":1,"f14":"长鑫科技","f3":-3.91,"f62":-1210894464.0,"f184":-11.56},{"f12":"600176","f13":1,"f14":"中国巨石","f3":-7.94,"f62":-1206103408.0,"f184":-15.24},{"f12":"300394","f13":0,"f14":"天孚通信","f3":-8.18,"f62":-1182748224.0,"f184":-15.35},{"f12":"601869","f13":1,"f14":"长飞光纤","f3":-9.99,"f62":-924153984.0,"f184":-19.0},{"f12":"600105","f13":1,"f14":"永鼎股份","f3":-9.99,"f62":-789910816.0,"f184":-21.61},{"f12":"002281","f13":0,"f14":"光迅科技","f3":-9.8,"f62":-782289200.0,"f184":-13.77},{"f12":"600641","f13":1,"f14":"先导基电","f3":-4.07,"f62":-760721904.0,"f184":-12.88},{"f12":"300476","f13":0,"f14":"胜宏科技","f3":-7.65,"f62":-715130720.0,"f184":-13.5},{"f12":"000988","f13":0,"f14":"华工科技","f3":-9.77,"f62":-704201760.0,"f184":-13.49},{"f12":"000636","f13":0,"f14":"风华高科","f3":-10.0,"f62":-633262336.0,"f184":-13.6},{"f12":"600183","f13":1,"f14":"生益科技","f3":-4.04,"f62":-619713136.0,"f184":-11.23},{"f12":"002463","f13":0,"f14":"沪电股份","f3":-5.38,"f62":-534562976.0,"f184":-11.63},{"f12":"300059","f13":0,"f14":"东方财富","f3":-2.13,"f62":-515163805.0,"f184":-21.38},{"f12":"301308","f13":0,"f14":"江波龙","f3":-5.56,"f62":-496388400.0,"f184":-19.02}],"quoteTs":1790577169000,"observedAt":1790577168942,"source":"东方财富","timeBasis":"provider"},"updated_at":"2026-09-28T06:32:48.942000+00:00"} /* MARKET_PANELS_SNAPSHOT_END */;
+const _marketPanelCache={breadth:null,inflow:null,outflow:null};
+let _marketPanelLoaded=false, _marketPanelSharedPending=null, _marketPanelSharedAt=0;
+let _breadthPending=null;
+const _BREADTH_BUCKETS=[
+  {label:'涨停',lo:950,hi:100000,barCol:'#b91c1c',lblCol:'#ef4444'},
+  {label:'涨~5%',lo:500,hi:949,barCol:'#dc2626',lblCol:'#ef4444'},
+  {label:'1~5%',lo:100,hi:499,barCol:'#f87171',lblCol:'#dc2626'},
+  {label:'0~1%',lo:1,hi:99,barCol:'#fca5a5',lblCol:'#ef4444'},
+  {label:'平盘',lo:0,hi:0,barCol:'#9ca3af',lblCol:'#6b7280'},
+  {label:'0~1%',lo:-99,hi:-1,barCol:'#bbf7d0',lblCol:'#16a34a'},
+  {label:'1~5%',lo:-499,hi:-100,barCol:'#4ade80',lblCol:'#15803d'},
+  {label:'5~跌',lo:-949,hi:-500,barCol:'#16a34a',lblCol:'#15803d'},
+  {label:'跌停',lo:-100000,hi:-950,barCol:'#14532d',lblCol:'#166534'}
+];
+function _marketPanelQuoteTs(rows){
+  return Math.max(0,...rows.map(row=>{
+    const n=Number(row.f124),ts=n>1e12?n:n*1000;
+    return Number.isFinite(ts)&&ts>1e12&&ts<=Date.now()+300000?ts:0;
+  }));
+}
+function _marketPanelValid(key,row){
+  if(!row||typeof row!=='object') return false;
+  const stamp=row.quoteTs||row.observedAt;
+  if(!Number.isFinite(stamp)||stamp<1e12||stamp>Date.now()+300000) return false;
+  if(!Number.isFinite(row.observedAt)||row.observedAt<1e12||row.observedAt>Date.now()+300000) return false;
+  if(row.quoteTs!=null&&(!Number.isFinite(row.quoteTs)||row.quoteTs<0)) return false;
+  if(key==='breadth'){
+    if(!Number.isInteger(row.total)||row.total<500||row.total>20000||!Array.isArray(row.counts)||row.counts.length!==9) return false;
+    if(row.counts.some(n=>!Number.isInteger(n)||n<0)) return false;
+    const sum=row.counts.reduce((a,b)=>a+b,0);
+    return sum>=Math.max(500,row.total*.9)&&sum<=row.total&&sum-row.counts[4]>=50;
+  }
+  if(!Array.isArray(row.rows)||row.rows.length!==20) return false;
+  const codes=new Set();
+  return row.rows.every(item=>{
+    if(!item||!/^\d{6}$/.test(String(item.f12))||!item.f14||codes.has(item.f12)) return false;
+    codes.add(item.f12);
+    return typeof item.f62==='number'&&Number.isFinite(item.f62)&&(key==='inflow'?item.f62>0:item.f62<0)
+      &&typeof item.f3==='number'&&Number.isFinite(item.f3);
+  });
+}
+function _marketPanelAccept(key,row,persist=true){
+  if(!_marketPanelValid(key,row)) return false;
+  const old=_marketPanelCache[key];
+  if(old){
+    // 没有行情时间的响应不能盖过已确认时间的快照。
+    // 收盘后的结算修正可能仍标 15:00：允许相同源时间、较晚发起的完整抓取更新。
+    if(old.quoteTs&&!row.quoteTs) return false;
+    if(old.quoteTs&&row.quoteTs){
+      if(row.quoteTs<old.quoteTs||(row.quoteTs===old.quoteTs&&row.observedAt<=old.observedAt)) return false;
+    }else if(!row.quoteTs){
+      if(row.observedAt<=old.observedAt) return false;
+    }else if(_breadthBeijingClock(row.quoteTs).date<_breadthBeijingClock(old.observedAt).date) return false;
+  }
+  _marketPanelCache[key]=JSON.parse(JSON.stringify(row));
+  if(persist){try{localStorage.setItem(_MARKET_PANEL_KEY,JSON.stringify(_marketPanelCache));}catch(e){}}
+  return true;
+}
+function _marketPanelLabel(row,nowMs=Date.now()){
+  const clock=_breadthBeijingClock(nowMs),quote=_breadthBeijingClock(row.quoteTs||row.observedAt);
+  if(!row.quoteTs) return (quote.date===clock.date?'':quote.date.slice(5)+' ')+'获取 '+quote.time;
+  const prefix=quote.date!==clock.date?quote.date.slice(5)+' ':quote.minute>=900?'收盘 ':quote.minute>=690&&quote.minute<780&&clock.minute>=690?'午盘 ':!clock.isTrading?'保留 ':'';
+  return prefix+quote.time;
+}
+function _marketPanelStatus(id,row){
+  const el=document.getElementById(id);if(!el||!row) return;
+  el.textContent=_marketPanelLabel(row);
+  const clock=_breadthBeijingClock(row.quoteTs||row.observedAt);
+  el.title=(row.quoteTs?'行情时间：':'源未提供行情时间；最近成功获取：')+clock.date+' '+clock.time+'（北京时间） · '+(row.source||'东方财富')+'；接口异常时保留此数据';
+}
+function _marketPanelSessionComplete(key,nowMs=Date.now()){
+  const row=_marketPanelCache[key];if(!row?.quoteTs) return false;
+  const now=_breadthBeijingClock(nowMs),quote=_breadthBeijingClock(row.quoteTs);
+  if(now.date!==quote.date) return false;
+  const observed=_breadthBeijingClock(row.observedAt);
+  if(observed.date!==now.date) return false;
+  if(now.minute>=690&&now.minute<780) return quote.minute>=690&&observed.minute>=695;
+  if(now.minute>=900) return quote.minute>=900&&observed.minute>=910;
+  return false;
+}
+function _marketPanelsRestore(){
+  if(!_marketPanelLoaded){
+    _marketPanelLoaded=true;
+    Object.keys(_marketPanelCache).forEach(key=>_marketPanelAccept(key,_MARKET_PANEL_BOOTSTRAP[key],false));
+    try{const saved=JSON.parse(localStorage.getItem(_MARKET_PANEL_KEY)||'{}');Object.keys(_marketPanelCache).forEach(key=>_marketPanelAccept(key,saved[key],false));}catch(e){}
+  }
+  _renderBreadthSnapshot();
+  _renderMainFlowSnapshot('inflow');_renderMainFlowSnapshot('outflow');
+}
+function _refreshMarketPanelSnapshot(force=false){
+  _marketPanelsRestore();
+  if(_marketPanelSharedPending) return _marketPanelSharedPending;
+  if(!force&&Date.now()-_marketPanelSharedAt<60000) return Promise.resolve();
+  _marketPanelSharedAt=Date.now();
+  _marketPanelSharedPending=Promise.allSettled([
+    './data/market_panels.json',
+    'https://raw.githubusercontent.com/xuepenggao-bit/ai-dashboard/main/data/market_panels.json'
+  ].map(async url=>{
+    const data=await _idxFetch(url+'?_='+Date.now(),{timeout:4500,retries:0});
+    Object.keys(_marketPanelCache).forEach(key=>_marketPanelAccept(key,data?.[key]));
+    _marketPanelsRestore();
+  })).finally(()=>{_marketPanelSharedPending=null;});
+  return _marketPanelSharedPending;
+}
+
+function _renderBreadthSnapshot(){
+  const row=_marketPanelCache.breadth;if(!row) return false;
+  const counts=row.counts,stats=_reconcileMarketBreadth(row.total,counts);
+  Object.entries({mktUp:stats.totalUp,mktDown:stats.totalDown,mktLimitUp:counts[0],mktLimitDown:counts[8]}).forEach(([id,n])=>{
+    const el=document.getElementById(id);if(el)el.textContent=String(n);
+  });
+  const flat=document.getElementById('mktFlatRow');
+  if(flat){flat.textContent='平盘 '+stats.flat+' 家'+(stats.noQuote>0?' · 无行情 '+stats.noQuote+' 家':'');flat.style.display=(stats.flat||stats.noQuote)?'block':'none';}
+  const chart=document.getElementById('mktBreadthChart'),max=Math.max(...counts,1);
+  if(chart){
+    const html='<div class="market-breadth-bars">'+_BREADTH_BUCKETS.map((b,i)=>
+      `<div class="market-breadth-col"><div class="market-breadth-count" style="color:${b.lblCol}">${counts[i]||''}</div><div class="market-breadth-track"><div class="market-breadth-bar" style="height:${Math.max(1.6,counts[i]/max*100).toFixed(2)}%;background:${b.barCol};border-radius:6px 6px 1px 1px;box-shadow:inset 0 1px 0 rgba(255,255,255,.22)"></div></div><div class="market-breadth-label">${b.label}</div></div>`).join('')
+      +`</div><div class="market-breadth-total">有行情 ${stats.quotedTotal} 家 · 无行情 ${stats.noQuote} 家 · 全部 ${row.total} 家</div>`;
+    if(chart.innerHTML!==html) chart.innerHTML=html;
+  }
+  _marketPanelStatus('mktBreadthTs',row);return true;
+}
 
 // 全市场总数包含退市、停牌、暂无成交或行情源暂未给出 f3 的股票。
 // “平盘”只统计真实 f3=0；无有效 f3 的股票单独列为“无行情”，避免虚增平盘家数。
@@ -9893,152 +10022,65 @@ function _reconcileMarketBreadth(total, counts){
   return {totalUp,totalDown,flat,quotedTotal,noQuote};
 }
 
-async function _doFetchBreadth(){
-  // 分页请求可能跨过 11:30/15:00，按请求发起时刻判断是否属于交易时段。
-  const trendClock=_breadthBeijingClock();
-  const bTs    = document.getElementById('mktBreadthTs');
-  const chartEl= document.getElementById('mktBreadthChart');
-  const elUp   = document.getElementById('mktUp');
-  const elDown = document.getElementById('mktDown');
-  const elLU   = document.getElementById('mktLimitUp');
-  const elLD   = document.getElementById('mktLimitDown');
-  const elFlat = document.getElementById('mktFlatRow');
-  if(bTs) bTs.textContent = '加载中…';
+function _doFetchBreadth(){
+  _marketPanelsRestore();
+  _refreshMarketPanelSnapshot();
+  if(_breadthPending) return _breadthPending;
+  if(_marketPanelSessionComplete('breadth')) return Promise.resolve();
+  _breadthPending=_fetchBreadthSnapshot().finally(()=>{_breadthPending=null;});
+  return _breadthPending;
+}
+async function _fetchBreadthSnapshot(){
+  const observedAt=Date.now();
+  const bTs=document.getElementById('mktBreadthTs');
+  if(!_marketPanelCache.breadth&&bTs) bTs.textContent='加载中…';
   try{
-    // f:!2 排除退市、旧代码等已终止交易证券；停牌与待上市证券仍保留。
-    const FS  = 'm:0+t:6+f:!2,m:0+t:80+f:!2,m:1+t:2+f:!2,m:1+t:23+f:!2';
-    // 不加 fltt，f3 为 EM 内部整数 centipercent（-1.56% = -156），与 BKTS 阈值单位一致
-    const BP  = 'np=1&invt=2&fid=f12&po=0&fields=f3';
-
-    // 9 档区间（centipercent: 9.5%=950, 5%=500, 1%=100）
-    //   涨停 ≥950 | 涨5~9.5% 500~949 | 涨1~5% 100~499 | 微涨 1~99
-    //   平盘 0 | 微跌 -99~-1 | 跌1~5% -499~-100 | 跌5~9.5% -949~-500 | 跌停 ≤-950
-    const BKTS = [
-      {label:'涨停',  lo: 950,     hi: 100000, barCol:'#b91c1c', lblCol:'#ef4444'},
-      {label:'涨~5%', lo: 500,     hi: 949,    barCol:'#dc2626', lblCol:'#ef4444'},
-      {label:'1~5%',  lo: 100,     hi: 499,    barCol:'#f87171', lblCol:'#dc2626'},
-      {label:'0~1%',  lo: 1,       hi: 99,     barCol:'#fca5a5', lblCol:'#ef4444'},
-      {label:'平盘',   lo: 0,       hi: 0,      barCol:'#9ca3af', lblCol:'#6b7280'},
-      {label:'0~1%',  lo: -99,     hi: -1,     barCol:'#bbf7d0', lblCol:'#16a34a'},
-      {label:'1~5%',  lo: -499,    hi: -100,   barCol:'#4ade80', lblCol:'#15803d'},
-      {label:'5~跌',  lo: -949,    hi: -500,   barCol:'#16a34a', lblCol:'#15803d'},
-      {label:'跌停',   lo: -100000, hi: -950,   barCol:'#14532d', lblCol:'#166534'},
-    ];
-
-    // ① 取全市场总家数（pz=1，多域名+重试）
-    const rT = await _emClistGet(`${BP}&pn=1&pz=1&fs=${FS}`);
-    if(!rT?.data?.total) throw new Error('获取总数失败');
-    const total = rT.data.total;
-    const PZ = 100, pages = Math.ceil(total / PZ);   // EM 单页上限 100 条
-
-    // ② 分页拉全市场 f3（每批 5 并发，多域名+重试；EM 不支持 b:f3 区间过滤，故全量拉取）
-    const allF3 = [];
-    let okPages = 0;
-    const _fetchPage = async (pn)=>{
-      const d = await _emClistGet(`${BP}&pn=${pn}&pz=${PZ}&fs=${FS}`);
-      const diff = d?.data?.diff;
-      if(Array.isArray(diff) && diff.length){
-        okPages++;
-        diff.forEach(x=>{ const v = parseInt(x.f3); if(isFinite(v)) allF3.push(v); });
-      }
-    };
-    const BATCH = 5;
-    for(let s=1; s<=pages; s+=BATCH){
-      const grp = [];
-      for(let p=s; p<Math.min(s+BATCH, pages+1); p++) grp.push(_fetchPage(p));
-      await Promise.all(grp);
+    const FS='m:0+t:6+f:!2,m:0+t:80+f:!2,m:1+t:2+f:!2,m:1+t:23+f:!2';
+    // 不加 fltt：f3 为百分比的百分之一；f124 为源行情时间。
+    const BP='np=1&invt=2&fid=f12&po=0&fields=f3,f12,f13,f124';
+    const first=await _emClistGet(BP+'&pn=1&pz=100&fs='+FS);
+    const total=Number(first?.data?.total),rows=[],codes=new Set();
+    if(!Number.isInteger(total)||total<500||total>20000) throw Error('获取总数失败');
+    const pages=Math.ceil(total/100);
+    function addPage(data,pn){
+      const diff=data?.data?.diff;
+      if(!Array.isArray(diff)||diff.length!==Math.min(100,total-(pn-1)*100)||Number(data.data.total)!==total) throw Error('分页不完整');
+      diff.forEach(row=>{
+        const code=row.f13+'.'+row.f12;
+        if(!/^\d{6}$/.test(String(row.f12))||codes.has(code)) throw Error('分页代码重复或无效');
+        codes.add(code);rows.push(row);
+      });
     }
-    // 任一页缺失都会让上涨+下跌+平盘小于总数；此时沿用上次完整缓存，绝不展示残缺统计。
-    if(okPages !== pages) throw new Error(`分页拉取不完整(${okPages}/${pages})`);
-
-    // ③ 前端按 BKTS 区间精确分 9 档
-    const counts = BKTS.map(()=>0);
-    allF3.forEach(v=>{
-      for(let k=0;k<BKTS.length;k++){ if(v>=BKTS[k].lo && v<=BKTS[k].hi){ counts[k]++; break; } }
+    addPage(first,1);
+    // 一批失败立即回退，不再等待剩余几十个请求；避免拖慢其它面板。
+    for(let s=2;s<=pages;s+=5){
+      await Promise.all(Array.from({length:Math.min(5,pages-s+1)},(_,i)=>
+        _emClistGet(BP+'&pn='+(s+i)+'&pz=100&fs='+FS).then(data=>addPage(data,s+i))));
+    }
+    const counts=_BREADTH_BUCKETS.map(()=>0);
+    rows.forEach(row=>{
+      const v=typeof row.f3==='number'?row.f3:NaN;
+      if(!Number.isFinite(v)) return;
+      const i=_BREADTH_BUCKETS.findIndex(b=>v>=b.lo&&v<=b.hi);if(i>=0)counts[i]++;
     });
-    const sumCounts  = counts.reduce((a,c)=>a+c, 0);
-    const reconciled = _reconcileMarketBreadth(total,counts);
-    const activeStks = reconciled.totalUp+reconciled.totalDown;
-    console.log('[涨跌统计] total:', total, 'pages:', pages, 'ok:', okPages, 'sum:', sumCounts, 'buckets:', counts);
-
-    // ③ 非交易时段检测：有效涨跌家数 < 50 且总家数正常
-    if(activeStks < 50 && total > 500){
-      const tn = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
-      if(chartEl) chartEl.innerHTML=
-        `<div style="text-align:center;padding:14px 4px 10px">`
-        +`<div style="font-size:14px;color:#94a3b8;margin-bottom:6px">📊 非交易时段</div>`
-        +`<div style="font-size:10px;color:#9ca3af;line-height:1.7">`
-        +`交易时间 9:30~11:30 / 13:00~15:00<br>届时可查看实时涨跌分布</div></div>`;
-      if(bTs) bTs.textContent = tn + ' 非交易时段';
-      [elUp,elDown,elLU,elLD].forEach(el=>{ if(el) el.textContent='—'; });
-      if(elFlat){ elFlat.textContent=''; elFlat.style.display='none'; }
-      return;
-    }
-
-    // ④ 区间过滤完全无效保护（sumCounts 极小且非交易检测未触发）
-    if(sumCounts < 50) throw new Error(`区间统计异常(sum=${sumCounts},total=${total})`);
-
-    // ⑤ 精确 0 才是平盘；退市、停牌、暂无成交或缺少 f3 的股票单列为无行情。
-    const bFlat   = reconciled.flat;
-    const noQuote = reconciled.noQuote;
-    const b_lu    = counts[0];
-    const b_ld    = counts[8];
-    const totalUp   = reconciled.totalUp;
-    const totalDown = reconciled.totalDown;
-    console.log('[涨跌统计] ↑',totalUp,'平',bFlat,'↓',totalDown,'无行情',noQuote,'涨停',b_lu,'跌停',b_ld);
-
-    if(elUp)   elUp.textContent   = totalUp;
-    if(elDown) elDown.textContent = totalDown;
-    if(elLU)   elLU.textContent   = b_lu;
-    if(elLD)   elLD.textContent   = b_ld;
-    if(elFlat){
-      elFlat.textContent='平盘 '+bFlat+' 家'+(noQuote>0?' · 无行情 '+noQuote+' 家':'');
-      elFlat.style.display=(bFlat>0||noQuote>0)?'block':'none';
-    }
-
-    // ⑥ 渲染直方图
-    const displayCounts = [...counts.slice(0,4), bFlat, ...counts.slice(5)];
-    const maxCnt = Math.max(...displayCounts, 1);
-    const bars   = BKTS.map((b, i) => {
-      const cnt = displayCounts[i];
-      const bh  = Math.max(1.6, (cnt/maxCnt)*100);
-      return `<div class="market-breadth-col">`
-        +`<div class="market-breadth-count" style="color:${b.lblCol}">${cnt||''}</div>`
-        +`<div class="market-breadth-track">`
-        +`<div class="market-breadth-bar" style="height:${bh.toFixed(2)}%;background:${b.barCol};border-radius:6px 6px 1px 1px;box-shadow:inset 0 1px 0 rgba(255,255,255,.22)"></div></div>`
-        +`<div class="market-breadth-label">${b.label}</div></div>`;
-    }).join('');
-    const _hm = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
-    if(chartEl) chartEl.innerHTML=
-      `<div class="market-breadth-bars">${bars}</div>`
-      +`<div class="market-breadth-total">有行情 ${reconciled.quotedTotal} 家 · 无行情 ${noQuote} 家 · 全部 ${total} 家</div>`;
-    if(bTs) bTs.textContent=_hm;
-
-    // 成功后写入粘性缓存（含各数字与直方图，供失败时回填）
-    _breadthCache = {
-      up:String(totalUp), down:String(totalDown), lu:String(b_lu), ld:String(b_ld),
-      flat:bFlat, noQuote:noQuote, chart:chartEl?chartEl.innerHTML:'', ts:_hm
-    };
-    _setBreadthTrendLivePoint(totalUp,totalDown,bFlat,trendClock);
-  }catch(e){
-    console.warn('[涨跌统计]', e.message);
-    // 有缓存则回填上次成功值（不闪现消失），仅从未成功过时才显示重试提示
-    if(_breadthCache){
-      if(elUp)   elUp.textContent   = _breadthCache.up;
-      if(elDown) elDown.textContent = _breadthCache.down;
-      if(elLU)   elLU.textContent   = _breadthCache.lu;
-      if(elLD)   elLD.textContent   = _breadthCache.ld;
-      if(elFlat){
-        elFlat.textContent='平盘 '+_breadthCache.flat+' 家'+(_breadthCache.noQuote>0?' · 无行情 '+_breadthCache.noQuote+' 家':'');
-        elFlat.style.display=(_breadthCache.flat>0||_breadthCache.noQuote>0)?'block':'none';
+    const snapshot={counts,total,quoteTs:_marketPanelQuoteTs(rows),observedAt,source:'东方财富'};
+    // 全零/空行情是源异常或重置，不能用它清空午盘、收盘或上一交易日数据。
+    if(!_marketPanelValid('breadth',snapshot)) throw Error('行情为空或重置，保留有效快照');
+    const accepted=_marketPanelAccept('breadth',snapshot);
+    _renderBreadthSnapshot();
+    if(accepted&&snapshot.quoteTs){
+      const sourceClock=_breadthBeijingClock(snapshot.quoteTs),now=_breadthBeijingClock();
+      if(sourceClock.date===now.date){
+        const stats=_reconcileMarketBreadth(total,counts);
+        _setBreadthTrendLivePoint(stats.totalUp,stats.totalDown,stats.flat,sourceClock);
       }
-      if(chartEl) chartEl.innerHTML = _breadthCache.chart;
-      if(bTs) bTs.textContent = _breadthCache.ts + ' (缓存)';
-    }else{
-      if(chartEl) chartEl.innerHTML=
-        `<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">`
-        +`暂未取到数据<br><span style="font-size:10px">请点击↻重试</span></div>`;
-      if(bTs) bTs.textContent='';
+    }
+  }catch(e){
+    console.warn('[涨跌统计]',e.message);
+    await _refreshMarketPanelSnapshot();
+    if(!_renderBreadthSnapshot()){
+      if(bTs)bTs.textContent='正在重试';
+      // 尚无任何可信快照时不伪造 0，也不把有效数据替换为空白。
     }
   }
 }
@@ -11726,24 +11768,38 @@ function triggerSentimentRefresh(){
 
 // ── 主力净流入 / 净流出 TOP 20 ─────────────────────────────────
 // 两侧使用同一股票池、字段和渲染逻辑；po=1 为净流入降序，po=0 为净流出升序。
-const _mfCache = {inflow:null, outflow:null}; // 两侧分别保留上次成功结果，单侧失败不清空另一侧
+let _mainFlowPending=null;
+
+function _renderMainFlowSnapshot(key){
+  const row=_marketPanelCache[key];if(!row) return false;
+  const el=document.getElementById(key==='inflow'?'mfList':'mfOutList');
+  if(el){const html=_renderMainFlowList(row.rows,key);if(el.innerHTML!==html)el.innerHTML=html;}
+  _marketPanelStatus(key==='inflow'?'mfTs':'mfOutTs',row);
+  return true;
+}
 
 async function _fetchMainFlowList(po){
+  const observedAt=Date.now();
   const UT    = 'bd1d9ddb04089700cf9c27f6f7426281';
   const path  = `/api/qt/clist/get?fid=f62&po=${po}&pz=20&pn=1&np=1&fltt=2&invt=2&ut=${UT}`
-              + `&fields=f12,f14,f3,f62,f184&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23`;
-  const hosts = ['https://push2.eastmoney.com','https://push2delay.eastmoney.com'];
+              + `&fields=f12,f14,f3,f62,f184,f124&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23`;
+  const urls = [
+    'https://emdatah5.eastmoney.com/dc/ZJLX/getZDYLBData?'+path.split('?')[1].replace(/\+/g,'%2B'),
+    'https://push2.eastmoney.com'+path,
+    'https://push2delay.eastmoney.com'+path
+  ];
   let list = null;
-  for(const host of hosts){
+  for(const url of urls){
     try{
-      const data = await _idxFetch(host + path + '&_=' + Date.now(), {timeout:3000, retries:1});
+      const data = await _idxFetch(url + '&_=' + Date.now(), {timeout:3500, retries:0});
       if(data && (data.rc === 0 || data.rc == null)){
         const d = data.data && data.data.diff;
-        if(d && d.length){ list = d; break; }
+        const candidate={rows:d,quoteTs:Array.isArray(d)?_marketPanelQuoteTs(d):0,observedAt,source:'东方财富'};
+        if(_marketPanelValid(po===1?'inflow':'outflow',candidate)){ list=candidate;break; }
       }
     }catch(e){ /* 试下一个域名 */ }
   }
-  if(!list || !list.length) throw new Error('empty');
+  if(!list) throw new Error('资金榜为空或重置，保留有效快照');
   return list;
 }
 
@@ -11771,37 +11827,50 @@ function _renderMainFlowList(list, tone){
   }).join('');
 }
 
-async function fetchMainFlow(){
-  const panels = [
-    {key:'inflow',  po:1, list:document.getElementById('mfList'),    ts:document.getElementById('mfTs')},
-    {key:'outflow', po:0, list:document.getElementById('mfOutList'), ts:document.getElementById('mfOutTs')}
-  ].filter(p=>p.list);
+function fetchMainFlow(){
+  _marketPanelsRestore();
+  _refreshMarketPanelSnapshot();
+  if(_mainFlowPending) return _mainFlowPending;
+  _mainFlowPending=_fetchMainFlowSnapshots().finally(()=>{_mainFlowPending=null;});
+  return _mainFlowPending;
+}
+async function _fetchMainFlowSnapshots(){
+  const panels=[
+    {key:'inflow',po:1,list:document.getElementById('mfList')},
+    {key:'outflow',po:0,list:document.getElementById('mfOutList')}
+  ].filter(p=>p.list&&!_marketPanelSessionComplete(p.key));
   if(!panels.length) return;
-  const buttons = [document.getElementById('mfRefBtn'),document.getElementById('mfOutRefBtn')].filter(Boolean);
-  buttons.forEach(btn=>{ btn.disabled=true; btn.textContent='⏳'; });
-
+  const buttons=['mfRefBtn','mfOutRefBtn'].map(id=>document.getElementById(id)).filter(Boolean);
+  buttons.forEach(btn=>{btn.disabled=true;btn.textContent='⏳';});
   try{
     await Promise.all(panels.map(async panel=>{
       try{
-        const list = await _fetchMainFlowList(panel.po);
-        const html = _renderMainFlowList(list, panel.key);
-        panel.list.innerHTML = html;
-        _mfCache[panel.key] = html;
-        if(panel.ts) panel.ts.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+        const row=await _fetchMainFlowList(panel.po);
+        _marketPanelAccept(panel.key,row);
+        _renderMainFlowSnapshot(panel.key);
       }catch(err){
-        // 失败时保留对应榜单的上次成功结果，避免刷新时整块闪空。
-        if(_mfCache[panel.key]){
-          if(!panel.list.innerHTML || panel.list.textContent.includes('加载中') || panel.list.textContent.includes('获取失败'))
-            panel.list.innerHTML = _mfCache[panel.key];
-        }else{
-          panel.list.innerHTML=`<div style="color:#94a3b8;font-size:11px;text-align:center;padding:14px 0">暂未取到数据<br><span style="font-size:10px">请点击↻重试</span></div>`;
-        }
-        console.warn('fetchMainFlow '+panel.key+':', err.message);
+        await _refreshMarketPanelSnapshot();
+        _renderMainFlowSnapshot(panel.key);
+        console.warn('fetchMainFlow '+panel.key+':',err.message);
       }
     }));
   }finally{
-    buttons.forEach(btn=>{ btn.disabled=false; btn.textContent='↻'; });
+    buttons.forEach(btn=>{btn.disabled=false;btn.textContent='↻';});
   }
+}
+
+// 独立于股价定时器：A 股 11:30/15:00 后继续补抓终值，浏览器恢复前台也补抓。
+// 有源时间确认的收盘快照后停止直连接口；小 JSON 后台快照仍每分钟检查一次。
+let _marketPanelCloseAttempt=0;
+function _refreshMarketPanelsAfterSession(force=false){
+  if(document.hidden) return;
+  _refreshMarketPanelSnapshot(force);
+  const clock=_breadthBeijingClock();
+  const settling=(clock.minute>=690&&clock.minute<780)||(clock.minute>=900&&clock.minute<=990);
+  if(!settling||clock.weekday<1||clock.weekday>5) return;
+  if(!force&&Date.now()-_marketPanelCloseAttempt<120000) return;
+  _marketPanelCloseAttempt=Date.now();
+  fetchMainFlow();_doFetchBreadth();
 }
 
 // 新浪 rt_hk 实时港股行情（hq.sinajs.cn 有 CORS/Referer 限制，故用 JSONP/script 标签加载）
@@ -12626,7 +12695,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 仅交易时段实际轮询(见 setAutoRefresh)，用户可在右上角下拉改回「手动」。
   try{ _arPick(10, '10秒', false); }catch(e){ console.warn('[default auto-refresh]', e); }
   fetchMainFlow();      // 初始化时同时拉取主力净流入榜与净流出榜
-  fetchMarketBreadth(); // 市场涨跌统计（主要用腾讯 API，极少命中东方财富限流）
+  fetchMarketBreadth(); // 涨跌统计恢复有效快照，再异步拉取东方财富最新分布
+  setInterval(()=>_refreshMarketPanelsAfterSession(false),60000);
   fetchNews(true);    // 首次打开立即强制读取最新要闻与自选股资讯
   setInterval(function(){
     if(!document.hidden){ try{ fetchNews(false); }catch(e){} }
@@ -12638,12 +12708,14 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(!document.hidden){
       try{ fetchNews(true); }catch(e){}
       _refreshVisibleMacroBreadth(true);
+      _refreshMarketPanelsAfterSession(true);
     }
   });                 // 从后台切回时立即刷新，修复手机/Safari挂起定时器后的陈旧内容
   window.addEventListener('pageshow',function(e){
     if(e.persisted){
       try{ fetchNews(true); }catch(err){}
       _refreshVisibleMacroBreadth(true);
+      _refreshMarketPanelsAfterSession(true);
     }
   });                 // Safari 通过前进/后退缓存恢复页面时，定时器可能未立即补跑
   fetchKolSummary();  // X关注意见领袖：从 data/twitter_kol_summary.json 加载

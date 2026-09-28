@@ -22,6 +22,9 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / "data" / "market_panels.json"
 HOSTS = ("push2.eastmoney.com", "push2delay.eastmoney.com")
+# Same official clist data, via the data site's own public H5 controller. This
+# remains available when push2 closes connections on some networks.
+H5_LIST_URL = "https://emdatah5.eastmoney.com/dc/ZJLX/getZDYLBData"
 SOURCE = "东方财富"
 BREADTH_POOL = "m:0+t:6+f:!2,m:0+t:80+f:!2,m:1+t:2+f:!2,m:1+t:23+f:!2"
 # Keep the dashboard's established top-20 universe, independently of breadth.
@@ -187,6 +190,14 @@ def request_json(host, params):
 
 def request_any(params):
     last_error = None
+    try:
+        url = H5_LIST_URL + "?" + urlencode({**params, "fltt": 2, "_": int(time.time() * 1000)})
+        with urlopen(Request(url, headers={**HEADERS, "Referer": "https://emdatah5.eastmoney.com/dc/zjlx/index"}), timeout=8) as response:
+            payload = json.loads(response.read(2_000_000))
+        normalize_diff(payload)
+        return payload
+    except Exception as exc:
+        last_error = exc
     for host in HOSTS:
         try:
             payload = request_json(host, params)
