@@ -1,0 +1,57 @@
+name: Refresh Market Panel Snapshots
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/refresh_market_panels.py'
+      - '.github/workflows/refresh-market-panels.yml'
+      - 'tests/test_refresh_market_panels.py'
+  schedule:
+    # Beijing weekdays 09:35–15:35, including the lunch recess. In particular
+    # 11:35 and 15:05/15:15/15:35 retry the closing data. Actions cron may delay;
+    # the frontend also collects live quotes and retains its own valid cache.
+    - cron: '35,45,55 1 * * 1-5'
+    - cron: '5,15,25,35,45,55 2-6 * * 1-5'
+    - cron: '5,15,25,35 7 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-market-panels
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test complete snapshots and last-good retention
+        run: python -m unittest discover -s tests -p test_refresh_market_panels.py -v
+      - name: Refresh market panel snapshots
+        run: python .github/scripts/refresh_market_panels.py
+      # Data commits made with GITHUB_TOKEN do not trigger Pages. The frontend
+      # reads both same-origin JSON and the latest raw GitHub snapshot.
+      - name: Commit and push valid snapshot data
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/market_panels.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: refresh market panels $(date -u '+%Y-%m-%d %H:%M UTC')"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
