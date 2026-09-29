@@ -5371,26 +5371,37 @@ function _renderArrLatestEvent(d){
   const events=Object.values((d&&d.arr_latest_events)||{})
     .filter(e=>e&&e.summary&&e.source_date)
     .sort((a,b)=>String(b.source_date).localeCompare(String(a.source_date)));
-  const latest=events[0];
-  if(!latest){ el.style.display='none'; return; }
+  if(!events.length){ el.replaceChildren(); el.style.display='none'; return; }
   el.replaceChildren();
-  const label=document.createElement('strong');
-  label.style.color='#1d4ed8';
-  label.textContent=(latest.company||'AI公司')+' 最新里程碑：';
-  const summary=document.createElement('span');
-  summary.textContent=latest.summary+'（'+latest.source_date+'）';
-  el.append(label,summary);
-  const allowed=['openai.com','anthropic.com','cnbc.com','reuters.com','bloomberg.com','axios.com','nytimes.com','ft.com','wsj.com'];
-  try{
-    const u=new URL(latest.source_url||'');
-    if(u.protocol==='https:'&&allowed.some(host=>u.hostname===host||u.hostname.endsWith('.'+host))){
-      const link=document.createElement('a');
-      link.href=u.href; link.target='_blank'; link.rel='noopener';
-      link.style.cssText='margin-left:5px;color:#2563eb;text-decoration:none;font-weight:700';
-      link.textContent=(latest.source_label||'查看来源')+' ↗';
-      el.append(link);
-    }
-  }catch(_){ /* 无可信链接时只显示已保存摘要 */ }
+  const allowed=['openai.com','anthropic.com','cnbc.com','reuters.com','bloomberg.com','bloomberglaw.com','axios.com','nytimes.com','ft.com','wsj.com'];
+  // 两家公司分别展示；前瞻预期只作文字动态，不写入已实现里程碑曲线。
+  events.forEach((event,index)=>{
+    const row=document.createElement('div');
+    if(index) row.style.marginTop='6px';
+    const label=document.createElement('strong');
+    label.style.color=event.company==='Anthropic'?'#6d28d9':'#1d4ed8';
+    label.textContent=(event.company||'AI公司')+(event.disclosure_type==='forecast'?' 预期动态：':' 收入动态：');
+    const summary=document.createElement('span');
+    summary.textContent=event.summary+'（披露 '+event.source_date+'）';
+    row.append(label,summary);
+    try{
+      const u=new URL(event.source_url||'');
+      if(u.protocol==='https:'&&allowed.some(host=>u.hostname===host||u.hostname.endsWith('.'+host))){
+        const link=document.createElement('a');
+        link.href=u.href; link.target='_blank'; link.rel='noopener';
+        link.style.cssText='margin-left:5px;color:#2563eb;text-decoration:none;font-weight:700';
+        link.textContent=(event.source_label||'查看来源')+' ↗';
+        row.append(link);
+      }
+    }catch(_){ /* 无可信链接时只显示已保存摘要 */ }
+    el.append(row);
+  });
+  if(d.arr_checked_at){
+    const checked=document.createElement('div');
+    checked.style.cssText='margin-top:6px;color:#64748b;font-size:9px';
+    checked.textContent='公开来源核查：'+d.arr_checked_at+' · 年化运行率不等于全年实际收入';
+    el.append(checked);
+  }
   el.style.display='block';
 }
 
@@ -5542,7 +5553,7 @@ function _renderCreditRatings(d){
     const action=company.last_action||{};
     const actionBox=el('div','credit-rating-action');
     const actionKind=['up','new'].includes(action.kind)?action.kind:'flat';
-    const actionLabel=actionKind==='up'?'↑ 上调':actionKind==='new'?'＋ 首评':'→ 维持';
+    const actionLabel=action.label||(actionKind==='up'?'↑ 上调':actionKind==='new'?'＋ 首评':'→ 维持');
     actionBox.append(el('span','credit-rating-action-badge is-'+actionKind,actionLabel),el('span','credit-rating-action-copy',action.detail||'近期未发现评级或展望变化'));
     card.append(head,hero,agencies,actionBox);
     const sourceUrl=safeUrl(company.source_url);
@@ -5554,7 +5565,7 @@ function _renderCreditRatings(d){
     grid.append(card);
   });
   const stamp=document.getElementById('creditRatingTs');
-  if(stamp) stamp.textContent='评级核验截至 '+(snapshot.as_of||'—');
+  if(stamp) stamp.textContent='公开来源核查 '+(snapshot.checked_at||snapshot.as_of||'—');
   const note=document.getElementById('creditRatingNote');
   if(note&&snapshot.note) note.textContent=snapshot.note;
 }

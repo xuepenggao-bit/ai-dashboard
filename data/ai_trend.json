@@ -1,15 +1,15 @@
 {
-  "updated": "2026-08-26 18:00:11",
+  "updated": "2026-09-29 14:36:01",
   "last_checked": "2026-09-29 14:02:44",
   "scan_interval_hours": 3,
   "scanner_method": "local-evidence-v2",
   "capex_as_of": "2026-08-08",
   "capex_unit": "USD 100 million",
   "note": "GitHub Actions每3小时自动扫描三大云业务季度收入和四家公司Capex；优先采用公司官方投资者关系披露，业绩会仅在官方文字稿不可得时采用AP/Reuters/CNBC直接报道",
-  "hyperscaler_capex_2026e_low_yi": 7350.0,
-  "hyperscaler_capex_2026e_mid_yi": 7400.0,
-  "hyperscaler_capex_2026e_high_yi": 7450.0,
-  "hyperscaler_capex_2026e_yi": 7400.0,
+  "hyperscaler_capex_2026e_low_yi": 7350,
+  "hyperscaler_capex_2026e_mid_yi": 7400,
+  "hyperscaler_capex_2026e_high_yi": 7450,
+  "hyperscaler_capex_2026e_yi": 7400,
   "hyperscaler_capex_2025a_yi": 3564.9,
   "hyperscaler_yoy_pct": 107.6,
   "hyperscaler_detail": "ALPHABET $195–205B · MICROSOFT ~$175B · AMAZON ~$220B · META ~$145B",
@@ -31,8 +31,8 @@
       "display_name": "Microsoft",
       "actual_2024_yi": 444.8,
       "actual_2025_yi": 645.5,
-      "guidance_low_yi": 1750.0,
-      "guidance_high_yi": 1750.0,
+      "guidance_low_yi": 1750,
+      "guidance_high_yi": 1750,
       "guidance_type": "point",
       "period": "CY2026",
       "basis_note": "CY2026 · 公司正式Capex指引",
@@ -57,8 +57,8 @@
       "display_name": "Meta",
       "actual_2024_yi": 392.3,
       "actual_2025_yi": 722.2,
-      "guidance_low_yi": 1450.0,
-      "guidance_high_yi": 1450.0,
+      "guidance_low_yi": 1450,
+      "guidance_high_yi": 1450,
       "guidance_type": "point",
       "period": "CY2026",
       "basis_note": "CY2026 · 公司正式Capex指引",
@@ -67,17 +67,18 @@
       "source_url": "https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-First-Quarter-2026-Results/default.aspx"
     }
   },
-  "mag7_pe_median": 25.0,
+  "mag7_pe_median": 25,
   "mag7_pe_avg": 41,
   "amazon_capex_2025a_yi": 1283.2,
   "amazon_capex_2026e_yi": 2200,
-  "meta_capex_low_yi": 1450.0,
-  "meta_capex_high_yi": 1450.0,
+  "meta_capex_low_yi": 1450,
+  "meta_capex_high_yi": 1450,
   "arr_labels": [
     "2024末",
     "2025末",
     "2026-02",
     "2026-05",
+    "2026-07",
     "2026-08"
   ],
   "arr_openai": [
@@ -85,47 +86,63 @@
     214,
     250,
     null,
-    400.0
+    null,
+    400
   ],
   "arr_anthropic": [
     10,
     90,
     null,
     470,
-    650.0
+    650,
+    null
   ],
-  "arr_as_of": "2026-08-18",
-  "arr_note": "年化收入运行率公开里程碑（非传统合同ARR） · 仅提取来源明确给出的金额，不从增速或定性表述反推数值",
+  "arr_as_of": "2026-09-18",
+  "arr_note": "年化收入运行率公开里程碑（非全年实际收入、非传统合同ARR） · 仅连接已报道数值；预测不计入曲线",
   "arr_latest_events": {
     "openai": {
       "company": "OpenAI",
-      "summary": "最新公开披露的年化收入运行率约为$40B。",
+      "summary": "已报道年化收入运行率超过400亿美元；本次核查未发现更晚的可验证数值。",
       "numeric": true,
-      "source_label": "bloomberg.com",
-      "source_date": "2026-08-16",
+      "arr_yi": 400,
+      "comparison": ">",
+      "metric_period": "2026-08",
+      "source_label": "Bloomberg · 年化收入报道",
+      "source_date": "2026-08-13",
       "source_url": "https://www.bloomberg.com/news/articles/2026-08-13/openai-s-revenue-run-rate-tops-40-billion-ahead-of-ipo",
-      "arr_yi": 400.0
+      "checked_at": "2026-09-29"
     },
     "anthropic": {
       "company": "Anthropic",
-      "summary": "最新公开披露的年化收入运行率约为$65B。",
-      "numeric": true,
-      "source_label": "cnbc.com",
-      "source_date": "2026-08-18",
-      "source_url": "https://www.cnbc.com/2026/08/17/anthropic-says-annualized-revenue-climbed-to-65-billion-in-july.html",
-      "arr_yi": 650.0
+      "summary": "已报道7月末年化收入约650亿美元；9月18日报道预计年底超过1,000亿美元，属于预期，未计入曲线。",
+      "numeric": false,
+      "disclosure_type": "forecast",
+      "source_label": "NYT · 年底预期（非已实现）",
+      "source_date": "2026-09-18",
+      "source_url": "https://www.nytimes.com/2026/09/18/technology/anthropic-ipo-ai-safety.html",
+      "checked_at": "2026-09-29"
     }
   },
   "arr_sources": {
     "openai": {
-      "source_label": "bloomberg.com",
-      "source_date": "2026-08-16",
-      "source_url": "https://www.bloomberg.com/news/articles/2026-08-13/openai-s-revenue-run-rate-tops-40-billion-ahead-of-ipo"
+      "source_label": "Bloomberg",
+      "source_date": "2026-08-13",
+      "source_url": "https://www.bloomberg.com/news/articles/2026-08-13/openai-s-revenue-run-rate-tops-40-billion-ahead-of-ipo",
+      "metric_period": "2026-08",
+      "arr_yi": 400,
+      "comparison": ">",
+      "checked_at": "2026-09-29",
+      "corroborating_url": "https://news.bloomberglaw.com/artificial-intelligence/openais-revenue-run-rate-tops-40-billion-ahead-of-ipo"
     },
     "anthropic": {
-      "source_label": "cnbc.com",
-      "source_date": "2026-08-18",
-      "source_url": "https://www.cnbc.com/2026/08/17/anthropic-says-annualized-revenue-climbed-to-65-billion-in-july.html"
+      "source_label": "CNBC",
+      "source_date": "2026-08-17",
+      "source_url": "https://www.cnbc.com/2026/08/17/anthropic-says-annualized-revenue-climbed-to-65-billion-in-july.html",
+      "metric_period": "2026-07",
+      "arr_yi": 650,
+      "comparison": "~",
+      "checked_at": "2026-09-29",
+      "corroborating_url": "https://www.youtube.com/watch?v=Mv075uu1io0"
     }
   },
   "cloud_revenue": {
@@ -148,7 +165,7 @@
           20.028,
           24.768
         ],
-        "latest_yoy_pct": 82.0,
+        "latest_yoy_pct": 82,
         "source_label": "Alphabet 2026 Q2 财报",
         "source_date": "2026-07-22",
         "source_url": "https://abc.xyz/investor/news/news-details/2026/Alphabet-Announces-Second-Quarter-2026-Results-2026-Y3uQ6H4ZJa/default.aspx",
@@ -185,7 +202,7 @@
           54.5,
           59.3
         ],
-        "latest_yoy_pct": 27.0,
+        "latest_yoy_pct": 27,
         "scope_note": "包含 Microsoft 365 Commercial cloud、Azure and other cloud services、LinkedIn 商业部分与 Dynamics 365；不是 Azure 单独收入。",
         "source_label": "Microsoft FY26 Q4 财报",
         "source_date": "2026-07-29",
@@ -197,9 +214,9 @@
     }
   },
   "credit_ratings": {
-    "as_of": "2026-08-21",
+    "as_of": "2026-09-29",
     "scope": "long-term issuer / senior unsecured",
-    "note": "来源：S&P Global Ratings、SEC 债券发行文件及公司投资者关系页面；评级与最近动作分别展示",
+    "note": "公开来源核查截至2026-09-29；核查日期不代表评级动作日期。新债定级不等于主体升降级；部分动作由财经媒体转述，未取得评级机构最新完整历史。WD=撤销评级；—=未核实到公开评级，不等于无评级。",
     "companies": {
       "alphabet": {
         "display_name": "Alphabet / Google",
@@ -209,12 +226,12 @@
           "sp": {
             "rating": "AA+",
             "outlook": "Stable",
-            "note": "S&P 长期发行人评级，展望稳定"
+            "note": "S&P AA+ / 稳定；2026-08-06 SEC新债预期评级，2026-05-14 S&P新债公告同时确认主体评级不变。"
           },
           "moodys": {
             "rating": "Aa2",
             "outlook": "Stable",
-            "note": "Moody’s 高级无担保评级，展望稳定"
+            "note": "Moody’s Aa2 / 稳定；2026-08-06 SEC新债预期评级。"
           },
           "fitch": {
             "rating": "—",
@@ -224,11 +241,22 @@
         },
         "last_action": {
           "kind": "flat",
-          "date": "2026-08-17",
-          "detail": "2026-08-17 · S&P 新债定级 AA+，发行人评级 AA+ / 稳定保持不变"
+          "label": "新债定级",
+          "date": "2026-08-06",
+          "event_type": "new_issue_expected_rating",
+          "detail": "2026-08-06 · 新债文件列示预期 AA+ / Aa2、展望稳定；不是主体升降级。",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/1652044/000119312526338750/d159970dfwp.htm"
         },
-        "source_label": "S&P · Alphabet 评级行动",
-        "source_url": "https://www.spglobal.com/ratings/en/regulatory/article/-/view/type/HTML/id/3612219"
+        "source_label": "SEC · 2026-08-06 新债发行文件",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1652044/000119312526338750/d159970dfwp.htm",
+        "source_date": "2026-08-06",
+        "previous_evidence": {
+          "source_date": "2026-08-17",
+          "source_url": "https://www.spglobal.com/ratings/en/regulatory/article/-/view/type/HTML/id/3612219",
+          "note": "澳元新债定级页面标题仍可检索，本次未能重新取得正文，不作为更新的主体评级动作。"
+        },
+        "checked_at": "2026-09-29",
+        "verification_note": "按可访问公开资料核查；未取得所有机构完整最新评级行动历史。"
       },
       "microsoft": {
         "display_name": "Microsoft",
@@ -246,18 +274,28 @@
             "note": "Moody’s 长期评级，展望稳定"
           },
           "fitch": {
-            "rating": "—",
+            "rating": "WD",
             "outlook": "—",
-            "note": "公司投资者关系页面未列示 Fitch 评级"
+            "note": "Fitch于2023-01-24先确认AAA/稳定，随后因商业原因撤销评级（WD）；未核实到后续恢复评级。",
+            "source_date": "2023-01-24",
+            "source_url": "https://fund.megabank.com.tw/SaveFile/bond/Fitch_Withdraws_Miscrosoft_Rating.pdf",
+            "verification_level": "agency_report_mirror"
           }
         },
         "last_action": {
           "kind": "flat",
+          "label": "确认评级",
           "date": "2026-08-21",
-          "detail": "2026-08-21 · Moody’s 维持 Aaa / 稳定，短期评级维持 P-1"
+          "event_type": "issuer_affirmation",
+          "detail": "2026-08-21 · 据媒体转述，Moody’s 确认 Aaa / 稳定；公司官网仍列 AAA / Aaa。",
+          "source_url": "https://www.investing.com/news/stock-market-news/moodys-affirms-microsoft-stock-aaa-rating-outlook-stable-93CH-4872059",
+          "verification_level": "secondary_report"
         },
         "source_label": "Microsoft · 公司信用评级",
-        "source_url": "https://www.microsoft.com/en-us/investor/faq"
+        "source_url": "https://www.microsoft.com/en-us/investor/faq",
+        "source_date": null,
+        "checked_at": "2026-09-29",
+        "verification_note": "按可访问公开资料核查；未取得所有机构完整最新评级行动历史。"
       },
       "amazon": {
         "display_name": "Amazon",
@@ -272,7 +310,7 @@
           "moodys": {
             "rating": "A1",
             "outlook": "Stable",
-            "note": "Moody’s 长期评级，展望稳定"
+            "note": "A1 / 稳定；2026-02-20展望由正面调为稳定，评级维持；7月SEC新债文件确认A1。"
           },
           "fitch": {
             "rating": "AA-",
@@ -281,12 +319,26 @@
           }
         },
         "last_action": {
-          "kind": "up",
-          "date": "2021-06-11",
-          "detail": "2021-06-11 · S&P 由 AA- 上调至 AA；2026-07 发行文件仍列示 AA"
+          "kind": "flat",
+          "label": "展望调整",
+          "date": "2026-02-20",
+          "event_type": "outlook_revision",
+          "detail": "2026-02-20 · Moody’s 展望由正面调为稳定，A1不变；7月SEC文件仍列 AA / A1 / AA-。",
+          "source_url": "https://finance.yahoo.com/news/moody-shifts-amazon-outlook-stable-230825793.html",
+          "verification_level": "secondary_report"
         },
-        "source_label": "SEC · Amazon 2026-07 债券发行文件",
-        "source_url": "https://www.sec.gov/Archives/edgar/data/1018724/000110465926081334/tm2619352d3_fwp.htm"
+        "source_label": "SEC · 2026-07-07 新债发行文件",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1018724/000110465926081334/tm2619352d3_fwp.htm",
+        "source_date": "2026-07-07",
+        "recent_issuance": {
+          "source_date": "2026-09-09",
+          "event_type": "new_issue_disclosure",
+          "source_url": "https://de.advfn.com/borse/NASDAQ/AMZN/nachrichten/99278443/form-fwp-filing-under-securities-act-rules-163-4",
+          "verification_level": "filing_reproduction",
+          "note": "较新FWP转载列示A1 / AA / AA-，未列示展望；未取得SEC原文，不作为新的主体评级调整。"
+        },
+        "checked_at": "2026-09-29",
+        "verification_note": "按可访问公开资料核查；未取得所有机构完整最新评级行动历史。"
       },
       "meta": {
         "display_name": "Meta",
@@ -310,13 +362,38 @@
           }
         },
         "last_action": {
-          "kind": "new",
-          "date": "2022-08-03",
-          "detail": "2022-08-03 · S&P 首次给予 AA- / 稳定；2026-08-17 仍为 AA- / 稳定"
+          "kind": "flat",
+          "label": "确认评级",
+          "date": "2026-02-27",
+          "event_type": "issuer_affirmation",
+          "detail": "2026-02-27 · 据媒体转述，Moody’s 确认 Aa3 / 稳定；4月SEC新债文件列 AA- / Aa3。",
+          "source_url": "https://www.investing.com/news/stock-market-news/moodys-affirms-meta-aa3-rating-on-strong-performance-93CH-4532317",
+          "verification_level": "secondary_report"
         },
-        "source_label": "S&P · Meta 当前评级核验",
-        "source_url": "https://www.spglobal.com/ratings/en/regulatory/article/-/view/type/HTML/id/3612754"
+        "source_label": "SEC · 2026-04-30 新债发行文件",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1326801/000119312526197902/d148113dfwp.htm",
+        "source_date": "2026-04-30",
+        "excluded_evidence": {
+          "source_url": "https://www.spglobal.com/ratings/en/regulatory/article/-/view/type/HTML/id/3612754",
+          "reason": "评级主体为Sopaipilla Investor LLC，不能当作Meta主体评级动作。"
+        },
+        "checked_at": "2026-09-29",
+        "verification_note": "按可访问公开资料核查；未取得所有机构完整最新评级行动历史。"
       }
+    },
+    "checked_at": "2026-09-29"
+  },
+  "arr_checked_at": "2026-09-29",
+  "arr_forecasts": [
+    {
+      "company": "Anthropic",
+      "target_period": "2026年末",
+      "arr_yi": 1000,
+      "comparison": ">",
+      "is_realized": false,
+      "source_date": "2026-09-18",
+      "source_label": "NYT · 知情人士预期",
+      "source_url": "https://www.nytimes.com/2026/09/18/technology/anthropic-ipo-ai-safety.html"
     }
-  }
+  ]
 }
