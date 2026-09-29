@@ -2566,6 +2566,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- 历史记录 -->
   <div class="pcard">
     <h3>📜 自检历史 <span style="font-size:11px;color:#8C806C;font-weight:500">情绪—决策数据库 · 半年后回看，关联高度可预测</span></h3>
+    <div id="preHistStatus" role="status" style="font-size:11px;color:#64748b;margin-bottom:8px"></div>
     <div id="preHist" style="overflow-x:auto"></div>
   </div>
 </div>
@@ -6778,6 +6779,8 @@ function refreshPortAll(force){
 
 function _tabRefresh(idx){
   const tab=TAB_ORDER[idx];
+  // 自检页先同步显示缓存，后台读取自行去重；不能被其他页的初始化节流挡住。
+  if(tab==='tPre'){ preLoad(); return; }
   const now=Date.now();
   if(_TAB_TS[idx] && now-_TAB_TS[idx]<_TAB_THROTTLE) return; // 节流
   _TAB_TS[idx]=now;
@@ -6786,7 +6789,6 @@ function _tabRefresh(idx){
   else if(tab==='t0')    { refreshMacro(); refreshAiTrendOnTabAccess(); }
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tHist') renderHistTable();
-  else if(tab==='tPre')  preLoad();
   // Capex / ARR：进入宏观趋势页时重新读取快照，并在过期且已有PAT时自动触发后台扫描。
 }
 
@@ -6809,12 +6811,13 @@ let _PRE={};
 let _preCur={light:'green',flags:[],quad:''};
 
 function preClick(el){
+  _preMarkDirty();
   _PRE[el.dataset.q]=el.dataset.v;
   el.parentElement.querySelectorAll('.popt').forEach(b=>b.classList.remove('on','warnon'));
   el.classList.add(el.dataset.warn==='1'?'warnon':'on');
   preJudge();
 }
-function preNote(el){ _PRE[el.dataset.q]=el.value; }
+function preNote(el){ _preMarkDirty(); _PRE[el.dataset.q]=el.value; }
 
 function preJudge(){
   // 情感投入高低：身体亢奋 或 热情冲动
@@ -6874,113 +6877,202 @@ function preJudge(){
 // 盘前自检：通过 GitHub Contents API 持久化到 data/preflight_log.json（跨设备同步）
 // 同时保留 localStorage 作为本地缓存/离线备份
 const PRE_FILE='data/preflight_log.json';
-let _preSha=null; // 当前文件的 SHA，PUT 时需要
-// 当天日期（北京时间 YYYY-MM-DD）。必须用东八区，否则 toISOString 的 UTC 会让北京早晨算成前一天
+let _preSha=null; // 仅写操作的权威 API 读取/写入可以更新 SHA
+let _preLogCache=null, _preRefreshPending=null, _preLastSync=0;
+let _preEpoch=0, _preWriting=false, _preFormDay='', _preFormDirty=false, _preEditVersion=0;
+let _preApiOnlyUntil=0;
+const PRE_META_KEY=PRE_KEY+'_meta';
 function _preToday(){ return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Shanghai'}); }
-
-// 读盘前自检历史。默认走 GitHub Pages 同源 raw（CDN，快、稳，用于 preLoad）；
-// useApi=true 时走 GitHub API（实时并返回 SHA，用于写入前取合并基准）。
-async function _preGhGet(useApi){
-  if(!useApi){
-    try{
-      const r=await fetch(`${PRE_FILE}?v=${Math.floor(Date.now()/60000)}`);
-      if(r.ok) return await r.json();
-      if(r.status===404) return [];
-    }catch(e){}   // 同源失败 → 落到 api
-  }
-  try{
-    const r=await fetch(`https://api.github.com/repos/${PORT_GH_REPO}/contents/${PRE_FILE}?_=${Date.now()}`,
-      {headers:_githubApiHeaders(), cache:'no-store'});
-    if(r.status===404){ _preSha=null; return []; }
-    if(!r.ok) return null;
-    const j=await r.json();
-    _preSha=j.sha;
-    return _decodeGhContent(j.content);
-  }catch(e){ return null; }
+function _preValidLog(log){
+  return Array.isArray(log)&&log.every(r=>r&&typeof r==='object'&&/^\d{4}-\d{2}-\d{2}$/.test(r.date)
+    &&(r.flags==null||Array.isArray(r.flags))&&(r.ans==null||(typeof r.ans==='object'&&!Array.isArray(r.ans))));
 }
-
+function _preReadCache(){
+  if(_preLogCache!==null) return _preLogCache;
+  try{
+    const meta=JSON.parse(localStorage.getItem(PRE_META_KEY)||'{}');
+    _preApiOnlyUntil=Number(meta.apiOnlyUntil)||0;
+  }catch(_){}
+  try{
+    const log=JSON.parse(localStorage.getItem(PRE_KEY)||'null');
+    if(_preValidLog(log)) _preLogCache=log;
+  }catch(_){}
+  return _preLogCache;
+}
+function _preRememberLog(log,afterWrite=false){
+  if(!_preValidLog(log)) return;
+  _preLogCache=log;
+  if(afterWrite) _preApiOnlyUntil=Date.now()+20*60*1000;
+  try{
+    localStorage.setItem(PRE_KEY,JSON.stringify(log));
+    localStorage.setItem(PRE_META_KEY,JSON.stringify({apiOnlyUntil:_preApiOnlyUntil}));
+  }catch(_){ /* Safari 存储受限时，仍使用内存缓存 */ }
+}
+function _preHistoryStatus(text,failed=false){
+  const el=document.getElementById('preHistStatus');
+  if(el){ el.textContent=text; el.style.color=failed?'#b45309':'#64748b'; }
+}
+function _preMarkDirty(){ _preFormDirty=true; _preEditVersion++; }
+function _preApplyToday(log){
+  if(_preFormDirty||_preFormDay!==_preToday()) return;
+  const rec=(log||[]).find(r=>r.date===_preFormDay);
+  _PRE=Object.assign({},rec&&rec.ans||{});
+  document.querySelectorAll('#tPre .popt').forEach(b=>{
+    b.classList.remove('on','warnon');
+    if(_PRE[b.dataset.q]===b.dataset.v) b.classList.add(b.dataset.warn==='1'?'warnon':'on');
+  });
+  document.querySelectorAll('#tPre .pnote').forEach(t=>{ t.value=_PRE[t.dataset.q]||''; });
+  const tip=document.getElementById('preSaveTip');
+  if(tip){
+    tip.textContent=rec?'✓ 已载入今日记录（'+(rec.ts||'')+'）':'';
+    tip.style.color='#16a34a';
+  }
+  preJudge();
+}
+// 超时覆盖响应体解析，避免只拿到 HTTP 头后仍无限等 JSON。
+async function _preFetchJson(url,options={},timeout=6000){
+  const controller=new AbortController();
+  let timer;
+  try{
+    return await Promise.race([
+      (async()=>{
+        const r=await fetch(url,{...options,signal:controller.signal});
+        if(r.status===404) return {missing:true};
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return {value:await r.json()};
+      })(),
+      new Promise((_,reject)=>{
+        timer=setTimeout(()=>{controller.abort();reject(new Error('自检历史读取超时'));},timeout);
+      })
+    ]);
+  }finally{ clearTimeout(timer); }
+}
+// 显示读取不改写 SHA；保存/删除仍必须读取权威 API 全量与 SHA。
+async function _preGhGet(useApi=false){
+  _preReadCache();
+  const api=async()=>{
+    const response=await _preFetchJson(
+      'https://api.github.com/repos/'+PORT_GH_REPO+'/contents/'+PRE_FILE+'?_='+Date.now(),
+      {headers:_githubApiHeaders(),cache:'no-store'},6000);
+    if(response.missing){
+      if(useApi) _preSha=null;
+      else _preApiOnlyUntil=Date.now()+20*60*1000;
+      return [];
+    }
+    const j=response.value, log=_decodeGhContent(j&&j.content);
+    if(!_preValidLog(log)||!j.sha) throw new Error('历史格式异常');
+    if(useApi) _preSha=j.sha;
+    else _preApiOnlyUntil=Date.now()+20*60*1000;
+    return log;
+  };
+  const page=async()=>{
+    const response=await _preFetchJson(PRE_FILE+'?v='+Math.floor(Date.now()/60000),{cache:'no-cache'},3500);
+    if(response.missing||!_preValidLog(response.value)) throw new Error('同源快照不可用');
+    return response.value;
+  };
+  if(useApi){ try{return await api();}catch(_){return null;} }
+  // 已确认的 API 数据不能被部署滞后的 CDN 快照覆盖，尤其是刚保存/删除之后。
+  const apiOnly=Date.now()<_preApiOnlyUntil;
+  if(apiOnly||_getGithubToken()){
+    try{return await api();}catch(_){}
+    if(apiOnly) return null;
+    try{return await page();}catch(_){return null;}
+  }
+  try{return await page();}catch(_){}
+  try{return await api();}catch(_){return null;}
+}
 async function _preGhPut(log){
   if(!_getGithubToken()) return false;
-  const body={
-    message:'Update preflight log',
-    branch:'main',
-    content:_b64Encode(JSON.stringify(log,null,2))
-  };
+  const body={message:'Update preflight log',branch:'main',content:_b64Encode(JSON.stringify(log,null,2))};
   if(_preSha) body.sha=_preSha;
   try{
-    const r=await fetch(`https://api.github.com/repos/${PORT_GH_REPO}/contents/${PRE_FILE}`,
-      {method:'PUT', headers:_githubApiHeaders({'Content-Type':'application/json'}),
-       body:JSON.stringify(body)});
+    const r=await fetch('https://api.github.com/repos/'+PORT_GH_REPO+'/contents/'+PRE_FILE,
+      {method:'PUT',headers:_githubApiHeaders({'Content-Type':'application/json'}),body:JSON.stringify(body)});
     if(!r.ok) return false;
     const j=await r.json();
-    _preSha=j.content?.sha || null;
+    _preSha=j.content?.sha||null;
     return true;
-  }catch(e){ return false; }
+  }catch(_){return false;}
 }
-
-async function preLoad(){
-  const today=_preToday();
-  const de=document.getElementById('preDate'); if(de) de.textContent=today;
-  _PRE={};
-  document.querySelectorAll('#tPre .popt').forEach(b=>b.classList.remove('on','warnon'));
-  document.querySelectorAll('#tPre .pnote').forEach(t=>t.value='');
-  const tip=document.getElementById('preSaveTip');
-  tip.textContent='⏳ 同步中…'; tip.style.color='#94a3b8';
-
-  // 优先从 GitHub 拉取最新数据；失败则回退 localStorage
-  let log=await _preGhGet();
-  if(log===null){
-    log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
-    tip.textContent='⚠ 远端同步失败，已载入本地缓存'; tip.style.color='#d97706';
-  } else {
-    // 同步到 localStorage 作为离线备份
-    localStorage.setItem(PRE_KEY, JSON.stringify(log));
-    tip.textContent='';
-  }
-  const rec=log.find(r=>r.date===today);
-  if(rec){
-    Object.assign(_PRE, rec.ans||{});
-    document.querySelectorAll('#tPre .popt').forEach(b=>{
-      if(_PRE[b.dataset.q]===b.dataset.v) b.classList.add(b.dataset.warn==='1'?'warnon':'on');
-    });
-    document.querySelectorAll('#tPre .pnote').forEach(t=>{ if(_PRE[t.dataset.q]) t.value=_PRE[t.dataset.q]; });
-    tip.textContent='✓ 已载入今日记录（'+(rec.ts||'')+'）'; tip.style.color='#16a34a';
-  }
-  preJudge();
-  preRenderHistory(log);
+function _preRefreshHistory(){
+  const cached=_preReadCache();
+  if(_preWriting) return Promise.resolve(cached);
+  if(_preRefreshPending&&_preRefreshPending.epoch===_preEpoch) return _preRefreshPending.promise;
+  if(_preLastSync&&Date.now()-_preLastSync<30000) return Promise.resolve(cached);
+  const epoch=_preEpoch;
+  _preHistoryStatus(cached!==null?'已显示缓存 · 后台核对云端…':'正在读取云端历史…');
+  const pending={epoch,promise:null};
+  _preRefreshPending=pending;
+  pending.promise=(async()=>{
+    try{
+      const log=await _preGhGet();
+      if(epoch!==_preEpoch||_preWriting) return _preReadCache();
+      if(log===null){
+        _preHistoryStatus(cached!==null?'云端暂不可达 · 保留已加载历史':'暂未读取成功，重新进入此页可重试',true);
+        if(cached===null){
+          const el=document.getElementById('preHist');
+          if(el) el.innerHTML='<div style="color:#b45309;font-size:12px;padding:14px 0">云端历史暂未读取成功，不代表没有记录。</div>';
+        }
+        return cached;
+      }
+      _preRememberLog(log);
+      _preLastSync=Date.now();
+      preRenderHistory(log);
+      _preHistoryStatus('已核对云端 · '+log.length+' 条记录');
+      _preApplyToday(log); // 预热开始后首次打开也可回填；助手函数不会覆盖已编辑/清空的作答。
+      return log;
+    }finally{
+      if(_preRefreshPending===pending) _preRefreshPending=null;
+    }
+  })();
+  return pending.promise;
 }
-
+function preLoad(){
+  const today=_preToday(), de=document.getElementById('preDate');
+  if(de) de.textContent=today;
+  if(_preFormDay!==today){
+    _preFormDay=today; _preFormDirty=false; _preEditVersion++; _PRE={};
+  }
+  const cached=_preReadCache();
+  // 在第一个 await 之前绘制，网络快慢不再决定历史首次显示时间。
+  if(cached!==null){ preRenderHistory(cached); if(!_preWriting) _preApplyToday(cached); }
+  else{
+    const el=document.getElementById('preHist');
+    if(el) el.innerHTML='<div style="color:#64748b;font-size:12px;padding:14px 0">正在读取自检历史…</div>';
+    if(!_preWriting) _preApplyToday([]);
+  }
+  return _preRefreshHistory();
+}
 async function preSubmit(){
-  preJudge();
-  const today=_preToday();
+  if(_preWriting) return;
+  _preWriting=true; _preEpoch++;
+  const editVersion=_preEditVersion;
   const tip=document.getElementById('preSaveTip');
-  tip.textContent='💾 保存中…'; tip.style.color='#94a3b8';
-
-  const rec={date:today, ts:new Date().toLocaleString('zh-CN',{hour12:false}),
-             ans:Object.assign({},_PRE), light:_preCur.light, quad:_preCur.quad, flags:_preCur.flags};
-
-  // 写操作：合并基准走 api 实时读取（true），拿到最新全量历史 + SHA，避免 CDN 延迟或覆盖云端
-  let log=await _preGhGet(true);
-  if(log===null){
-    tip.textContent='⚠ 云端读取失败，未保存（请检查网络后重试）'; tip.style.color='#ef4444';
-    return;   // 读不到云端全量就不写，避免覆盖云端历史
-  }
-  // 每天一条：先移除当天旧记录再插入最新 → 当天首次提交=新建，再次提交=刷新
-  log=log.filter(r=>r.date!==today); log.unshift(rec); log=log.slice(0,365);
-
-  const ok=await _preGhPut(log);
-  if(ok){
-    localStorage.setItem(PRE_KEY, JSON.stringify(log));   // 仅成功后更新本地备份
-    tip.textContent='✓ 已同步至云端（'+rec.ts+'）'; tip.style.color='#16a34a';
-  } else {
-    tip.textContent='⚠ 云端写入失败，请检查网络后重试'; tip.style.color='#d97706';
-  }
-  preRenderHistory(log);
+  try{
+    preJudge();
+    const today=_preToday();
+    tip.textContent='💾 保存中…'; tip.style.color='#94a3b8';
+    const rec={date:today,ts:new Date().toLocaleString('zh-CN',{hour12:false}),
+      ans:Object.assign({},_PRE),light:_preCur.light,quad:_preCur.quad,flags:[..._preCur.flags]};
+    let log=await _preGhGet(true);
+    if(log===null){
+      tip.textContent='⚠ 云端读取失败，未保存（请检查网络后重试）'; tip.style.color='#ef4444';
+      return;
+    }
+    log=log.filter(r=>r.date!==today); log.unshift(rec); log=log.slice(0,365);
+    if(await _preGhPut(log)){
+      _preRememberLog(log,true); _preLastSync=Date.now();
+      if(editVersion===_preEditVersion) _preFormDirty=false;
+      tip.textContent='✓ 已同步至云端（'+rec.ts+'）'; tip.style.color='#16a34a';
+      preRenderHistory(log); _preHistoryStatus('已核对云端 · '+log.length+' 条记录');
+    }else{
+      tip.textContent='⚠ 云端写入失败，已保留原历史，请检查网络后重试'; tip.style.color='#d97706';
+    }
+  }finally{ _preWriting=false; }
 }
-
 function preReset(){
   if(!confirm('清空本次作答？（不影响已保存的历史记录）')) return;
-  _PRE={};
+  _preMarkDirty(); _PRE={};
   document.querySelectorAll('#tPre .popt').forEach(b=>b.classList.remove('on','warnon'));
   document.querySelectorAll('#tPre .pnote').forEach(t=>t.value='');
   const tip=document.getElementById('preSaveTip');
@@ -6989,7 +7081,7 @@ function preReset(){
 }
 
 function preRenderHistory(log){
-  if(!log) log=JSON.parse(localStorage.getItem(PRE_KEY)||'[]');
+  if(!log) log=_preReadCache()||[];
   const el=document.getElementById('preHist');
   if(!log.length){ el.innerHTML='<div style="color:#94a3b8;font-size:12px;padding:14px 0">暂无记录 · 完成首次自检后这里会积累情绪—决策数据库（同步至 GitHub data/preflight_log.json）</div>'; return; }
   const dot={green:'🟢',yellow:'🟡',red:'🔴'};
@@ -7010,25 +7102,27 @@ function preRenderHistory(log){
     ).join('')+'</tbody></table>';
 }
 
-// 删除某一天的自检记录：从云端读最新全量 → 移除该日期 → 写回云端（与提交同样的云端权威逻辑）
+// 删除同样使用权威 API，只有成功写回才更新缓存和列表。
 async function preDeleteRecord(date){
-  if(!confirm('确认删除 '+date+' 的自检记录？此操作会同步到云端。')) return;
+  if(_preWriting||!confirm('确认删除 '+date+' 的自检记录？此操作会同步到云端。')) return;
+  _preWriting=true; _preEpoch++;
   const tip=document.getElementById('preSaveTip');
-  tip.textContent='🗑 删除中…'; tip.style.color='#94a3b8';
-  let log=await _preGhGet(true);   // 写操作：api 实时读取拿最新全量 + SHA
-  if(log===null){
-    tip.textContent='⚠ 云端读取失败，未删除（请检查网络后重试）'; tip.style.color='#ef4444';
-    return;
-  }
-  log=log.filter(r=>r.date!==date);
-  const ok=await _preGhPut(log);
-  if(ok){
-    localStorage.setItem(PRE_KEY, JSON.stringify(log));
-    tip.textContent='✓ 已删除 '+date+' 的记录'; tip.style.color='#16a34a';
-  } else {
-    tip.textContent='⚠ 云端写入失败，请检查网络后重试'; tip.style.color='#d97706';
-  }
-  preRenderHistory(log);
+  try{
+    tip.textContent='🗑 删除中…'; tip.style.color='#94a3b8';
+    let log=await _preGhGet(true);
+    if(log===null){
+      tip.textContent='⚠ 云端读取失败，未删除（请检查网络后重试）'; tip.style.color='#ef4444';
+      return;
+    }
+    log=log.filter(r=>r.date!==date);
+    if(await _preGhPut(log)){
+      _preRememberLog(log,true); _preLastSync=Date.now();
+      tip.textContent='✓ 已删除 '+date+' 的记录'; tip.style.color='#16a34a';
+      preRenderHistory(log); _preHistoryStatus('已核对云端 · '+log.length+' 条记录');
+    }else{
+      tip.textContent='⚠ 云端写入失败，已保留原历史，请检查网络后重试'; tip.style.color='#d97706';
+    }
+  }finally{ _preWriting=false; }
 }
 
 // ── REFRESH ──────────────────────────────────────────────────
@@ -12820,6 +12914,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     _safe(mkStageMatrix);
     _safe(()=>{renderRisk();renderAlerts();renderSteps();renderSwitch();});
     // 非首屏数据抓取（错开首屏行情请求，避免抢东财/腾讯连接）
+    _preRefreshHistory();   // 空闲时预热自检历史；切页共用请求，不阻塞首屏股价
     loadAiTrendSnapshot();  // 读取每3小时自动扫描后保存的 AI 趋势快照
     fetchVixChart();        // iVIX 历史数据
     fetchMonLive();         // 产业链监控20日动量
@@ -12835,7 +12930,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 确保节流起点是"实际取到价格的时刻"而不是"页面初始化时刻"，避免首次切换被误节流。
   // 1(tVal)  不预加载，首次切换时立即拉取（同原逻辑）。
   // 8(t3)    静态内容，无需节流。
-  [2,3,5,6,7].forEach(i=>_TAB_TS[i]=_initTs);
+  [2,3,5,6,7].filter(i=>TAB_ORDER[i]&&TAB_ORDER[i]!=='tPre').forEach(i=>_TAB_TS[i]=_initTs);
 });
 
 // Safari/手机浏览器会冻结后台标签页的定时器；恢复前台时主动补刷指数，
