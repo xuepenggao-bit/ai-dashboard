@@ -1937,6 +1937,25 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="tx3 mt4" id="volumeKpiFooter">来源: 东方财富 · 上证综指 + 深证综指成交额 · 柱=每日成交额 · 线=5日均额 · 加载中…</div>
   </div>
 
+  <!-- 日频：沪深 A 股 52 周新高新低（近 60 个交易日） -->
+  <div class="card mb16" id="highLow52Card">
+    <div class="ch">
+      <span class="ct">沪深 A 股 52 周新高新低趋势（日频·家）</span>
+      <span class="cbadge" style="background:#eff6ff;color:#1d4ed8">60 交易日 · 自动更新</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0" aria-live="polite">
+      <span id="highLow52KpiDate" class="tx3" style="color:#64748b">加载中…</span>
+      <div><span class="tx3">52周新高&nbsp;</span><span id="highLow52KpiHigh" style="font-size:18px;font-weight:800;color:#ef4444">—</span></div>
+      <div><span class="tx3">52周新低&nbsp;</span><span id="highLow52KpiLow" style="font-size:18px;font-weight:800;color:#16a34a">—</span></div>
+      <span id="highLow52KpiNet" class="tx3" style="font-weight:800;color:#64748b">净新高 —</span>
+      <span id="highLow52KpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
+    </div>
+    <div style="height:225px"><canvas id="cHighLow52" role="img" aria-label="沪深A股52周新高与新低家数趋势"></canvas></div>
+    <div style="height:135px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0"><canvas id="cHighLow52Net" role="img" aria-label="52周新高减新低家数"></canvas></div>
+    <div class="tx3 mt4" id="highLow52Footer">来源：腾讯财经前复权日线 · 52自然周（364天）· 当日最高/最低触及窗口极值 · 上市满52周 · 沪深A股含ST、不含北交所 · 加载中…</div>
+  </div>
+
+
   <!-- 日频：沪深 A 股涨跌家数趋势（近 60 个交易日） -->
   <div class="card mb16">
     <div class="ch">
@@ -12964,5 +12983,221 @@ window.addEventListener('pageshow', event=>{
   }
 });
 </script>
+<script>
+// HIGH_LOW52_MODULE_START
+// Standalone chart: historical snapshots and live collectors share strict row arbitration.
+const _HIGH_LOW52_STORAGE='aiDashboard.highLow52.v1';
+const _HIGH_LOW52_URLS=[
+  './data/market_high_low_52w.json',
+  'https://raw.githubusercontent.com/xuepenggao-bit/ai-dashboard/main/data/market_high_low_52w.json',
+];
+const _HIGH_LOW52_METHOD='52自然周（364天）· 当日最高/最低触及窗口极值 · 上市满52周 · 沪深A股含ST、不含北交所';
+let _highLow52Rows=new Map();
+let _highLow52Meta={source:'腾讯财经前复权日线',methodology:_HIGH_LOW52_METHOD,updatedAt:''};
+let _highLow52Charts=null;
+let _highLow52Pending=null;
+let _highLow52Attempt=0;
+let _highLow52Restored=false;
+let _highLow52RefreshFailed=false;
+
+function _highLow52Clock(now=Date.now()){
+  const date=new Date(now+8*3600000);
+  return{date:date.toISOString().slice(0,10),minute:date.getUTCHours()*60+date.getUTCMinutes()};
+}
+function _highLow52Int(value){
+  return typeof value==='number'&&Number.isSafeInteger(value)&&value>=0?value:null;
+}
+function _normalizeHighLow52Row(raw,now=Date.now()){
+  if(!raw||typeof raw!=='object'||!/^\d{4}-\d{2}-\d{2}$/.test(raw.date||'')) return null;
+  const parsed=Date.parse(raw.date+'T00:00:00Z'),clock=_highLow52Clock(now);
+  if(!Number.isFinite(parsed)||new Date(parsed).toISOString().slice(0,10)!==raw.date||raw.date>clock.date) return null;
+  const high=_highLow52Int(raw.high),low=_highLow52Int(raw.low);
+  const eligible=_highLow52Int(raw.eligible),universe=_highLow52Int(raw.universe);
+  if(high===null||low===null||eligible===null||universe===null||!eligible||eligible>universe||high>eligible||low>eligible) return null;
+  if(raw.status!=='close'&&raw.status!=='live') return null;
+  if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(raw.asOf||'')) return null;
+  const minute=Number(raw.asOf.slice(0,2))*60+Number(raw.asOf.slice(3));
+  if(minute<9*60+25||(raw.status==='close'&&minute<15*60)) return null;
+  if(raw.date===clock.date&&minute>clock.minute+5) return null;
+  return{date:raw.date,high,low,eligible,universe,asOf:raw.asOf,status:raw.status};
+}
+function _highLow52OrderedRows(){
+  return [..._highLow52Rows.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-60);
+}
+function _highLow52CanReplace(previous,next,revision){
+  if(!previous) return true;
+  if(previous.status==='close'&&next.status!=='close') return false;
+  if(previous.status==='live'&&next.status==='close') return true;
+  if(next.asOf!==previous.asOf) return next.asOf>previous.asOf;
+  if(previous.status!==next.status) return next.status==='close';
+  return revision>previous._revision;
+}
+function _highLow52Save(){
+  try{
+    localStorage.setItem(_HIGH_LOW52_STORAGE,JSON.stringify({
+      schemaVersion:1,..._highLow52Meta,
+      series:_highLow52OrderedRows().map(({_revision,...row})=>({...row,_cachedRevision:_revision})),
+    }));
+  }catch(e){} // Private browsing/storage policy must not disable in-memory data.
+}
+function _acceptHighLow52Payload(payload,options={}){
+  if(!payload||payload.schemaVersion!==1||!Array.isArray(payload.series)) return false;
+  if(typeof payload.source!=='string'||!payload.source.trim()||typeof payload.methodology!=='string'||!payload.methodology.trim()) return false;
+  const revision=Date.parse(payload.updatedAt);
+  if(!Number.isFinite(revision)||revision>Date.now()+300000) return false;
+  let valid=0,changed=false;
+  for(const raw of payload.series){
+    const row=_normalizeHighLow52Row(raw);
+    if(!row) continue;
+    valid++;
+    const cachedRevision=options.fromCache&&Number.isFinite(raw._cachedRevision)?raw._cachedRevision:revision;
+    if(_highLow52CanReplace(_highLow52Rows.get(row.date),row,cachedRevision)){
+      _highLow52Rows.set(row.date,{...row,_revision:cachedRevision});
+      changed=true;
+    }
+  }
+  if(!valid) return false;
+  if(changed){
+    const rows=_highLow52OrderedRows();
+    _highLow52Rows=new Map(rows.map(row=>[row.date,row]));
+    if(!Date.parse(_highLow52Meta.updatedAt)||revision>=Date.parse(_highLow52Meta.updatedAt)){
+      _highLow52Meta={source:payload.source,methodology:payload.methodology,updatedAt:payload.updatedAt};
+    }
+    if(options.persist!==false) _highLow52Save();
+  }
+  _highLow52RefreshFailed=false;
+  _renderHighLow52();
+  return true;
+}
+// A collector supplies source-stamped complete counts; this API never invents a date or zero.
+function _setHighLow52LivePoint(raw,metadata={}){
+  const row=_normalizeHighLow52Row(raw);
+  if(!row||row.date!==_highLow52Clock().date) return false;
+  return _acceptHighLow52Payload({
+    schemaVersion:1,updatedAt:metadata.updatedAt||new Date().toISOString(),
+    source:metadata.source||'腾讯财经前复权日线',
+    methodology:metadata.methodology||_HIGH_LOW52_METHOD,series:[row],
+  });
+}
+function _restoreHighLow52(){
+  if(_highLow52Restored) return;
+  _highLow52Restored=true;
+  try{
+    const saved=JSON.parse(localStorage.getItem(_HIGH_LOW52_STORAGE)||'null');
+    _acceptHighLow52Payload(saved,{persist:false,fromCache:true});
+  }catch(e){}
+}
+function _mkHighLow52(){
+  if(_highLow52Charts||typeof Chart!=='function') return;
+  const line=document.getElementById('cHighLow52'),net=document.getElementById('cHighLow52Net');
+  if(!line||!net) return;
+  const axis={grid:{display:false},ticks:{color:'#64748b',font:{size:10},maxTicksLimit:10,maxRotation:0}};
+  const lines=new Chart(line.getContext('2d'),{type:'line',data:{labels:[],datasets:[
+    {label:'52周新高',data:[],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.06)',borderWidth:2,pointRadius:0,pointHoverRadius:4,tension:.18},
+    {label:'52周新低',data:[],borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.05)',borderWidth:2,pointRadius:0,pointHoverRadius:4,tension:.18},
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{color:'#475569',font:{size:12,weight:'600'},usePointStyle:true,pointStyle:'line',
+      generateLabels:chart=>chart.data.datasets.map((ds,i)=>({text:ds.label,strokeStyle:ds.borderColor,fillStyle:ds.borderColor,lineWidth:2,pointStyle:'line',hidden:!chart.isDatasetVisible(i),datasetIndex:i}))}},
+      tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+Number(ctx.parsed.y).toLocaleString('zh-CN')+' 家'}}},
+    scales:{x:axis,y:{beginAtZero:true,grid:{color:'rgba(226,232,240,.9)'},ticks:{color:'#64748b',precision:0,callback:v=>Number(v).toLocaleString('zh-CN')+'家'}}},
+  }});
+  const delta=new Chart(net.getContext('2d'),{type:'bar',data:{labels:[],datasets:[
+    {label:'新高−新低',data:[],borderWidth:1,borderRadius:2,barPercentage:.82,categoryPercentage:.92},
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'新高−新低: '+(ctx.parsed.y>0?'+':'')+Number(ctx.parsed.y).toLocaleString('zh-CN')+' 家'}}},
+    scales:{x:{...axis,ticks:{...axis.ticks,font:{size:9}}},y:{min:-10,max:10,
+      grid:{color:ctx=>ctx.tick.value===0?'#94a3b8':'rgba(226,232,240,.55)',lineWidth:ctx=>ctx.tick.value===0?1.5:1},
+      ticks:{color:'#64748b',precision:0,maxTicksLimit:5,callback:v=>(v>0?'+':'')+Number(v).toLocaleString('zh-CN')}}},
+  }});
+  _highLow52Charts={lines,delta};
+}
+function _renderHighLow52(){
+  const rows=_highLow52OrderedRows();
+  _mkHighLow52();
+  if(!rows.length) return false;
+  const labels=rows.map(row=>row.date.slice(5)),net=rows.map(row=>row.high-row.low);
+  if(_highLow52Charts){
+    const {lines,delta}=_highLow52Charts;
+    lines.data.labels=labels;
+    ['high','low'].forEach((key,i)=>{
+      lines.data.datasets[i].data=rows.map(row=>row[key]);
+      lines.data.datasets[i].pointRadius=rows.map(row=>row.status==='live'?4:0);
+      lines.data.datasets[i].pointBorderWidth=rows.map(row=>row.status==='live'?2:0);
+      lines.data.datasets[i].pointBorderColor='#fff';
+    });
+    lines.update('none');
+    delta.data.labels=labels;
+    delta.data.datasets[0].data=net;
+    delta.data.datasets[0].backgroundColor=net.map(v=>v>0?'rgba(220,38,38,.76)':v<0?'rgba(22,163,74,.76)':'rgba(148,163,184,.65)');
+    delta.data.datasets[0].borderColor=net.map(v=>v>0?'#dc2626':v<0?'#16a34a':'#94a3b8');
+    const maxAbs=Math.max(10,...net.map(Math.abs));
+    delta.options.scales.y.min=-maxAbs;delta.options.scales.y.max=maxAbs;
+    delta.update('none');
+  }
+  const last=rows[rows.length-1],value=last.high-last.low;
+  const put=(id,text)=>{const el=document.getElementById(id);if(el)el.textContent=text;};
+  const phase=last.status==='close'?'收盘':last.date===_highLow52Clock().date?'盘中快照':'历史盘中快照';
+  put('highLow52KpiDate',last.date+' · '+phase+' '+last.asOf);
+  put('highLow52KpiHigh',last.high.toLocaleString('zh-CN')+' 家');
+  put('highLow52KpiLow',last.low.toLocaleString('zh-CN')+' 家');
+  put('highLow52KpiNet','净新高 '+(value>0?'+':'')+value.toLocaleString('zh-CN')+' 家');
+  const netEl=document.getElementById('highLow52KpiNet');
+  if(netEl)netEl.style.color=value>0?'#dc2626':value<0?'#16a34a':'#64748b';
+  put('highLow52KpiCnt',rows.length+'交易日 · '+rows[0].date+' 至 '+last.date);
+  put('highLow52Footer','来源：'+_highLow52Meta.source+' · '+_highLow52Meta.methodology+
+    ' · 有效样本 '+last.eligible.toLocaleString('zh-CN')+'/'+last.universe.toLocaleString('zh-CN')+' 家'+
+    ' · 折线=新高/新低，柱=新高−新低'+(_highLow52RefreshFailed?' · 本次读取未成功，保留已验证数据':''));
+  return true;
+}
+async function _fetchHighLow52Snapshot(url){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7000);
+  try{
+    const response=await fetch(url+'?_='+Date.now(),{cache:'no-store',signal:controller.signal});
+    if(!response.ok) throw Error('52周快照 HTTP '+response.status);
+    const payload=await response.json();
+    if(!_acceptHighLow52Payload(payload)) throw Error('52周快照没有有效数据');
+    return true;
+  }finally{clearTimeout(timer);}
+}
+async function refreshHighLow52(force=false){
+  _restoreHighLow52();
+  _renderHighLow52();
+  if(_highLow52Pending) return _highLow52Pending;
+  if(!force&&_highLow52Attempt&&Date.now()-_highLow52Attempt<45000) return !!_highLow52Rows.size;
+  _highLow52Attempt=Date.now();
+  _highLow52Pending=(async()=>{
+    const results=await Promise.allSettled(_HIGH_LOW52_URLS.map(_fetchHighLow52Snapshot));
+    _highLow52RefreshFailed=results.every(result=>result.status==='rejected');
+    if(!_renderHighLow52()){
+      const date=document.getElementById('highLow52KpiDate'),foot=document.getElementById('highLow52Footer');
+      if(date)date.textContent='等待有效历史数据';
+      if(foot)foot.textContent='来源：腾讯财经前复权日线 · '+_HIGH_LOW52_METHOD+' · 暂未取得有效数据，将自动重试；缺失数据不显示为0';
+    }
+    return !_highLow52RefreshFailed;
+  })();
+  try{return await _highLow52Pending;}finally{_highLow52Pending=null;}
+}
+function _refreshVisibleHighLow52(force=false){
+  const macro=document.getElementById('t0');
+  if(document.hidden||!macro||!macro.classList.contains('active')) return;
+  if(_highLow52Charts) Object.values(_highLow52Charts).forEach(chart=>chart.resize());
+  refreshHighLow52(force).catch(error=>console.warn('[52周新高新低]',error.message));
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  _restoreHighLow52();
+  _renderHighLow52();
+  _refreshVisibleHighLow52(true);
+  const macro=document.getElementById('t0');
+  if(macro&&typeof MutationObserver==='function'){
+    new MutationObserver(()=>_refreshVisibleHighLow52(true)).observe(macro,{attributes:true,attributeFilter:['class']});
+  }
+  setInterval(()=>_refreshVisibleHighLow52(false),60000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)_refreshVisibleHighLow52(true);});
+  window.addEventListener('pageshow',event=>{if(event.persisted)_refreshVisibleHighLow52(true);});
+});
+// HIGH_LOW52_MODULE_END
+
+</script>
+<script src="assets/high-low-52w-live.js?v=20261005" defer></script>
 </body>
 </html>

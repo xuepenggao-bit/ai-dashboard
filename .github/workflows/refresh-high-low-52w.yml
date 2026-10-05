@@ -1,0 +1,57 @@
+name: Refresh A-share 52-week High Low
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/refresh_high_low_52w.py'
+      - '.github/workflows/refresh-high-low-52w.yml'
+      - 'tests/test_refresh_high_low_52w.py'
+  schedule:
+    # Beijing 15:15 and 16:15. Browser scans are independent of Actions delays.
+    - cron: '15 7,8 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-high-low-52w
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test exact window and complete-universe rules
+        run: python -m unittest discover -s tests -p test_refresh_high_low_52w.py -v
+      - name: Restore immutable dated universe cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/high-low-52w-cache/universe-*.json
+          key: high-low-universe-${{ github.run_id }}
+          restore-keys: high-low-universe-
+      - name: Calculate complete 60-session history
+        run: python .github/scripts/refresh_high_low_52w.py --workers 6
+      - name: Persist verified history and next-session comparison prices
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/market_high_low_52w.json data/market_high_low_52w_baseline.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: refresh 52-week market breadth $(date -u '+%Y-%m-%d %H:%M UTC')"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
