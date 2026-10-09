@@ -1,0 +1,52 @@
+name: Refresh AI Supply Chain Earnings and Valuation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/refresh_chain_monitor.py'
+      - '.github/workflows/refresh-chain-monitor.yml'
+      - 'tests/test_refresh_chain_monitor.py'
+      - 'data/chain_research.json'
+  schedule:
+    # Beijing 08:19, 12:19, 16:19, 20:19 and 22:19: includes evening filings.
+    - cron: '19 0,4,8,12,14 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-chain-monitor
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify reported earnings, TTM and loss-base rules
+        run: python -m unittest discover -s tests -p test_refresh_chain_monitor.py -v
+      - name: Refresh reported results and valuation snapshots
+        run: python .github/scripts/refresh_chain_monitor.py
+      - name: Persist latest valid monitor
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/chain_monitor.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: refresh supply chain earnings and valuations"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
