@@ -60,3 +60,24 @@ test('newly reported latest quarter replaces old Q1/Q2 trend in analysis',()=>{
   s.financials.latestQuarter={period:'2026Q3',previous:{revenue:100},yoy:{revenue:10}};
   const a=m.classify(s,25);assert.equal(a.q1,40);assert.equal(a.q2,10);assert.equal(a.accelerating,false);
 });
+test('growth sorts descending and PE ascending without changing the source order',()=>{
+  const groups=[{id:'missing',revenue:null,pe:null},{id:'slow',revenue:-5,pe:40},{id:'fast',revenue:50,pe:20},{id:'equal',revenue:50,pe:20},{id:'flat',revenue:0,pe:30}];
+  assert.deepEqual(m.sortGroups(groups,'revenue',-1).map(g=>g.id),['fast','equal','flat','slow','missing']);
+  assert.deepEqual(m.sortGroups(groups,'pe').map(g=>g.id),['fast','equal','flat','slow','missing']);
+  assert.equal(groups[0].id,'missing');
+  assert.deepEqual(m.sortGroups([{id:'invalid',pe:NaN},{id:'number',pe:5},{id:'empty',pe:''}],'pe').map(g=>g.id),['number','invalid','empty']);
+});
+test('sample market cap sums total company cap only when every sample has a fresh valid quote',()=>{
+  const a=stock(),b=stock({code:'300502'});b.quote.capYi=250;
+  const input={groups:[{id:'optical',codes:['300308','300502']}],stocks:[a,b]};
+  assert.equal(m.groupsOf(input)[0].marketCapYi,350);assert.equal(m.groupsOf(input)[0].capCoverage,2);
+  b.quote.capYi=null;assert.equal(m.groupsOf(input)[0].marketCapYi,null);
+  b.quote.capYi=250;b.quote.date='2020-01-01';assert.equal(m.groupsOf(input)[0].marketCapYi,null);
+  input.stocks=[a,a];assert.equal(m.groupsOf(input)[0].marketCapYi,null);
+});
+test('bubble area is proportional to sample market cap with no minimum-radius distortion',()=>{
+  const small=m.bubbleRadius(100,400),large=m.bubbleRadius(400,400);
+  assert.equal(large,40);assert.equal(small,20);assert.equal(large**2/small**2,4);
+  assert.ok(m.bubbleRadius(1,400)<small);
+  assert.equal(m.bubbleRadius(null,400),0);assert.equal(m.bubbleRadius(-1,400),0);assert.equal(m.bubbleRadius(100,0),0);
+});
