@@ -55,3 +55,8 @@ test('expected reporting windows do not demand a quarter before required release
   assert.equal(m.expectedReportDate('2026-10-09'),'2026-06-30');assert.equal(m.expectedReportDate('2026-11-01'),'2026-09-30');
   assert.equal(m.expectedReportDate('2026-07-01'),'2026-03-31');
 });
+test('newly reported latest quarter replaces old Q1/Q2 trend in analysis',()=>{
+  const s=stock();s.financials.previousQuarter={period:'2026Q2',previous:{revenue:100},yoy:{revenue:40}};
+  s.financials.latestQuarter={period:'2026Q3',previous:{revenue:100},yoy:{revenue:10}};
+  const a=m.classify(s,25);assert.equal(a.q1,40);assert.equal(a.q2,10);assert.equal(a.accelerating,false);
+});

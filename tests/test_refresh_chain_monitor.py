@@ -74,6 +74,19 @@ class FinancialsTests(unittest.TestCase):
         rows.append({**row("2026-09-30", 500, 100), "NOTICE_DATE": None})
         self.assertEqual(m.build_financials("000977", rows, AS_OF)["reportPeriod"], "2026H1")
 
+    def test_latest_quarter_rolls_forward_when_q3_is_disclosed(self):
+        rows = fixture() + [row("2026-09-30", 450, 120, 108, 35, notice="2026-10-20"),
+                            row("2025-09-30", 310, 70, 60, 22, notice="2025-10-20")]
+        stock = m.build_financials("000977", rows, "2026-11-01")
+        latest = stock["financials"]["latestQuarter"]
+        previous = stock["financials"]["previousQuarter"]
+        self.assertEqual(stock["reportPeriod"], "20269M")
+        self.assertEqual(latest["period"], "2026Q3")
+        self.assertEqual(previous["period"], "2026Q2")
+        self.assertEqual(latest["revenue"], 150)
+        self.assertEqual(latest["previous"]["revenue"], 110)
+        self.assertAlmostEqual(latest["yoy"]["revenue"], 40 / 110 * 100)
+
     def test_negative_and_zero_bases_are_visible(self):
         rows = [row("2026-06-30", 110, 10, 0, -10), row("2025-06-30", 100, -5, 0, -20)]
         financials = m.build_financials("000977", rows, AS_OF)["financials"]

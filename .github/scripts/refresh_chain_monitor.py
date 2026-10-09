@@ -138,6 +138,14 @@ def build_financials(code, rows, as_of):
     h1_previous = values(accepted.get(f"{year - 1}-06-30"))
     q2 = subtract(h1, q1)
     q2_previous = subtract(h1_previous, q1_previous)
+    def single_quarter(y, q):
+        dates = {1: "03-31", 2: "06-30", 3: "09-30", 4: "12-31"}
+        cumulative = values(accepted.get(f"{y}-{dates[q]}"))
+        return cumulative if q == 1 else subtract(cumulative, values(accepted.get(f"{y}-{dates[q - 1]}")))
+    latest_q = {"03-31": 1, "06-30": 2, "09-30": 3, "12-31": 4}.get(latest_date[5:])
+    previous_y, previous_q = (year, latest_q - 1) if latest_q and latest_q > 1 else (year - 1, 4)
+    latest_quarter = quarter_data(f"{year}Q{latest_q}", single_quarter(year, latest_q), single_quarter(year - 1, latest_q)) if latest_q else None
+    previous_quarter = quarter_data(f"{previous_y}Q{previous_q}", single_quarter(previous_y, previous_q), single_quarter(previous_y - 1, previous_q)) if latest_q else None
     if latest_date.endswith("12-31"):
         ttm = dict(current)
     else:
@@ -161,6 +169,7 @@ def build_financials(code, rows, as_of):
             "yoy": growth(current, previous), "yoyBase": base_sign(previous),
             "q1": quarter_data(f"{year}Q1", q1, q1_previous),
             "q2": quarter_data(f"{year}Q2", q2, q2_previous),
+            "latestQuarter": latest_quarter, "previousQuarter": previous_quarter,
             "q2VsQ1": growth(q2, q1), "ttm": ttm,
             "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
             "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null",
