@@ -16,6 +16,8 @@
 <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link rel="stylesheet" href="assets/chain-monitor.css?v=20261009d">
 <script defer src="assets/chain-monitor.js?v=20261009d"></script>
+<link rel="stylesheet" href="assets/account-openings.css?v=20261010a">
+<script defer src="assets/account-openings.js?v=20261010a"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -2012,6 +2014,23 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div style="height:220px"><canvas id="cHkVolume"></canvas></div>
     <div class="tx3 mt4" id="hkVolumeKpiFooter">来源: 腾讯财经 · 港股主板成交额 · 柱=每日成交额 · 线=5日均额 · 加载中…</div>
   </div>
+
+  <!-- ACCOUNT_OPENINGS_CARD_START -->
+  <div class="card mb16 ao-card" id="accountOpeningCard">
+    <div class="ch ao-heading">
+      <span class="ct">A股个人开户数趋势（月频·万户）</span>
+      <span class="ao-badge" id="aoPeriod">截至 2026年9月 · 每日核验</span>
+    </div>
+    <div class="ao-summary">
+      <div class="ao-stat"><span class="ao-stat-label" id="aoCurrentLabel">2026年累计 · 1—9月</span><strong class="ao-stat-value"><span id="aoCurrentValue">2,702.39</span><small>万户</small></strong></div>
+      <div class="ao-stat"><span class="ao-stat-label" id="aoPreviousLabel">2025年同期 · 1—9月</span><strong class="ao-stat-value"><span id="aoPreviousValue">2,007.28</span><small>万户</small></strong></div>
+      <div class="ao-stat ao-yoy" id="aoYoyStat"><span class="ao-stat-label">累计开户数 · 同比增速</span><strong class="ao-stat-value" id="aoYoyValue">+34.63%</strong></div>
+    </div>
+    <div class="ao-chart"><canvas id="cAccountOpenings" role="img" aria-label="去年与今年每月个人A股开户数对比"></canvas></div>
+    <div class="ao-footer"><span>来源：<a href="https://www.sse.com.cn/aboutus/publication/monthly/investor/" target="_blank" rel="noopener noreferrer">上交所月报</a> · 初始数据来自附件</span><span id="aoCheck">等待每日官方核验</span></div>
+    <div class="ao-note" id="aoScope">口径：上交所个人A股账户新开户数，非沪深去重新增投资者人数。未公布月份留空，累计同比只比较相同月份。</div>
+  </div>
+  <!-- ACCOUNT_OPENINGS_CARD_END -->
 
   <!-- 第一行：X关注意见领袖 -->
   <div class="card mb16" style="border-top:3px solid #1d9bf0">

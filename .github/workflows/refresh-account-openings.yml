@@ -1,0 +1,64 @@
+name: Refresh A-share Personal Account Openings
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/refresh_account_openings.py'
+      - 'tests/test_refresh_account_openings.py'
+      - 'tests/test_account_openings.cjs'
+      - 'assets/account-openings.js'
+      - '.github/workflows/refresh-account-openings.yml'
+  schedule:
+    # GitHub cron uses UTC: 00:41 UTC = 08:41 Beijing time every day.
+    - cron: '41 0 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-account-openings
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test official parsing and safe historical merging
+        run: python -m unittest discover -s tests -p test_refresh_account_openings.py -v
+      - name: Test same-month totals and snapshot fallback
+        run: node --test tests/test_account_openings.cjs
+      - name: Check SSE official monthly account data
+        run: python .github/scripts/refresh_account_openings.py
+      # Failed network checks update check status but never delete cached values.
+      - name: Commit updated data or recorded check status
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/account_openings.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: check SSE account openings $(date -u '+%Y-%m-%d %H:%M UTC')"
+          for attempt in 1 2 3; do
+            if ! git pull --rebase origin main; then
+              if git rev-parse --verify -q REBASE_HEAD >/dev/null; then
+                git rebase --abort
+                echo 'Concurrent data conflict; preserved cached data instead of overwriting it.'
+                exit 1
+              fi
+              sleep $((attempt * 2))
+              continue
+            fi
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
