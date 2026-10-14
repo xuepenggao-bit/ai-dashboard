@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""60-session Shanghai/Shenzhen 52-calendar-week high/low breadth.
+"""60-session Shanghai/Shenzhen 52-week and moving-average breadth.
 
 Point-in-time universes: Eastmoney daily valuation table (includes ST, no BJ).
 Prices: Tencent forward-adjusted daily OHLC, with a 364-calendar-day window.
@@ -10,6 +10,7 @@ before publishing, so an incomplete request never turns missing data into zero.
 from __future__ import annotations
 
 import argparse
+from bisect import bisect_right
 import concurrent.futures
 import datetime as dt
 import json
@@ -24,10 +25,16 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / 'data/market_high_low_52w.json'
 BASELINE = ROOT / 'data/market_high_low_52w_baseline.json'
+MA_OUTPUT = ROOT / 'data/market_ma_breadth.json'
+MA_BASELINE = ROOT / 'data/market_ma_breadth_baseline.json'
+MA_WINDOWS = (20, 60, 120)
 TZ = dt.timezone(dt.timedelta(hours=8))
 METHOD = ('沪深A股（含ST、不含北交所）；按每个交易日当时的股票名单，'
           '统计上市满52周、当日有成交的股票；前复权日内最高/最低价触及52周滚动窗口（回溯364自然日，含边界日）极值；差值=新高-新低。')
 SOURCE = '东方财富每日股票名单 · 腾讯财经前复权日线/实时行情'
+MA_METHOD = ('沪深A股（含ST、不含北交所）；按每个交易日当时的股票名单，'
+             '以同一批前复权日线计算20/60/120日收盘均线（含当日）；'
+             '收盘价严格高于均线计入分子；当日无行情、停牌无成交或该窗口历史不足的股票不计入该窗口分母；占比=高于均线家数/可比家数。')
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36'
 
 
@@ -172,6 +179,182 @@ def build_series(dates, universes, prices):
     return series[-60:]
 
 
+def require_complete_prices(dates, universes, prices):
+    """An unavailable symbol is a failed build, not a zero/absent observation."""
+    required = set().union(*(set(universes[date]) for date in dates))
+    missing = required - set(prices)
+    empty = {code for code in required & set(prices) if not prices[code]}
+    if missing or empty:
+        raise ValueError(f'Incomplete symbols: {len(missing)} missing, {len(empty)} empty')
+
+
+def ma_observation(bars, date, window, end=None):
+    """Count only tradable, positive-current-price observations with N bars."""
+    if end is None:
+        end = bisect_right([row['date'] for row in bars], date)
+    if not end or bars[end - 1]['date'] != date or end < window:
+        return False, False
+    current = bars[end - 1]
+    if current['volume'] <= 0 or not math.isfinite(current['close']) or current['close'] <= 0:
+        return False, False
+    closes = [row['close'] for row in bars[end - window:end]]
+    if not all(math.isfinite(value) for value in closes):
+        raise ValueError(f'{date}: nonfinite adjusted close in {window}-day window')
+    # Historical forward-adjusted closes may legitimately be negative.
+    mean = math.fsum(closes) / window
+    return True, current['close'] > mean
+
+
+def build_ma_series(dates, universes, prices):
+    require_complete_prices(dates, universes, prices)
+    bar_dates = {code: [row['date'] for row in bars] for code, bars in prices.items()}
+    series = []
+    for date in dates:
+        totals = {window: [0, 0] for window in MA_WINDOWS}
+        for code in universes[date]:
+            end = bisect_right(bar_dates[code], date)
+            for window in MA_WINDOWS:
+                yes, up = ma_observation(prices[code], date, window, end)
+                totals[window][0] += int(up)
+                totals[window][1] += int(yes)
+        windows = {str(window): {'above': above, 'eligible': eligible,
+                                'pct': round(100 * above / eligible, 4) if eligible else None}
+                   for window, (above, eligible) in totals.items()}
+        series.append({'date': date, 'asOf': '15:00', 'status': 'close',
+                       'universe': len(universes[date]), 'windows': windows})
+    return series[-60:]
+
+
+def build_ma_baseline(latest, universe, prices, updated):
+    require_complete_prices([latest], {latest: universe}, prices)
+    stocks = []
+    for code in sorted(universe):
+        bars = [row for row in prices[code] if row['date'] <= latest]
+        if not bars:
+            raise ValueError(f'{code}: no completed daily bars through {latest}')
+        close = bars[-1]['close']
+        if not math.isfinite(close) or close <= 0:
+            raise ValueError(f'{code}: invalid latest completed close')
+        prior_sums = {}
+        for window in MA_WINDOWS:
+            closes = [row['close'] for row in bars[-(window - 1):]]
+            if not all(math.isfinite(value) for value in closes):
+                raise ValueError(f'{code}: nonfinite adjusted close in baseline')
+            prior_sums[str(window)] = math.fsum(closes) if len(closes) == window - 1 else None
+        stocks.append({'code': code, 'lastDate': bars[-1]['date'], 'close': close,
+                       'priorSums': prior_sums})
+    return {'schemaVersion': 1, 'windows': list(MA_WINDOWS), 'updatedAt': updated,
+            'asOfDate': latest, 'stocks': stocks}
+
+
+def valid_date(value):
+    if not isinstance(value, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
+        raise ValueError('Invalid snapshot date')
+    return dt.date.fromisoformat(value)
+
+
+def nonnegative_integer(value):
+    return type(value) is int and value >= 0
+
+
+def finite_number(value):
+    return type(value) in (int, float) and math.isfinite(value)
+
+
+def validate_ma_metadata(payload, latest, now):
+    if type(payload.get('schemaVersion')) is not int or payload.get('schemaVersion') != 1:
+        raise ValueError('Invalid moving-average schemaVersion')
+    if payload.get('windows') != list(MA_WINDOWS):
+        raise ValueError('Invalid moving-average windows')
+    if valid_date(latest) > now.date():
+        raise ValueError('Future moving-average asOf date')
+    updated = dt.datetime.fromisoformat(str(payload.get('updatedAt', '')).replace('Z', '+00:00'))
+    if updated.tzinfo is None or updated > now:
+        raise ValueError('Invalid or future moving-average updatedAt')
+
+
+def validate_ma_history(payload, latest, now=None):
+    now = now or dt.datetime.now(TZ)
+    validate_ma_metadata(payload, latest, now)
+    if not isinstance(payload.get('source'), str) or not payload['source'].strip():
+        raise ValueError('Missing moving-average source')
+    if not isinstance(payload.get('methodology'), str) or not payload['methodology'].strip():
+        raise ValueError('Missing moving-average methodology')
+    rows = payload.get('series')
+    if not isinstance(rows, list) or len(rows) != 60:
+        raise ValueError('Moving-average history requires 60 sessions')
+    dates = []
+    expected_keys = set(map(str, MA_WINDOWS))
+    for row in rows:
+        date = row.get('date')
+        valid_date(date)
+        if date > latest or row.get('asOf') != '15:00' or row.get('status') != 'close':
+            raise ValueError('Invalid moving-average close observation')
+        dates.append(date)
+        universe = row.get('universe')
+        windows = row.get('windows')
+        if not nonnegative_integer(universe) or not isinstance(windows, dict) or set(windows) != expected_keys:
+            raise ValueError('Invalid moving-average universe/windows')
+        for window in MA_WINDOWS:
+            entry = windows[str(window)]
+            if not isinstance(entry, dict):
+                raise ValueError('Invalid moving-average window entry')
+            above, eligible, pct = entry.get('above'), entry.get('eligible'), entry.get('pct')
+            if not nonnegative_integer(above) or not nonnegative_integer(eligible) or not above <= eligible <= universe:
+                raise ValueError('Invalid moving-average counts')
+            if eligible == 0:
+                if pct is not None:
+                    raise ValueError('Empty moving-average denominator must have null pct')
+            elif not finite_number(pct) or not math.isclose(pct, round(100 * above / eligible, 4), rel_tol=0, abs_tol=.00011):
+                raise ValueError('Invalid moving-average percentage')
+    if len(set(dates)) != 60 or dates != sorted(dates) or dates[-1] != latest:
+        raise ValueError('Moving-average dates must be unique, increasing and current')
+    return payload
+
+
+def validate_ma_baseline(payload, latest, universe, now=None):
+    now = now or dt.datetime.now(TZ)
+    validate_ma_metadata(payload, latest, now)
+    if payload.get('asOfDate') != latest:
+        raise ValueError('Moving-average baseline asOf mismatch')
+    stocks = payload.get('stocks')
+    if not isinstance(stocks, list) or len(stocks) != universe:
+        raise ValueError('Moving-average baseline universe mismatch')
+    codes = set()
+    for row in stocks:
+        code = row.get('code')
+        if not isinstance(code, str) or len(code) != 8 or code[:2] not in ('sh', 'sz') or not valid_code(code[2:] + '.' + code[:2].upper()) or code in codes:
+            raise ValueError('Invalid or duplicate moving-average baseline code')
+        codes.add(code)
+        last = row.get('lastDate')
+        valid_date(last)
+        if last > latest or not finite_number(row.get('close')) or row['close'] <= 0:
+            raise ValueError('Invalid moving-average baseline completed close')
+        sums = row.get('priorSums')
+        if not isinstance(sums, dict) or set(sums) != set(map(str, MA_WINDOWS)) or any(value is not None and not finite_number(value) for value in sums.values()):
+            raise ValueError('Invalid moving-average baseline priorSums')
+    return payload
+
+
+def complete_cached_snapshots(latest, now=None):
+    """Closed-day reuse requires both old and new products, never just 52w."""
+    if not all(path.exists() for path in (OUTPUT, BASELINE, MA_OUTPUT, MA_BASELINE)):
+        return False
+    try:
+        old = json.loads(OUTPUT.read_text())
+        baseline = json.loads(BASELINE.read_text())
+        ma = json.loads(MA_OUTPUT.read_text())
+        ma_baseline = json.loads(MA_BASELINE.read_text())
+        previous = old.get('series') or []
+        validate_ma_history(ma, latest, now)
+        validate_ma_baseline(ma_baseline, latest, ma['series'][-1]['universe'], now)
+        return (len(previous) == 60 and previous[-1].get('date') == latest and
+                baseline.get('asOfDate') == latest and bool(baseline.get('validThrough')) and
+                bool(baseline.get('stocks')))
+    except (OSError, TypeError, ValueError, IndexError, AttributeError, KeyError, OverflowError):
+        return False
+
+
 def parallel_map(items, fn, workers=6, label='fetch'):
     result, errors = {}, {}
     total = len(items)
@@ -193,18 +376,14 @@ def parallel_map(items, fn, workers=6, label='fetch'):
 def refresh_history(cache_dir, workers=6, force=False):
     now = dt.datetime.now(TZ)
     index_bars = fetch_bars('sh000001')
-    dates = [row['date'] for row in index_bars if row['volume'] > 0 and
+    dates = [row['date'] for row in index_bars if row['volume'] > 0 and row['date'] <= now.date().isoformat() and
              (row['date'] < now.date().isoformat() or now.hour >= 15)][-60:]
     if len(dates) != 60:
         raise RuntimeError('Need 60 completed trading sessions')
     latest = dates[-1]
-    if not force and latest < now.date().isoformat() and OUTPUT.exists() and BASELINE.exists():
-        old = json.loads(OUTPUT.read_text())
-        baseline = json.loads(BASELINE.read_text())
-        previous = old.get('series') or []
-        if len(previous) == 60 and previous[-1].get('date') == latest and baseline.get('asOfDate') == latest and baseline.get('validThrough'):
-            print(f'Exchange closed; complete {latest} snapshot retained.', flush=True)
-            return
+    if not force and latest < now.date().isoformat() and complete_cached_snapshots(latest, now):
+        print(f'Exchange closed; complete {latest} snapshots retained.', flush=True)
+        return
     print(f'Building {dates[0]} → {latest}', flush=True)
     universes = parallel_map(dates, lambda date: cached(cache_dir / ('universe-' + date + '.json'),
                                                       lambda: fetch_universe(date)), workers, 'universes')
@@ -213,10 +392,20 @@ def refresh_history(cache_dir, workers=6, force=False):
     # completed-session build, never merge differently adjusted raw bars.
     prices = parallel_map(symbols, lambda code: cached(cache_dir / latest / (code + '.json'),
                                                      lambda: fetch_bars(code)), workers, 'daily bars')
+    # Daily APIs can already include a live/future bar. Neither historical
+    # series nor next-session comparison prices may use an uncompleted bar.
+    prices = {code: [row for row in bars if row['date'] <= latest] for code, bars in prices.items()}
+    require_complete_prices(dates, universes, prices)
     series = build_series(dates, universes, prices)
+    ma_series = build_ma_series(dates, universes, prices)
     updated = now.isoformat(timespec='seconds')
     payload = {'schemaVersion': 1, 'updatedAt': updated, 'methodology': METHOD,
                'source': SOURCE, 'series': series}
+    ma_payload = {'schemaVersion': 1, 'windows': list(MA_WINDOWS), 'updatedAt': updated,
+                  'source': SOURCE, 'methodology': MA_METHOD, 'series': ma_series}
+    ma_baseline = build_ma_baseline(latest, universes[latest], prices, updated)
+    validate_ma_history(ma_payload, latest, now)
+    validate_ma_baseline(ma_baseline, latest, ma_series[-1]['universe'], now)
     start = (dt.date.fromisoformat(latest) - dt.timedelta(days=364)).isoformat()
     through = (dt.date.fromisoformat(latest) + dt.timedelta(days=21)).isoformat()
     baseline = {'schemaVersion': 1, 'updatedAt': updated, 'asOfDate': latest, 'validThrough': through,
@@ -225,10 +414,14 @@ def refresh_history(cache_dir, workers=6, force=False):
                             'highs': extrema_queue(prices[code], 'high', start, through),
                             'lows': extrema_queue(prices[code], 'low', start, through)}
                            for code in sorted(universes[latest])]}
-    # No writes above: only publish after both universe and all histories pass.
+    # No output writes above: publish only after both products validate.
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + '\n')
     BASELINE.write_text(json.dumps(baseline, ensure_ascii=False, separators=(',', ':')) + '\n')
+    MA_OUTPUT.write_text(json.dumps(ma_payload, ensure_ascii=False, indent=2) + '\n')
+    MA_BASELINE.write_text(json.dumps(ma_baseline, ensure_ascii=False, separators=(',', ':')) + '\n')
     print(f'Published {len(series)} sessions; last={series[-1]}', flush=True)
+    print(f'Moving-average breadth: last={ma_series[-1]}', flush=True)
 
 
 def main():
