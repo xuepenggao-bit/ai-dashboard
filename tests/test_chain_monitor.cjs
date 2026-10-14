@@ -81,3 +81,41 @@ test('bubble area is proportional to sample market cap with no minimum-radius di
   assert.ok(m.bubbleRadius(1,400)<small);
   assert.equal(m.bubbleRadius(null,400),0);assert.equal(m.bubbleRadius(-1,400),0);assert.equal(m.bubbleRadius(100,0),0);
 });
+test('qualitative research is dated, covers all groups and keeps previous underwriting',()=>{
+  const fs=require('node:fs'),r=JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'../data/chain_research.json')));
+  assert.equal(m.validResearch(r,'2026-10-14'),true);
+  assert.equal(r.groups.length,10);assert.equal(r.groups.filter(g=>g.industry&&g.valuationJudgment&&g.catalyst&&g.falsifier).length,10);
+  assert.equal(r.previousRevision.asOf,'2026-10-09');
+  const previous=JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'../'+r.previousRevision.path)));
+  assert.equal(previous.asOf,'2026-10-09');assert.equal(previous.groups.length,10);
+  const server=r.groups.find(g=>g.id==='server');
+  assert.ok(server.fact.includes('累计预告')&&server.fact.includes('未经预审计'));
+  assert.ok(server.stockNotes['000977'].includes('不替代已披露TTM'));
+  assert.ok(r.groups.find(g=>g.id==='memory').fact.includes('同比百分比不适用'));
+});
+test('future, incomplete, duplicate or future-sourced research cannot replace a valid review',()=>{
+  const r=require('../data/chain_research.json');
+  assert.equal(m.validResearch(null,'2026-10-14'),false);
+  assert.equal(m.validResearch({...r,asOf:'2099-10-14'},'2026-10-14'),false);
+  assert.equal(m.validResearch({...r,groups:[]},'2026-10-14'),false);
+  const duplicate=structuredClone(r);duplicate.groups[1].id=duplicate.groups[0].id;
+  assert.equal(m.validResearch(duplicate,'2026-10-14'),false);
+  const future=structuredClone(r);future.groups[0].sources[0].date='2026-10-15';
+  assert.equal(m.chooseResearch(r,future,'2026-10-14'),r);
+  const context=structuredClone(r);context.marketContext[0].sources[0].date='2026-10-15';
+  assert.equal(m.validResearch(context,'2026-10-14'),false);
+});
+test('older financial snapshot cannot overwrite newer qualitative research',()=>{
+  const fresh=require('../data/chain_research.json'),old=require('../data/chain_research_history/2026-10-09.json');
+  assert.equal(m.chooseResearch(fresh,old,'2026-10-14'),fresh);
+  assert.equal(m.chooseResearch(old,fresh,'2026-10-14'),fresh);
+  assert.equal(m.chooseResearch(fresh,undefined,'2026-10-14'),fresh);
+  const later={...fresh,revision:'20261014b'};
+  assert.equal(m.chooseResearch(fresh,later,'2026-10-14'),later);
+});
+test('research valuation requires two positive TTM samples rather than one-stock industry PE',()=>{
+  const a=stock(),g={stocks:[a],pe:20,peCount:1,total:2};
+  assert.equal(m.researchValuation(g).pe,null);assert.equal(m.researchValuation(g).coverage,1);
+  g.peCount=2;g.total=3;g.stocks.push(stock({code:'300502'}));
+  assert.equal(m.researchValuation(g).pe,20);assert.equal(m.researchValuation(g).date,today);
+});

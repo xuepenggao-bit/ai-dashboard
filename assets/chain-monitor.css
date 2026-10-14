@@ -128,6 +128,18 @@
 .cm-sector-card b {display: inline-block; border-radius: 5px; padding: 2px 7px; margin-right: 5px; color: #285377; background: #e7eff7; font-size: 12px; line-height: 1.7; font-weight: 750;}
 .cm-sector-card .cm-trigger b {color: #15634f; background: #e7f2ec;}
 .cm-sector-card .cm-falsifier b {color: #895015; background: #fff1df;}
+.cm-research-context {display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin-bottom: 20px;}
+.cm-research-context > div {padding: 18px 20px; border: 1px solid #c8dbe8; border-radius: 12px; background: #f0f6fb;}
+.cm-research-context strong {color: #254b70; font-size: 16px;}
+.cm-research-context p {font-size: 14px; line-height: 1.8; color: #3d536b; margin-top: 8px;}
+.cm-research-valuation {margin-top: 15px; padding: 13px 15px; border: 1px solid #d3dfeb; border-radius: 10px; background: #eef4fa;}
+.cm-research-multiple {display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px 12px;}
+.cm-research-multiple span {font-size: 13px; color: #486078; font-weight: 650;}
+.cm-research-multiple strong {font-size: 23px; color: #245b87; font-variant-numeric: tabular-nums;}
+.cm-research-multiple small,.cm-research-valuation > small {font-size: 12px; color: #5b7086; line-height: 1.7;}
+.cm-sector-card .cm-research-valuation p {margin: 7px 0;}
+.cm-research-note {font-size: 13px; line-height: 1.8; color: #5b6e82; margin: 0 3px 20px;}
+.cm-research-note a {color: #315f89; margin-left: 12px;}
 .cm-source {font-size: 12px; color: #50677e; line-height: 1.8; margin-top: 15px; padding-top: 10px; border-top: 1px solid #dce5ee; display: flex; gap: 6px 13px; flex-wrap: wrap;}
 .cm-source a {overflow-wrap: anywhere;}
 .cm-select {border: 1px solid #afc2d5; background: #fff; border-radius: 9px; padding: 9px 32px 9px 12px; color: #254c6f; font: inherit; font-size: 14px; font-weight: 650; max-width: 250px; box-shadow: 0 2px 5px #15395506; margin-left: 7px;}
@@ -142,6 +154,7 @@
 .cm-asof-alert {background: #fff4e2; color: #795019; border: 1px solid #e6cda2; border-radius: 10px; padding: 12px 15px; font-size: 14px; line-height: 1.75; margin: 14px 0;}
 .cm-refresh:focus-visible, .cm-sector-btn:focus-visible, .cm-growth-row button:focus-visible, .cm-select:focus-visible, .cm-source-details summary:focus-visible, .cm-table-wrap:focus-visible {outline: 3px solid #88b7df; outline-offset: 3px;}
 @media (max-width: 1180px) {
+  .cm-research-context {grid-template-columns: 1fr;}
   .cm-opportunities {grid-template-columns: repeat(2, minmax(0, 1fr));}
   .cm-matrix-layout {grid-template-columns: 1fr;}
   .cm-chart {height: 410px;}
