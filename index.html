@@ -18,6 +18,7 @@
 <script defer src="assets/chain-monitor.js?v=20261014b"></script>
 <link rel="stylesheet" href="assets/account-openings.css?v=20261010a">
 <script defer src="assets/account-openings.js?v=20261010a"></script>
+<link rel="stylesheet" href="assets/ma-breadth.css?v=20261014a">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -2034,27 +2035,22 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   </div>
   <!-- ACCOUNT_OPENINGS_CARD_END -->
 
-  <!-- 第一行：X关注意见领袖 -->
-  <div class="card mb16" style="border-top:3px solid #1d9bf0">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:13px;font-weight:800;color:#374151">🐦 X关注意见领袖</span>
-        <span id="kolCount" style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
-                     padding:1px 7px;border-radius:10px;font-weight:600">86人关注</span>
-        <span id="kolTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
-      </div>
-      <button onclick="triggerKolRefresh()" id="kolBtn" title="触发后台抓取最新动态并生成自动摘要（约1-2分钟）"
-        style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
-               padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+  <!-- MA_BREADTH_CARD_START -->
+  <div class="card mb16" id="maBreadthCard">
+    <div class="ma-breadth-heading">
+      <div><div class="ct">沪深 A 股均线广度（日频·%）</div><div class="ma-breadth-subtitle">高于均线的股票占比 · 近60个交易日 · 盘中每5分钟异步更新</div></div>
+      <span id="maBreadthDate">加载中…</span>
     </div>
-    <div id="kolGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">
-      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">
-        点击「↻」加载X关注意见领袖观点
-      </div>
+    <div class="ma-breadth-kpis">
+      <div class="ma-breadth-kpi"><div class="ma-breadth-label"><span class="ma-breadth-swatch" aria-hidden="true"></span>高于20日均线</div><span class="ma-breadth-value" id="maBreadthKpi20">—</span><span class="ma-breadth-sample" id="maBreadthSample20">有效样本待更新</span></div>
+      <div class="ma-breadth-kpi"><div class="ma-breadth-label"><span class="ma-breadth-swatch" aria-hidden="true"></span>高于60日均线</div><span class="ma-breadth-value" id="maBreadthKpi60">—</span><span class="ma-breadth-sample" id="maBreadthSample60">有效样本待更新</span></div>
+      <div class="ma-breadth-kpi"><div class="ma-breadth-label"><span class="ma-breadth-swatch" aria-hidden="true"></span>高于120日均线</div><span class="ma-breadth-value" id="maBreadthKpi120">—</span><span class="ma-breadth-sample" id="maBreadthSample120">有效样本待更新</span></div>
     </div>
+    <div class="ma-breadth-plot"><canvas id="cMaBreadth" role="img" aria-label="沪深A股高于20日、60日和120日均线的股票占比趋势"></canvas></div>
+    <span id="maBreadthRange"></span>
+    <div id="maBreadthFooter">来源：腾讯财经前复权日线 · 均线包含当日 · 沪深A股含ST、不含北交所 · 停牌及历史不足不计入对应窗口 · 虚线为50%参考线</div>
   </div>
-
-
+  <!-- MA_BREADTH_CARD_END -->
 </div>
 
 <!-- ════════════════ TAB 估值分析 ════════════════ -->
@@ -2394,6 +2390,26 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   </section>
   </div>
   <!-- AI_INDUSTRY_CONTEXT_END -->
+  <!-- X_KOL_CARD_START -->
+  <div class="card mb16" id="kolCard" style="border-top:3px solid #1d9bf0">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:800;color:#374151">🐦 X关注意见领袖</span>
+        <span id="kolCount" style="font-size:10px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;
+                     padding:1px 7px;border-radius:10px;font-weight:600">86人关注</span>
+        <span id="kolTs" style="font-size:10px;color:#94a3b8;font-weight:500"></span>
+      </div>
+      <button onclick="triggerKolRefresh()" id="kolBtn" title="触发后台抓取最新动态并生成自动摘要（约1-2分钟）"
+        style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:5px;
+               padding:2px 8px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700">↻</button>
+    </div>
+    <div id="kolGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">
+      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">
+        点击「↻」加载X关注意见领袖观点
+      </div>
+    </div>
+  </div>
+  <!-- X_KOL_CARD_END -->
 </div>
 
 <!-- ═══ 盘前自检 ═══ -->
@@ -6385,7 +6401,7 @@ function _tabRefresh(idx){
   else if(tab==='t0')    { refreshMacro(); }
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tHist') renderHistTable();
-  else if(tab==='tStage') { mkStageMatrix(); refreshAiTrendOnTabAccess(); }
+  else if(tab==='tStage') { mkStageMatrix(); refreshAiTrendOnTabAccess(); fetchKolSummary(); }
   // Capex / ARR：进入产业链监控页时读取快照，已有PAT时本会话自动补扫描一次。
 }
 
@@ -11236,6 +11252,7 @@ function _escH(s) {
 // ── X 关注意见领袖 ────────────────────────────────────────────────
 
 let _kolCache = null; // { ts:epoch, data }
+let _kolPending = null;
 
 const _KOL_CAT_COLORS = {
   'AI技术研究':   '#7c3aed',
@@ -11317,13 +11334,15 @@ function _renderKolGrid(data) {
 
 async function fetchKolSummary(force) {
   force = (force === true);
+  if (_kolPending) return _kolPending;
   if (!force && _kolCache && Date.now() - _kolCache.ts < 30*60*1000) {
     _renderKolGrid(_kolCache.data); return;
   }
+  _kolPending = (async()=>{
   const btn  = document.getElementById('kolBtn');
   const grid = document.getElementById('kolGrid');
   if (btn)  { btn.disabled = true; btn.textContent = '…'; }
-  if (grid) grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">加载中…</div>';
+  if (grid && !_kolCache) grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">加载中…</div>';
   try {
     const r = await fetch('data/twitter_kol_summary.json?_=' + Date.now(), { cache: 'no-store' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -11333,9 +11352,12 @@ async function fetchKolSummary(force) {
     console.log('[KOL] 加载成功，has_tweets:', data.has_tweets);
   } catch(e) {
     console.warn('[KOL] 加载失败:', e.message);
-    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">数据加载失败，点击↻重试</div>';
+    if (_kolCache) _renderKolGrid(_kolCache.data);
+    else if (grid) grid.innerHTML = '<div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:20px 0">数据加载失败，点击↻重试</div>';
   }
   if (btn) { btn.disabled = false; btn.textContent = '↻'; }
+  })();
+  try { return await _kolPending; } finally { _kolPending = null; }
 }
 
 const _sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -11414,7 +11436,7 @@ function triggerKolRefresh(){
     tsField:  'last_updated',
     statusEl: document.getElementById('kolTs'),
     btn:      document.getElementById('kolBtn'),
-    render:   _renderKolGrid
+    render:   data=>{ _kolCache={ts:Date.now(),data}; _renderKolGrid(data); }
   });
 }
 
@@ -12498,7 +12520,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       _refreshMarketPanelsAfterSession(true);
     }
   });                 // Safari 通过前进/后退缓存恢复页面时，定时器可能未立即补跑
-  fetchKolSummary();  // X关注意见领袖：从 data/twitter_kol_summary.json 加载
+  // X 摘要在访问产业链监控时读取，不占用投资组合首屏连接。
   // 30s 后检查是否成功，若仍是占位文字则自动重试一次
   setTimeout(()=>{
     const mfEl = document.getElementById('mfList');
@@ -12790,6 +12812,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 // HIGH_LOW52_MODULE_END
 
 </script>
-<script src="assets/high-low-52w-live.js?v=20261005" defer></script>
+<script src="assets/ma-breadth.js?v=20261014a" defer></script>
+<script src="assets/high-low-52w-live.js?v=20261014a" defer></script>
 </body>
 </html>

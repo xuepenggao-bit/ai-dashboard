@@ -9,13 +9,15 @@ test('all AI tail widgets are moved once to the bottom of the industry tab',()=>
   assert.ok(stage.indexOf('AI_INDUSTRY_CONTEXT_END')>stage.indexOf('creditRatingNote'));
   for(const id of ids){assert.ok(stage.includes('id="'+id+'"'),id);assert.ok(!macro.includes('id="'+id+'"'),id);assert.equal(html.split('id="'+id+'"').length-1,1,id);}
 });
-test('market macro charts and opinion leaders remain in the macro tab',()=>{
-  for(const id of ['cHighLow52','cUpDown','cLimitMoves','cHkVolume','cAccountOpenings','kolGrid'])assert.ok(macro.includes('id="'+id+'"'),id);
+test('market charts remain in market environment while opinion leaders move to industry',()=>{
+  for(const id of ['cHighLow52','cUpDown','cLimitMoves','cHkVolume','cAccountOpenings','cMaBreadth'])assert.ok(macro.includes('id="'+id+'"'),id);
+  assert.ok(!macro.includes('id="kolGrid"'));
+  assert.ok(stage.includes('id="kolGrid"'));
 });
 test('AI snapshot refresh belongs to industry access, not macro access',()=>{
   const refresh=html.slice(html.indexOf('function _tabRefresh(idx)'),html.indexOf('function _resizeAiIndustryCharts'));
   assert.ok(refresh.includes("else if(tab==='t0')    { refreshMacro(); }"));
-  assert.ok(refresh.includes("else if(tab==='tStage') { mkStageMatrix(); refreshAiTrendOnTabAccess(); }"));
+  assert.ok(refresh.includes("else if(tab==='tStage') { mkStageMatrix(); refreshAiTrendOnTabAccess(); fetchKolSummary(); }"));
   assert.ok(!html.includes('[2,3,5,6,7].filter'));
   const change=html.slice(html.indexOf('function switchTab(idx)'),html.indexOf('// ── 盘前自检'));
   assert.ok(change.includes("if(TAB_ORDER[idx]==='tStage') _resizeAiIndustryCharts();"));

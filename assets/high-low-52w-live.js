@@ -1,4 +1,4 @@
-/* Complete, asynchronous 52-calendar-week live breadth. No missing quote = 0. */
+/* One asynchronous quote scan for 52-week extremes and moving-average breadth. */
 let _hl52LivePending=null,_hl52LiveAttempt=0,_hl52Baseline=null,_hl52BaselineAt=0;
 const _hl52BaselineUrls=['./data/market_high_low_52w_baseline.json',
   'https://raw.githubusercontent.com/xuepenggao-bit/ai-dashboard/main/data/market_high_low_52w_baseline.json'];
@@ -43,8 +43,8 @@ function _hl52Quotes(text,codes){
   if(codes.some(code=>!quotes.has(code)))throw Error('52周统计报价未完整返回');
   return quotes;
 }
-async function _hl52GetQuotes(codes){
-  return _hl52Quotes(await _idxFetch('https://qt.gtimg.cn/q='+codes.join(',')+'&_='+Date.now(),{gbk:true,timeout:6500,retries:1}),codes);
+async function _hl52GetQuotes(codes,requireComplete=true){
+  return _hl52Quotes(await _idxFetch('https://qt.gtimg.cn/q='+codes.join(',')+'&_='+Date.now(),{gbk:true,timeout:6500,retries:1}),requireComplete?codes:[]);
 }
 async function _hl52Daily(code,count=400){
   let error;
@@ -91,22 +91,40 @@ async function _hl52CollectLive(){
   if(!baseline.validThrough||baseline.validThrough<date)throw Error('52周比较窗口已过期');
   const start=_hl52Start(date),eligible=baseline.stocks.filter(s=>s.firstDate<=start);
   if(eligible.length<4000)throw Error('52周有效样本不足');
+  let maBaseline=null;
+  if(typeof window.loadMaBreadthBaseline==='function'){
+    try{
+      const candidate=await window.loadMaBreadthBaseline(false);
+      if(candidate.asOfDate===previous&&candidate.stocks.length>=4000)maBaseline=candidate;
+      else console.warn('[均线广度] 上一交易日基准待更新');
+    }catch(error){console.warn('[均线广度基准]',error.message);}
+  }
+  // The MA universe includes younger listings with sufficient daily bars.
+  // Its quote requests share the existing worker pool, never a second scan.
+  const requiredHighLow=new Map(eligible.map(stock=>[stock.code,stock]));
+  const codes=[...new Set([...requiredHighLow.keys(),...(maBaseline?maBaseline.stocks.map(stock=>stock.code):[])])];
+  const allQuotes=new Map();
   const batches=[];
-  for(let i=0;i<eligible.length;i+=80)batches.push(eligible.slice(i,i+80));
+  for(let i=0;i<codes.length;i+=80)batches.push(codes.slice(i,i+80));
   let cursor=0,high=0,low=0,stopped=false;
   // At most four requests at a time; the chart and the rest of the dashboard
   // remain usable while a full-market scan completes in the background.
   const results=await Promise.allSettled(Array.from({length:4},async()=>{
     try{while(cursor<batches.length&&!stopped){
       if(document.hidden||!document.getElementById('t0')?.classList.contains('active'))throw Error('页面已离开，取消本轮');
-      const batch=batches[cursor++],quotes=await _hl52GetQuotes(batch.map(s=>s.code));
-      for(const stock of batch){
-        const quote=quotes.get(stock.code);
+      const batch=batches[cursor++],quotes=await _hl52GetQuotes(batch,!maBaseline);
+      for(const [code,quote] of quotes)allQuotes.set(code,quote);
+      for(const code of batch){
+        const stock=requiredHighLow.get(code);
+        if(!stock)continue;
+        const quote=quotes.get(code);
+        if(!quote)throw Error('52周统计报价未完整返回');
         let threshold=_hl52Thresholds(stock,date);
         if(quote.volume>0&&Math.abs(quote.previous-stock.close)>.012){
           // Never apply unadjusted quotes to a previous-vintage adjusted price.
           // Re-read only affected stocks (e.g. ex-dividend/split) in today's basis.
-          threshold=_hl52DailyThresholds(await _hl52Daily(stock.code),date,previous);
+          quote.adjustedRows=await _hl52Daily(stock.code);
+          threshold=_hl52DailyThresholds(quote.adjustedRows,date,previous);
           if(Math.abs(quote.previous-threshold.close)>.012)throw Error('除权基准仍不一致');
         }
         const result=_hl52Classify(quote,threshold,date);high+=result.high;low+=result.low;
@@ -117,8 +135,14 @@ async function _hl52CollectLive(){
   if(failure)throw failure.reason;
   if(_highLow52Clock().date!==date)throw Error('交易日已切换');
   const time=[...iq.map(q=>q.time),'15:00'].sort()[0];
-  return _setHighLow52LivePoint({date,high,low,eligible:eligible.length,universe:baseline.stocks.length,
+  const highLowUpdated=_setHighLow52LivePoint({date,high,low,eligible:eligible.length,universe:baseline.stocks.length,
     asOf:time,status:'live'},{source:'东方财富股票名单 · 腾讯财经复权日线 + 盘中行情'});
+  let maUpdated=false;
+  if(maBaseline&&typeof window.applyMaBreadthLiveQuotes==='function'){
+    try{maUpdated=await window.applyMaBreadthLiveQuotes(maBaseline,allQuotes,date,time,previous);}
+    catch(error){console.warn('[均线广度盘中统计]',error.message);}
+  }
+  return highLowUpdated||maUpdated;
 }
 function refreshHighLow52Live(force=false){
   const clock=_highLow52Clock(),day=new Date(clock.date+'T00:00:00Z').getUTCDay();
