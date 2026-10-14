@@ -911,7 +911,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <nav class="tabs">
   <div class="tabs-inner">
     <button class="tab active" onclick="switchTab(0)">💼 投资组合</button>
-    <button class="tab" onclick="switchTab(1)">🌐 宏观趋势</button>
+    <button class="tab" onclick="switchTab(1)">🌐 市场环境</button>
     <button class="tab" onclick="switchTab(2)">📋 历史持仓</button>
     <button class="tab" onclick="switchTab(3)">🧭 盘前自检</button>
     <button class="tab" onclick="switchTab(4)">📐 交易系统</button>
@@ -1865,7 +1865,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <!-- ════════════════ TAB 2.1 ════════════════ -->
 <div class="tab-content" id="t0">
   <div class="stitle" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-    宏观趋势仪表板 <span class="stag">A股日频 · AI产业景气</span>
+    市场环境 <span class="stag">A股日频 · 市场全景</span>
   </div>
 
   <!-- KPI Row -->
@@ -7264,7 +7264,7 @@ async function _refreshHkVolumeChart(force=false){
         if(kd) kd.textContent='无法取得';
         if(kc) kc.textContent='实时数据源暂不可用';
         if(kcmp) kcmp.textContent='5 日均额 —';
-        if(kf) kf.textContent='⚠️ 港股成交额趋势暂时取不到，请稍后重新打开“宏观趋势”标签页';
+        if(kf) kf.textContent='⚠️ 港股成交额趋势暂时取不到，请稍后重新打开“市场环境”标签页';
       }
       return false;
     }finally{
@@ -7591,7 +7591,7 @@ async function fetchDailyCharts(){
     const kv=document.getElementById('marginKpiVal');    if(kv) kv.textContent='—';
     const kd=document.getElementById('marginKpiDate');   if(kd) kd.textContent='无法取得';
     const kc=document.getElementById('marginKpiCnt');    if(kc) kc.textContent='实时数据源暂不可用';
-    const kf=document.getElementById('marginKpiFooter'); if(kf) kf.textContent='⚠️ 融资融券数据暂时取不到，请点「刷新宏观数据」重试';
+    const kf=document.getElementById('marginKpiFooter'); if(kf) kf.textContent='⚠️ 融资融券数据暂时取不到，请稍后重新打开“市场环境”标签页';
   }
 
   // ── 2. 沪深 A 股成交额：稳定快照已在函数开头并行启动 ─────────────
@@ -7637,14 +7637,14 @@ async function fetchDailyCharts(){
       if(CH.updown){ CH.updown.data.labels=[]; CH.updown.data.datasets.forEach(ds=>ds.data=[]); CH.updown.update('none'); }
       if(CH.updownDelta){ CH.updownDelta.data.labels=[]; CH.updownDelta.data.datasets.forEach(ds=>ds.data=[]); CH.updownDelta.update('none'); }
       const dateEl=document.getElementById('breadthKpiDate'); if(dateEl) dateEl.textContent='数据暂不可用';
-      const cntEl=document.getElementById('breadthKpiCnt'); if(cntEl) cntEl.textContent='请稍后重新打开“宏观趋势”';
+      const cntEl=document.getElementById('breadthKpiCnt'); if(cntEl) cntEl.textContent='请稍后重新打开“市场环境”';
       const foot=document.getElementById('cUpDownFooter'); if(foot) foot.textContent='⚠️ 涨跌家数历史暂时取不到，已保留空图而不显示错误数值';
     }
     if(!_renderLimitTrend()){
       if(CH.limitMoves){ CH.limitMoves.data.labels=[]; CH.limitMoves.data.datasets.forEach(ds=>ds.data=[]); CH.limitMoves.update('none'); }
       if(CH.limitDelta){ CH.limitDelta.data.labels=[]; CH.limitDelta.data.datasets.forEach(ds=>ds.data=[]); CH.limitDelta.update('none'); }
       const dateEl=document.getElementById('limitKpiDate'); if(dateEl) dateEl.textContent='数据暂不可用';
-      const cntEl=document.getElementById('limitKpiCnt'); if(cntEl) cntEl.textContent='请稍后重新打开“宏观趋势”';
+      const cntEl=document.getElementById('limitKpiCnt'); if(cntEl) cntEl.textContent='请稍后重新打开“市场环境”';
       const foot=document.getElementById('cLimitFooter'); if(foot) foot.textContent='⚠️ 涨跌停家数历史暂时取不到，已保留空图而不显示错误数值';
     }
   }
