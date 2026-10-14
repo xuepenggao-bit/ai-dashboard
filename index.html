@@ -14,8 +14,8 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <!-- defer：不阻塞 HTML 解析与首屏渲染；所有图表都在 DOMContentLoaded 后创建,defer 安全 -->
 <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="assets/chain-monitor.css?v=20261014a">
-<script defer src="assets/chain-monitor.js?v=20261014a"></script>
+<link rel="stylesheet" href="assets/chain-monitor.css?v=20261014b">
+<script defer src="assets/chain-monitor.js?v=20261014b"></script>
 <link rel="stylesheet" href="assets/account-openings.css?v=20261010a">
 <script defer src="assets/account-openings.js?v=20261010a"></script>
 <style>
@@ -2052,173 +2052,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- 云收入、四大云公司 Capex 与前沿 AI ARR：GitHub Actions 每3小时自动扫描；进入本页时自动补触发一次 -->
-  <div class="card mb12" style="padding:13px 16px;border-left:3px solid #2563eb;background:linear-gradient(135deg,#fff 0%,#f8fbff 100%)">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
-      <div>
-        <div style="font-size:13px;font-weight:800;color:#1e293b">四大云公司资本开支指引</div>
-        <div style="font-size:10.5px;color:#64748b;margin-top:3px">后台每3小时扫描云收入、公司财报、官方披露与可靠媒体；进入本页时自动补刷一次</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:9px;margin-left:auto">
-        <span id="capexTs" style="font-size:10.5px;color:#94a3b8;font-weight:500;white-space:nowrap">载入上次快照…</span>
-        <button onclick="triggerCapexRefresh()" id="capexBtn" title="立即触发 GitHub Actions 扫描最新云收入、Capex 指引及 OpenAI / Anthropic ARR 里程碑（约1-2分钟）"
-          style="background:#2563eb;border:1px solid #1d4ed8;color:#fff;border-radius:7px;
-                 padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:750;
-                 box-shadow:0 1px 2px rgba(37,99,235,.18);white-space:nowrap">↻ 立即扫描</button>
-      </div>
-    </div>
-    <div id="capexSourceSummary" style="font-size:9.5px;color:#94a3b8;margin-top:8px">口径：亿美元；2026E 为公司指引，2025A 为各公司已披露财年口径</div>
-  </div>
-
-  <!-- KPI Row -->
-  <div class="g4 mb16">
-    <div class="card">
-      <div class="klabel">Hyperscaler总Capex 2026E <span style="background:#dcfce7;color:#166534;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">季报指引</span></div>
-      <div class="kval tb" id="kCapex26">$7,200–7,450亿</div>
-      <div class="kchange up" id="kYoy26">中值同比 +105.5%</div>
-      <div class="tx3 mt4">Alphabet/MSFT/Amazon/Meta 指引合计</div>
-    </div>
-    <div class="card">
-      <div class="klabel">Hyperscaler总Capex 2025A <span style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">历史实际值</span></div>
-      <div class="kval" id="kCapex25">$3,565亿</div>
-      <div class="kchange neu">公司披露口径合计</div>
-      <div class="tx3 mt4">Microsoft 为 FY2025，其余为 CY2025</div>
-    </div>
-    <div class="card">
-      <div class="klabel">美股7姐妹 中位数TTM PE <span style="background:#fee2e2;color:#991b1b;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2025A 参考</span></div>
-      <div class="kval ty" id="kMag7Pe">36x</div>
-      <div class="kchange neu">均值 <span id="kMag7Avg">41x</span>，NVDA/TSLA拉高</div>
-      <div class="tx3 mt4">6只阶段4 · 1只阶段5(TSLA) · 无阶段3</div>
-    </div>
-    <div class="card">
-      <div class="klabel">AI ETF 20日动量 <span style="background:#fee2e2;color:#7f1d1d;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">实时行情</span></div>
-      <div class="kval" id="kEtfPe">—</div>
-      <div class="kchange neu" id="kPeg">加载中…</div>
-      <div class="tx3 mt4">515980 华富中证AI产业ETF · 20日累计涨跌</div>
-    </div>
-  </div>
-
-  <!-- Charts -->
-  <div class="g3 mb16">
-    <div class="card">
-      <div class="ch"><span class="ct">四大Hyperscaler Capex对比 ($亿)</span></div>
-      <div style="height:230px"><canvas id="cCapex"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="ch"><span class="ct">四大合计Capex趋势 2024→2026E</span><span class="cbadge">2026E取区间中值</span></div>
-      <div style="height:230px"><canvas id="cTrend"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="ch">
-        <span class="ct">OpenAI & Anthropic 年化收入里程碑</span>
-        <span class="cbadge" style="background:#ede9fe;color:#6d28d9">公开披露</span>
-      </div>
-      <div style="height:200px"><canvas id="cArr"></canvas></div>
-      <div id="arrSourceSummary" class="tx3 mt4" style="font-size:10px;line-height:1.55">仅连接已公开的年化收入运行率里程碑 · 蓝=OpenAI 紫=Anthropic · 单位$亿</div>
-      <div id="arrLatestEvent" style="display:none;margin-top:7px;padding:7px 8px;border-radius:7px;background:#eff6ff;border:1px solid #dbeafe;font-size:10px;line-height:1.5;color:#334155"></div>
-    </div>
-  </div>
-
-  <!-- 三大云业务收入与资本开支：季度收入统一按自然季度，年度 Capex 延用上方公司指引口径 -->
-  <div class="card cloud-compare-card mb16">
-    <div class="cloud-compare-head">
-      <div>
-        <div class="cloud-compare-title">云业务收入增长 vs 年度资本开支扩张</div>
-        <div class="cloud-compare-subtitle">最近四个自然季度云业务收入，配对 2024A、2025A 与最新 2026E Capex；用“Capex ÷ 最新季度收入年化值”观察投资强度</div>
-      </div>
-      <span class="cloud-compare-stamp" id="cloudRevenueTs">载入最新财报快照…</span>
-    </div>
-    <div class="g2">
-      <div class="cloud-chart-panel">
-        <div class="cloud-chart-title"><span>最近四季度云业务收入</span><span class="cloud-chart-unit">USD 十亿美元</span></div>
-        <div style="height:240px"><canvas id="cCloudRevenue"></canvas></div>
-      </div>
-      <div class="cloud-chart-panel">
-        <div class="cloud-chart-title"><span>年度 Capex 变化趋势</span><span class="cloud-chart-unit">USD 十亿美元 · 2026E 为指引中值</span></div>
-        <div style="height:240px"><canvas id="cCloudCapex"></canvas></div>
-      </div>
-    </div>
-    <div class="cloud-summary-grid">
-      <div class="cloud-summary cloud-summary-google">
-        <div class="cloud-summary-name"><span class="cloud-summary-dot"></span>Google Cloud</div>
-        <div class="cloud-summary-main"><strong class="cloud-summary-value" id="cloudAlphabetLatest">$24.77B</strong><span class="cloud-summary-growth" id="cloudAlphabetGrowth">QoQ +23.7% · YoY +81.8%</span></div>
-        <div class="cloud-summary-metrics">
-          <div class="cloud-summary-metric"><span>2026E Capex</span><strong id="cloudAlphabetCapex">$200B</strong></div>
-          <div class="cloud-summary-metric"><span>投资强度</span><strong id="cloudAlphabetIntensity">2.02×</strong></div>
-        </div>
-        <a class="cloud-summary-source" id="cloudAlphabetSource" href="https://abc.xyz/investor/news/news-details/2026/Alphabet-Announces-Second-Quarter-2026-Results-2026-Y3uQ6H4ZJa/default.aspx" target="_blank" rel="noopener">Alphabet 2026 Q2 财报 ↗</a>
-      </div>
-      <div class="cloud-summary cloud-summary-amazon">
-        <div class="cloud-summary-name"><span class="cloud-summary-dot"></span>Amazon Web Services</div>
-        <div class="cloud-summary-main"><strong class="cloud-summary-value" id="cloudAmazonLatest">$42.23B</strong><span class="cloud-summary-growth" id="cloudAmazonGrowth">QoQ +12.4% · YoY +36.8%</span></div>
-        <div class="cloud-summary-metrics">
-          <div class="cloud-summary-metric"><span>2026E Capex</span><strong id="cloudAmazonCapex">$220B</strong></div>
-          <div class="cloud-summary-metric"><span>投资强度</span><strong id="cloudAmazonIntensity">1.30×</strong></div>
-        </div>
-        <a class="cloud-summary-source" id="cloudAmazonSource" href="https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Second-Quarter-Results/default.aspx" target="_blank" rel="noopener">Amazon 2026 Q2 财报 ↗</a>
-      </div>
-      <div class="cloud-summary cloud-summary-microsoft">
-        <div class="cloud-summary-name"><span class="cloud-summary-dot"></span>Microsoft Cloud</div>
-        <div class="cloud-summary-main"><strong class="cloud-summary-value" id="cloudMicrosoftLatest">$59.30B</strong><span class="cloud-summary-growth" id="cloudMicrosoftGrowth">QoQ +8.8% · YoY +27.0%</span></div>
-        <div class="cloud-summary-metrics">
-          <div class="cloud-summary-metric"><span>2026E Capex</span><strong id="cloudMicrosoftCapex">$175B</strong></div>
-          <div class="cloud-summary-metric"><span>投资强度</span><strong id="cloudMicrosoftIntensity">0.74×</strong></div>
-        </div>
-        <a class="cloud-summary-source" id="cloudMicrosoftSource" href="https://www.microsoft.com/en-us/Investor/earnings/FY-2026-Q4/press-release-webcast" target="_blank" rel="noopener">Microsoft FY26 Q4 财报 ↗</a>
-      </div>
-    </div>
-    <div class="cloud-compare-note" id="cloudMethodNote">口径说明：Google Cloud 与 AWS 为公司分部收入；Microsoft Cloud 包含 Microsoft 365 Commercial cloud、Azure、LinkedIn 商业部分及 Dynamics 365，并非 Azure 单项收入，因此三家公司绝对收入不宜直接视作同口径市场份额。投资强度仅作方向性比较。</div>
-  </div>
-
-  <!-- 四家公司 Capex 指引明细 -->
-  <div class="g4 mb16">
-    <div class="card">
-      <div class="ch"><span class="ct">Alphabet / Google</span><span class="cbadge tg">正式区间</span></div>
-      <div class="fjb mb4"><span class="tx2">2025A 实际值</span><span class="tx2" id="kGoog25">$914亿</span></div>
-      <div class="fjb mb4"><span class="tx2">2026E 指引</span><span class="tb" style="font-weight:700" id="kGoog26">$1,950–2,050亿</span></div>
-      <div class="tx3 mt8" id="kGoogBasis">CY2026 · 官方区间</div>
-      <a id="kGoogSource" href="https://abc.xyz/investor/events/event-details/2026/2026-Q2-Earnings-Call-2026-GgTAq7Is0z/default.aspx" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Alphabet 2026 Q2业绩会 · 2026-07-22 ↗</a>
-    </div>
-    <div class="card">
-      <div class="ch"><span class="ct">Microsoft</span><span class="cbadge" style="background:#fef3c7;color:#92400e">点指引</span></div>
-      <div class="fjb mb4"><span class="tx2">FY2025 实际值</span><span class="tx2" id="kMsft25">$646亿</span></div>
-      <div class="fjb mb4"><span class="tx2">CY2026 指引</span><span class="tb" style="font-weight:700" id="kMsft26">约 $1,750亿</span></div>
-      <div class="tx3 mt8" id="kMsftBasis">CY2026 · 租赁分类调整，底层投资预期不变</div>
-      <a id="kMsftSource" href="https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q4" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Microsoft FY26 Q4业绩会 · 2026-07-29 ↗</a>
-    </div>
-    <div class="card">
-      <div class="ch"><span class="ct">Amazon</span><span class="cbadge" style="background:#fef3c7;color:#92400e">点指引</span></div>
-      <div class="fjb mb4"><span class="tx2">2025A 实际值</span><span class="tx2" id="kAmz25">$1,283亿</span></div>
-      <div class="fjb mb4"><span class="tx2">2026E 指引</span><span class="tg" style="font-weight:700" id="kAmz26">约 $2,200亿</span></div>
-      <div class="tx3 mt8" id="kAmzBasis">CY2026 · 现金Capex约$220B；较此前指引上调</div>
-      <a id="kAmzSource" href="https://apnews.com/article/b4ce02b4666a35b8975823c5c22072ee" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">AP · Amazon 2026 Q2业绩会 · 2026-07-30 ↗</a>
-    </div>
-    <div class="card">
-      <div class="ch"><span class="ct">Meta</span><span class="cbadge tg">收窄区间</span></div>
-      <div class="fjb mb4"><span class="tx2">2025A 实际值</span><span class="tx2" id="kMeta25">$722亿</span></div>
-      <div class="fjb mb4"><span class="tx2">2026E 指引</span><span class="tg" style="font-weight:700" id="kMeta26">$1,300–1,450亿</span></div>
-      <div class="tx3 mt8" id="kMetaBasis">CY2026 · Q2收窄后的官方区间</div>
-      <a id="kMetaSource" href="https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Second-Quarter-2026-Results/default.aspx" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Meta 2026 Q2业绩 · 2026-07-29 ↗</a>
-    </div>
-  </div>
-
-  <!-- 四大 CSP 债券评级：当前评级与最近一次可核验评级动作分开展示 -->
-  <section class="card credit-ratings-card mb16" aria-labelledby="creditRatingsTitle">
-    <div class="credit-ratings-head">
-      <div>
-        <div class="credit-ratings-title" id="creditRatingsTitle"><span class="credit-ratings-icon">债</span>四大 CSP 债券评级与变化</div>
-        <div class="credit-ratings-subtitle">长期发行人 / 高级无担保口径 · 当前评级与最近评级动作分开展示，避免把新债定级误读为主体评级调整</div>
-      </div>
-      <span class="credit-ratings-stamp" id="creditRatingTs">载入评级快照…</span>
-    </div>
-    <div class="credit-ratings-grid" id="creditRatingGrid">
-      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:24px 0">正在读取评级资料…</div>
-    </div>
-    <div class="credit-ratings-note">
-      <span id="creditRatingNote">评级来源：S&amp;P Global Ratings、公司债券发行文件及公司投资者关系页面</span>
-      <span>“—”表示所引用公开材料未列示该机构评级</span>
-    </div>
-  </section>
 
 </div>
 
@@ -2386,7 +2219,180 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 </div>
 
 <!-- ─── tStage: earnings and valuation monitor ─── -->
-<div class="tab-content" id="tStage"><div class="cm-loading">正在加载产业链业绩与估值…</div></div>
+<div class="tab-content" id="tStage">
+  <div id="chainMonitorRoot"><div class="cm-loading">正在加载产业链业绩与估值…</div></div>
+  <!-- AI_INDUSTRY_CONTEXT_START -->
+  <div id="aiIndustryContext">
+  <!-- 云收入、四大云公司 Capex 与前沿 AI ARR：GitHub Actions 每3小时自动扫描；进入本页时自动补触发一次 -->
+  <div class="card mb12" style="padding:13px 16px;border-left:3px solid #2563eb;background:linear-gradient(135deg,#fff 0%,#f8fbff 100%)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#1e293b">四大云公司资本开支指引</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:3px">后台每3小时扫描云收入、公司财报、官方披露与可靠媒体；进入本页时自动补刷一次</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;margin-left:auto">
+        <span id="capexTs" style="font-size:10.5px;color:#94a3b8;font-weight:500;white-space:nowrap">载入上次快照…</span>
+        <button onclick="triggerCapexRefresh()" id="capexBtn" title="立即触发 GitHub Actions 扫描最新云收入、Capex 指引及 OpenAI / Anthropic ARR 里程碑（约1-2分钟）"
+          style="background:#2563eb;border:1px solid #1d4ed8;color:#fff;border-radius:7px;
+                 padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit;font-weight:750;
+                 box-shadow:0 1px 2px rgba(37,99,235,.18);white-space:nowrap">↻ 立即扫描</button>
+      </div>
+    </div>
+    <div id="capexSourceSummary" style="font-size:9.5px;color:#94a3b8;margin-top:8px">口径：亿美元；2026E 为公司指引，2025A 为各公司已披露财年口径</div>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="g4 mb16">
+    <div class="card">
+      <div class="klabel">Hyperscaler总Capex 2026E <span style="background:#dcfce7;color:#166534;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">季报指引</span></div>
+      <div class="kval tb" id="kCapex26">$7,200–7,450亿</div>
+      <div class="kchange up" id="kYoy26">中值同比 +105.5%</div>
+      <div class="tx3 mt4">Alphabet/MSFT/Amazon/Meta 指引合计</div>
+    </div>
+    <div class="card">
+      <div class="klabel">Hyperscaler总Capex 2025A <span style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">历史实际值</span></div>
+      <div class="kval" id="kCapex25">$3,565亿</div>
+      <div class="kchange neu">公司披露口径合计</div>
+      <div class="tx3 mt4">Microsoft 为 FY2025，其余为 CY2025</div>
+    </div>
+    <div class="card">
+      <div class="klabel">美股7姐妹 中位数TTM PE <span style="background:#fee2e2;color:#991b1b;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">2025A 参考</span></div>
+      <div class="kval ty" id="kMag7Pe">36x</div>
+      <div class="kchange neu">均值 <span id="kMag7Avg">41x</span>，NVDA/TSLA拉高</div>
+      <div class="tx3 mt4">6只阶段4 · 1只阶段5(TSLA) · 无阶段3</div>
+    </div>
+    <div class="card">
+      <div class="klabel">AI ETF 20日动量 <span style="background:#fee2e2;color:#7f1d1d;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">实时行情</span></div>
+      <div class="kval" id="kEtfPe">—</div>
+      <div class="kchange neu" id="kPeg">加载中…</div>
+      <div class="tx3 mt4">515980 华富中证AI产业ETF · 20日累计涨跌</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="g3 mb16">
+    <div class="card">
+      <div class="ch"><span class="ct">四大Hyperscaler Capex对比 ($亿)</span></div>
+      <div style="height:230px"><canvas id="cCapex"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">四大合计Capex趋势 2024→2026E</span><span class="cbadge">2026E取区间中值</span></div>
+      <div style="height:230px"><canvas id="cTrend"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">OpenAI & Anthropic 年化收入里程碑</span>
+        <span class="cbadge" style="background:#ede9fe;color:#6d28d9">公开披露</span>
+      </div>
+      <div style="height:200px"><canvas id="cArr"></canvas></div>
+      <div id="arrSourceSummary" class="tx3 mt4" style="font-size:10px;line-height:1.55">仅连接已公开的年化收入运行率里程碑 · 蓝=OpenAI 紫=Anthropic · 单位$亿</div>
+      <div id="arrLatestEvent" style="display:none;margin-top:7px;padding:7px 8px;border-radius:7px;background:#eff6ff;border:1px solid #dbeafe;font-size:10px;line-height:1.5;color:#334155"></div>
+    </div>
+  </div>
+
+  <!-- 三大云业务收入与资本开支：季度收入统一按自然季度，年度 Capex 延用上方公司指引口径 -->
+  <div class="card cloud-compare-card mb16">
+    <div class="cloud-compare-head">
+      <div>
+        <div class="cloud-compare-title">云业务收入增长 vs 年度资本开支扩张</div>
+        <div class="cloud-compare-subtitle">最近四个自然季度云业务收入，配对 2024A、2025A 与最新 2026E Capex；用“Capex ÷ 最新季度收入年化值”观察投资强度</div>
+      </div>
+      <span class="cloud-compare-stamp" id="cloudRevenueTs">载入最新财报快照…</span>
+    </div>
+    <div class="g2">
+      <div class="cloud-chart-panel">
+        <div class="cloud-chart-title"><span>最近四季度云业务收入</span><span class="cloud-chart-unit">USD 十亿美元</span></div>
+        <div style="height:240px"><canvas id="cCloudRevenue"></canvas></div>
+      </div>
+      <div class="cloud-chart-panel">
+        <div class="cloud-chart-title"><span>年度 Capex 变化趋势</span><span class="cloud-chart-unit">USD 十亿美元 · 2026E 为指引中值</span></div>
+        <div style="height:240px"><canvas id="cCloudCapex"></canvas></div>
+      </div>
+    </div>
+    <div class="cloud-summary-grid">
+      <div class="cloud-summary cloud-summary-google">
+        <div class="cloud-summary-name"><span class="cloud-summary-dot"></span>Google Cloud</div>
+        <div class="cloud-summary-main"><strong class="cloud-summary-value" id="cloudAlphabetLatest">$24.77B</strong><span class="cloud-summary-growth" id="cloudAlphabetGrowth">QoQ +23.7% · YoY +81.8%</span></div>
+        <div class="cloud-summary-metrics">
+          <div class="cloud-summary-metric"><span>2026E Capex</span><strong id="cloudAlphabetCapex">$200B</strong></div>
+          <div class="cloud-summary-metric"><span>投资强度</span><strong id="cloudAlphabetIntensity">2.02×</strong></div>
+        </div>
+        <a class="cloud-summary-source" id="cloudAlphabetSource" href="https://abc.xyz/investor/news/news-details/2026/Alphabet-Announces-Second-Quarter-2026-Results-2026-Y3uQ6H4ZJa/default.aspx" target="_blank" rel="noopener">Alphabet 2026 Q2 财报 ↗</a>
+      </div>
+      <div class="cloud-summary cloud-summary-amazon">
+        <div class="cloud-summary-name"><span class="cloud-summary-dot"></span>Amazon Web Services</div>
+        <div class="cloud-summary-main"><strong class="cloud-summary-value" id="cloudAmazonLatest">$42.23B</strong><span class="cloud-summary-growth" id="cloudAmazonGrowth">QoQ +12.4% · YoY +36.8%</span></div>
+        <div class="cloud-summary-metrics">
+          <div class="cloud-summary-metric"><span>2026E Capex</span><strong id="cloudAmazonCapex">$220B</strong></div>
+          <div class="cloud-summary-metric"><span>投资强度</span><strong id="cloudAmazonIntensity">1.30×</strong></div>
+        </div>
+        <a class="cloud-summary-source" id="cloudAmazonSource" href="https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Second-Quarter-Results/default.aspx" target="_blank" rel="noopener">Amazon 2026 Q2 财报 ↗</a>
+      </div>
+      <div class="cloud-summary cloud-summary-microsoft">
+        <div class="cloud-summary-name"><span class="cloud-summary-dot"></span>Microsoft Cloud</div>
+        <div class="cloud-summary-main"><strong class="cloud-summary-value" id="cloudMicrosoftLatest">$59.30B</strong><span class="cloud-summary-growth" id="cloudMicrosoftGrowth">QoQ +8.8% · YoY +27.0%</span></div>
+        <div class="cloud-summary-metrics">
+          <div class="cloud-summary-metric"><span>2026E Capex</span><strong id="cloudMicrosoftCapex">$175B</strong></div>
+          <div class="cloud-summary-metric"><span>投资强度</span><strong id="cloudMicrosoftIntensity">0.74×</strong></div>
+        </div>
+        <a class="cloud-summary-source" id="cloudMicrosoftSource" href="https://www.microsoft.com/en-us/Investor/earnings/FY-2026-Q4/press-release-webcast" target="_blank" rel="noopener">Microsoft FY26 Q4 财报 ↗</a>
+      </div>
+    </div>
+    <div class="cloud-compare-note" id="cloudMethodNote">口径说明：Google Cloud 与 AWS 为公司分部收入；Microsoft Cloud 包含 Microsoft 365 Commercial cloud、Azure、LinkedIn 商业部分及 Dynamics 365，并非 Azure 单项收入，因此三家公司绝对收入不宜直接视作同口径市场份额。投资强度仅作方向性比较。</div>
+  </div>
+
+  <!-- 四家公司 Capex 指引明细 -->
+  <div class="g4 mb16">
+    <div class="card">
+      <div class="ch"><span class="ct">Alphabet / Google</span><span class="cbadge tg">正式区间</span></div>
+      <div class="fjb mb4"><span class="tx2">2025A 实际值</span><span class="tx2" id="kGoog25">$914亿</span></div>
+      <div class="fjb mb4"><span class="tx2">2026E 指引</span><span class="tb" style="font-weight:700" id="kGoog26">$1,950–2,050亿</span></div>
+      <div class="tx3 mt8" id="kGoogBasis">CY2026 · 官方区间</div>
+      <a id="kGoogSource" href="https://abc.xyz/investor/events/event-details/2026/2026-Q2-Earnings-Call-2026-GgTAq7Is0z/default.aspx" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Alphabet 2026 Q2业绩会 · 2026-07-22 ↗</a>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Microsoft</span><span class="cbadge" style="background:#fef3c7;color:#92400e">点指引</span></div>
+      <div class="fjb mb4"><span class="tx2">FY2025 实际值</span><span class="tx2" id="kMsft25">$646亿</span></div>
+      <div class="fjb mb4"><span class="tx2">CY2026 指引</span><span class="tb" style="font-weight:700" id="kMsft26">约 $1,750亿</span></div>
+      <div class="tx3 mt8" id="kMsftBasis">CY2026 · 租赁分类调整，底层投资预期不变</div>
+      <a id="kMsftSource" href="https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q4" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Microsoft FY26 Q4业绩会 · 2026-07-29 ↗</a>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Amazon</span><span class="cbadge" style="background:#fef3c7;color:#92400e">点指引</span></div>
+      <div class="fjb mb4"><span class="tx2">2025A 实际值</span><span class="tx2" id="kAmz25">$1,283亿</span></div>
+      <div class="fjb mb4"><span class="tx2">2026E 指引</span><span class="tg" style="font-weight:700" id="kAmz26">约 $2,200亿</span></div>
+      <div class="tx3 mt8" id="kAmzBasis">CY2026 · 现金Capex约$220B；较此前指引上调</div>
+      <a id="kAmzSource" href="https://apnews.com/article/b4ce02b4666a35b8975823c5c22072ee" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">AP · Amazon 2026 Q2业绩会 · 2026-07-30 ↗</a>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Meta</span><span class="cbadge tg">收窄区间</span></div>
+      <div class="fjb mb4"><span class="tx2">2025A 实际值</span><span class="tx2" id="kMeta25">$722亿</span></div>
+      <div class="fjb mb4"><span class="tx2">2026E 指引</span><span class="tg" style="font-weight:700" id="kMeta26">$1,300–1,450亿</span></div>
+      <div class="tx3 mt8" id="kMetaBasis">CY2026 · Q2收窄后的官方区间</div>
+      <a id="kMetaSource" href="https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Second-Quarter-2026-Results/default.aspx" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:9.5px;color:#2563eb;text-decoration:none">Meta 2026 Q2业绩 · 2026-07-29 ↗</a>
+    </div>
+  </div>
+
+  <!-- 四大 CSP 债券评级：当前评级与最近一次可核验评级动作分开展示 -->
+  <section class="card credit-ratings-card mb16" aria-labelledby="creditRatingsTitle">
+    <div class="credit-ratings-head">
+      <div>
+        <div class="credit-ratings-title" id="creditRatingsTitle"><span class="credit-ratings-icon">债</span>四大 CSP 债券评级与变化</div>
+        <div class="credit-ratings-subtitle">长期发行人 / 高级无担保口径 · 当前评级与最近评级动作分开展示，避免把新债定级误读为主体评级调整</div>
+      </div>
+      <span class="credit-ratings-stamp" id="creditRatingTs">载入评级快照…</span>
+    </div>
+    <div class="credit-ratings-grid" id="creditRatingGrid">
+      <div style="grid-column:1/-1;color:#94a3b8;font-size:11px;text-align:center;padding:24px 0">正在读取评级资料…</div>
+    </div>
+    <div class="credit-ratings-note">
+      <span id="creditRatingNote">评级来源：S&amp;P Global Ratings、公司债券发行文件及公司投资者关系页面</span>
+      <span>“—”表示所引用公开材料未列示该机构评级</span>
+    </div>
+  </section>
+  </div>
+  <!-- AI_INDUSTRY_CONTEXT_END -->
+</div>
 
 <!-- ═══ 盘前自检 ═══ -->
 <div class="tab-content" id="tPre">
@@ -5500,7 +5506,7 @@ function _renderAiTrend(d){
       const stale=Number.isFinite(ageHours)&&ageHours>Math.max(2.5,scanHours*2.5);
       tsEl.textContent=(stale?'⚠ 自动扫描可能延迟 · ':'自动扫描已启用 · ')+checked;
       tsEl.style.color=stale?'#d97706':'#059669';
-      tsEl.title='GitHub Actions 每3小时自动核对；进入宏观趋势页时会立即补触发一次';
+      tsEl.title='GitHub Actions 每3小时自动核对；进入产业链监控页时会立即补触发一次';
     }
   }
 }
@@ -5521,7 +5527,7 @@ async function loadAiTrendSnapshot(){
   }
 }
 
-// 进入宏观趋势页时先重新读取快照；当前浏览器已保存PAT时，
+// 进入产业链监控页时先重新读取快照；当前浏览器已保存PAT时，
 // 本次页面会话自动触发一次后台扫描。没有PAT时仍由每3小时定时任务兜底，
 // 且绝不在切换标签页时弹出令牌输入框。
 async function refreshAiTrendOnTabAccess(){
@@ -6374,11 +6380,18 @@ function _tabRefresh(idx){
   _TAB_TS[idx]=now;
   // 按标签页类型调用对应的动态数据刷新函数
   if(tab==='tPort'){ refreshPortAll(true); }  // 切到组合页：强制全刷（A档优化：不再依赖 fetchPortPrices 的 finally 串行链）
-  else if(tab==='t0')    { refreshMacro(); refreshAiTrendOnTabAccess(); }
+  else if(tab==='t0')    { refreshMacro(); }
   else if(tab==='tVal')   { fetchPortPrices(); fetchValData(); }
   else if(tab==='tHist') renderHistTable();
-  else if(tab==='tStage') mkStageMatrix();
-  // Capex / ARR：进入宏观趋势页时重新读取快照，并在过期且已有PAT时自动触发后台扫描。
+  else if(tab==='tStage') { mkStageMatrix(); refreshAiTrendOnTabAccess(); }
+  // Capex / ARR：进入产业链监控页时读取快照，已有PAT时本会话自动补扫描一次。
+}
+
+function _resizeAiIndustryCharts(){
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(!document.getElementById('tStage')?.classList.contains('active'))return;
+    ['capex','trend','arr','cloudRevenue','cloudCapex'].forEach(key=>{try{CH[key]?.resize();}catch(e){console.warn('[AI图表尺寸]',key,e.message);}});
+  }));
 }
 
 function switchTab(idx){
@@ -6391,6 +6404,7 @@ function switchTab(idx){
     const f=document.getElementById('tradeFrame');
     if(f && !f.src && f.dataset.src){ f.src=f.dataset.src; }
   }
+  if(TAB_ORDER[idx]==='tStage') _resizeAiIndustryCharts();
   _tabRefresh(idx); // 切换时刷新该标签页动态数据
 }
 
@@ -12519,7 +12533,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 确保节流起点是"实际取到价格的时刻"而不是"页面初始化时刻"，避免首次切换被误节流。
   // 1(tVal)  不预加载，首次切换时立即拉取（同原逻辑）。
   // 8(t3)    静态内容，无需节流。
-  [2,3,5,6,7].filter(i=>TAB_ORDER[i]&&TAB_ORDER[i]!=='tPre').forEach(i=>_TAB_TS[i]=_initTs);
+  // 产业链页不预设节流时间：首次访问要读取搬入的 AI 快照。
+  [2,3,5,7].filter(i=>TAB_ORDER[i]&&TAB_ORDER[i]!=='tPre').forEach(i=>_TAB_TS[i]=_initTs);
 });
 
 // Safari/手机浏览器会冻结后台标签页的定时器；恢复前台时主动补刷指数，

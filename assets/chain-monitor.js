@@ -140,7 +140,8 @@
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(!global.document)return;
 
-  const root=document.getElementById('tStage');if(!root)return;
+  const tab=document.getElementById('tStage');if(!tab)return;
+  const root=document.getElementById('chainMonitorRoot')||tab;
   let data=null,groups=[],selected='all',chart=null,inflight=null,lastFetch=0,lastQuote=0;
   const companyView={top:0,left:0,expanded:new Set()};
   const CACHE='chain-monitor-v1';
@@ -276,6 +277,6 @@
   try{const cached=JSON.parse(localStorage.getItem(CACHE));if(valid(cached)){data=cached;render();}}catch(_){}
   global.ChainMonitor={refresh,render,getData:()=>data};
   refresh(false);
-  setInterval(()=>{if(root.classList.contains('active')&&!document.hidden){quotes(false);if(Date.now()-lastFetch>900000)refresh(false);}},60000);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&root.classList.contains('active'))refresh(false);});
+  setInterval(()=>{if(tab.classList.contains('active')&&!document.hidden){quotes(false);if(Date.now()-lastFetch>900000)refresh(false);}},60000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&tab.classList.contains('active'))refresh(false);});
 })(typeof window==='undefined'?globalThis:window);
