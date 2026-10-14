@@ -171,6 +171,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+#aiIndustryContext .g2 > *, #aiIndustryContext .g3 > *, #aiIndustryContext .g4 > *{min-width:0}
+#aiIndustryContext canvas{max-width:100%}
 .g5{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
 @media(max-width:900px){.g2,.g3,.g4,.g5{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.g2,.g3,.g4,.g5{grid-template-columns:1fr}}
@@ -6387,12 +6389,17 @@ function _tabRefresh(idx){
   // Capex / ARR：进入产业链监控页时读取快照，已有PAT时本会话自动补扫描一次。
 }
 
+let _aiIndustryResizePending=false;
 function _resizeAiIndustryCharts(){
+  if(_aiIndustryResizePending)return;
+  _aiIndustryResizePending=true;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    _aiIndustryResizePending=false;
     if(!document.getElementById('tStage')?.classList.contains('active'))return;
     ['capex','trend','arr','cloudRevenue','cloudCapex'].forEach(key=>{try{CH[key]?.resize();}catch(e){console.warn('[AI图表尺寸]',key,e.message);}});
   }));
 }
+window.addEventListener('resize',_resizeAiIndustryCharts);
 
 function switchTab(idx){
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
