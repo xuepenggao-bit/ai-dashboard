@@ -14,6 +14,8 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <!-- defer：不阻塞 HTML 解析与首屏渲染；所有图表都在 DOMContentLoaded 后创建,defer 安全 -->
 <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- 市场图表样式须先注册，部分模块会在恢复缓存时立即绘图。 -->
+<script src="assets/market-environment.js?v=20261015a" defer></script>
 <link rel="stylesheet" href="assets/chain-monitor.css?v=20261014b">
 <script defer src="assets/chain-monitor.js?v=20261014b"></script>
 <link rel="stylesheet" href="assets/account-openings.css?v=20261010a">
@@ -22,6 +24,7 @@
 <link rel="stylesheet" href="assets/market-risk.css?v=20261015a">
 <link rel="stylesheet" href="assets/market-quality.css?v=20261015a">
 <link rel="stylesheet" href="assets/market-heat.css?v=20261015a">
+<link rel="stylesheet" href="assets/market-environment.css?v=20261015a">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -1868,42 +1871,43 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ════════════════ TAB 2.1 ════════════════ -->
 <div class="tab-content" id="t0">
-  <div class="stitle" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-    市场环境 <span class="stag">A股日频 · 市场全景</span>
+  <div class="market-environment-hero">
+    <div class="market-environment-title-line"><h1 class="stitle market-environment-title">市场环境</h1><span class="stag market-environment-tag">A股日频 · 市场全景</span></div>
+    <p class="market-environment-subtitle">从市场热度、交易活跃到资金与风险，观察 A 股整体状态。</p>
   </div>
 
   <!-- KPI Row -->
-  <div class="g5 mb16">
-    <div class="card">
+  <div class="g5 mb16 market-overview-grid">
+    <div class="card market-overview-card">
       <div class="klabel">沪深A股总市值 <span id="kTmcDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
-      <div class="kval tb" id="kTmc" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kval tb" id="kTmc" style="color:#94a3b8">--</div>
       <div class="kchange neu" id="kTmcChange">--</div>
       <div class="tx3 mt4">右侧四板块合计 · 不含B股、北交所<br>显示值四舍五入，可能有尾差</div>
     </div>
-    <div class="card">
+    <div class="card market-overview-card">
       <div class="klabel">上证综指 PE(TTM) <span id="kSsePeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
-      <div class="kval" id="kSsePe" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kval" id="kSsePe" style="color:#94a3b8">--</div>
       <div class="kchange neu" id="kSsePeHint">历史均值 ~12x</div>
       <div class="macro-market-cap" title="市值口径：沪市A股总市值减去科创板；上方PE仍为上证综指PE。"><div class="macro-market-cap-line"><span class="macro-market-cap-label">沪市主板A股</span><strong id="kSseMc" class="macro-market-cap-value">—</strong></div><div id="kSseMcDate" class="macro-market-cap-date">正在获取…</div></div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
-    <div class="card">
+    <div class="card market-overview-card">
       <div class="klabel">深证成指 PE(TTM) <span id="kSzePeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
-      <div class="kval ty" id="kSzePe" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kval ty" id="kSzePe" style="color:#94a3b8">--</div>
       <div class="kchange neu" id="kSzePeHint">历史均值 ~25x</div>
       <div class="macro-market-cap" title="市值口径：深市A股总市值减去创业板；上方PE仍为深证成指PE。"><div class="macro-market-cap-line"><span class="macro-market-cap-label">深市主板A股</span><strong id="kSzeMc" class="macro-market-cap-value">—</strong></div><div id="kSzeMcDate" class="macro-market-cap-date">正在获取…</div></div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
-    <div class="card">
+    <div class="card market-overview-card">
       <div class="klabel">创业板指 PE(TTM) <span id="kGemPeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
-      <div class="kval tp" id="kGemPe" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kval tp" id="kGemPe" style="color:#94a3b8">--</div>
       <div class="kchange neu" id="kGemPeHint">历史均值 ~35x</div>
       <div class="macro-market-cap" title="创业板全板股票总市值，采用创业板综指口径；与深市主板A股互不重叠。"><div class="macro-market-cap-line"><span class="macro-market-cap-label">创业板总市值</span><strong id="kGemMc" class="macro-market-cap-value">—</strong></div><div id="kGemMcDate" class="macro-market-cap-date">正在获取…</div></div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
-    <div class="card">
+    <div class="card market-overview-card">
       <div class="klabel">科创50 PE(TTM) <span id="kStarPeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
-      <div class="kval tp" id="kStarPe" style="color:#94a3b8;font-size:18px">--</div>
+      <div class="kval tp" id="kStarPe" style="color:#94a3b8">--</div>
       <div class="kchange neu" id="kStarPeHint">历史均值 ~45x</div>
       <div class="macro-market-cap" title="科创板全板股票总市值，采用科创综指口径；与沪市主板A股互不重叠。"><div class="macro-market-cap-line"><span class="macro-market-cap-label">科创板总市值</span><strong id="kStarMc" class="macro-market-cap-value">—</strong></div><div id="kStarMcDate" class="macro-market-cap-date">正在获取…</div></div>
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
@@ -1934,114 +1938,114 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <!-- MARKET_HEAT_CARD_END -->
 
   <!-- 日频：融资融券余额趋势（全宽）-->
-  <div class="card mb16">
+  <div class="card mb16 market-series-card market-series-card--margin" id="marketMarginCard">
     <div class="ch">
       <span class="ct">融资融券余额趋势 + 每日融资增量 (日频·¥亿)</span>
       <span class="cbadge" style="background:#d1fae5;color:#065f46">沪深交易所 · 日频</span>
     </div>
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;padding:8px 12px;background:#fffbeb;border-radius:8px;border:1px solid #fde68a">
+    <div class="market-series-summary" style="display:flex;align-items:center;gap:16px;margin-bottom:10px;padding:8px 12px;background:#fffbeb;border-radius:8px;border:1px solid #fde68a">
       <div>
         <span class="tx3">最新余额&nbsp;</span>
         <span id="marginKpiVal" style="font-size:18px;font-weight:800;color:#d97706">—</span>
       </div>
-      <span id="marginKpiDate" class="tx3" style="color:#94a3b8">加载中…</span>
+      <span id="marginKpiDate" class="tx3">加载中…</span>
       <span id="marginKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
     </div>
-    <div style="height:200px"><canvas id="cMargin"></canvas></div>
-    <div class="tx3 mt4">来源: 东方财富 · 日频两融余额（沪深合计）· 柱=每日增量(余额环比，红增绿减) · <span id="marginKpiFooter">加载中…</span></div>
+    <div class="market-series-plot" style="height:200px"><canvas id="cMargin"></canvas></div>
+    <div class="tx3 mt4 market-series-footer">来源: 东方财富 · 日频两融余额（沪深合计）· 柱=每日增量(余额环比，红增绿减) · <span id="marginKpiFooter">加载中…</span></div>
   </div>
 
   <!-- 日频：沪深两市成交额趋势（近三个月） -->
-  <div class="card mb16">
+  <div class="card mb16 market-series-card market-series-card--volume" id="marketVolumeCard">
     <div class="ch">
       <span class="ct">沪深 A 股成交额趋势（日频·亿元）</span>
       <span class="cbadge" style="background:#dbeafe;color:#1d4ed8">近 3 个月 · 60 交易日</span>
     </div>
-    <div style="display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
+    <div class="market-series-summary" style="display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
       <div>
         <span class="tx3">最新成交额&nbsp;</span>
         <span id="volumeKpiVal" style="font-size:18px;font-weight:800;color:#2563eb">—</span>
       </div>
-      <span id="volumeKpiDate" class="tx3" style="color:#94a3b8">加载中…</span>
+      <span id="volumeKpiDate" class="tx3">加载中…</span>
       <span id="volumeKpiCompare" class="tx3" style="color:#64748b">5 日均额 —</span>
       <span id="volumeKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
     </div>
-    <div style="height:220px"><canvas id="cVolume"></canvas></div>
-    <div class="tx3 mt4" id="volumeKpiFooter">来源: 东方财富 · 上证综指 + 深证综指成交额 · 柱=每日成交额 · 线=5日均额 · 加载中…</div>
+    <div class="market-series-plot" style="height:220px"><canvas id="cVolume"></canvas></div>
+    <div class="tx3 mt4 market-series-footer" id="volumeKpiFooter">来源: 东方财富 · 上证综指 + 深证综指成交额 · 柱=每日成交额 · 线=5日均额 · 加载中…</div>
   </div>
 
   <!-- 日频：沪深 A 股 52 周新高新低（近 60 个交易日） -->
-  <div class="card mb16" id="highLow52Card">
+  <div class="card mb16 market-series-card market-series-card--highlow" id="highLow52Card">
     <div class="ch">
       <span class="ct">沪深 A 股 52 周新高新低趋势（日频·家）</span>
       <span class="cbadge" style="background:#eff6ff;color:#1d4ed8">60 交易日 · 自动更新</span>
     </div>
-    <div style="display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0" aria-live="polite">
-      <span id="highLow52KpiDate" class="tx3" style="color:#64748b">加载中…</span>
+    <div class="market-series-summary" style="display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0" aria-live="polite">
+      <span id="highLow52KpiDate" class="tx3">加载中…</span>
       <div><span class="tx3">52周新高&nbsp;</span><span id="highLow52KpiHigh" style="font-size:18px;font-weight:800;color:#ef4444">—</span></div>
       <div><span class="tx3">52周新低&nbsp;</span><span id="highLow52KpiLow" style="font-size:18px;font-weight:800;color:#16a34a">—</span></div>
       <span id="highLow52KpiNet" class="tx3" style="font-weight:800;color:#64748b">净新高 —</span>
       <span id="highLow52KpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
     </div>
-    <div style="height:225px"><canvas id="cHighLow52" role="img" aria-label="沪深A股52周新高与新低家数趋势"></canvas></div>
-    <div style="height:135px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0"><canvas id="cHighLow52Net" role="img" aria-label="52周新高减新低家数"></canvas></div>
-    <div class="tx3 mt4" id="highLow52Footer">来源：腾讯财经前复权日线 · 52自然周（364天）· 当日最高/最低触及窗口极值 · 上市满52周 · 沪深A股含ST、不含北交所 · 加载中…</div>
+    <div class="market-series-plot" style="height:225px"><canvas id="cHighLow52" role="img" aria-label="沪深A股52周新高与新低家数趋势"></canvas></div>
+    <div class="market-series-delta" style="height:135px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0"><canvas id="cHighLow52Net" role="img" aria-label="52周新高减新低家数"></canvas></div>
+    <div class="tx3 mt4 market-series-footer" id="highLow52Footer">来源：腾讯财经前复权日线 · 52自然周（364天）· 当日最高/最低触及窗口极值 · 上市满52周 · 沪深A股含ST、不含北交所 · 加载中…</div>
   </div>
 
 
   <!-- 日频：沪深 A 股涨跌家数趋势（近 60 个交易日） -->
-  <div class="card mb16">
+  <div class="card mb16 market-series-card market-series-card--breadth" id="marketBreadthCard">
     <div class="ch">
       <span class="ct">沪深 A 股涨跌家数趋势（日频·家）</span>
       <span class="cbadge" style="background:#eff6ff;color:#1d4ed8">60 交易日 · 实时更新</span>
     </div>
-    <div style="display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
-      <span id="breadthKpiDate" class="tx3" style="color:#64748b">加载中…</span>
+    <div class="market-series-summary" style="display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
+      <span id="breadthKpiDate" class="tx3">加载中…</span>
       <div><span class="tx3">上涨&nbsp;</span><span id="breadthKpiUp" style="font-size:18px;font-weight:800;color:#ef4444">—</span></div>
       <div><span class="tx3">下跌&nbsp;</span><span id="breadthKpiDown" style="font-size:18px;font-weight:800;color:#16a34a">—</span></div>
       <span id="breadthKpiRatio" class="tx3" style="font-weight:700;color:#64748b">涨跌比 —</span>
       <span id="breadthKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
     </div>
-    <div style="height:225px"><canvas id="cUpDown"></canvas></div>
-    <div style="height:135px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0"><canvas id="cUpDownDelta"></canvas></div>
-    <div class="tx3 mt4" id="cUpDownFooter">来源: 东方财富 · 沪深 A 股（不含北交所）· 折线=上涨/下跌家数 · 柱=上涨家数−下跌家数 · 加载中…</div>
+    <div class="market-series-plot" style="height:225px"><canvas id="cUpDown"></canvas></div>
+    <div class="market-series-delta" style="height:135px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0"><canvas id="cUpDownDelta"></canvas></div>
+    <div class="tx3 mt4 market-series-footer" id="cUpDownFooter">来源: 东方财富 · 沪深 A 股（不含北交所）· 折线=上涨/下跌家数 · 柱=上涨家数−下跌家数 · 加载中…</div>
   </div>
 
   <!-- 日频：沪深 A 股涨跌停家数趋势（近 60 个交易日） -->
-  <div class="card mb16">
+  <div class="card mb16 market-series-card market-series-card--limits" id="marketLimitsCard">
     <div class="ch">
       <span class="ct">沪深 A 股涨跌停家数趋势（日频·家）</span>
       <span class="cbadge" style="background:#fff7ed;color:#c2410c">60 交易日 · 实时更新</span>
     </div>
-    <div style="display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#fffaf5;border-radius:8px;border:1px solid #fed7aa">
-      <span id="limitKpiDate" class="tx3" style="color:#64748b">加载中…</span>
+    <div class="market-series-summary" style="display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#fffaf5;border-radius:8px;border:1px solid #fed7aa">
+      <span id="limitKpiDate" class="tx3">加载中…</span>
       <div><span class="tx3">涨停&nbsp;</span><span id="limitKpiUp" style="font-size:18px;font-weight:800;color:#dc2626">—</span></div>
       <div><span class="tx3">跌停&nbsp;</span><span id="limitKpiDown" style="font-size:18px;font-weight:800;color:#15803d">—</span></div>
       <span id="limitKpiDelta" class="tx3" style="font-weight:800;color:#64748b">净涨停 —</span>
       <span id="limitKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
     </div>
-    <div style="height:225px"><canvas id="cLimitMoves"></canvas></div>
-    <div style="height:135px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0"><canvas id="cLimitDelta"></canvas></div>
-    <div class="tx3 mt4" id="cLimitFooter">来源: 东方财富 · 沪深 A 股官方分钟序列/个股日行情 · 折线=涨停/跌停家数 · 柱=涨停−跌停 · 加载中…</div>
+    <div class="market-series-plot" style="height:225px"><canvas id="cLimitMoves"></canvas></div>
+    <div class="market-series-delta" style="height:135px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0"><canvas id="cLimitDelta"></canvas></div>
+    <div class="tx3 mt4 market-series-footer" id="cLimitFooter">来源: 东方财富 · 沪深 A 股官方分钟序列/个股日行情 · 折线=涨停/跌停家数 · 柱=涨停−跌停 · 加载中…</div>
   </div>
 
   <!-- 日频：港股成交额趋势（近 60 个交易日） -->
-  <div class="card mb16">
+  <div class="card mb16 market-series-card market-series-card--hk" id="marketHkVolumeCard">
     <div class="ch">
       <span class="ct">港股成交额趋势（日频·亿港元）</span>
       <span class="cbadge" style="background:#fff1f2;color:#be123c">近 3 个月 · 60 交易日</span>
     </div>
-    <div style="display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#fffafa;border-radius:8px;border:1px solid #ffe4e6">
+    <div class="market-series-summary" style="display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#fffafa;border-radius:8px;border:1px solid #ffe4e6">
       <div>
         <span class="tx3">最新成交额&nbsp;</span>
         <span id="hkVolumeKpiVal" style="font-size:18px;font-weight:800;color:#be123c">—</span>
       </div>
-      <span id="hkVolumeKpiDate" class="tx3" style="color:#94a3b8">加载中…</span>
+      <span id="hkVolumeKpiDate" class="tx3">加载中…</span>
       <span id="hkVolumeKpiCompare" class="tx3" style="color:#64748b">5 日均额 —</span>
       <span id="hkVolumeKpiCnt" class="tx3" style="margin-left:auto;color:#94a3b8"></span>
     </div>
-    <div style="height:220px"><canvas id="cHkVolume"></canvas></div>
-    <div class="tx3 mt4" id="hkVolumeKpiFooter">来源: 腾讯财经 · 港股主板成交额 · 柱=每日成交额 · 线=5日均额 · 加载中…</div>
+    <div class="market-series-plot" style="height:220px"><canvas id="cHkVolume"></canvas></div>
+    <div class="tx3 mt4 market-series-footer" id="hkVolumeKpiFooter">来源: 腾讯财经 · 港股主板成交额 · 柱=每日成交额 · 线=5日均额 · 加载中…</div>
   </div>
 
 
