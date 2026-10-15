@@ -24,7 +24,7 @@
 <link rel="stylesheet" href="assets/market-risk.css?v=20261015a">
 <link rel="stylesheet" href="assets/market-quality.css?v=20261015a">
 <link rel="stylesheet" href="assets/market-heat.css?v=20261015a">
-<link rel="stylesheet" href="assets/market-environment.css?v=20261015a">
+<link rel="stylesheet" href="assets/market-environment.css?v=20261015b">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -1878,11 +1878,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
   <!-- KPI Row -->
   <div class="g5 mb16 market-overview-grid">
-    <div class="card market-overview-card">
+    <div class="card market-overview-card" id="marketTotalCapCard" title="沪市主板A股、深市主板A股、创业板、科创板总市值之和；不含B股、北交所；显示值经四舍五入，可能有尾差。">
       <div class="klabel">沪深A股总市值 <span id="kTmcDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>
       <div class="kval tb" id="kTmc" style="color:#94a3b8">--</div>
-      <div class="kchange neu" id="kTmcChange">--</div>
-      <div class="tx3 mt4">右侧四板块合计 · 不含B股、北交所<br>显示值四舍五入，可能有尾差</div>
+      <div class="kchange neu market-total-scope" id="kTmcChange">--</div>
+      <div class="tx3 mt4 market-total-note">不含 B 股、北交所</div>
     </div>
     <div class="card market-overview-card">
       <div class="klabel">上证综指 PE(TTM) <span id="kSsePeDate" style="background:#e0e7ff;color:#3730a3;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px">加载中…</span></div>

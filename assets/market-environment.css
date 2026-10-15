@@ -91,10 +91,14 @@
 
 /* First row: five restrained overview cards with a clear numerical hierarchy. */
 #t0 .market-overview-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 13px; align-items: stretch; margin-bottom: 0; }
-#t0 .market-overview-card { display: flex; flex-direction: column; padding: 18px 17px 16px; border-radius: 15px; background: linear-gradient(155deg, #fff, #fbfcfe); }
+#t0 .market-overview-card { --overview-accent: #285fba; --overview-tint: #edf4ff; --overview-border: #ccdcf4; display: flex; flex-direction: column; padding: 18px 17px 16px; border: 1px solid var(--overview-border); border-radius: 15px; background: linear-gradient(145deg, var(--overview-tint), #fff 78%); }
+#t0 .market-overview-card:nth-child(2) { --overview-accent: #147a70; --overview-tint: #edf8f4; --overview-border: #c9e4da; }
+#t0 .market-overview-card:nth-child(3) { --overview-accent: #955c16; --overview-tint: #fff5e7; --overview-border: #ebd9bb; }
+#t0 .market-overview-card:nth-child(4) { --overview-accent: #7252b3; --overview-tint: #f4efff; --overview-border: #dcd0ef; }
+#t0 .market-overview-card:nth-child(5) { --overview-accent: #a64e70; --overview-tint: #fcf0f5; --overview-border: #ead0db; }
 #t0 .market-overview-card .klabel { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; min-height: 52px; margin: 0 0 13px; color: #405570; font-size: 13px; font-weight: 650; line-height: 1.65; letter-spacing: 0; }
 #t0 .market-overview-card .klabel > span { flex: 0 0 100%; width: 100%; max-width: 100%; align-self: flex-start; white-space: nowrap; margin-left: 0 !important; padding: 2px 6px !important; border: 1px solid #e0e7f0; background: #f2f5fa; color: #5b6f89; border-radius: 5px !important; font-size: 12px !important; line-height: 1.4; font-weight: 550; }
-#t0 .market-overview-card .kval { margin: 0 0 7px; color: #1d3b65; font-size: 32px; line-height: 1.23; letter-spacing: -.055em; font-weight: 740; }
+#t0 .market-overview-card .kval { margin: 0 0 7px; color: var(--overview-accent); font-size: 32px; line-height: 1.23; letter-spacing: -.055em; font-weight: 740; }
 #t0 .market-overview-card:first-child .kval { font-size: 29px; letter-spacing: -.055em; }
 #t0 .market-overview-card .kchange { min-height: 23px; color: #5b6b80; font-size: 12.5px; line-height: 1.65; font-weight: 550; }
 #t0 .market-overview-card .tx3 { margin-top: 9px; color: #617086; font-size: 12px; line-height: 1.75; }
@@ -103,6 +107,11 @@
 #t0 .macro-market-cap-label { color: #536780; font-size: 12px; font-weight: 600; }
 #t0 .macro-market-cap-value { font-size: 19px; font-weight: 730; letter-spacing: -.035em; color: #234369; }
 #t0 .macro-market-cap-date { color: #63758c; font-size: 12px; line-height: 1.6; margin-top: 5px; }
+#t0 .market-overview-card .macro-market-cap { background: rgba(255, 255, 255, .74); border-color: var(--overview-border); }
+#t0 .market-overview-card .macro-market-cap-value { color: var(--overview-accent); }
+#t0 #marketTotalCapCard .kval { margin-bottom: 17px; font-size: 31px; line-height: 1.28; letter-spacing: -.045em; }
+#t0 #marketTotalCapCard .market-total-scope { min-height: 0; font-size: 13px; line-height: 1.85; font-weight: 600; color: #405a7b; }
+#t0 #marketTotalCapCard .market-total-note { margin-top: auto; padding-top: 15px; border-top: 1px solid var(--overview-border); font-size: 12.5px; line-height: 1.8; color: #536b86; }
 
 /* Daily series: a common header, summary tray, plot and source treatment. */
 #t0 .market-series-card { padding-top: 24px; }
