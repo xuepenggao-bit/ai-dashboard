@@ -1,0 +1,77 @@
+name: Refresh A-share Market Temperature
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/market-heat-engine.js'
+      - '.github/scripts/refresh_market_heat.cjs'
+      - '.github/scripts/refresh_market_heat_support.py'
+      - '.github/workflows/refresh-market-heat.yml'
+      - 'tests/test_market_heat.cjs'
+      - 'tests/test_refresh_market_heat_support.py'
+  schedule:
+    # Beijing 08:35, 16:35 and 20:35; upstream completions also recompute.
+    - cron: '35 0,8,12 * * 1-5'
+  workflow_run:
+    workflows:
+      - 'Refresh A-share Return Distribution and Trading Concentration'
+      - 'Refresh A-share 52-week High Low and MA Breadth'
+      - 'Refresh A-share Market Breadth'
+      - 'Refresh Market Risk'
+      - 'Refresh ETF Shares'
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-market-heat
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test causal weights, disclosures and missing-data coverage
+        run: node --test tests/test_market_heat.cjs
+      - name: Test actual warm-up amounts and lagged funding data
+        run: python -m unittest discover -s tests -p test_refresh_market_heat_support.py -v
+      - name: Restore verified support cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/market-heat-cache
+          key: market-heat-${{ github.run_id }}
+          restore-keys: market-heat-
+      - name: Refresh actual warm-up and disclosed funding inputs
+        run: python .github/scripts/refresh_market_heat_support.py --input-dir data --cache-dir "$RUNNER_TEMP/market-heat-cache" --output data/market_heat_support.json
+      - name: Recompute the latest complete 60-session temperature
+        run: node .github/scripts/refresh_market_heat.cjs
+      - name: Persist the explained composite score
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/market_heat.json data/market_heat_support.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: refresh A-share market temperature $(date -u '+%Y-%m-%d %H:%M UTC')"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1

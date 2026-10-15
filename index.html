@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="assets/ma-breadth.css?v=20261014a">
 <link rel="stylesheet" href="assets/market-risk.css?v=20261015a">
 <link rel="stylesheet" href="assets/market-quality.css?v=20261015a">
+<link rel="stylesheet" href="assets/market-heat.css?v=20261015a">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -1908,6 +1909,29 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="tx3 mt4">来源: 东方财富 · 实时</div>
     </div>
   </div>
+
+  <!-- MARKET_HEAT_CARD_START -->
+<section class="card market-heat-card" id="marketHeatCard" aria-labelledby="marketHeatTitle" style="margin-bottom:20px">
+  <div class="market-heat-heading">
+    <div><div class="market-heat-eyebrow">MARKET TEMPERATURE</div><h2 id="marketHeatTitle">A 股市场热度</h2><p>以收盘数据综合交易活跃度、市场广度与趋势强弱，回看 60 个交易日的温度变化</p></div>
+    <div class="market-heat-meta"><div class="market-heat-asof" id="marketHeatDate">正在读取最近有效数据</div><span class="market-heat-risk-context" id="marketHeatRiskContext"></span></div>
+  </div>
+  <div class="market-heat-main">
+    <div class="market-heat-score-panel">
+      <div class="market-heat-score-label">收盘综合热度 <span>100 分制</span></div>
+      <div class="market-heat-score-number"><strong id="marketHeatScore">—</strong><span>/ 100</span></div>
+      <div class="market-heat-score-state"><span id="marketHeatZone" class="market-heat-zone">等待数据</span><span id="marketHeatChange">近 5 日变化 —</span></div>
+      <div class="market-heat-scale" aria-hidden="true"><div class="market-heat-scale-bar"><i id="marketHeatPointer"></i></div><div class="market-heat-scale-labels"><span>低温</span><span>偏冷</span><span>适中</span><span>偏热</span><span>高温</span></div></div>
+      <div class="market-heat-score-note" id="marketHeatCoverage">分数越高，交易与趋势越热。</div>
+    </div>
+    <div class="market-heat-chart-panel"><div class="market-heat-chart-heading"><span>近 60 个交易日</span><span>市场热度 · 分</span></div><div class="market-heat-plot"><canvas id="cMarketHeat" role="img" aria-label="A 股市场热度近60个交易日曲线"></canvas></div><div id="marketHeatRange" class="market-heat-range"></div></div>
+  </div>
+  <div class="market-heat-components-heading"><span>本期热度构成</span><span>按固定权重合成</span></div>
+  <div class="market-heat-components" id="marketHeatComponents"><div class="market-heat-empty">正在核对各项指标的日期与覆盖范围…</div></div>
+  <details class="market-heat-method"><summary>指标权重与计算口径 <span>查看</span></summary><div id="marketHeatMethod"></div></details>
+  <div id="marketHeatFooter" class="market-heat-footer">读取失败时保留最近有效数据，缺失指标不会作为 0 分。</div>
+</section>
+  <!-- MARKET_HEAT_CARD_END -->
 
   <!-- 日频：融资融券余额趋势（全宽）-->
   <div class="card mb16">
@@ -12851,6 +12875,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="assets/ma-breadth.js?v=20261014a" defer></script>
 <script src="assets/market-risk.js?v=20261015a" defer></script>
 <script src="assets/market-quality.js?v=20261015a" defer></script>
+<script src="assets/market-heat-engine.js?v=20261015a" defer></script>
+<script src="assets/market-heat.js?v=20261015a" defer></script>
 <script src="assets/high-low-52w-live.js?v=20261015a" defer></script>
 </body>
 </html>
