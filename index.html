@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="assets/account-openings.css?v=20261010a">
 <script defer src="assets/account-openings.js?v=20261010a"></script>
 <link rel="stylesheet" href="assets/ma-breadth.css?v=20261014a">
+<link rel="stylesheet" href="assets/market-risk.css?v=20261015a">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -2051,6 +2052,24 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div id="maBreadthFooter">来源：腾讯财经前复权日线 · 均线包含当日 · 沪深A股含ST、不含北交所 · 停牌及历史不足不计入对应窗口 · 虚线为50%参考线</div>
   </div>
   <!-- MA_BREADTH_CARD_END -->
+  <!-- MARKET_RISK_AND_ETF_CARDS_START -->
+<section class="card environment-risk-card" id="marketRiskCard" style="margin-top:18px">
+  <div class="environment-risk-heading"><div><div class="ct">中证全指 · 波动与回撤</div><div class="environment-risk-subtitle">20日实际波动率与距离近60个交易日高点的回撤</div></div><span class="environment-risk-date" id="marketRiskDate">等待有效数据</span></div>
+  <div class="environment-risk-kpis risk-kpis">
+    <div class="environment-risk-kpi"><span class="environment-risk-label">20日实际波动率 · 年化</span><strong id="marketRiskVol">—</strong><span id="marketRiskVolNote">20个交易日日收益的波动</span></div>
+    <div class="environment-risk-kpi"><span class="environment-risk-label">距离60日高点的回撤</span><strong id="marketRiskDrawdown">—</strong><span id="marketRiskPeak">近60个交易日最高价：—</span></div>
+  </div>
+  <div class="environment-risk-charts"><div><div class="environment-risk-plot-label">实际波动率 <small>年化 %</small></div><div class="environment-risk-plot"><canvas id="cMarketRiskVol"></canvas></div></div><div><div class="environment-risk-plot-label">距60日高点回撤 <small>%</small></div><div class="environment-risk-plot"><canvas id="cMarketRiskDrawdown"></canvas></div></div></div>
+  <div class="environment-risk-range" id="marketRiskRange"></div><div class="environment-risk-footer" id="marketRiskFooter">缺失数据不显示为0；读取失败时保留最近有效数据。</div>
+</section>
+<section class="card environment-risk-card" id="etfSharesCard" style="margin-top:18px">
+  <div class="environment-risk-heading"><div><div class="ct">宽基 ETF · 份额变化</div><div class="environment-risk-subtitle">观察基金份额净增减，不以基金规模增长替代资金流入</div></div><span class="environment-risk-date" id="etfSharesDate">按已披露交易日更新</span></div>
+  <div class="environment-risk-kpis etf-kpis" id="etfSharesKpis"></div>
+  <div class="environment-risk-plot-label">每日净份额变化 <small>亿份 · 最多60个已披露交易日</small></div><div class="environment-risk-plot etf-shares-plot"><canvas id="cEtfShares" role="img" aria-label="三只代表宽基ETF最近60个已披露交易日的净份额变化"></canvas></div><div class="environment-risk-range" id="etfSharesRange"></div>
+  <div class="etf-shares-table-wrap"><table class="etf-shares-table"><thead><tr><th>代表 ETF</th><th>披露日期</th><th>总份额（亿份）</th><th>净变化（亿份）</th><th>净变化率</th><th>净申赎估算（亿元）</th></tr></thead><tbody id="etfSharesTable"><tr><td colspan="6">正在读取已披露数据…</td></tr></tbody></table></div>
+  <div class="environment-risk-footer" id="etfSharesFooter">仅覆盖3只代表 ETF，非全市场合计。净申赎估算＝份额净变化×当日单位净值，不等于实际资金净流入。</div>
+</section>
+  <!-- MARKET_RISK_AND_ETF_CARDS_END -->
 </div>
 
 <!-- ════════════════ TAB 估值分析 ════════════════ -->
@@ -12813,6 +12832,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 </script>
 <script src="assets/ma-breadth.js?v=20261014a" defer></script>
+<script src="assets/market-risk.js?v=20261015a" defer></script>
 <script src="assets/high-low-52w-live.js?v=20261014a" defer></script>
 </body>
 </html>

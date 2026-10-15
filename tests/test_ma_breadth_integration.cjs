@@ -20,9 +20,9 @@ const maBaseline={schemaVersion:1,windows:[20,60,120],asOfDate:previous,updatedA
 function divNodes(source){
   const markup=source.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,'');
   const nodes=[],stack=[];
-  for(const m of markup.matchAll(/<!--[\s\S]*?-->|<\/?div\b[^>]*>/gi)){
+  for(const m of markup.matchAll(/<!--[\s\S]*?-->|<\/?(?:div|section)\b[^>]*>/gi)){
     if(m[0].startsWith('<!--'))continue;
-    if(/^<\/div/i.test(m[0])){
+    if(/^<\/(?:div|section)/i.test(m[0])){
       const node=stack.pop();assert.ok(node,'Every closing div has an opening div');node.end=m.index+m[0].length;continue;
     }
     const id=/\bid="([^"]*)"/.exec(m[0])?.[1]||'';
@@ -84,14 +84,17 @@ function context(config={}){
 }
 
 const cases=[];function test(name,fn){cases.push([name,fn]);}
-test('KOL is the final static sibling of the industry tab; MA is the final market-environment card',()=>{
+test('KOL remains the final industry sibling; market risk and ETF shares follow MA breadth',()=>{
   const dom=divNodes(html),market=dom.one('t0'),stage=dom.one('tStage'),root=dom.one('chainMonitorRoot'),ai=dom.one('aiIndustryContext');
   const kol=dom.one('kolCard'),ma=dom.one('maBreadthCard'),grid=dom.one('kolGrid');
   assert.equal(root.parent,stage);assert.equal(ai.parent,stage);assert.equal(kol.parent,stage,'KOL cannot be overwritten by chain rendering');
   assert.ok(grid.start>kol.start&&grid.end<kol.end);assert.ok(kol.start>ai.end);
   assert.equal(dom.markup.slice(kol.end,stage.end-6).replace(/<!--[\s\S]*?-->/g,'').trim(),'','KOL is at the very bottom of industry monitoring');
   assert.equal(ma.parent,market);assert.ok(ma.start>dom.one('accountOpeningCard').end);
-  assert.equal(dom.markup.slice(ma.end,market.end-6).replace(/<!--[\s\S]*?-->/g,'').trim(),'','MA is at the very bottom of market environment');
+  const risk=dom.one('marketRiskCard'),etf=dom.one('etfSharesCard');
+  assert.equal(risk.parent,market);assert.equal(etf.parent,market);
+  assert.ok(risk.start>ma.end&&etf.start>risk.end,'Risk and ETF cards follow the existing MA breadth');
+  assert.equal(dom.markup.slice(etf.end,market.end-6).replace(/<!--[\s\S]*?-->/g,'').trim(),'','ETF shares are at the bottom of market environment');
   assert.ok(!(grid.start>market.start&&grid.end<market.end),'KOL is not duplicated in the market tab');
   for(const id of ['kolBtn','kolCount','kolTs','cMaBreadth','maBreadthKpi20','maBreadthKpi60','maBreadthKpi120'])
     assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,id+' appears exactly once');

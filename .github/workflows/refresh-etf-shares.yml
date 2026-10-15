@@ -1,0 +1,52 @@
+name: Refresh ETF Shares
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/refresh_etf_shares.py'
+      - '.github/workflows/refresh-etf-shares.yml'
+      - 'tests/test_refresh_etf_shares.py'
+  schedule:
+    # Beijing 08:25, 17:55, 21:25 checks post-clearing shares and same-day NAV.
+    - cron: '25 0,13 * * 1-5'
+    - cron: '55 9 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-etf-shares
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test disclosed shares and estimated subscriptions
+        run: python -m unittest discover -s tests -p test_refresh_etf_shares.py -v
+      - name: Refresh post-clearing ETF shares
+        run: python .github/scripts/refresh_etf_shares.py
+      - name: Persist verified ETF history
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/etf_shares.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: refresh ETF shares $(date -u '+%Y-%m-%d %H:%M UTC')"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
