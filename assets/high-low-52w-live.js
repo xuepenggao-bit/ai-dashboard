@@ -1,4 +1,4 @@
-/* One asynchronous quote scan for 52-week extremes and moving-average breadth. */
+/* One bounded asynchronous quote scan shared by all full-market indicators. */
 let _hl52LivePending=null,_hl52LiveAttempt=0,_hl52Baseline=null,_hl52BaselineAt=0;
 const _hl52BaselineUrls=['./data/market_high_low_52w_baseline.json',
   'https://raw.githubusercontent.com/xuepenggao-bit/ai-dashboard/main/data/market_high_low_52w_baseline.json'];
@@ -37,7 +37,9 @@ function _hl52Quotes(text,codes){
     if(!/^\d{14}$/.test(stamp))continue;
     const vals=[3,4,6,33,34].map(i=>f[i]===''?NaN:Number(f[i]));
     if(vals.some(v=>!Number.isFinite(v))||vals[0]<=0||vals[1]<=0||vals[2]<0)continue;
+    const amount=f[37]===''?NaN:Number(f[37]),change=f[32]===''?NaN:Number(f[32]);
     quotes.set(match[1],{code:match[1],price:vals[0],previous:vals[1],volume:vals[2],high:vals[3],low:vals[4],
+      amountYuan:Number.isFinite(amount)&&amount>=0?amount*10000:NaN,returnPct:Number.isFinite(change)?change:NaN,
       date:stamp.slice(0,4)+'-'+stamp.slice(4,6)+'-'+stamp.slice(6,8),time:stamp.slice(8,10)+':'+stamp.slice(10,12)});
   }
   if(codes.some(code=>!quotes.has(code)))throw Error('52周统计报价未完整返回');
@@ -99,10 +101,19 @@ async function _hl52CollectLive(){
       else console.warn('[均线广度] 上一交易日基准待更新');
     }catch(error){console.warn('[均线广度基准]',error.message);}
   }
-  // The MA universe includes younger listings with sufficient daily bars.
-  // Its quote requests share the existing worker pool, never a second scan.
+  let qualityBaseline=null;
+  if(typeof window.loadMarketQualityBaseline==='function'){
+    try{
+      let candidate=await window.loadMarketQualityBaseline(false);
+      if(candidate.asOfDate!==previous&&candidate.asOfDate!==date)candidate=await window.loadMarketQualityBaseline(true);
+      if(candidate.asOfDate===previous&&candidate.stocks.length>=4000)qualityBaseline=candidate;
+    }catch(error){console.warn('[收益与成交集中度基准]',error.message);}
+  }
+  // MA and market-quality samples include younger listings. All consumers
+  // share this worker pool; no second full-market quote scan is created.
   const requiredHighLow=new Map(eligible.map(stock=>[stock.code,stock]));
-  const codes=[...new Set([...requiredHighLow.keys(),...(maBaseline?maBaseline.stocks.map(stock=>stock.code):[])])];
+  const codes=[...new Set([...requiredHighLow.keys(),...(maBaseline?maBaseline.stocks.map(stock=>stock.code):[]),
+    ...(qualityBaseline?qualityBaseline.stocks.map(stock=>stock.code):[])])];
   const allQuotes=new Map();
   const batches=[];
   for(let i=0;i<codes.length;i+=80)batches.push(codes.slice(i,i+80));
@@ -112,7 +123,7 @@ async function _hl52CollectLive(){
   const results=await Promise.allSettled(Array.from({length:4},async()=>{
     try{while(cursor<batches.length&&!stopped){
       if(document.hidden||!document.getElementById('t0')?.classList.contains('active'))throw Error('页面已离开，取消本轮');
-      const batch=batches[cursor++],quotes=await _hl52GetQuotes(batch,!maBaseline);
+      const batch=batches[cursor++],quotes=await _hl52GetQuotes(batch,!maBaseline&&!qualityBaseline);
       for(const [code,quote] of quotes)allQuotes.set(code,quote);
       for(const code of batch){
         const stock=requiredHighLow.get(code);
@@ -142,7 +153,12 @@ async function _hl52CollectLive(){
     try{maUpdated=await window.applyMaBreadthLiveQuotes(maBaseline,allQuotes,date,time,previous);}
     catch(error){console.warn('[均线广度盘中统计]',error.message);}
   }
-  return highLowUpdated||maUpdated;
+  let qualityUpdated=false;
+  if(qualityBaseline&&typeof window.applyMarketQualityLiveQuotes==='function'){
+    try{qualityUpdated=await window.applyMarketQualityLiveQuotes(qualityBaseline,allQuotes,date,time,previous);}
+    catch(error){console.warn('[收益与成交集中度盘中统计]',error.message);}
+  }
+  return highLowUpdated||maUpdated||qualityUpdated;
 }
 function refreshHighLow52Live(force=false){
   const clock=_highLow52Clock(),day=new Date(clock.date+'T00:00:00Z').getUTCDay();

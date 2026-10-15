@@ -20,6 +20,7 @@
 <script defer src="assets/account-openings.js?v=20261010a"></script>
 <link rel="stylesheet" href="assets/ma-breadth.css?v=20261014a">
 <link rel="stylesheet" href="assets/market-risk.css?v=20261015a">
+<link rel="stylesheet" href="assets/market-quality.css?v=20261015a">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -2019,22 +2020,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="tx3 mt4" id="hkVolumeKpiFooter">来源: 腾讯财经 · 港股主板成交额 · 柱=每日成交额 · 线=5日均额 · 加载中…</div>
   </div>
 
-  <!-- ACCOUNT_OPENINGS_CARD_START -->
-  <div class="card mb16 ao-card" id="accountOpeningCard">
-    <div class="ch ao-heading">
-      <span class="ct">A股个人开户数趋势（月频·万户）</span>
-      <span class="ao-badge" id="aoPeriod">截至 2026年9月 · 每日核验</span>
-    </div>
-    <div class="ao-summary">
-      <div class="ao-stat"><span class="ao-stat-label" id="aoCurrentLabel">2026年累计 · 1—9月</span><strong class="ao-stat-value"><span id="aoCurrentValue">2,702.39</span><small>万户</small></strong></div>
-      <div class="ao-stat"><span class="ao-stat-label" id="aoPreviousLabel">2025年同期 · 1—9月</span><strong class="ao-stat-value"><span id="aoPreviousValue">2,007.28</span><small>万户</small></strong></div>
-      <div class="ao-stat ao-yoy" id="aoYoyStat"><span class="ao-stat-label">累计开户数 · 同比增速</span><strong class="ao-stat-value" id="aoYoyValue">+34.63%</strong></div>
-    </div>
-    <div class="ao-chart"><canvas id="cAccountOpenings" role="img" aria-label="去年与今年每月个人A股开户数对比"></canvas></div>
-    <div class="ao-footer"><span>来源：<a href="https://www.sse.com.cn/aboutus/publication/monthly/investor/" target="_blank" rel="noopener noreferrer">上交所月报</a> · 初始数据来自附件</span><span id="aoCheck">等待每日官方核验</span></div>
-    <div class="ao-note" id="aoScope">口径：上交所个人A股账户新开户数，非沪深去重新增投资者人数。未公布月份留空，累计同比只比较相同月份。</div>
-  </div>
-  <!-- ACCOUNT_OPENINGS_CARD_END -->
 
   <!-- MA_BREADTH_CARD_START -->
   <div class="card mb16" id="maBreadthCard">
@@ -2070,6 +2055,38 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div class="environment-risk-footer" id="etfSharesFooter">仅覆盖3只代表 ETF，非全市场合计。净申赎估算＝份额净变化×当日单位净值，不等于实际资金净流入。</div>
 </section>
   <!-- MARKET_RISK_AND_ETF_CARDS_END -->
+  <!-- MARKET_QUALITY_CARDS_START -->
+<section class="card market-quality-card" id="marketMedianCard" style="margin-top:18px">
+  <div class="market-quality-heading"><div><div class="ct">沪深 A 股 · 个股收益中位数</div><div class="market-quality-subtitle">观察普通股票的当日表现 · 近60个交易日</div></div><span class="market-quality-date" id="marketMedianDate">等待有效数据</span></div>
+  <div class="market-quality-summary"><div class="market-quality-main"><span>当日收益中位数</span><strong id="marketMedianValue">—</strong></div><div class="market-quality-detail"><span id="marketMedianQuartiles">中间50%的股票收益区间：—</span><span id="marketMedianCoverage">有效交易股票：—</span></div></div>
+  <div class="market-quality-legend"><span><i class="quality-line"></i>个股收益中位数</span><span><i class="quality-band"></i>25%—75%分位区间</span></div>
+  <div class="market-quality-plot"><canvas id="cMarketMedian" role="img" aria-label="最近60个交易日沪深A股个股收益中位数及25%至75%分位区间"></canvas></div>
+  <div class="market-quality-range" id="marketMedianRange"></div><div class="market-quality-footer" id="marketMedianFooter">以有效交易股票的当日涨跌幅计算；缺失行情不计作平盘。</div>
+</section>
+<section class="card market-quality-card market-concentration-card" id="marketConcentrationCard" style="margin-top:18px">
+  <div class="market-quality-heading"><div><div class="ct">沪深 A 股 · 成交额集中度</div><div class="market-quality-subtitle">成交额前20只股票占全市场成交额的比例 · 近60个交易日</div></div><span class="market-quality-date" id="marketConcentrationDate">等待有效数据</span></div>
+  <div class="market-quality-summary"><div class="market-quality-main"><span>成交额前20只股票占比</span><strong id="marketConcentrationValue">—</strong></div><div class="market-quality-detail"><span id="marketConcentrationTop20">前20只成交额：—</span><span id="marketConcentrationTotal">沪深 A 股成交额：—</span></div></div>
+  <div class="market-quality-plot"><canvas id="cMarketConcentration" role="img" aria-label="最近60个交易日成交额前20只股票占沪深A股成交额的比例"></canvas></div>
+  <div class="market-quality-range" id="marketConcentrationRange"></div><div class="market-quality-footer" id="marketConcentrationFooter">每日按成交额重新排序取前20只；分子与分母使用同一股票范围和同一时点。</div>
+</section>
+  <!-- MARKET_QUALITY_CARDS_END -->
+
+  <!-- ACCOUNT_OPENINGS_CARD_START -->
+  <div class="card mb16 ao-card" id="accountOpeningCard" style="margin-top:18px">
+    <div class="ch ao-heading">
+      <span class="ct">A股个人开户数趋势（月频·万户）</span>
+      <span class="ao-badge" id="aoPeriod">截至 2026年9月 · 每日核验</span>
+    </div>
+    <div class="ao-summary">
+      <div class="ao-stat"><span class="ao-stat-label" id="aoCurrentLabel">2026年累计 · 1—9月</span><strong class="ao-stat-value"><span id="aoCurrentValue">2,702.39</span><small>万户</small></strong></div>
+      <div class="ao-stat"><span class="ao-stat-label" id="aoPreviousLabel">2025年同期 · 1—9月</span><strong class="ao-stat-value"><span id="aoPreviousValue">2,007.28</span><small>万户</small></strong></div>
+      <div class="ao-stat ao-yoy" id="aoYoyStat"><span class="ao-stat-label">累计开户数 · 同比增速</span><strong class="ao-stat-value" id="aoYoyValue">+34.63%</strong></div>
+    </div>
+    <div class="ao-chart"><canvas id="cAccountOpenings" role="img" aria-label="去年与今年每月个人A股开户数对比"></canvas></div>
+    <div class="ao-footer"><span>来源：<a href="https://www.sse.com.cn/aboutus/publication/monthly/investor/" target="_blank" rel="noopener noreferrer">上交所月报</a> · 初始数据来自附件</span><span id="aoCheck">等待每日官方核验</span></div>
+    <div class="ao-note" id="aoScope">口径：上交所个人A股账户新开户数，非沪深去重新增投资者人数。未公布月份留空，累计同比只比较相同月份。</div>
+  </div>
+  <!-- ACCOUNT_OPENINGS_CARD_END -->
 </div>
 
 <!-- ════════════════ TAB 估值分析 ════════════════ -->
@@ -12833,6 +12850,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="assets/ma-breadth.js?v=20261014a" defer></script>
 <script src="assets/market-risk.js?v=20261015a" defer></script>
-<script src="assets/high-low-52w-live.js?v=20261014a" defer></script>
+<script src="assets/market-quality.js?v=20261015a" defer></script>
+<script src="assets/high-low-52w-live.js?v=20261015a" defer></script>
 </body>
 </html>

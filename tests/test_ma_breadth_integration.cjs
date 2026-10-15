@@ -90,11 +90,14 @@ test('KOL remains the final industry sibling; market risk and ETF shares follow 
   assert.equal(root.parent,stage);assert.equal(ai.parent,stage);assert.equal(kol.parent,stage,'KOL cannot be overwritten by chain rendering');
   assert.ok(grid.start>kol.start&&grid.end<kol.end);assert.ok(kol.start>ai.end);
   assert.equal(dom.markup.slice(kol.end,stage.end-6).replace(/<!--[\s\S]*?-->/g,'').trim(),'','KOL is at the very bottom of industry monitoring');
-  assert.equal(ma.parent,market);assert.ok(ma.start>dom.one('accountOpeningCard').end);
+  assert.equal(ma.parent,market);assert.ok(ma.start>dom.markup.indexOf('id="cHkVolume"'));
   const risk=dom.one('marketRiskCard'),etf=dom.one('etfSharesCard');
   assert.equal(risk.parent,market);assert.equal(etf.parent,market);
   assert.ok(risk.start>ma.end&&etf.start>risk.end,'Risk and ETF cards follow the existing MA breadth');
-  assert.equal(dom.markup.slice(etf.end,market.end-6).replace(/<!--[\s\S]*?-->/g,'').trim(),'','ETF shares are at the bottom of market environment');
+  const median=dom.one('marketMedianCard'),concentration=dom.one('marketConcentrationCard'),account=dom.one('accountOpeningCard');
+  for(const node of [median,concentration,account])assert.equal(node.parent,market);
+  assert.ok(median.start>etf.end&&concentration.start>median.end&&account.start>concentration.end,'New market-quality indicators precede the final monthly account card');
+  assert.equal(dom.markup.slice(account.end,market.end-6).replace(/<!--[\s\S]*?-->/g,'').trim(),'','Account openings are at the bottom of market environment');
   assert.ok(!(grid.start>market.start&&grid.end<market.end),'KOL is not duplicated in the market tab');
   for(const id of ['kolBtn','kolCount','kolTs','cMaBreadth','maBreadthKpi20','maBreadthKpi60','maBreadthKpi120'])
     assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,id+' appears exactly once');
