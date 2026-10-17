@@ -1,6 +1,6 @@
 {
-  "updated": "2026-09-29 14:36:01",
-  "last_checked": "2026-10-17 23:41:57",
+  "updated": "2026-10-18 04:42:09",
+  "last_checked": "2026-10-18 04:42:09",
   "scan_interval_hours": 3,
   "scanner_method": "local-evidence-v2",
   "capex_as_of": "2026-08-08",
@@ -79,7 +79,8 @@
     "2026-02",
     "2026-05",
     "2026-07",
-    "2026-08"
+    "2026-08",
+    "2026-09"
   ],
   "arr_openai": [
     60,
@@ -87,7 +88,8 @@
     250,
     null,
     null,
-    400
+    400,
+    700.0
   ],
   "arr_anthropic": [
     10,
@@ -95,22 +97,20 @@
     null,
     470,
     650,
+    null,
     null
   ],
-  "arr_as_of": "2026-09-18",
+  "arr_as_of": "2026-09-29",
   "arr_note": "年化收入运行率公开里程碑（非传统合同ARR） · 仅提取来源明确给出的金额，不从增速或定性表述反推数值",
   "arr_latest_events": {
     "openai": {
       "company": "OpenAI",
-      "summary": "已报道年化收入运行率超过400亿美元；本次核查未发现更晚的可验证数值。",
+      "summary": "最新公开披露的年化收入运行率约为$70B。",
       "numeric": true,
-      "arr_yi": 400,
-      "comparison": ">",
-      "metric_period": "2026-08",
-      "source_label": "Bloomberg · 年化收入报道",
-      "source_date": "2026-08-13",
-      "source_url": "https://www.bloomberg.com/news/articles/2026-08-13/openai-s-revenue-run-rate-tops-40-billion-ahead-of-ipo",
-      "checked_at": "2026-09-29"
+      "source_label": "reuters.com",
+      "source_date": "2026-09-29",
+      "source_url": "https://www.reuters.com/technology/openais-annual-recurring-revenue-nears-70-billion-axios-reports-2026-09-29/",
+      "arr_yi": 700.0
     },
     "anthropic": {
       "company": "Anthropic",
@@ -125,14 +125,9 @@
   },
   "arr_sources": {
     "openai": {
-      "source_label": "Bloomberg",
-      "source_date": "2026-08-13",
-      "source_url": "https://www.bloomberg.com/news/articles/2026-08-13/openai-s-revenue-run-rate-tops-40-billion-ahead-of-ipo",
-      "metric_period": "2026-08",
-      "arr_yi": 400,
-      "comparison": ">",
-      "checked_at": "2026-09-29",
-      "corroborating_url": "https://news.bloomberglaw.com/artificial-intelligence/openais-revenue-run-rate-tops-40-billion-ahead-of-ipo"
+      "source_label": "reuters.com",
+      "source_date": "2026-09-29",
+      "source_url": "https://www.reuters.com/technology/openais-annual-recurring-revenue-nears-70-billion-axios-reports-2026-09-29/"
     },
     "anthropic": {
       "source_label": "CNBC",
