@@ -2,6 +2,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
+const MarketSession=require(process.env.MARKET_SESSION_MODEL||path.join(__dirname,'../assets/market-session.js'));
 const html=fs.readFileSync(process.env.TEST_HTML||path.join(__dirname,'../index.html'),'utf8');
 const helpers=html.slice(html.indexOf('function _portTurnoverRate('),html.indexOf('function togglePortSort('));
 const fetching=html.slice(html.indexOf('async function fetchPortPrices(){'),html.indexOf('function renderPortTop3(){'));
@@ -12,6 +13,10 @@ const ctx=vm.createContext({console,Date,Number,AbortController,TextDecoder,setT
   _pfInflight:false,_PORT_PRICES:{},_portSort:{},_TAB_TS:{},
   PORT:{sectors:[{stocks:[{code:'300750',name:'宁德时代',mkt:'SZ',w:5},{code:'00700',name:'腾讯控股',mkt:'HK',w:3}]}]},
   _escH:String,portLoad(){},_isTradingNow:()=>false,
+  // Field-mapping fixture: pin the calendar decision to an open market. The
+  // real holiday/session rules have their own model and integration tests.
+  PortfolioMarketSession:MarketSession,
+  _portMarketState:()=>({isClosed:false,isTradingDay:true,calendarKnown:true}),
   document:{getElementById:()=>dom},
   renderPortfolio(){},renderPortTop3(){},_renderPortTopW(){},fetchPortFiveDayRanges:async()=>{},
   _fetchSinaRT:async()=>({rt_hk00700:{price:426.8,pct:1.86,quoteTs:Date.now()}}),

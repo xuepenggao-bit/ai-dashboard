@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://datacenter-web.eastmoney.com">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <!-- defer：不阻塞 HTML 解析与首屏渲染；所有图表都在 DOMContentLoaded 后创建,defer 安全 -->
+<script defer src="assets/market-session.js?v=20261019a"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- 市场图表样式须先注册，部分模块会在恢复缓存时立即绘图。 -->
 <script src="assets/market-environment.js?v=20261015a" defer></script>
@@ -2162,7 +2163,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div style="font-size:12px;color:var(--text2);margin-top:3px">记录每日仓位与涨跌数据，自动同步至云端</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <button onclick="fixHistCsi()" id="histCsiBtn" class="rbtn" style="padding:7px 16px;font-size:12px;background:var(--card2)" title="用投资组合「主要指数」里的中证全指，补正历史记录中缺失的中证全指值">
+      <button onclick="fixHistCsi()" id="histCsiBtn" class="rbtn" style="padding:7px 16px;font-size:12px;background:var(--card2)" title="仅用当日有效中证全指行情补正今日记录；历史日期和休市日不会使用今日数据补填">
         <span>↺</span> 补中证全指
       </button>
       <button onclick="addHistRecord()" id="histAddBtn" class="rbtn" style="padding:7px 16px;font-size:12px">
@@ -4152,6 +4153,82 @@ try{
   });
 }catch(e){ /* Safari 隐私模式禁用 localStorage 时仅失去跨刷新缓存 */ }
 
+// One session decision feeds tables, rankings, allocation returns and snapshots.
+function _portMarketState(mkt,nowMs=Date.now()){
+  if(typeof PortfolioMarketSession==='object') return PortfolioMarketSession.marketState(mkt,nowMs);
+  return {status:'calendar_unknown',label:'交易日历待确认',isClosed:false,isTradingDay:false,calendarKnown:false,phase:'unknown'};
+}
+function _portStockState(stock,quote,nowMs=Date.now()){
+  if(typeof PortfolioMarketSession!=='object') return {status:'calendar_unknown',label:'交易日历待确认',canDisplayPrice:false,canUseReturn:false,canRecordPrice:false,displayPct:null};
+  const market=PortfolioMarketSession.marketOf(stock),quotedMarket=quote&&PortfolioMarketSession.marketOf(quote.mkt||quote.market);
+  return PortfolioMarketSession.stockState(stock,quotedMarket&&market!==quotedMarket?null:quote,nowMs);
+}
+function _portEffectivePrices(prices,nowMs=Date.now(),port){
+  const current=port||(typeof PORT!=='undefined'?PORT:null),roster=new Map();
+  (current?.sectors||[]).forEach(sector=>(sector.stocks||[]).forEach(stock=>roster.set(stock.code,stock)));
+  const result={};
+  Object.entries(prices||{}).forEach(([code,quote])=>{
+    const stock=roster.get(code)||{code,mkt:quote&&quote.mkt},state=_portStockState(stock,quote,nowMs);
+    if(state.canUseReturn && state.displayPct!=null) result[code]={...quote,pct:state.displayPct,returnEligible:true,_sessionState:state};
+  });
+  return result;
+}
+function _portSessionBadge(state){
+  const label=_escH(state?.label||'待更新');
+  return '<span class="port-preopen-pill" data-quote-status="'+_escH(state?.status||'missing')+'">'+label+'</span>';
+}
+function _portIndexMarketState(region,nowMs=Date.now()){
+  const market=String(region||'').toLowerCase();
+  if(market==='a')return _portMarketState('A',nowMs);
+  if(market==='hk')return _portMarketState('HK',nowMs);
+  if(market==='ah'){
+    const a=_portMarketState('A',nowMs),hk=_portMarketState('HK',nowMs);
+    return a.isClosed?a:hk.isClosed?hk:!a.calendarKnown?a:hk;
+  }
+  return null;
+}
+function _portReconcileSessions(force=false){
+  if(typeof PortfolioMarketSession!=='object'||document.hidden)return;
+  const c=PortfolioMarketSession.clock(),a=_portMarketState('A'),hk=_portMarketState('HK');
+  const stamp=[c.date,a.status,a.phase,hk.status,hk.phase].join('|');
+  if(!force&&_portReconcileSessions.stamp===stamp)return;
+  _portReconcileSessions.stamp=stamp;
+  if(typeof PORT!=='undefined'&&PORT){
+    renderPortfolio();renderPortTop3();_renderPortTopW();
+  }
+  const list=document.getElementById('portIndexList');
+  if(list&&typeof _IDX_CACHE!=='undefined'&&typeof _idxListHtml==='function')list.innerHTML=_idxListHtml({});
+}
+async function _portLoadSessionCalendar(){
+  if(typeof PortfolioMarketSession!=='object')return;
+  let merged=JSON.parse(JSON.stringify(PortfolioMarketSession.EMBEDDED_CALENDAR));
+  function accept(payload){
+    if(!PortfolioMarketSession.validateCalendar(payload))return false;
+    const newer=Date.parse(payload.updatedAt||'')>=Date.parse(merged.updatedAt||'');
+    for(const market of ['A','HK'])for(const [year,entry]of Object.entries(payload.markets[market].years)){
+      if(newer||!merged.markets[market].years[year])merged.markets[market].years[year]=entry;
+    }
+    if(newer)merged.updatedAt=payload.updatedAt;
+    return PortfolioMarketSession.setCalendar(merged);
+  }
+  try{accept(JSON.parse(localStorage.getItem('portfolio_market_sessions_v1')||'null'));}catch(_){}
+  _portReconcileSessions(true);
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),6000);
+  try{
+    const response=await fetch('data/market_sessions.json?_='+Date.now(),{cache:'no-store',signal:controller.signal});
+    if(response.ok&&accept(await response.json())){
+      try{localStorage.setItem('portfolio_market_sessions_v1',JSON.stringify(merged));}catch(_){}
+      _portReconcileSessions(true);
+    }
+  }catch(error){console.warn('[交易日历] 保留已核验日历',error.message);}finally{clearTimeout(timer);}
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  _portLoadSessionCalendar();
+  setInterval(()=>_portReconcileSessions(false),60000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)_portReconcileSessions(true);});
+  window.addEventListener('pageshow',()=>_portReconcileSessions(true));
+});
+
 function _port5dKey(stock){
   return String(stock&&stock.mkt||'')+':'+String(stock&&stock.code||'');
 }
@@ -4778,7 +4855,9 @@ async function portForcePush(){
 
 /* 从下方分类持仓列表生成唯一的仓位聚合模型。
    分类与行业共用同一批个股行、同一数字标准化和同一加权公式，避免两套结果发生偏差。 */
-function _buildPortfolioAllocationModel(port, prices){
+function _buildPortfolioAllocationModel(port, prices, nowMs=Date.now()){
+  const rawPrices=prices;
+  if(typeof _portEffectivePrices==='function')prices=_portEffectivePrices(prices,nowMs,port);
   const sectors = port && Array.isArray(port.sectors) ? port.sectors : [];
   const industryBuckets = new Map();
   let totalStocks = 0, hkStocks = 0;
@@ -4806,7 +4885,9 @@ function _buildPortfolioAllocationModel(port, prices){
       stockCount: rows.length,
       activeCount: rows.filter(row=>row.weight>0).length,
       pricedCount: quoted.length,
-      pricedWeight: quotedWeight
+      pricedWeight: quotedWeight,
+      excludedCount: rows.filter(row=>row.weight>0&&row.sessionExcluded).length,
+      excludedWeight: rows.filter(row=>row.weight>0&&row.sessionExcluded).reduce((sum,row)=>sum+row.weight,0)
     };
   };
 
@@ -4824,7 +4905,8 @@ function _buildPortfolioAllocationModel(port, prices){
         stock,
         weight,
         pct: Number.isFinite(pctNumber) ? pctNumber : null,
-        industry: cleanIndustry(stock.industry)
+        industry: cleanIndustry(stock.industry),
+        sessionExcluded: typeof _portStockState==='function'&&['market_closed','suspended','no_trade'].includes(_portStockState(stock,rawPrices&&rawPrices[stock.code],nowMs).status)
       };
       if(weight>0){
         if(!industryBuckets.has(row.industry)) industryBuckets.set(row.industry,[]);
@@ -4861,6 +4943,7 @@ function _buildPortfolioAllocationModel(port, prices){
 
 function renderPortfolio(){
   portLoad();
+  const sessionPrices=typeof _portEffectivePrices==='function'?_portEffectivePrices(_PORT_PRICES):_PORT_PRICES;
   // KPI、分类仓位和行业仓位全部来自下方同一批个股明细。
   const allocModel = _buildPortfolioAllocationModel(PORT,_PORT_PRICES);
   const total = allocModel.totalStocks;
@@ -4877,6 +4960,8 @@ function renderPortfolio(){
   const pricedWeight = allocModel.categories.reduce((sum,entry)=>sum+entry.pricedWeight,0);
   const pricedStocks = allocModel.categories.reduce((sum,entry)=>sum+entry.pricedCount,0);
   const activeStocks = allocModel.categories.reduce((sum,entry)=>sum+entry.activeCount,0);
+  const excludedStocks=allocModel.categories.reduce((sum,entry)=>sum+(entry.excludedCount||0),0);
+  const excludedWeight=allocModel.categories.reduce((sum,entry)=>sum+(entry.excludedWeight||0),0);
   const weightedPct = pricedWeight>0
     ? allocModel.categories.reduce((sum,entry)=>sum+(entry.pct==null?0:entry.pct*entry.pricedWeight),0)/pricedWeight
     : null;
@@ -4886,14 +4971,14 @@ function renderPortfolio(){
   if(changeEl && changeCard && changeMeta){
     changeCard.classList.remove('is-up','is-down','is-flat','is-empty');
     if(weightedPct!=null){
-      const fullCoverage = pricedStocks===activeStocks && Math.abs(pricedWeight-wSum)<0.05;
+      const fullCoverage = pricedStocks===activeStocks-excludedStocks && Math.abs(pricedWeight-(wSum-excludedWeight))<0.05;
       const sign = weightedPct>0 ? '+' : '';
       changeEl.textContent = (fullCoverage?'':'≈')+sign+weightedPct.toFixed(2)+'%';
-      changeMeta.textContent = '覆盖 '+pricedStocks+'/'+activeStocks+'只 · 仓位 '+pricedWeight.toFixed(1)+'%';
+      changeMeta.textContent = '参与 '+pricedStocks+'只 · 仓位 '+pricedWeight.toFixed(1)+'%'+(excludedStocks?' · 排除 '+excludedStocks+'只休市/停牌/未成交':'');
       changeCard.classList.add(weightedPct>0.005?'is-up':weightedPct<-0.005?'is-down':'is-flat');
     }else{
-      changeEl.textContent = '待刷新';
-      changeMeta.textContent = '刷新行情后自动计算';
+      changeEl.textContent = excludedStocks===activeStocks&&activeStocks>0?'休市 / 停牌':'待当日行情';
+      changeMeta.textContent = '仅计入当日有效交易股票';
       changeCard.classList.add('is-empty');
     }
   }
@@ -5005,14 +5090,14 @@ function renderPortfolio(){
     const secNameHtml = _escH(sec.name);
     const secCoverageFull = secAvgPct!=null
       && secAlloc.activeCount>0
-      && secAlloc.pricedCount===secAlloc.activeCount
-      && Math.abs((secAlloc.pricedWeight||0)-secW)<0.05;
+      && secAlloc.pricedCount===secAlloc.activeCount-(secAlloc.excludedCount||0)
+      && Math.abs((secAlloc.pricedWeight||0)-(secW-(secAlloc.excludedWeight||0)))<0.05;
     const secPerfClass = secAvgPct==null ? 'is-empty'
       : secAvgPct>0.005 ? 'is-up'
       : secAvgPct<-0.005 ? 'is-down' : 'is-flat';
-    const secPerfValue = secAvgPct==null ? '待行情'
+    const secPerfValue = secAvgPct==null ? (secAlloc.activeCount>0&&secAlloc.excludedCount===secAlloc.activeCount?'休市 / 停牌':'待当日行情')
       : (secCoverageFull?'':'≈')+(secAvgPct>0?'+':'')+secAvgPct.toFixed(2)+'%';
-    const secPerfMeta = secAvgPct==null ? '刷新行情后自动计算'
+    const secPerfMeta = secAvgPct==null ? '仅计入当日有效交易股票'
       : `覆盖 ${secAlloc.pricedCount}/${secAlloc.activeCount} 只 · 仓位 ${(secAlloc.pricedWeight||0).toFixed(1)}%`;
     const secPerfTitle = secAvgPct==null
       ? '当前分类尚无有效实时行情'
@@ -5020,27 +5105,31 @@ function renderPortfolio(){
     // sort display copy; keep original index for edit/delete
     const disp=[...sec.stocks];
     if(_portSort.col==='pct'){
-      disp.sort((a,b)=>((_PORT_PRICES[b.code]?.pct??-9999)-(_PORT_PRICES[a.code]?.pct??-9999))*_portSort.dir);
+      disp.sort((a,b)=>(sessionPrices[a.code]?.pct==null?1:sessionPrices[b.code]?.pct==null?-1:(sessionPrices[b.code].pct-sessionPrices[a.code].pct)*_portSort.dir));
     } else if(_portSort.col==='w'){
       disp.sort((a,b)=>((b.w??-1)-(a.w??-1))*_portSort.dir);
     } else if(_portSort.col==='turnover'){
-      disp.sort((a,b)=>_portTurnoverCompare(_PORT_PRICES[a.code]?.turnoverRate,_PORT_PRICES[b.code]?.turnoverRate,_portSort.dir));
+      disp.sort((a,b)=>_portTurnoverCompare(sessionPrices[a.code]?.turnoverRate,sessionPrices[b.code]?.turnoverRate,_portSort.dir));
     } else if(_portSort.col==='vr'){
-      disp.sort((a,b)=>((_PORT_PRICES[b.code]?.volRatio??-1)-(_PORT_PRICES[a.code]?.volRatio??-1))*_portSort.dir);
+      disp.sort((a,b)=>((sessionPrices[b.code]?.volRatio??-1)-(sessionPrices[a.code]?.volRatio??-1))*_portSort.dir);
     } else if(_portSort.col==='speed'){
-      disp.sort((a,b)=>((_PORT_PRICES[b.code]?.speedPct??-9999)-(_PORT_PRICES[a.code]?.speedPct??-9999))*_portSort.dir);
+      disp.sort((a,b)=>((sessionPrices[b.code]?.speedPct??-9999)-(sessionPrices[a.code]?.speedPct??-9999))*_portSort.dir);
     }
     const rows = sec.stocks.length ? disp.map((sk)=>{
       const ki=sec.stocks.indexOf(sk);
-      const pi = _PORT_PRICES[sk.code];
-      const aPreOpen=_isPortfolioAStockPreOpen(sk.mkt,sk.code,portRenderNow);
+      const rawPi = _PORT_PRICES[sk.code];
+      const quoteState=_portStockState(sk,rawPi,portRenderNow);
+      const pi=quoteState.canDisplayPrice?rawPi:null;
+      const aPreOpen=quoteState.status==='preopen';
       const priceMoveClass=(!aPreOpen&&pi)?_portLiveMoveClass(sk,'price',pi.price,portRenderNow):'port-live-value';
-      const priceCell = aPreOpen
+      const priceCell = !quoteState.canDisplayPrice&&!aPreOpen
+        ? _portSessionBadge(quoteState)
+        : aPreOpen
         ? `<span class="port-preopen-pill">未开盘</span>`
         : pi
         ? `<span class="port-price-number ${priceMoveClass}">${sk.mkt==='HK'?Number(pi.price).toFixed(3):Number(pi.price).toFixed(2)}</span>`
         : `<span class="port-data-empty">—</span>`;
-      const displayPct = pi ? _portfolioStockDisplayPct(sk.mkt,sk.code,pi.pct,portRenderNow) : null;
+      const displayPct = quoteState.canUseReturn?quoteState.displayPct:null;
       const pctState=displayPct==null?'':displayPct>0.005?'is-up':displayPct<-0.005?'is-down':'is-flat';
       const pctMoveClass=(!aPreOpen&&pi)?_portLiveMoveClass(sk,'pct',pi.pct,portRenderNow):'port-live-value';
       const pctCell = displayPct!=null
@@ -5048,13 +5137,13 @@ function renderPortfolio(){
         : `<span class="port-data-empty">—</span>`;
       const high20Cell=_renderCloseRangeDistance(sk,pi,'high');
       const low10Cell =_renderCloseRangeDistance(sk,pi,'low');
-      const vr = pi?.volRatio;
+      const vr = quoteState.canUseReturn?pi?.volRatio:null;
       const vrState=!vr?'':vr>=2.5?'is-hot':vr>=1.5?'is-elevated':'';
       const vrMoveClass=pi?_portLiveMoveClass(sk,'volRatio',vr,portRenderNow):'port-live-value';
       const vrCell = vr!=null
         ? `<span class="port-metric-number ${vrState} ${vrMoveClass}">${Number(vr).toFixed(2)}</span>`
         : `<span class="port-data-empty">—</span>`;
-      const sp = pi?.speedPct;
+      const sp = quoteState.canUseReturn?pi?.speedPct:null;
       const spState=sp==null?'':sp>0.005?'is-up':sp<-0.005?'is-down':'is-flat';
       const spMoveClass=pi?_portLiveMoveClass(sk,'speedPct',sp,portRenderNow):'port-live-value';
       const spCell = sp!=null
@@ -8165,6 +8254,7 @@ function _isWeekdayMarketClock(clock){
 
 // 09:00（含）—09:15（不含）：港股已有行情，沪深 A 股榜单涨跌幅按 0 展示。
 function _isAPreOpenZeroWindow(nowMs){
+  if(typeof _portMarketState==='function'&&!_portMarketState('A',nowMs).isTradingDay)return false;
   const clock=_beijingMarketClock(nowMs);
   return _isWeekdayMarketClock(clock) && clock.minutes>=540 && clock.minutes<555;
 }
@@ -8222,7 +8312,7 @@ function _portTopMarketIcon(mkt,code){
 // 同时显示榜内仓位合计，避免把归一化加权结果误解为整个组合的单日贡献。
 function _renderPortTopWeightedSummary(items, theme){
   var valid=(Array.isArray(items)?items:[]).filter(function(item){
-    return isFinite(Number(item.pct)) && isFinite(Number(item.w)) && Number(item.w)>0;
+    return item.returnEligible!==false && item.pct!=null && isFinite(Number(item.pct)) && isFinite(Number(item.w)) && Number(item.w)>0;
   });
   var weightSum=valid.reduce(function(sum,item){ return sum+Number(item.w); },0);
   var avg=weightSum>0
@@ -8253,6 +8343,7 @@ function _isTradingNow(nowMs){
   const clock=_beijingMarketClock(nowMs);
   if(!_isWeekdayMarketClock(clock)) return false;
   const m=clock.minutes;
+  if(typeof _portMarketState==='function'&&!_portMarketState('A',nowMs).isTradingDay&&!_portMarketState('HK',nowMs).isTradingDay)return false;
   return (m>=540&&m<720)||(m>=780&&m<960);
 }
 
@@ -8728,6 +8819,8 @@ function _idxUpdateTimestamp(rowMap,nowMs=Date.now()){
 }
 
 function _idxRowHtml(r,nowMs=Date.now()){
+  const session=typeof _portIndexMarketState==='function'?_portIndexMarketState(r.region,nowMs):null;
+  if(session?.isClosed)return `<div data-idx-label="${_escH(r.label)}" class="port-index-row" style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:8px;background:#f1f5f9"><span style="font-size:12px;font-weight:700">${_escH(r.label)}</span><span style="font-size:13px;font-weight:700;color:#64748b">休市</span></div>`;
   const unavailable=!(Number(r.price)>0);
   const displayPct = _portfolioIndexDisplayPct(r.region,r.pct,nowMs) ?? 0;
   const displayMove = r.region === 'rate' ? (Number(r.delta)||0)*100 : displayPct;
@@ -9152,19 +9245,47 @@ async function fetchMacroRates(){
 //   而非收盘的 3%，这样调仓当天的盈亏归因才准确。
 // 参数：curStocks 当日快照(含 pct)，prevStocks 昨日快照(含 w，作权重基准)。
 //   无昨日记录(首日)时退化为用当日仓位加权。
+function _histBeijingDate(nowMs=Date.now()){
+  return new Date(Number(nowMs)+8*60*60*1000).toISOString().slice(0,10);
+}
+
+function _histReturnEligible(stock){
+  if(!stock || stock.returnEligible===false) return false;
+  if(['market_closed','suspended','stale','no_trade','preopen','missing','calendar_unknown','invalid','unsupported_market'].includes(stock.status)) return false;
+  return stock.pct!=null && Number.isFinite(Number(stock.pct));
+}
+
+function _histStatusLabel(stock){
+  const labels={market_closed:'休市',suspended:'停牌',stale:'无当日行情',no_trade:'尚无成交',preopen:'未开盘',missing:'无有效行情',calendar_unknown:'休市安排待确认',invalid:'行情待确认',unsupported_market:'市场待确认'};
+  return labels[stock && stock.status] || '—';
+}
+
+function _histCsiValue(nowMs=Date.now()){
+  // Index quotes use the same market date and holiday check as stocks. Unlike a
+  // DOM percentage or _csiPct, this quote preserves its actual provider date.
+  const quote=_IDX_CACHE && _IDX_CACHE['中证全指'];
+  if(!quote) return null;
+  const state=_portStockState({mkt:'SH',code:'000985',kind:'index'},quote,nowMs);
+  return state.canRecordPrice && state.canUseReturn && quote.pct!=null && Number.isFinite(Number(quote.pct))
+    ?Number(quote.pct):null;
+}
+
 function _computePortPct(curStocks, prevStocks){
   if(!curStocks || !curStocks.length) return null;
-  // 当日个股涨跌映射 code → pct
-  const curPct = {};
-  curStocks.forEach(s=>{ if(s.pct!=null && isFinite(s.pct)) curPct[s.code] = s.pct; });
-  // 权重基准：优先用昨日收盘仓位；首日无昨日则用当日仓位
-  const basis = (prevStocks && prevStocks.length) ? prevStocks : curStocks;
-  let tw = 0, wp = 0;
-  basis.forEach(b=>{
-    const w = b.w;
-    if(w > 0 && curPct[b.code] != null){ wp += w * curPct[b.code]; tw += w; }
+  const curPct={};
+  curStocks.forEach(stock=>{
+    if(_histReturnEligible(stock)) curPct[stock.code]=Number(stock.pct);
   });
-  return tw > 0 ? parseFloat((wp / tw).toFixed(3)) : null;
+  const basis=(prevStocks && prevStocks.length)?prevStocks:curStocks;
+  let totalWeight=0,weightedPct=0;
+  basis.forEach(stock=>{
+    const weight=Number(stock.w);
+    if(Number.isFinite(weight) && weight>0 && curPct[stock.code]!=null){
+      weightedPct+=weight*curPct[stock.code];
+      totalWeight+=weight;
+    }
+  });
+  return totalWeight>0?Number((weightedPct/totalWeight).toFixed(3)):null;
 }
 
 function renderHistTable(){
@@ -9409,14 +9530,17 @@ function renderHistDetail(date){
 
   const rows=stocks.map(s=>{
     const isHK=s.mkt==='HK';
-    const pctBg =s.pct!=null?(s.pct>0?'#fee2e2':s.pct<0?'#d1fae5':'#f1f5f9'):'';
-    const pctCol=s.pct!=null?(s.pct>0?'#991b1b':s.pct<0?'#065f46':'#475569'):'';
-    const priceCell=s.price!=null
+    const eligible=_histReturnEligible(s);
+    const priceAvailable=s.returnEligible!==false && s.price!=null && Number.isFinite(Number(s.price)) && Number(s.price)>0;
+    const statusLabel=_histStatusLabel(s);
+    const pctBg=eligible?(s.pct>0?'#fee2e2':s.pct<0?'#d1fae5':'#f1f5f9'):'';
+    const pctCol=eligible?(s.pct>0?'#991b1b':s.pct<0?'#065f46':'#475569'):'';
+    const priceCell=priceAvailable
       ?`<span style="font-weight:700;font-size:15px;color:var(--text)">${Number(s.price).toFixed(isHK?3:2)}</span>`
-      :`<span style="color:var(--text2);font-size:13px">—</span>`;
-    const pctCell=s.pct!=null
-      ?`<span style="display:inline-block;background:${pctBg};color:${pctCol};font-weight:800;font-size:14px;padding:3px 9px;border-radius:7px;letter-spacing:-.01em">${s.pct>0?'+':''}${Number(s.pct).toFixed(2)}%</span>`
-      :`<span style="color:var(--text2);font-size:13px">—</span>`;
+      :`<span style="color:var(--text2);font-size:13px">${statusLabel}</span>`;
+    const pctCell=eligible
+      ?`<span style="display:inline-block;background:${pctBg};color:${pctCol};font-weight:800;font-size:14px;padding:3px 9px;border-radius:7px">${s.pct>0?'+':''}${Number(s.pct).toFixed(2)}%</span>`
+      :`<span style="color:var(--text2);font-size:13px">${statusLabel}</span>`;
     const wCell=s.w>0
       ?`<strong style="color:var(--blue);font-size:15px">${Number(s.w).toFixed(1)}%</strong>`
       :`<span style="color:var(--text2);font-size:13px">—</span>`;
@@ -9463,99 +9587,93 @@ async function addHistRecord(){
   if(!PORT) portLoad();
   if(!PORT.history) PORT.history=[];
 
-  // 必须已刷新股价
-  if(!_PORT_PRICES||!Object.keys(_PORT_PRICES).length){
-    alert('请先切换到「投资组合」点击「刷新股价」，再回来记录');
-    return;
+  // A snapshot may still preserve holdings when every market is closed. Missing
+  // or old quotes are never promoted to today's prices merely to fill a record.
+  if(!_PORT_PRICES || !Object.keys(_PORT_PRICES).length){
+    try{ await fetchPortPrices(); }catch(error){ console.warn('addHistRecord 获取股价失败:',error); }
   }
-
-  // 确保中证全指已加载（_csiPct 由 fetchIndexPrices 异步写入；缺失则先同步拉取一次再记录）
-  if(_csiPct==null || !isFinite(_csiPct)){
-    try{ await fetchIndexPrices(); }catch(e){ console.warn('addHistRecord 取中证全指失败:', e); }
+  if(_histCsiValue()==null){
+    try{ await fetchIndexPrices(); }catch(error){ console.warn('addHistRecord 取中证全指失败:',error); }
   }
-  // 仍缺失则从「主要指数」DOM 兜底读取（与用户看到的中证全指一致）
-  let _csiVal = (_csiPct!=null && isFinite(_csiPct)) ? _csiPct : _readCsiFromDOM();
+  const nowMs=Date.now();
+  const dateStr=_histBeijingDate(nowMs);
+  const csiValue=_histCsiValue(nowMs);
 
-  const _now=new Date();
-  const _pad=n=>String(n).padStart(2,'0');
-  const dateStr=`${_now.getFullYear()}-${_pad(_now.getMonth()+1)}-${_pad(_now.getDate())}`;
+  const existing=PORT.history.find(record=>record.date===dateStr);
+  if(existing && !confirm(`${dateStr} 已有记录，是否用当前数据覆盖？`)) return;
 
-  // 当天已有记录时询问是否覆盖
-  if(PORT.history.find(r=>r.date===dateStr)){
-    if(!confirm(`${dateStr} 已有记录，是否用当前数据覆盖？`)) return;
-    PORT.history=PORT.history.filter(r=>r.date!==dateStr);
-  }
-
-  // 抓取当前持仓快照（含当日仓位 w 与当日涨跌 pct，按仓位降序）
-  const _snapStocks=[];
-  PORT.sectors.forEach(sec=>sec.stocks.forEach(sk=>{
-    const pi=_PORT_PRICES[sk.code];
-    _snapStocks.push({
-      code:     sk.code,
-      name:     sk.name,
-      mkt:      sk.mkt,
-      industry: sk.industry||'',
-      sector:   sec.name,
-      w:        sk.w!=null?parseFloat(Number(sk.w).toFixed(2)):0,
-      price:    pi?parseFloat(Number(pi.price).toFixed(sk.mkt==='HK'?3:2)):null,
-      pct:      pi?parseFloat(Number(pi.pct).toFixed(3)):null
+  const snapshot=[];
+  (PORT.sectors||[]).forEach(sector=>(sector.stocks||[]).forEach(stock=>{
+    const quote=(_PORT_PRICES||{})[stock.code];
+    const state=_portStockState(stock,quote,nowMs);
+    const price=state.canRecordPrice && quote && Number.isFinite(Number(quote.price)) && Number(quote.price)>0
+      ?Number(Number(quote.price).toFixed(stock.mkt==='HK'?3:2)):null;
+    const pct=state.canRecordPrice && state.canUseReturn && quote && quote.pct!=null && Number.isFinite(Number(quote.pct))
+      ?Number(Number(quote.pct).toFixed(3)):null;
+    const weight=Number(stock.w);
+    const quoteTs=Number(quote && quote.quoteTs);
+    snapshot.push({
+      code:stock.code,
+      name:stock.name,
+      mkt:stock.mkt,
+      industry:stock.industry||'',
+      sector:sector.name,
+      w:Number.isFinite(weight)?Number(weight.toFixed(2)):0,
+      price,
+      pct,
+      status:state.status,
+      returnEligible:state.canUseReturn && pct!=null,
+      quoteDate:state.quoteDate || (quoteTs>0?_histBeijingDate(quoteTs):null)
     });
   }));
-  _snapStocks.sort((a,b)=>(b.w||0)-(a.w||0));
-
-  // 今日收盘总仓位（用于"股票仓位"列显示）
-  let dispW=0;
-  _snapStocks.forEach(s=>{ if(s.w>0) dispW+=s.w; });
-
-  // 上一条历史记录（今日之前最近一天）= 今日开盘持仓基准
-  const _prevRec=PORT.history
-    .filter(r=>r.date < dateStr && r.stocks && r.stocks.length)
+  snapshot.sort((a,b)=>(b.w||0)-(a.w||0));
+  const totalWeight=snapshot.reduce((total,stock)=>total+(stock.w>0?stock.w:0),0);
+  const previous=PORT.history
+    .filter(record=>record.date<dateStr && record.stocks && record.stocks.length)
     .sort((a,b)=>b.date.localeCompare(a.date))[0];
-
-  // 持仓涨跌幅 = Σ(昨日收盘仓位 × 今日涨跌) / Σ(昨日收盘仓位)
-  // 用"今日开盘持仓"承受今日涨跌，调仓当天的归因才准确
-  const portPct=_computePortPct(_snapStocks, _prevRec?_prevRec.stocks:null);
-
-  const rec={
-    date:    dateStr,
-    weight:  parseFloat(dispW.toFixed(2)),
-    portPct: portPct,
-    csiPct:  (_csiVal!=null&&isFinite(_csiVal))?parseFloat(Number(_csiVal).toFixed(3)):null,
-    note:    '',
-    stocks:  _snapStocks
+  const record={
+    date:dateStr,
+    weight:Number(totalWeight.toFixed(2)),
+    portPct:_computePortPct(snapshot,previous?previous.stocks:null),
+    csiPct:csiValue!=null?Number(csiValue.toFixed(3)):null,
+    note:existing && existing.note || '',
+    stocks:snapshot
   };
-  _touchHistoryRecord(rec);
-  PORT.history.unshift(rec);
+  _touchHistoryRecord(record);
+  PORT.history=PORT.history.filter(item=>item.date!==dateStr);
+  PORT.history.unshift(record);
   portSave();
   portSaveRemote();
   renderHistTable();
-
-  // 保持/切换到历史持仓标签页。不要写死序号，避免以后调整 TAB_ORDER 后跳到其他页面。
   const histTabIdx=TAB_ORDER.indexOf('tHist');
   if(histTabIdx>=0) switchTab(histTabIdx);
 }
 
 // 用投资组合「主要指数」里的中证全指涨跌幅（_csiPct），补正历史记录中缺失的 csiPct，并同步云端
 async function fixHistCsi(){
-  if(_csiPct==null||!isFinite(_csiPct)){
-    try{ await fetchIndexPrices(); }catch(e){}   // 缺失则先拉一次中证全指
+  if(!PORT || !PORT.history || !PORT.history.length){ alert('暂无历史记录'); return; }
+  if(_histCsiValue()==null){
+    try{ await fetchIndexPrices(); }catch(error){ console.warn('fixHistCsi 取中证全指失败:',error); }
   }
-  let csi = (_csiPct!=null&&isFinite(_csiPct)) ? _csiPct : _readCsiFromDOM();  // 仍缺失则读DOM
-  if(csi==null||!isFinite(csi)){
-    alert('中证全指当前仍取不到。\n请切到「投资组合」标签，确认"主要指数"里中证全指已显示后再试。');
+  const nowMs=Date.now();
+  const csiValue=_histCsiValue(nowMs);
+  if(csiValue==null){
+    alert('A股今日休市、未开盘或无当日有效指数行情，不能用前一交易日数据补正。');
     return;
   }
-  if(!PORT||!PORT.history||!PORT.history.length){ alert('暂无历史记录'); return; }
-  const v=parseFloat(Number(csi).toFixed(3));
-  const miss=PORT.history.filter(r=>r.csiPct==null||!isFinite(r.csiPct));
-  if(!miss.length){ alert('没有缺失中证全指的记录，无需补正。'); return; }
-  if(!confirm('将用主要指数「中证全指」'+v.toFixed(2)+'% 补正以下 '+miss.length+' 天的缺失值：\n'+miss.map(r=>r.date).join('、')+'\n\n确认补正并同步到云端？')) return;
-  const updatedAt=Date.now();
-  miss.forEach(r=>{ r.csiPct=v; _touchHistoryRecord(r, updatedAt); });
+  const today=_histBeijingDate(nowMs);
+  const missing=PORT.history.filter(record=>record.date===today && (record.csiPct==null || !Number.isFinite(Number(record.csiPct))));
+  if(!missing.length){
+    alert('今日没有缺失中证全指的记录。历史日期不能使用今日涨跌幅补正，休市日保持空值。');
+    return;
+  }
+  const value=Number(csiValue.toFixed(3));
+  if(!confirm('将用今日中证全指 '+value.toFixed(2)+'% 补正 '+today+' 的缺失值，历史日期不变。\n确认补正并同步到云端？')) return;
+  missing.forEach(record=>{ record.csiPct=value; _touchHistoryRecord(record,nowMs); });
   portSave();
   portSaveRemote();
   renderHistTable();
-  alert('已用中证全指 '+v.toFixed(2)+'% 补正 '+miss.length+' 条记录并同步云端。');
+  alert('已补正今日中证全指并同步云端，历史日期未改动。');
 }
 
 var _noteRemoteTimer = null;
@@ -9593,26 +9711,29 @@ function deleteHistRecord(idx){
 // 重算所有历史记录的持仓涨跌幅（按「昨日收盘仓位 × 当日涨跌」业绩归因）
 // 利用每条记录快照中存储的 stocks[].w 与 stocks[].pct，用前一日仓位作权重重算。
 function recomputeHistReturns(){
-  if(!PORT||!PORT.history||!PORT.history.length){ alert('暂无历史记录'); return; }
-  const asc=[...PORT.history].sort((a,b)=>a.date.localeCompare(b.date));   // 升序便于取前一日
-  let changed=0, skipped=0;
-  for(let i=0;i<asc.length;i++){
-    const cur=asc[i];
-    if(!cur.stocks||!cur.stocks.length){ skipped++; continue; }   // 无快照无法重算
-    const prev=(i>0)?asc[i-1]:null;
-    const np=_computePortPct(cur.stocks, (prev&&prev.stocks&&prev.stocks.length)?prev.stocks:null);
-    if(np!=null && np!==cur.portPct){
-      cur.portPct=np;
-      _touchHistoryRecord(cur);
+  if(!PORT || !PORT.history || !PORT.history.length){ alert('暂无历史记录'); return; }
+  const ascending=[...PORT.history].sort((a,b)=>a.date.localeCompare(b.date));
+  let changed=0,skipped=0;
+  for(let i=0;i<ascending.length;i++){
+    const current=ascending[i];
+    if(!current.stocks || !current.stocks.length){ skipped++; continue; }
+    const previous=i>0?ascending[i-1]:null;
+    const value=_computePortPct(current.stocks,previous && previous.stocks && previous.stocks.length?previous.stocks:null);
+    // Explicit exclusions may clear a falsely populated return. A legacy record
+    // with no usable snapshot remains untouched rather than inventing a result.
+    const explicitExclusion=current.stocks.some(stock=>stock.returnEligible===false);
+    if(value!==current.portPct && (value!=null || explicitExclusion)){
+      current.portPct=value;
+      _touchHistoryRecord(current);
       changed++;
-    }   // 直接改引用，即 PORT.history 内对象
+    }
   }
   portSave();
   portSaveRemote();
   renderHistTable();
-  alert(`已按「昨日收盘仓位 × 当日涨跌」重算持仓涨跌幅\n更新 ${changed} 条`
-    + (skipped?`，${skipped} 条因缺持仓明细跳过`:'')
-    + '。\n注：首条记录无昨日基准，按当日仓位加权。');
+  alert(`已按「昨日收盘仓位 × 当日有效涨跌」重算持仓涨跌幅\n更新 ${changed} 条`
+    +(skipped?`，${skipped} 条因缺持仓明细跳过`:'')
+    +'。\n休市、停牌和无当日有效行情的股票不计入分子或分母；首条记录按当日有效仓位加权。');
 }
 
 // ── 市场涨跌统计 + 两市成交额 ───────────────────────────────────
@@ -11705,7 +11826,7 @@ function _fetchSinaRT(codes){
               break;
             }
           }
-          if(price > 0 && isFinite(pct)) out[code] = {price:price, pct:pct, quoteTs:quoteTs};
+          if(price > 0 && isFinite(pct)) out[code] = {price:price, pct:pct, quoteTs:quoteTs,amount:f[11],volume:f[12],suspended:/停牌|暫停買賣|暂停买卖/.test(f[1]||'')};
         }
         try{ delete window['hq_str_' + code]; }catch(e){ try{ window['hq_str_' + code] = undefined; }catch(_){} }
       });
@@ -11746,6 +11867,7 @@ function _portQuoteTimestamp(raw){
 }
 function _portPricesNeedRefresh(){
   return (PORT?.sectors||[]).some(s=>(s.stocks||[]).some(sk=>{
+    if(_portMarketState(sk.mkt).isClosed)return false;
     const q=_PORT_PRICES[sk.code];
     return !q||q.mkt!==sk.mkt||q.stale||(_isTradingNow()&&(!q.quoteTs||Date.now()-q.quoteTs>180000));
   }));
@@ -11792,6 +11914,7 @@ async function _fetchPortfolioPricesRound(){
     var aStocks = [], hkStocks = [];
     PORT.sectors.forEach(function(sec){
       sec.stocks.forEach(function(sk){
+        if(_portMarketState(sk.mkt).isClosed)return;
         var pfx = sk.mkt === 'SH' ? 'sh' : sk.mkt === 'HK' ? 'hk' : 'sz';
         var entry = {code: sk.code, name: sk.name, mkt: sk.mkt, w: sk.w, tc: pfx + sk.code};
         if(sk.mkt === 'HK') hkStocks.push(entry);
@@ -11799,7 +11922,11 @@ async function _fetchPortfolioPricesRound(){
       });
     });
 
-    if(!aStocks.length && !hkStocks.length){ ts.textContent = '无持仓'; ts.title = '当前没有持仓股票'; return; }
+    if(!aStocks.length && !hkStocks.length){
+      const hasHoldings=(PORT.sectors||[]).some(sec=>(sec.stocks||[]).length);
+      if(ts){ts.textContent=hasHoldings?'休市':'无持仓';ts.title=hasHoldings?'持仓所在市场今日休市，不参与今日收益计算':'当前没有持仓股票';}
+      _portRenderQuoteProgress();return;
+    }
 
     // 快照上一时刻成功取到的价格：本轮某只取不到新值时回填，绝不让其消失/清零（用户要求：得不到数据就保持上一时刻不变）
     var _prevPrices = _PORT_PRICES || {};
@@ -11818,7 +11945,7 @@ async function _fetchPortfolioPricesRound(){
     // 腾讯港股返回结构与 A 股不同：量比位于 ~ 分隔后的第 50 号字段。
     // 价格仍以东财实时源为准；这一路只补齐东财港股经常为空的量比字段。
     var hkMetricUrl = hkStocks.length ? 'https://qt.gtimg.cn/q=' + hkStocks.map(function(s){ return 'r_hk'+s.code+',hk'+s.code; }).join(',') + '&_=' + ts0 : null;
-    var hkFields = 'f12,f14,f2,f3,f20,f50,f11,f124,f8';
+    var hkFields = 'f12,f14,f2,f3,f20,f50,f11,f124,f8,f5,f6';
     var emUrl = hkSids          ? 'https://push2.eastmoney.com/api/qt/ulist.np/get?secids='+hkSids+'&fltt=2&invt=2&fields='+hkFields+'&_='+ts0 : null;
     // push2 主域名在部分网络/早盘时段会返回空响应；push2delay 在港股开市前竞价阶段
     // 能返回带当日 f124 时间戳的 IEP 行情，因此并行请求作为同源实时冗余。
@@ -11845,6 +11972,8 @@ async function _fetchPortfolioPricesRound(){
         const p=m[1].split('~'),cur=parseFloat(p[3]),pct=parseFloat(p[32]);
         const vr=parseFloat(p[hk?50:49]),sp=hk?NaN:parseFloat(p[80]),mc=parseFloat(p[45]);
         changed=_portPublishQuote(s,{price:cur,pct,src:hk?'tc_rt':'tc',quoteTs:_portQuoteTimestamp(p[30]),
+          volume:p[6],amount:p[37],
+          suspended:/停牌|暫停買賣|暂停买卖/.test(p[1]||''),
           turnoverRate:_portTurnoverRate(p[hk?59:38]),turnoverSource:hk?'腾讯实时':'腾讯行情',
           volRatio:isFinite(vr)&&vr>0?vr:null,speedPct:isFinite(sp)?sp:null,mktCap:isFinite(mc)&&mc>0?mc:null})||changed;
       });
@@ -11877,6 +12006,7 @@ async function _fetchPortfolioPricesRound(){
           var vr = parseFloat(d.f50);
           var sp = parseFloat(d.f11);
           _portPublishQuote(matched,{price:price, pct:pct, src:source,
+            volume:d.f5,amount:d.f6,
             turnoverRate:_portTurnoverRate(d.f8),turnoverSource:'东方财富',
             quoteTs:  quoteTs,
             mktCap:   (isFinite(mc)&&mc>0) ? mc/100000000 : null,
@@ -11902,7 +12032,7 @@ async function _fetchPortfolioPricesRound(){
                           .then(data=>{
                             hkStocks.forEach(s=>{
                               const d=data?.['rt_hk'+s.code];
-                              if(d&&_hkQuoteIsFresh(d.quoteTs||0)&&_portPublishQuote(s,{price:d.price,pct:d.pct,src:'sina',quoteTs:d.quoteTs||0}))hkDone[s.code]=true;
+                              if(d&&_hkQuoteIsFresh(d.quoteTs||0)&&_portPublishQuote(s,{price:d.price,pct:d.pct,src:'sina',quoteTs:d.quoteTs||0,volume:d.volume,amount:d.amount,suspended:d.suspended}))hkDone[s.code]=true;
                             });
                             _portRenderQuoteProgress();return data;
                           })
@@ -11952,7 +12082,7 @@ async function _fetchPortfolioPricesRound(){
         var d = sinaRes && sinaRes['rt_hk'+s.code];
         if(d && _hkQuoteIsFresh(d.quoteTs||0)){
           // 无新时间戳的新浪补位只填缺失；有时间戳则由统一时间规则选最新。
-          if(!hkDone[s.code]||d.quoteTs) _portPublishQuote(s,{price:d.price,pct:d.pct,src:'sina',quoteTs:d.quoteTs||0});
+          if(!hkDone[s.code]||d.quoteTs) _portPublishQuote(s,{price:d.price,pct:d.pct,src:'sina',quoteTs:d.quoteTs||0,volume:d.volume,amount:d.amount,suspended:d.suspended});
           hkDone[s.code]=true;
         }
       });
@@ -11978,7 +12108,8 @@ async function _fetchPortfolioPricesRound(){
               var mc = parseFloat(d.f20), vr = parseFloat(d.f50), sp = parseFloat(d.f11);
               var quoteSec=parseFloat(d.f124);
               _portPublishQuote(matched,{price:price, pct:pct, src:'em',
-                turnoverRate:_portTurnoverRate(d.f8),turnoverSource:'东方财富',
+                volume:d.f5,amount:d.f6,
+            turnoverRate:_portTurnoverRate(d.f8),turnoverSource:'东方财富',
                 quoteTs:  isFinite(quoteSec)&&quoteSec>0 ? quoteSec*1000 : 0,
                 mktCap:   (isFinite(mc)&&mc>0) ? mc/100000000 : null,
                 volRatio: isFinite(vr)&&vr>0   ? vr           : null,
@@ -12011,6 +12142,8 @@ async function _fetchPortfolioPricesRound(){
               pv.stale = true; _PORT_PRICES[s.code] = pv;
             } else {
               _portPublishQuote(s,{price:cur, pct:pct, src:'tc',quoteTs:quoteTs,
+                volume:p[6],amount:p[37],
+                suspended:/停牌|暫停買賣|暂停买卖/.test(p[1]||''),
                 turnoverRate:_portTurnoverRate(p[59]),turnoverSource:'腾讯延迟行情',
                 mktCap:isFinite(txMc)&&txMc>0 ? txMc : null});
             }
@@ -12109,14 +12242,15 @@ function renderPortTop3(){
   var upEl   = document.getElementById('portTop3Up');
   var downEl = document.getElementById('portTop3Down');
   if(!upEl || !downEl) return;
-  var topNow = Date.now(); // 同一轮三个榜单使用同一时间快照，避免 09:15 边界出现不一致
+  var topNow = Date.now();
+  var sessionPrices=_portEffectivePrices(_PORT_PRICES,topNow); // 同一轮三个榜单使用同一时间快照，避免 09:15 边界出现不一致
 
   // 收集所有已有价格的持仓（不限仓位，任何仓位都参与 TOP5 排序）
   var entries = [];
   if(typeof PORT !== 'undefined' && PORT && PORT.sectors){
     PORT.sectors.forEach(function(sec){
       sec.stocks.forEach(function(sk){
-        var pi = _PORT_PRICES[sk.code];
+        var pi = sessionPrices[sk.code];
         if(pi && isFinite(pi.pct)){
           var w = (pi.w != null ? pi.w : sk.w);
           var market = pi.mkt || sk.mkt;
@@ -12189,6 +12323,7 @@ function _renderPortBreadth(){
   var el = document.getElementById('portBreadth');
   if(!el) return;
   var breadthNow = Date.now();
+  var sessionPrices=_portEffectivePrices(_PORT_PRICES,breadthNow);
 
   // 收集所有涨跌幅有效的股票；09:00—09:15 的 A 股尚未开盘，不混入当日分布。
   var allStocks = [];
@@ -12198,34 +12333,34 @@ function _renderPortBreadth(){
     });
   }
   var quotedStocks = allStocks.filter(function(sk){
-    var pi = _PORT_PRICES[sk.code];
+    var pi = sessionPrices[sk.code];
     return pi && isFinite(Number(pi.pct));
   });
   var withPrice = quotedStocks.filter(function(sk){
     return !_isPortfolioAStockPreOpen(sk.mkt,sk.code,breadthNow);
   });
-  if(!quotedStocks.length){ el.style.display='none'; return; }
 
-  var up   = withPrice.filter(function(sk){ return Number(_PORT_PRICES[sk.code].pct) > 0; });
-  var down = withPrice.filter(function(sk){ return Number(_PORT_PRICES[sk.code].pct) < 0; });
-  var flat = withPrice.filter(function(sk){ return Number(_PORT_PRICES[sk.code].pct) === 0; });
+
+  var up   = withPrice.filter(function(sk){ return Number(sessionPrices[sk.code].pct) > 0; });
+  var down = withPrice.filter(function(sk){ return Number(sessionPrices[sk.code].pct) < 0; });
+  var flat = withPrice.filter(function(sk){ return Number(sessionPrices[sk.code].pct) === 0; });
 
   // Σ(pct × w) / Σ(w)；若分组内没有有效仓位则退化为等权平均。
   function _weightedBreadthAvg(stocks){
     if(!stocks.length) return null;
     var wSum = stocks.reduce(function(s,sk){
-      var pi=_PORT_PRICES[sk.code];
+      var pi=sessionPrices[sk.code];
       var w=Number(pi && pi.w != null ? pi.w : sk.w);
       return s+(isFinite(w)&&w>0?w:0);
     },0);
     if(wSum>0){
       return stocks.reduce(function(s,sk){
-        var pi=_PORT_PRICES[sk.code];
+        var pi=sessionPrices[sk.code];
         var w=Number(pi && pi.w != null ? pi.w : sk.w);
         return s+Number(pi.pct)*(isFinite(w)&&w>0?w:0);
       },0)/wSum;
     }
-    return stocks.reduce(function(s,sk){ return s+Number(_PORT_PRICES[sk.code].pct); },0)/stocks.length;
+    return stocks.reduce(function(s,sk){ return s+Number(sessionPrices[sk.code].pct); },0)/stocks.length;
   }
   var avgUp = _weightedBreadthAvg(up);
   var avgDown = _weightedBreadthAvg(down);
@@ -12233,10 +12368,10 @@ function _renderPortBreadth(){
 
   // 热力点阵：按涨幅从高到低排序，大小代表仓位，颜色深浅代表幅度
   var sorted = withPrice.slice().sort(function(a,b){
-    return _PORT_PRICES[b.code].pct - _PORT_PRICES[a.code].pct;
+    return sessionPrices[b.code].pct - sessionPrices[a.code].pct;
   });
   var dotsHtml = sorted.map(function(sk){
-    var p   = _PORT_PRICES[sk.code].pct;
+    var p   = sessionPrices[sk.code].pct;
     var mag = Math.min(1, Math.abs(p) / 5);   // 5% 以上饱和
     // 大小：有仓位则按权重缩放（8-16px），否则统一 9px
     var sz  = (sk.w > 0) ? Math.max(8, Math.min(16, 6 + sk.w * 0.65)) : 9;
@@ -12263,7 +12398,7 @@ function _renderPortBreadth(){
   document.getElementById('pBreadthLabel').textContent =
     (up.length ? up.length + '↑ ' : '') +
     (down.length ? down.length + '↓' : '') +
-    (flat.length ? ' ' + flat.length + '平' : '');
+    (flat.length ? ' ' + flat.length + '平' : '')+(withPrice.length?'':'暂无当日有效行情');
   document.getElementById('pUpCount').textContent   = up.length;
   document.getElementById('pDownCount').textContent  = down.length;
   document.getElementById('pUpAvg').textContent =
@@ -12282,6 +12417,12 @@ function _renderPortBreadth(){
     var avgEl=document.getElementById('p'+prefix+'BreadthAvg');
     var linesEl=document.getElementById('p'+prefix+'BreadthLines');
     if(!countEl||!avgEl||!linesEl) return;
+    const marketState=_portMarketState(prefix==='HK'?'HK':'A',breadthNow);
+    if(marketState.isClosed){
+      countEl.textContent=allStocks.filter(sk=>prefix==='HK'?_isPortfolioHKStock(sk.mkt,sk.code):!_isPortfolioHKStock(sk.mkt,sk.code)).length+'只持仓';
+      avgEl.textContent='休市';avgEl.style.color='#64748b';
+      linesEl.innerHTML='<span class="port-market-flat">不参与今日涨跌统计</span>';return;
+    }
     if(isPreOpen){
       countEl.textContent=stocks.length+'只持仓';
       avgEl.textContent='未开盘';
@@ -12296,8 +12437,8 @@ function _renderPortBreadth(){
       linesEl.innerHTML='<span class="port-market-flat">暂无有效行情</span>';
       return;
     }
-    var marketUp=stocks.filter(function(sk){ return Number(_PORT_PRICES[sk.code].pct)>0; });
-    var marketDown=stocks.filter(function(sk){ return Number(_PORT_PRICES[sk.code].pct)<0; });
+    var marketUp=stocks.filter(function(sk){ return Number(sessionPrices[sk.code].pct)>0; });
+    var marketDown=stocks.filter(function(sk){ return Number(sessionPrices[sk.code].pct)<0; });
     var marketFlat=stocks.length-marketUp.length-marketDown.length;
     var marketAvg=_weightedBreadthAvg(stocks);
     var marketUpAvg=_weightedBreadthAvg(marketUp);
@@ -12323,7 +12464,7 @@ function _renderPortBreadth(){
   var _indMap = {};
   withPrice.forEach(function(sk){
     var ind = (sk.industry && sk.industry.trim()) ? sk.industry.trim() : '未分类';
-    var pi  = _PORT_PRICES[sk.code];
+    var pi  = sessionPrices[sk.code];
     var w   = (pi && pi.w != null) ? pi.w : (sk.w != null ? sk.w : 0);
     if(!_indMap[ind]) _indMap[ind] = { sumWP:0, sumW:0, sumP:0, cnt:0 };
     var m = _indMap[ind];
@@ -12363,12 +12504,6 @@ function _renderPortTopW(){
   if(!wEl) return;
   var topNow = Date.now();
 
-  // 没有价格数据时保持占位提示，等待用户点击"刷新股价"
-  if(!_PORT_PRICES || !Object.keys(_PORT_PRICES).length){
-    // 如果仍是初始状态（未刷新过），保留 HTML 中的默认提示不动
-    return;
-  }
-
   // 建立 code→w 的快查表（从 PORT 持仓数据读取各股仓位）
   var codeW = {};
   if(typeof PORT !== 'undefined' && PORT && PORT.sectors){
@@ -12385,17 +12520,10 @@ function _renderPortTopW(){
     PORT.sectors.forEach(function(sec){
       sec.stocks.forEach(function(sk){
         var pi = _PORT_PRICES[sk.code];
-        if(pi && isFinite(pi.pct)){
-          var market = pi.mkt || sk.mkt;
-          wEntries.push({
-            name:  pi.name || sk.name,
-            code:  sk.code,
-            mkt:   market,
-            w:     codeW[sk.code],   // null 表示未设置
-            pct:   _portTopDisplayPct(market, pi.pct, topNow),
-            price: pi.price
-          });
-        }
+        var state=_portStockState(sk,pi,topNow);
+        wEntries.push({name:sk.name,code:sk.code,mkt:sk.mkt,w:codeW[sk.code],
+          pct:state.canUseReturn?state.displayPct:null,price:state.canDisplayPrice?pi.price:null,
+          returnEligible:state.canUseReturn,statusLabel:state.label,status:state.status});
       });
     });
   }
@@ -12418,9 +12546,9 @@ function _renderPortTopW(){
     var pctColor = item.pct > 0 ? 'var(--red)' : item.pct < 0 ? 'var(--green)' : 'var(--text2)';
     var bgRow    = item.pct > 0 ? (rank===1?'#fff5f5':'#fff') : item.pct < 0 ? (rank===1?'#f0fdf4':'#fff') : '#fff';
     var sign     = item.pct > 0 ? '+' : '';
-    var priceStr = _isPortfolioAStockPreOpen(item.mkt,item.code,topNow)
+    var priceStr = item.status==='preopen'
       ? '未开盘'
-      : item.mkt==='HK' ? Number(item.price).toFixed(3) : Number(item.price).toFixed(2);
+      : item.price==null ? item.statusLabel||'待更新' : item.mkt==='HK' ? Number(item.price).toFixed(3) : Number(item.price).toFixed(2);
     var wLine    = item.w != null
       ? '<div style="font-size:11px;color:var(--blue);font-weight:700;margin-top:2px">仓位 '+Number(item.w).toFixed(1)+'%</div>'
       : '<div style="font-size:11px;color:var(--text2);margin-top:2px">仓位未设置</div>';
@@ -12437,7 +12565,7 @@ function _renderPortTopW(){
       + '</div>'
       + '<div style="text-align:right;flex-shrink:0">'
       + '<div style="font-size:20px;font-weight:900;color:'+pctColor+';line-height:1.1;letter-spacing:-.01em">'
-      + sign+Number(item.pct).toFixed(2)+'%</div>'
+      + (item.pct==null?(item.statusLabel||'待更新'):sign+Number(item.pct).toFixed(2)+'%')+'</div>'
       + '<div style="font-size:11px;color:var(--text2);margin-top:1px">现价 '+priceStr+'</div>'
       + '</div>'
       + '</div>';

@@ -1,0 +1,51 @@
+name: Refresh Exchange Trading Calendar
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/refresh_market_calendar.py'
+      - '.github/workflows/refresh-market-calendar.yml'
+      - 'tests/test_refresh_market_calendar.py'
+  schedule:
+    # Monday 07:20 Beijing; sources are exchange annual schedules, not quotes.
+    - cron: '20 23 * * 0'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-market-calendar
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify exchange calendar parsers and safe fallback
+        run: python -m unittest discover -s tests -p test_refresh_market_calendar.py -v
+      - name: Refresh official exchange holiday calendars
+        run: python .github/scripts/refresh_market_calendar.py
+      - name: Persist verified exchange schedule only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/market_sessions.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: refresh official exchange trading calendars"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1

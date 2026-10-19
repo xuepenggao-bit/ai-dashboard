@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const MarketSession = require(process.env.MARKET_SESSION_MODEL || path.join(__dirname, '../assets/market-session.js'));
 
 const html = fs.readFileSync(process.env.TEST_HTML || path.join(__dirname, '../index.html'), 'utf8');
 const quoteStart = html.indexOf('async function fetchPortPrices(){');
@@ -45,6 +46,10 @@ function harness(stocks = [stock()], handler) {
     _pfInflight: false, _PORT_PRICES: {}, _portSort: {}, _TAB_TS: {}, _arCur: 0,
     _portRevision: 0, _portDirty: false, PORT_KEY: 'portfolio-test', PORT_GH_FILE: 'portfolio.json',
     PORT: portfolio(stocks), portLoad() {}, _isTradingNow: () => true,
+    // This legacy stream fixture is deliberately an open-market scenario; actual
+    // holiday/session semantics are exercised by test_market_session_integration.
+    PortfolioMarketSession: MarketSession,
+    _portMarketState: () => ({isClosed:false,isTradingDay:true,calendarKnown:true}),
     document: {getElementById: element},
     localStorage: {getItem: key => saved.get(key) || null, setItem: (key, value) => saved.set(key, value)},
     _portTurnoverRate(value) { const n = Number(value); return value == null || String(value).trim() === '' || !Number.isFinite(n) || n < 0 ? null : n; },
