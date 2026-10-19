@@ -179,6 +179,12 @@
     if(quoteMinute!=null&&quoteMinute<(market.market==='HK'?540:555)){
       return {...base,status:'stale',label:'待更新',reason:'preopen_quote'};
     }
+    // An auction's indicative price is not evidence of a later executed trade.
+    // Once continuous trading begins, an unchanged zero-activity auction stamp
+    // must not become recordable merely because it shares today's date.
+    if(c.minute>=570&&quoteMinute!=null&&quoteMinute<570&&volume===0&&amount===0){
+      return {...base,status:'stale',label:'待更新',reason:'old_auction_quote'};
+    }
     // Zero activity is not proof of a suspension (illiquid HK shares can have no
     // prints). Require both actual source fields, and never reinterpret auction
     // or a missing/null field as a completed zero-activity trading observation.

@@ -195,6 +195,15 @@ test('history excludes suspended/no-trade/old/undated prices and returns, retain
     assert.equal(stock.price,null);assert.equal(stock.pct,null);assert.equal(stock.returnEligible,false);assert.ok(stock.name);assert.ok(stock.w>0);
   }
 });
+test('old zero-trade auction value is absent from post-open table, weighted return and history',async()=>{
+  const h=harness('2026-10-20','10:30:00',[A]);
+  h.ctx._PORT_PRICES={[A.code]:quote(A,'2026-10-20',3,88,{quoteTs:ts('2026-10-20','09:25:00'),volume:0,amount:0})};
+  h.ctx.renderPortfolio();assertEmptyMarketFields(rowFor(h,A.name),'待更新');
+  assert.equal(h.ctx._buildPortfolioAllocationModel(h.ctx.PORT,h.ctx._PORT_PRICES,h.state.now).categories[0].pct,null);
+  await h.ctx.addHistRecord();const record=h.ctx.PORT.history[0];
+  assert.equal(record.portPct,null);assert.equal(record.stocks[0].price,null);assert.equal(record.stocks[0].pct,null);
+  assert.equal(record.stocks[0].status,'stale');assert.equal(record.stocks[0].returnEligible,false);
+});
 test('fully closed history records holdings only and no benchmark/return',async()=>{
   const h=harness('2026-10-18');h.ctx._PORT_PRICES={
     [A.code]:quote(A,'2026-10-16',4),[HK.code]:quote(HK,'2026-10-16',-19.87)};

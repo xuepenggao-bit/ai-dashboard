@@ -126,6 +126,21 @@ test('auction zero activity does not become an apparent halt at 9:25',()=>{
   const s=M.stockState(A,q('2026-10-19','09:25:00',0,{volume:0,amount:0}),now('2026-10-19','09:25:00'),cal);
   assert.equal(s.status,'valid');assert.equal(s.canRecordPrice,false);
 });
+test('zero-activity auction snapshot cannot become an executed price after 9:30',()=>{
+  for(const time of ['09:30:00','10:30:00','12:00:00','18:00:00']){
+    const s=M.stockState(A,q('2026-10-19','09:25:00',0,{volume:0,amount:0}),now('2026-10-19',time),cal);
+    assert.equal(s.status,'stale');assert.equal(s.reason,'old_auction_quote');assert.equal(s.label,'待更新');
+    assert.equal(s.canDisplayPrice,false);assert.equal(s.canUseReturn,false);assert.equal(s.canRecordPrice,false);
+  }
+  const hk=M.stockState(HK,q('2026-10-20','09:05:00',0,{volume:0,amount:0}),now('2026-10-20','10:30:00'),cal);
+  assert.equal(hk.status,'stale');assert.equal(hk.reason,'old_auction_quote');assert.equal(hk.canRecordPrice,false);
+});
+test('executed auction quote and same-day positive-activity lunch quote remain usable',()=>{
+  for(const [stamp,extra]of [['09:25:00',{volume:100,amount:1000}],['11:29:00',{volume:100,amount:1000}]]){
+    const s=M.stockState(A,q('2026-10-19',stamp,2,extra),now('2026-10-19','12:00:00'),cal);
+    assert.equal(s.status,'valid');assert.equal(s.canUseReturn,true);assert.equal(s.canRecordPrice,true);assert.equal(s.displayPct,2);
+  }
+});
 test('market lunch/session/half-day boundaries are independent',()=>{
   assert.equal(M.marketState('A',now('2026-10-20','11:30:00'),cal).phase,'lunch');
   assert.equal(M.marketState('HK',now('2026-10-20','11:30:00'),cal).phase,'continuous');
