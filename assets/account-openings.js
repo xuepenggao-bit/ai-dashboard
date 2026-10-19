@@ -88,11 +88,13 @@
     if(!force&&Date.now()-lastFetch<30*60000)return Promise.resolve();
     lastFetch=Date.now();
     pending=(async()=>{
+      let checked=0;
       for(const base of ['data/account_openings.json','https://raw.githubusercontent.com/xuepenggao-bit/ai-dashboard/main/data/account_openings.json']){
         // Pages may lag a data-only bot commit. Inspect the raw snapshot too,
         // without delaying the immediately rendered seed/cache/same-origin data.
-        try{const fresh=await get(base+'?_='+Date.now());if(!valid(fresh))throw Error('开户数据不完整');if(newer(fresh,data)){data=mergeSnapshots(fresh,data);try{localStorage.setItem(CACHE,JSON.stringify(data));}catch(_){}render();} }catch(e){console.warn('[个人开户趋势] 保留有效数据',e.message);}
+        try{const fresh=await get(base+'?_='+Date.now());if(!valid(fresh))throw Error('开户数据不完整');checked++;if(newer(fresh,data)){data=mergeSnapshots(fresh,data);try{localStorage.setItem(CACHE,JSON.stringify(data));}catch(_){}render();} }catch(e){console.warn('[个人开户趋势] 保留有效数据',e.message);}
       }
+      return checked>0;
     })().finally(()=>{pending=null;});
     return pending;
   }

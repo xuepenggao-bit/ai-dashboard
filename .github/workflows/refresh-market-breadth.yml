@@ -8,9 +8,10 @@ on:
       - '.github/workflows/refresh-market-breadth.yml'
       - 'tests/test_refresh_market_breadth.py'
   schedule:
-    # Beijing time 15:05 and 15:35. The first run refreshes just after the
-    # A-share close; the second catches occasional source-publication delays.
+    # Beijing time 15:05, 15:35 and 16:15. Retain the A-share close checks,
+    # then check once more after both the A-share and Hong Kong closes.
     - cron: '5,35 7 * * 1-5'
+    - cron: '15 8 * * 1-5'
   workflow_dispatch:
 
 concurrency:

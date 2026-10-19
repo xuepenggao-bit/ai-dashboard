@@ -20,12 +20,13 @@
 <link rel="stylesheet" href="assets/chain-monitor.css?v=20261014b">
 <script defer src="assets/chain-monitor.js?v=20261014b"></script>
 <link rel="stylesheet" href="assets/account-openings.css?v=20261010a">
-<script defer src="assets/account-openings.js?v=20261010a"></script>
+<script defer src="assets/account-openings.js?v=20261019a"></script>
 <link rel="stylesheet" href="assets/ma-breadth.css?v=20261014a">
 <link rel="stylesheet" href="assets/market-risk.css?v=20261015a">
 <link rel="stylesheet" href="assets/market-quality.css?v=20261015a">
 <link rel="stylesheet" href="assets/market-heat.css?v=20261015a">
-<link rel="stylesheet" href="assets/market-environment.css?v=20261015b">
+<link rel="stylesheet" href="assets/market-environment.css?v=20261019a">
+<script defer src="assets/market-close-refresh.js?v=20261019a"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -1873,8 +1874,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 <!-- ════════════════ TAB 2.1 ════════════════ -->
 <div class="tab-content" id="t0">
   <div class="market-environment-hero">
-    <div class="market-environment-title-line"><h1 class="stitle market-environment-title">市场环境</h1><span class="stag market-environment-tag">A股日频 · 市场全景</span></div>
+    <div class="market-environment-title-line"><h1 class="stitle market-environment-title">市场环境</h1><span class="stag market-environment-tag">A股日频 · 市场全景</span><button id="macroBtnRefresh" type="button" class="market-refresh-button" onclick="refreshMacro({force:true,reason:'manual'})">刷新全部</button></div>
     <p class="market-environment-subtitle">从市场热度、交易活跃到资金与风险，观察 A 股整体状态。</p>
+    <div class="market-refresh-meta"><span id="marketCloseStatus">收盘补刷 · 北京时间16:10后</span><span id="macroTs" role="status" aria-live="polite">各指标按实际数据日期显示</span></div>
   </div>
 
   <!-- KPI Row -->
@@ -6959,20 +6961,102 @@ const _DC60='https://datacenter-web.eastmoney.com/api/data/v1/get?source=WEB&cli
 let _marketDailyPayload=null;
 let _marketDailyPayloadTs=0;
 let _marketDailyPayloadFetch=null;
-async function _fetchMarketDailyPayload(force=false){
-  if(!force&&_marketDailyPayload&&Date.now()-_marketDailyPayloadTs<60000) return _marketDailyPayload;
-  if(_marketDailyPayloadFetch) return _marketDailyPayloadFetch;
-  _marketDailyPayloadFetch=(async()=>{
-    const r=await fetch(`data/market_breadth_history.json?_=${Date.now()}`,{cache:'no-store'});
-    if(!r.ok) throw new Error('同源日频快照 HTTP '+r.status);
-    const payload=await r.json();
-    if(!Array.isArray(payload?.series)) throw new Error('同源日频快照格式异常');
-    _marketDailyPayload=payload;
-    _marketDailyPayloadTs=Date.now();
-    return payload;
+let _marketDailyPayloadReadState={ok:false,fallback:false,at:0,source:''};
+let _marketDailyPayloadStartedAt=0;
+let _marketDailyPayloadPostCloseQueued=null;
+function _marketDailyDate(value){
+  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
+  const stamp=Date.parse(value+'T00:00:00Z');
+  return Number.isFinite(stamp)&&new Date(stamp).toISOString().slice(0,10)===value;
+}
+
+function _marketDailySnapshot(payload,nowMs=Date.now()){
+  if(!payload||typeof payload!=='object'||!Array.isArray(payload.series)||payload.series.length<20||
+     typeof payload.source!=='string'||!payload.source.trim()||typeof payload.updatedAt!=='string'||
+     !/T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/.test(payload.updatedAt))return null;
+  const revision=Date.parse(payload.updatedAt),clock=_breadthBeijingClock(nowMs);
+  if(!Number.isFinite(revision)||revision>nowMs+300000)return null;
+  const published=_breadthBeijingClock(revision);
+  let previous='';
+  for(const row of payload.series){
+    if(!row||!_marketDailyDate(row.date)||row.date<=previous||row.date>clock.date||row.date>published.date)return null;
+    const day=new Date(row.date+'T00:00:00Z').getUTCDay();
+    if(day===0||day===6||(row.date===published.date&&published.minute<900))return null;
+    const counts=[row.up,row.down,row.flat??0];
+    if(counts.some(n=>typeof n!=='number'||!Number.isInteger(n)||n<0)||counts[0]+counts[1]+counts[2]<1000||counts[0]+counts[1]+counts[2]>10000)return null;
+    const hasLimits=row.limitUp!=null||row.limitDown!=null;
+    if(hasLimits&&(!Number.isInteger(row.limitUp)||!Number.isInteger(row.limitDown)||row.limitUp<0||row.limitDown<0||row.limitUp>row.up||row.limitDown>row.down))return null;
+    if(row.amountYi!=null&&(typeof row.amountYi!=='number'||!Number.isFinite(row.amountYi)||row.amountYi<100||row.amountYi>100000))return null;
+    if(row.status!=null&&!['close','收盘'].includes(row.status))return null;
+    if(row.asOf!=null&&(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(row.asOf)||row.asOf<'15:00'))return null;
+    previous=row.date;
+  }
+  return{payload,revision,lastDate:previous,count:payload.series.length};
+}
+
+function _marketDailyIsNewer(next,previous){
+  return !previous||next.lastDate>previous.lastDate||(next.lastDate===previous.lastDate&&
+    (next.revision>previous.revision||(next.revision===previous.revision&&next.count>previous.count)));
+}
+
+async function _marketDailyReadSource(url){
+  const controller=new AbortController();
+  let timer;
+  const operation=(async()=>{
+    const response=await fetch(url+(url.includes('?')?'&':'?')+'_='+Date.now(),{cache:'no-store',signal:controller.signal});
+    if(!response.ok)throw Error('日频快照 HTTP '+response.status);
+    const candidate=_marketDailySnapshot(await response.json());
+    if(!candidate)throw Error('日频快照完整性校验失败');
+    return{...candidate,url};
   })();
-  try{return await _marketDailyPayloadFetch;}
-  finally{_marketDailyPayloadFetch=null;}
+  const timeout=new Promise((resolve,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('日频快照读取超时'));},8000);});
+  try{return await Promise.race([operation,timeout]);}
+  finally{clearTimeout(timer);}
+}
+
+function _marketDailyLiveMayOverlay(historyRow,livePoint,today,clock){
+  if(!historyRow)return true;
+  if(historyRow.status==='close'||historyRow.status==='收盘')return false;
+  return !(clock.date===today&&clock.minute>=970);
+}
+
+async function _fetchMarketDailyPayload(force=false){
+  const now=Date.now();
+  if(_marketDailyPayloadFetch){
+    const current=_breadthBeijingClock(now),started=_breadthBeijingClock(_marketDailyPayloadStartedAt);
+    // A read started before the 16:10 boundary must not consume today's closing pass.
+    if(force&&current.minute>=970&&(started.date!==current.date||started.minute<970)){
+      if(!_marketDailyPayloadPostCloseQueued){
+        const pending=_marketDailyPayloadFetch;
+        _marketDailyPayloadPostCloseQueued=Promise.resolve(pending).catch(()=>null)
+          .then(()=>_fetchMarketDailyPayload(true)).finally(()=>{_marketDailyPayloadPostCloseQueued=null;});
+      }
+      return _marketDailyPayloadPostCloseQueued;
+    }
+    return _marketDailyPayloadFetch;
+  }
+  if(!force&&_marketDailyPayload&&now-_marketDailyPayloadTs<60000)return _marketDailyPayload;
+  _marketDailyPayloadStartedAt=now;
+  const pending=(async()=>{
+    const urls=['data/market_breadth_history.json','https://raw.githubusercontent.com/xuepenggao-bit/ai-dashboard/main/data/market_breadth_history.json'];
+    const results=await Promise.allSettled(urls.map(_marketDailyReadSource));
+    const valid=results.filter(result=>result.status==='fulfilled').map(result=>result.value);
+    let selected=_marketDailySnapshot(_marketDailyPayload);
+    let source='memory';
+    for(const candidate of valid){if(_marketDailyIsNewer(candidate,selected)){selected=candidate;source=candidate.url;}}
+    if(!valid.length){
+      _marketDailyPayloadReadState={ok:false,fallback:!!selected,at:Date.now(),source:'memory'};
+      if(selected)return selected.payload;
+      throw Error('日频快照全部来源暂不可用');
+    }
+    _marketDailyPayload=selected.payload;
+    _marketDailyPayloadTs=Date.now();
+    _marketDailyPayloadReadState={ok:true,fallback:false,at:_marketDailyPayloadTs,source,latestDate:selected.lastDate};
+    return _marketDailyPayload;
+  })();
+  _marketDailyPayloadFetch=pending;
+  try{return await pending;}
+  finally{if(_marketDailyPayloadFetch===pending)_marketDailyPayloadFetch=null;}
 }
 
 function _fmtDayLabel(s){
@@ -7560,19 +7644,16 @@ async function _fetchOfficialLimitLive(force=false){
   return _limitOfficialFetch;
 }
 
-function _mergeBreadthTrendRows(historyRows,livePoint,today=_breadthBeijingClock().date){
+function _mergeBreadthTrendRows(historyRows,livePoint,today=_breadthBeijingClock().date,clock=_breadthBeijingClock()){
   const byDate=new Map();
   (historyRows||[]).forEach(row=>{
-    if(!row||!/^\d{4}-\d{2}-\d{2}$/.test(row.date)) return;
+    if(!row||!_marketDailyDate(row.date))return;
     const up=Number(row.up),down=Number(row.down),flat=Number(row.flat||0);
-    if(Number.isFinite(up)&&Number.isFinite(down)&&up>=0&&down>=0) byDate.set(row.date,{date:row.date,up,down,flat:Math.max(0,flat),live:false});
+    if(Number.isFinite(up)&&Number.isFinite(down)&&up>=0&&down>=0)byDate.set(row.date,{date:row.date,up,down,flat:Math.max(0,flat),live:false,asOf:row.asOf||'',status:row.status||''});
   });
-  // 页面跨夜未关闭时，绝不能把昨天残留的盘中点继续混入今天的图表。
-  if(livePoint&&livePoint.date===today&&/^\d{4}-\d{2}-\d{2}$/.test(livePoint.date)){
+  if(livePoint&&livePoint.date===today&&_marketDailyDate(livePoint.date)&&_marketDailyLiveMayOverlay(byDate.get(today),livePoint,today,clock)){
     const up=Number(livePoint.up),down=Number(livePoint.down),flat=Number(livePoint.flat||0);
-    if(Number.isFinite(up)&&Number.isFinite(down)&&up+down>=50){
-      byDate.set(livePoint.date,{date:livePoint.date,up,down,flat:Math.max(0,flat),live:true,asOf:livePoint.asOf||'',status:livePoint.status||'盘中实时'});
-    }
+    if(Number.isFinite(up)&&Number.isFinite(down)&&up+down>=50)byDate.set(livePoint.date,{date:livePoint.date,up,down,flat:Math.max(0,flat),live:true,asOf:livePoint.asOf||'',status:livePoint.status||'盘中实时'});
   }
   return[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-60);
 }
@@ -7637,20 +7718,16 @@ function _setBreadthTrendLivePoint(up,down,flat,clock=_breadthBeijingClock()){
   return true;
 }
 
-function _mergeLimitTrendRows(historyRows,livePoint,today=_breadthBeijingClock().date){
+function _mergeLimitTrendRows(historyRows,livePoint,today=_breadthBeijingClock().date,clock=_breadthBeijingClock()){
   const byDate=new Map();
   (historyRows||[]).forEach(row=>{
-    if(!row||!/^\d{4}-\d{2}-\d{2}$/.test(row.date)) return;
+    if(!row||!_marketDailyDate(row.date))return;
     const up=Number(row.up),down=Number(row.down);
-    if(Number.isFinite(up)&&Number.isFinite(down)&&up>=0&&down>=0){
-      byDate.set(row.date,{date:row.date,up,down,live:false,source:row.source||''});
-    }
+    if(Number.isFinite(up)&&Number.isFinite(down)&&up>=0&&down>=0)byDate.set(row.date,{date:row.date,up,down,live:false,source:row.source||row.limitSource||'',asOf:row.asOf||row.limitAsOf||'',status:row.status||''});
   });
-  if(livePoint&&livePoint.date===today&&/^\d{4}-\d{2}-\d{2}$/.test(livePoint.date)){
+  if(livePoint&&livePoint.date===today&&_marketDailyDate(livePoint.date)&&_marketDailyLiveMayOverlay(byDate.get(today),livePoint,today,clock)){
     const up=Number(livePoint.up),down=Number(livePoint.down);
-    if(Number.isFinite(up)&&Number.isFinite(down)&&up>=0&&down>=0){
-      byDate.set(livePoint.date,{date:livePoint.date,up,down,live:true,asOf:livePoint.asOf||'',status:livePoint.status||'盘中实时',source:'eastmoney_hs_minute'});
-    }
+    if(Number.isFinite(up)&&Number.isFinite(down)&&up>=0&&down>=0)byDate.set(livePoint.date,{date:livePoint.date,up,down,live:true,asOf:livePoint.asOf||'',status:livePoint.status||'盘中实时',source:'eastmoney_hs_minute'});
   }
   return[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-60);
 }
@@ -7716,10 +7793,12 @@ function _setLimitTrendLivePoint(up,down,clock=_breadthBeijingClock()){
   return true;
 }
 
-async function fetchDailyCharts(){
+async function fetchDailyCharts(force=false){
+  let dailyOk=true;
   // A/H 股成交额与两融并行读取，避免额外增加宏观页等待时间。
   const aVolumeJob=_refreshAAmountChart(true);
   const hkVolumeJob=_refreshHkVolumeChart(true);
+  const marginJob=(async()=>{
   // ── 1. 融资融券余额 ──────────────────────────────────────────────
   try{
     const d=await _fetchDailySeries(
@@ -7754,28 +7833,33 @@ async function fetchDailyCharts(){
     if(kf&&d.latestDate)      kf.textContent='数据截至'+d.latestDate;
     console.log('[Daily] 融资融券 OK | 字段:'+d.usedField+' 最新:'+d.latestDate,d.latestVal+'亿');
   }catch(e){
+    dailyOk=false;
     console.warn('[Daily] 融资融券余额失败:',e.message);
     // 取不到实时数据：清空图表与 KPI，明确标注"无法取得"，不再用旧静态数据冒充最新
-    if(CH.margin){ CH.margin.data.labels=[]; CH.margin.data.datasets[0].data=[]; CH.margin.update('none'); }
-    const kv=document.getElementById('marginKpiVal');    if(kv) kv.textContent='—';
-    const kd=document.getElementById('marginKpiDate');   if(kd) kd.textContent='无法取得';
-    const kc=document.getElementById('marginKpiCnt');    if(kc) kc.textContent='实时数据源暂不可用';
+    const hasMarginPrior=!!CH.margin?.data?.labels?.length;
+    if(!hasMarginPrior&&CH.margin){ CH.margin.data.labels=[]; CH.margin.data.datasets[0].data=[]; CH.margin.update('none'); }
+    const kv=document.getElementById('marginKpiVal');    if(kv&&!hasMarginPrior) kv.textContent='—';
+    const kd=document.getElementById('marginKpiDate');   if(kd&&!hasMarginPrior) kd.textContent='无法取得';
+    const kc=document.getElementById('marginKpiCnt');    if(kc) kc.textContent=hasMarginPrior?'本次读取失败 · 保留上次有效数据':'实时数据源暂不可用';
     const kf=document.getElementById('marginKpiFooter'); if(kf) kf.textContent='⚠️ 融资融券数据暂时取不到，请稍后重新打开“市场环境”标签页';
   }
 
+  })();
   // ── 2. 沪深 A 股成交额：稳定快照已在函数开头并行启动 ─────────────
-  await aVolumeJob;
+
 
   // ── 3. 北向资金已移除（沪深港通自 2024-08 起官方停止披露日度北向净流入）──
 
+  const breadthJob=(async()=>{
   // ── 4. 涨跌家数：后台每日汇总并缓存为 60 交易日 JSON ─────────────
   try{
-    const payload=await _fetchMarketDailyPayload();
+    const payload=await _fetchMarketDailyPayload(force);
+    if(typeof _marketDailyPayloadReadState!=='undefined'&&_marketDailyPayloadReadState.ok===false)dailyOk=false;
     const rows=(payload?.series||[]).filter(row=>
       row&&/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&Number.isFinite(+row.up)&&Number.isFinite(+row.down)
     ).sort((a,b)=>a.date.localeCompare(b.date)).slice(-60);
     if(rows.length<20) throw new Error('有效历史不足');
-    _breadthHistoryRows=rows.map(row=>({date:row.date,up:+row.up,down:+row.down,flat:+(row.flat||0)}));
+    _breadthHistoryRows=rows.map(row=>({date:row.date,up:+row.up,down:+row.down,flat:+(row.flat||0),status:row.status||'close',asOf:row.asOf||'15:00'}));
     _renderBreadthTrend();
 
     // 同一份缓存同时承载涨跌停历史，避免宏观页重复请求 JSON。
@@ -7788,7 +7872,7 @@ async function fetchDailyCharts(){
     }).sort((a,b)=>a.date.localeCompare(b.date)).slice(-60);
     if(limitRows.length>=20){
       _limitHistoryRows=limitRows.map(row=>({
-        date:row.date,up:+row.limitUp,down:+row.limitDown,source:row.limitSource||'',
+        date:row.date,up:+row.limitUp,down:+row.limitDown,source:row.limitSource||'',status:row.status||'close',asOf:row.asOf||'15:00',
       }));
       _renderLimitTrend();
     }else{
@@ -7800,6 +7884,7 @@ async function fetchDailyCharts(){
       }
     }
   }catch(e){
+    dailyOk=false;
     console.warn('[Daily] 涨跌家数失败:',e.message);
     // 历史文件偶发不可达时，交易时段仍可展示实时点；两者都没有才保留空图。
     if(!_renderBreadthTrend()){
@@ -7817,7 +7902,10 @@ async function fetchDailyCharts(){
       const foot=document.getElementById('cLimitFooter'); if(foot) foot.textContent='⚠️ 涨跌停家数历史暂时取不到，已保留空图而不显示错误数值';
     }
   }
-  await hkVolumeJob;
+  })();
+  const [aResult,hkResult]=await Promise.all([aVolumeJob,hkVolumeJob,marginJob,breadthJob]);
+  if(aResult===false||hkResult===false)dailyOk=false;
+  return dailyOk;
 }
 const MACRO_CFGS={
   cpi:{
@@ -7934,7 +8022,7 @@ function _renderMacroMarketCaps(cached){
   if(date){date.textContent=s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8)+' '+s.slice(8,10)+':'+s.slice(10,12)+(cached?' 缓存':'');date.style.background=cached?'#fef9c3':'#d1fae5';date.style.color=cached?'#92400e':'#065f46';}
   if(hint) hint.textContent='沪深主板 + 创业板 + 科创板';
 }
-async function fetchMacroMarketCaps(){
+async function fetchMacroMarketCaps(force=false){
   const key='macro_board_market_caps_v2_ashare';
   if(!_macroCapState.loaded){
     _macroCapState.loaded=true;
@@ -7947,7 +8035,7 @@ async function fetchMacroMarketCaps(){
     _renderMacroMarketCaps(true);
   }
   if(_macroCapState.pending) return _macroCapState.pending;
-  if(Date.now()-_macroCapState.attempt<300000) return;
+  if(!force&&Date.now()-_macroCapState.attempt<300000) return !!_macroCapBreakdown(_macroCapState.rows);
   _macroCapState.attempt=Date.now();
   _macroCapState.pending=(async()=>{
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),6500);
@@ -7960,19 +8048,21 @@ async function fetchMacroMarketCaps(){
       if(accepted) _macroCapState.rows=incoming;
       _renderMacroMarketCaps(!accepted);
       if(accepted){try{localStorage.setItem(key,JSON.stringify({savedAt:Date.now(),rows:_macroCapState.rows}));}catch(_){}}
-    }catch(e){_renderMacroMarketCaps(true);console.warn('[板块总市值]',e.message);}
+          return !!accepted;
+    }catch(e){_renderMacroMarketCaps(true);console.warn('[板块总市值]',e.message);return false;}
     finally{clearTimeout(timer);}
   })();
-  try{await _macroCapState.pending;}finally{_macroCapState.pending=null;}
+  try{return await _macroCapState.pending;}finally{_macroCapState.pending=null;}
 }
 
 // ── 日频 KPI 卡片实时刷新（总市值、PE、两融）────────────────────
-async function fetchMacroKpis(){
-  void fetchMacroMarketCaps();
+async function fetchMacroKpis(force=false){
+  const marketCapsJob=fetchMacroMarketCaps(force);
+  let peOk=false;
   const _now = new Date();
   const _pad = n => String(n).padStart(2,'0');
   // 日期格式：YYYY-MM-DD
-  const todayStr = `${_now.getFullYear()}-${_pad(_now.getMonth()+1)}-${_pad(_now.getDate())}`;
+  const todayStr = new Date(Date.now()+8*3600000).toISOString().slice(0,10);
   // ── 0. PE 卡片日期标签先标记"加载中…"，等数据源返回后由 _applyPe 写入真实数据日期
   ['kSsePeDate','kSzePeDate','kGemPeDate','kStarPeDate'].forEach(id=>{
     const el=document.getElementById(id);
@@ -8063,7 +8153,7 @@ async function fetchMacroKpis(){
           const pe = parseFloat(f[39]);
           // 指数PE可能达数百倍（科创50等），上限放宽至2000
           if(pe > 3 && pe < 2000){
-            if(_applyPe(secucode, pe, todayStr)) peLoaded++;
+            if(/^\d{14}$/.test(f[30]||'')&&_applyPe(secucode,pe,f[30].slice(0,8)))peLoaded++;
           }
         });
         console.log('[MacroKpi] PE TX field[39] loaded:', peLoaded,
@@ -8124,34 +8214,63 @@ async function fetchMacroKpis(){
       });
     }
 
+    peOk=peLoaded===4;
     console.log('[MacroKpi] PE 最终 peLoaded:', peLoaded);
   }catch(e){ console.warn('[MacroKpi] 指数PE:', e.message); }
+  return (await marketCapsJob)!==false&&peOk;
 }
 
-async function refreshMacro(){
-  const btn=document.getElementById('macroBtnRefresh');
-  const ts =document.getElementById('macroTs');
-  const alertEl=document.getElementById('macroAlert');
-  if(btn){ btn.classList.add('loading'); btn.disabled=true; }
-  if(ts) ts.textContent='正在获取最新数据…';
-  if(alertEl) alertEl.style.display='none';
+function _macroRefreshTask(name,run,required=true){
+  let timer;
+  const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('读取超时')),45000);});
+  return Promise.race([Promise.resolve().then(run),timeout])
+    .then(value=>({name,required,ok:value!==false,error:value===false?'数据源暂不可用':''}))
+    .catch(error=>({name,required,ok:false,error:error.message||'读取失败'}))
+    .finally(()=>clearTimeout(timer));
+}
 
-  // 日频 KPI 与图表并行拉取；等待完成后再显示“已刷新”，避免慢网络下状态提前结束。
-  const jobs=[
-    fetchMacroKpis(),
-    fetchDailyCharts(),
-    refreshBreadthTrendLive(true),
-    fetchVixChart(),
-  ];
-  await Promise.allSettled(jobs);
-
-  // 月度宏观图表(CPI/社融/固投/社零/工业利润/电子利润/PE走势)已随"A股宏观"页删除，
-  // 对应请求一并移除（refreshMacro 现仅刷新市场 KPI、两融、成交量、涨跌家数与 iVIX）。
-  const timeStr=new Date().toLocaleString('zh-CN');
-  if(ts) ts.textContent=`已刷新 市值/PE/两融/A股成交额/港股成交额/涨跌家数/涨跌停 · ${timeStr}`;
-  if(btn){ btn.classList.remove('loading'); btn.disabled=false; }
-  const macroIdx=TAB_ORDER.indexOf('t0');
-  if(macroIdx>=0) _TAB_TS[macroIdx]=Date.now();
+async function refreshMacro(options={}){
+  if(refreshMacro.pending)return refreshMacro.pending;
+  const force=options===true||options.force===true;
+  const startedAt=Date.now();
+  const btn=document.getElementById('macroBtnRefresh'),ts=document.getElementById('macroTs');
+  if(btn){btn.classList.add('loading');btn.disabled=true;}
+  if(ts)ts.textContent=options.reason==='close'?'收盘后统一核验中…':'正在核验全部市场指标…';
+  const alertEl=document.getElementById('macroAlert');if(alertEl)alertEl.style.display='none';
+  refreshMacro.pending=(async()=>{
+    const task=(name,fn)=>_macroRefreshTask(name,()=>{
+      if(typeof fn!=='function')throw new Error('模块尚未就绪');
+      return fn(force);
+    });
+    const jobs=[
+      task('市值与估值',fetchMacroKpis),
+      task('两融、成交额与涨跌统计',fetchDailyCharts),
+      task('52周新高新低',typeof refreshHighLow52==='function'?refreshHighLow52:null),
+      task('均线广度',window.refreshMaBreadth),
+      task('波动与回撤',window.refreshMarketRisk),
+      task('ETF份额',window.refreshEtfShares),
+      task('收益中位数与成交额集中度',window.refreshMarketQuality),
+      task('市场热度',window.refreshMarketHeat),
+      task('个人开户数',window.AccountOpenings&&window.AccountOpenings.refresh),
+    ];
+    // 只在盘中尝试实时点；16:10后仅读取已经核验的收盘序列，不重复全市场扫描。
+    const clock=_beijingMarketClock(startedAt);
+    if(clock.minutes<970)jobs.push(_macroRefreshTask('盘中涨跌快照',()=>refreshBreadthTrendLive(true),false));
+    // iVIX是其它风险面板的依赖，不属于本Tab的收盘核验成功条件。
+    jobs.push(_macroRefreshTask('iVIX',fetchVixChart,false));
+    const results=await Promise.all(jobs),completedAt=Date.now();
+    const failed=results.filter(result=>result.required&&!result.ok).map(result=>result.name);
+    const report={ok:failed.length===0,forced:force,startedAt,completedAt,failed,results};
+    const time=new Date(completedAt).toLocaleTimeString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false});
+    if(ts)ts.textContent=report.ok?'全部指标已核验 · '+time+' · 各项保留实际数据日期'
+      :'已完成核验 · '+failed.length+'项源暂不可用，保留有效数据 · '+time;
+    if(ts)ts.title=failed.length?'未成功：'+failed.join('、'):'包括所有图表及月度/清算后披露数据；未公布的数据不伪造成今日值。';
+    const idx=TAB_ORDER.indexOf('t0');if(idx>=0)_TAB_TS[idx]=completedAt;
+    if(window.MarketCloseRefresh&&typeof window.MarketCloseRefresh.observe==='function')window.MarketCloseRefresh.observe(report);
+    return report;
+  })();
+  try{return await refreshMacro.pending;}
+  finally{refreshMacro.pending=null;if(btn){btn.classList.remove('loading');btn.disabled=false;}}
 }
 
 // ── 自动刷新周期控制 ─────────────────────────────────────────
