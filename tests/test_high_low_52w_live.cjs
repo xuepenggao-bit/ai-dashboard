@@ -24,15 +24,22 @@ function context(config={}){
       await Promise.resolve();active--;
       if(url.includes('baseline.json'))return config.baseline||baseline;
       if(url.includes('fqkline')){
+        if(config.tencentDown)throw Error('HTTP 501');
         const code=/param=([^,]+)/.exec(url)[1];
         const rows=code==='sh000001'?[['2026-09-30'],['2026-10-09']]:[
           ['2024-01-01','7','7','10','5','1'],['2026-09-30','6',config.badAdjustment?'6.5':'6','9','4','1'],['2026-10-09','6','7','8','4','1']];
         return{code:0,data:{[code]:{qfqday:rows}}};
       }
+      if(url.includes('push2his.eastmoney.com')){
+        const code=/secid=\d\.([^&]+)/.exec(url)[1];
+        return{rc:0,data:{code:config.badBackup?'000000':code,market:code==='399106'?0:1,klines:[
+          '2024-01-01,7,7,10,5,10','2026-09-30,7,7,10,5,10','2026-10-09,7,8,10,6,10']}};
+      }
       if(url.includes('qt.gtimg')){
         const codes=/q=([^&]+)/.exec(url)[1].split(',');
         return codes.map(code=>{
           if(config.missing&&code==='sh600000')return '';
+          if(config.manyMissing&&/^sh6000/.test(code))return '';
           const index=code==='sh000001'||code==='sz399106';
           if(config.holiday&&index)return quote(code,{30:'20260930150000'});
           if(config.stale&&code==='sh600000')return quote(code,{30:'20260930150000'});
@@ -52,7 +59,8 @@ module.exports=(async()=>{
   assert.equal(c.ctx._hl52ValidBaseline(baseline),true);
   assert.equal(c.ctx._hl52ValidBaseline({...baseline,stocks:[...stocks,stocks[0]]}),false,'Duplicate stock must fail');
   assert.throws(()=>c.ctx._hl52Quotes(quote('sh600000'),['sh600000','sh600001']),/完整/);
-  assert.throws(()=>c.ctx._hl52Quotes(quote('sh600000',{33:''}),['sh600000']),/完整/);
+  assert.equal(c.ctx._hl52Quotes(quote('sh600000',{33:''}),['sh600000']).size,1,'Missing high does not discard a valid price for other consumers');
+  assert.throws(()=>c.ctx._hl52Classify(c.ctx._hl52Quotes(quote('sh600000',{33:''}),[]).get('sh600000'),{high:10,low:5},'2026-10-09'),/无效/);
   const expired={highs:[['2025-10-09',100],['2026-09-30',10]],lows:[['2025-10-09',1],['2026-09-30',5]]};
   assert.deepEqual(JSON.parse(JSON.stringify(c.ctx._hl52Thresholds(expired,'2026-10-09'))),{high:10,low:5},'Exactly 364 calendar days, not one calendar year');
   await Promise.all([c.ctx.refreshHighLow52Live(true),c.ctx.refreshHighLow52Live(true)]);
@@ -61,18 +69,37 @@ module.exports=(async()=>{
   assert.equal(c.captured[0].eligible,4000);assert.equal(c.captured[0].asOf,'10:14');
   assert.ok(c.maxActive()<=4,'Bound parallel network work');
   const count=c.requests();await c.ctx.refreshHighLow52Live();assert.equal(c.requests(),count,'Five-minute throttle');
-  for(const config of [{missing:true},{stale:true},{holiday:true},{baseline:{...baseline,asOfDate:'2026-09-29'}},
-    {baseline:{...baseline,validThrough:'2026-10-08'}},{adjust:true,badAdjustment:true}]){
+  for(const config of [{manyMissing:true},{holiday:true},{baseline:{...baseline,asOfDate:'2026-09-29'}},
+    {baseline:{...baseline,validThrough:'2026-10-08'}}]){
     const t=context(config);await t.ctx.refreshHighLow52Live(true);assert.equal(t.captured.length,0,JSON.stringify(config).slice(0,100));
+  }
+  for(const config of [{missing:true},{stale:true},{adjust:true,badAdjustment:true}]){
+    const partial=context(config);await partial.ctx.refreshHighLow52Live(true);
+    assert.equal(partial.captured.length,1,'Isolated unavailable stock no longer cancels whole market');
+    assert.equal(partial.captured[0].observed,3999);assert.equal(partial.captured[0].missing,1);
+    assert.equal(partial.captured[0].high,3999,'No extrapolation of missing observations');
   }
   const suspend=context({suspend:true});await suspend.ctx.refreshHighLow52Live(true);
   assert.equal(suspend.captured[0].high,3999,'Explicitly suspended stock contributes neither extreme');
   const adjusted=context({adjust:true});await adjusted.ctx.refreshHighLow52Live(true);
   assert.equal(adjusted.captured[0].high,3999);assert.equal(adjusted.captured[0].low,1,'Refresh ex-dividend basis before comparison');
+  const backup=context({tencentDown:true});await backup.ctx.refreshHighLow52Live(true);
+  assert.equal(backup.captured[0].high,4000,'Alternate adjusted daily source keeps quote scans working');
+  const wrongBackup=context({tencentDown:true,badBackup:true});await wrongBackup.ctx.refreshHighLow52Live(true);
+  assert.equal(wrongBackup.captured.length,0,'Wrong alternate instrument must be rejected');
+  const independent=context({manyMissing:true});let maCalls=0;
+  independent.ctx.window.loadMaBreadthBaseline=async()=>baseline;
+  independent.ctx.window.applyMaBreadthLiveQuotes=async()=>{maCalls++;return false;};
+  await independent.ctx.refreshHighLow52Live(true);
+  assert.equal(maCalls,1,'52-week coverage failure does not prevent independent consumers from validating their observations');
+  assert.deepEqual(JSON.parse(JSON.stringify(c.ctx._hl52DailyThresholds([
+    ['2024-01-01',7,7,10,5],['2026-09-29',7,7,10,5],['2026-10-09',8,8,11,6]
+  ],'2026-10-09','2026-09-30','2026-09-29'))),{high:10,low:5,close:7},'Resumed stock uses its actual last traded session');
   const ipo=context({baseline:{...baseline,stocks:[...stocks,{...stocks[0],code:'sz301999',firstDate:'2026-09-01'}]}});
   await ipo.ctx.refreshHighLow52Live(true);
   assert.equal(ipo.captured[0].eligible,4000);assert.equal(ipo.captured[0].universe,4001,'Recent IPOs excluded from numerator');
   const hidden=context();hidden.ctx.document.hidden=true;await hidden.ctx.refreshHighLow52Live(true);
   assert.equal(hidden.requests(),0,'Hidden tab makes no requests');
-  return 'PASS: complete-market live scans, 364-day expiry, missing/stale/holiday rejection, ex-dividend correction, IPO/suspension rules, bounded concurrency and throttling';
+  return 'PASS: live scans, explicit missing/stale coverage, 99% minimum, 364-day expiry, holiday rejection, ex-dividend correction, IPO/suspension rules, bounded concurrency and throttling';
 })();
+

@@ -2,7 +2,8 @@
 """60-session Shanghai/Shenzhen 52-week and moving-average breadth.
 
 Point-in-time universes: Eastmoney daily valuation table (includes ST, no BJ).
-Prices: Tencent forward-adjusted daily OHLC, with a 364-calendar-day window.
+Prices: Tencent forward-adjusted daily OHLC, with Eastmoney as a whole-symbol
+fallback and a 364-calendar-day window. Never splice different price sources.
 A stock must have a full 52-week listing history; a touch counts, and a
 zero-volume/suspended session does not. All required symbols must be retrieved
 before publishing, so an incomplete request never turns missing data into zero.
@@ -31,7 +32,7 @@ MA_WINDOWS = (20, 60, 120)
 TZ = dt.timezone(dt.timedelta(hours=8))
 METHOD = ('沪深A股（含ST、不含北交所）；按每个交易日当时的股票名单，'
           '统计上市满52周、当日有成交的股票；前复权日内最高/最低价触及52周滚动窗口（回溯364自然日，含边界日）极值；差值=新高-新低。')
-SOURCE = '东方财富每日股票名单 · 腾讯财经前复权日线/实时行情'
+SOURCE = '东方财富每日股票名单 · 腾讯财经/东方财富前复权日线'
 MA_METHOD = ('沪深A股（含ST、不含北交所）；按每个交易日当时的股票名单，'
              '以同一批前复权日线计算20/60/120日收盘均线（含当日）；'
              '收盘价严格高于均线计入分子；当日无行情、停牌无成交或该窗口历史不足的股票不计入该窗口分母；占比=高于均线家数/可比家数。')
@@ -115,15 +116,42 @@ def parse_bars(payload, code):
 
 
 def fetch_bars(code):
-    error = None
+    errors = []
     for host in ('https://web.ifzq.gtimg.cn/appstock/app/fqkline/get',
                  'https://proxy.finance.qq.com/ifzqgtimg/appstock/app/fqkline/get'):
         try:
             payload = get_json(host + '?' + urlencode({'param': f'{code},day,,,500,qfq'}), attempts=1)
             return parse_bars(payload, code)
         except Exception as exc:
-            error = exc
-    raise RuntimeError(f'{code}: both Tencent daily endpoints failed: {error}')
+            errors.append(str(exc))
+    # Keep the entire adjusted history from one provider and one retrieval.
+    # A failed Tencent request must not be patched with individual raw bars.
+    try:
+        return fetch_eastmoney_bars(code)
+    except Exception as exc:
+        errors.append(str(exc))
+    raise RuntimeError(f'{code}: all adjusted daily endpoints failed: {errors}')
+
+
+def fetch_eastmoney_bars(code):
+    if not re.fullmatch(r'(?:sh|sz)\d{6}', str(code)):
+        raise ValueError('Invalid Eastmoney daily symbol')
+    market = 1 if code.startswith('sh') else 0
+    start = (dt.datetime.now(TZ).date() - dt.timedelta(days=900)).strftime('%Y%m%d')
+    payload = get_json('https://push2his.eastmoney.com/api/qt/stock/kline/get?' + urlencode({
+        'secid': f'{market}.{code[2:]}', 'klt': 101, 'fqt': 1,
+        'beg': start, 'end': '20500101', 'lmt': 500,
+        'fields1': 'f1,f2,f3,f4,f5,f6', 'fields2': 'f51,f52,f53,f54,f55,f56',
+    }), attempts=1)
+    item = payload.get('data') or {}
+    rows = item.get('klines')
+    if (payload.get('rc') != 0 or item.get('code') != code[2:] or
+            item.get('market') != market or not isinstance(rows, list) or not rows):
+        raise ValueError(f'{code}: invalid Eastmoney adjusted daily response')
+    # Same column order as Tencent: date, open, close, high, low, volume.
+    if any(not isinstance(row, str) or len(row.split(',')) != 6 for row in rows):
+        raise ValueError(f'{code}: malformed Eastmoney adjusted daily bars')
+    return parse_bars({'code': 0, 'data': {code: {'qfqday': [row.split(',') for row in rows]}}}, code)[-500:]
 
 
 def extrema_queue(bars, key, start, through=None):
@@ -337,7 +365,7 @@ def validate_ma_baseline(payload, latest, universe, now=None):
 
 
 def complete_cached_snapshots(latest, now=None):
-    """Closed-day reuse requires both old and new products, never just 52w."""
+    """Reuse requires both history products and their matching close baselines."""
     if not all(path.exists() for path in (OUTPUT, BASELINE, MA_OUTPUT, MA_BASELINE)):
         return False
     try:
@@ -355,19 +383,30 @@ def complete_cached_snapshots(latest, now=None):
         return False
 
 
-def parallel_map(items, fn, workers=6, label='fetch'):
+def parallel_map(items, fn, workers=6, label='fetch', attempts=3):
     result, errors = {}, {}
-    total = len(items)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(fn, item): item for item in items}
-        for number, future in enumerate(concurrent.futures.as_completed(futures), 1):
-            item = futures[future]
-            try:
-                result[item] = future.result()
-            except Exception as exc:
-                errors[item] = str(exc)
-            if number % 200 == 0 or number == total:
-                print(f'{label}: {number}/{total}; errors={len(errors)}', flush=True)
+    pending = list(items)
+    for attempt in range(max(1, min(attempts, 3))):
+        if attempt:
+            # A short bounded cooldown; retry only missing symbols, preserving
+            # successful same-run histories in their original adjustment basis.
+            time.sleep((5, 15)[attempt - 1])
+            print(f'{label}: retry {attempt}, {len(pending)} missing items', flush=True)
+        errors = {}
+        total = len(pending)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {pool.submit(fn, item): item for item in pending}
+            for number, future in enumerate(concurrent.futures.as_completed(futures), 1):
+                item = futures[future]
+                try:
+                    result[item] = future.result()
+                except Exception as exc:
+                    errors[item] = str(exc)
+                if number % 200 == 0 or number == total:
+                    print(f'{label}: {number}/{total}; errors={len(errors)}', flush=True)
+        if not errors:
+            return result
+        pending = list(errors)
     if errors:
         raise RuntimeError(f'{label} incomplete: {len(errors)} failures; {list(errors.items())[:8]}')
     return result
@@ -376,14 +415,28 @@ def parallel_map(items, fn, workers=6, label='fetch'):
 def refresh_history(cache_dir, workers=6, force=False):
     now = dt.datetime.now(TZ)
     index_bars = fetch_bars('sh000001')
-    dates = [row['date'] for row in index_bars if row['volume'] > 0 and row['date'] <= now.date().isoformat() and
-             (row['date'] < now.date().isoformat() or now.hour >= 15)][-60:]
+    available_dates = [row['date'] for row in index_bars if row['volume'] > 0 and row['date'] <= now.date().isoformat() and
+                       (row['date'] < now.date().isoformat() or now.hour >= 15)]
+    dates = available_dates[-60:]
     if len(dates) != 60:
         raise RuntimeError('Need 60 completed trading sessions')
     latest = dates[-1]
-    if not force and latest < now.date().isoformat() and complete_cached_snapshots(latest, now):
-        print(f'Exchange closed; complete {latest} snapshots retained.', flush=True)
+    if not force and complete_cached_snapshots(latest, now):
+        print(f'Complete {latest} close snapshots already available; retained.', flush=True)
         return
+    if latest == now.date().isoformat():
+        try:
+            cached(cache_dir / ('universe-' + latest + '.json'), lambda: fetch_universe(latest))
+        except Exception as exc:
+            # The daily constituent table is often released later than the
+            # closing quote. Repair yesterday now, never label it as today.
+            dates = available_dates[:-1][-60:]
+            if len(dates) != 60:
+                raise RuntimeError('Need 60 published sessions before current universe is released') from exc
+            latest = dates[-1]
+            print(f'Today constituent table unavailable; repairing through {latest}: {exc}', flush=True)
+            if not force and complete_cached_snapshots(latest, now):
+                return
     print(f'Building {dates[0]} → {latest}', flush=True)
     universes = parallel_map(dates, lambda date: cached(cache_dir / ('universe-' + date + '.json'),
                                                       lambda: fetch_universe(date)), workers, 'universes')
@@ -435,3 +488,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

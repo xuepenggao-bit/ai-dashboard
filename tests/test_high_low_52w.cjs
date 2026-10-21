@@ -49,6 +49,17 @@ module.exports=(async()=>{
   }
   assert.equal(ctx._acceptHighLow52Payload(payload([row({high:null})])),false);
   assert.equal(test.rows()[0].high,100,'Invalid data cannot erase last valid row');
+  for(const changes of [{observed:4800,missing:100},{observed:4899,missing:2},{observed:null},{observed:4901},
+    {status:'close',asOf:'15:00',observed:4899,missing:1}]){
+    assert.equal(ctx._normalizeHighLow52Row(row(changes)),null,'Reject misleading coverage '+JSON.stringify(changes));
+  }
+  const partial=context();
+  partial.ctx._setHighLow52LivePoint(row({observed:4899,missing:1}));
+  assert.ok(partial.elements.highLow52KpiDate.textContent.includes('盘中估算'));
+  assert.ok(partial.elements.highLow52Footer.textContent.includes('1 家待核验'));
+  partial.ctx._setHighLow52LivePoint(row({observed:4900,missing:0}));
+  partial.ctx._setHighLow52LivePoint(row({observed:4898,missing:2,high:99}));
+  assert.equal(partial.rows()[0].observed,4900,'Same-time full coverage cannot regress');
 
   assert.equal(ctx._setHighLow52LivePoint(row({high:0,low:0,asOf:'14:40'})),true);
   assert.equal(elements.highLow52KpiHigh.textContent,'0 家','True zero is not missing');
@@ -108,10 +119,13 @@ module.exports=(async()=>{
   assert.equal(race.rows()[0].high,70,'Timeout must not blank the chart');
 
   const cold=context();
+  let liveForces=[];cold.ctx.refreshHighLow52Live=async force=>{liveForces.push(force);return false;};
   await cold.ctx.refreshHighLow52(true);
+  assert.deepEqual(liveForces,[true],'Refresh all also requests a bounded live update');
   assert.equal(cold.rows().length,0);
   assert.equal(cold.elements.highLow52KpiDate.textContent,'等待有效历史数据');
   assert.notEqual(cold.elements.highLow52KpiHigh.textContent,'0 家','No fabricated zero on cold failure');
   assert.ok(source.includes('60000')&&source.includes("attributeFilter:['class']")&&source.includes('visibilitychange'),'Macro-tab, minute and foreground refresh hooks are present');
   return 'PASS: chart ordering, strict dates/counts, true zero, null rejection, live/close arbitration, 60-day history, cache-first, dual-source freshness, throttling and stale-data retention';
 })();
+
