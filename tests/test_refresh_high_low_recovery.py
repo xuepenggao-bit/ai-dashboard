@@ -117,7 +117,7 @@ class RecoveryTests(unittest.TestCase):
     def test_workflow_has_one_morning_repair_and_only_universe_cache(self):
         source = (Path(__file__).resolve().parents[1] / '.github/workflows/refresh-high-low-52w.yml').read_text()
         self.assertIn("cron: '15 0 * * 1-5'", source)
-        self.assertIn("cron: '15 7,8 * * 1-5'", source)
+        self.assertIn("cron: '15 7,8,12 * * 1-5'", source)
         self.assertIn('high-low-52w-cache/universe-*.json', source)
         self.assertNotIn('high-low-52w-cache/**', source)
 
@@ -131,6 +131,7 @@ class RecoveryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp, patch.object(m.dt, 'datetime', FixedDateTime), \
                 patch.object(m, 'fetch_bars', return_value=index), \
                 patch.object(m, 'fetch_universe', side_effect=RuntimeError('not released')), \
+                patch.object(m, 'OUTPUT', Path(temp) / 'missing.json'), \
                 patch.object(m, 'complete_cached_snapshots', side_effect=[False, True]) as existing, \
                 patch.object(m, 'parallel_map') as collect:
             m.refresh_history(Path(temp))
@@ -140,3 +141,4 @@ class RecoveryTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

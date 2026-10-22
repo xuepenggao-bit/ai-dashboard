@@ -15,13 +15,13 @@ function row(changes={}){
 function payload(rows=[row()],updatedAt='2026-10-05T14:31:00+08:00'){
   return{schemaVersion:1,updatedAt,source:'腾讯财经前复权日线',methodology:'52自然周（364天）· 当日最高/最低触及窗口极值 · 上市满52周 · 沪深A股含ST、不含北交所',series:rows};
 }
-function context(saved={},denyStorage=false){
+function context(saved={},denyStorage=false,current=now){
   const storage={...saved},elements={},listeners={},charts=[];
   for(const id of ['highLow52KpiDate','highLow52KpiHigh','highLow52KpiLow','highLow52KpiNet','highLow52KpiCnt','highLow52Footer','cHighLow52','cHighLow52Net']){
     elements[id]={textContent:'',style:{},getContext:()=>({})};
   }
   elements.t0={classList:{contains:()=>true}};
-  class FakeDate extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}
+  class FakeDate extends Date{constructor(...args){super(...(args.length?args:[current]));}static now(){return current;}}
   class Chart{constructor(_ctx,config){Object.assign(this,config);charts.push(this);}update(){}resize(){}}
   const ctx=vm.createContext({Date:FakeDate,Map,Set,Promise,AbortController,setTimeout,clearTimeout,setInterval:()=>0,
     console:{warn(){}},Chart,window:{addEventListener:(name,cb)=>{listeners[name]=cb;}},
@@ -42,7 +42,13 @@ module.exports=(async()=>{
   assert.equal(charts[0].data.datasets[0].borderColor,'#ef4444');
   assert.equal(charts[0].data.datasets[1].borderColor,'#16a34a');
   assert.equal(charts[1].data.datasets[0].data[0],60);
-  assert.ok(elements.highLow52KpiDate.textContent.includes('2026-10-05 · 盘中快照 14:30'));
+  assert.ok(elements.highLow52KpiDate.textContent.includes('2026-10-05 · 盘中快照（待收盘更新） 14:30'));
+  const intraday=context({},false,Date.parse('2026-10-05T10:30:00+08:00'));
+  intraday.ctx._setHighLow52LivePoint(row({asOf:'10:29'}));
+  assert.match(intraday.elements.highLow52KpiDate.textContent,/盘中实时 10:29/);
+  const lunch=context({},false,Date.parse('2026-10-05T12:00:00+08:00'));
+  lunch.ctx._setHighLow52LivePoint(row({asOf:'11:30'}));
+  assert.match(lunch.elements.highLow52KpiDate.textContent,/午间休市快照 11:30/);
 
   for(const changes of [{high:null},{low:null},{high:undefined},{high:''},{high:'0'},{low:-1},{high:0.5},{eligible:null},{high:5000},{date:'2026-02-30'},{date:'2026-10-06'},{asOf:'24:00'},{asOf:'08:30'},{status:'close',asOf:'14:59'}]){
     assert.equal(ctx._normalizeHighLow52Row(row(changes)),null,'Reject missing or invalid: '+JSON.stringify(changes));
@@ -55,7 +61,7 @@ module.exports=(async()=>{
   }
   const partial=context();
   partial.ctx._setHighLow52LivePoint(row({observed:4899,missing:1}));
-  assert.ok(partial.elements.highLow52KpiDate.textContent.includes('盘中估算'));
+  assert.ok(partial.elements.highLow52KpiDate.textContent.includes('部分待核验'));
   assert.ok(partial.elements.highLow52Footer.textContent.includes('1 家待核验'));
   partial.ctx._setHighLow52LivePoint(row({observed:4900,missing:0}));
   partial.ctx._setHighLow52LivePoint(row({observed:4898,missing:2,high:99}));
@@ -128,4 +134,5 @@ module.exports=(async()=>{
   assert.ok(source.includes('60000')&&source.includes("attributeFilter:['class']")&&source.includes('visibilitychange'),'Macro-tab, minute and foreground refresh hooks are present');
   return 'PASS: chart ordering, strict dates/counts, true zero, null rejection, live/close arbitration, 60-day history, cache-first, dual-source freshness, throttling and stale-data retention';
 })();
+
 

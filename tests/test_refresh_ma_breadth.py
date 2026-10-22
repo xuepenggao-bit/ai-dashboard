@@ -124,8 +124,8 @@ class MovingAverageBreadthTests(unittest.TestCase):
     def test_closed_day_missing_ma_snapshot_cannot_skip_build(self):
         with tempfile.TemporaryDirectory() as temp:
             paths = {name: Path(temp) / (name + '.json') for name in ('OUTPUT', 'BASELINE', 'MA_OUTPUT', 'MA_BASELINE')}
-            with patch.multiple(m, **paths):
-                paths['OUTPUT'].write_text(json.dumps({'series': [{'date': '2026-10-13'}] * 60}))
+            with patch.multiple(m, **paths), patch.object(m, 'load_universe', return_value={'sh600001': 'name'}):
+                paths['OUTPUT'].write_text(json.dumps({'series': [{'date': '2026-10-13', 'universe': 1}] * 60}))
                 paths['BASELINE'].write_text(json.dumps({'asOfDate': '2026-10-13', 'validThrough': '2026-11-03', 'stocks': [{'code': 'sh600001'}]}))
                 self.assertFalse(m.complete_cached_snapshots('2026-10-13'))
                 ma_row = {'date': '2026-10-13', 'universe': 1, 'windows': dict.fromkeys(('20', '60', '120'), {})}
@@ -248,3 +248,4 @@ class MovingAverageBreadthTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

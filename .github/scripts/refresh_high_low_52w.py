@@ -28,6 +28,8 @@ OUTPUT = ROOT / 'data/market_high_low_52w.json'
 BASELINE = ROOT / 'data/market_high_low_52w_baseline.json'
 MA_OUTPUT = ROOT / 'data/market_ma_breadth.json'
 MA_BASELINE = ROOT / 'data/market_ma_breadth_baseline.json'
+QUALITY_OUTPUT = ROOT / 'data/market_quality.json'
+QUALITY_BASELINE = ROOT / 'data/market_quality_baseline.json'
 MA_WINDOWS = (20, 60, 120)
 TZ = dt.timezone(dt.timedelta(hours=8))
 METHOD = ('沪深A股（含ST、不含北交所）；按每个交易日当时的股票名单，'
@@ -90,6 +92,118 @@ def fetch_universe(date):
         symbols[symbol] = row.get('SECURITY_NAME_ABBR', '')
     if len(symbols) < 4000:
         raise RuntimeError(f'{date}: suspicious universe size {len(symbols)}')
+    return symbols
+
+
+def read_json(path):
+    try:
+        return json.loads(path.read_text())
+    except (OSError, ValueError, TypeError):
+        return None
+
+
+def universe_reference(date, cache_dir=None):
+    """Prefer a separately calibrated same-day roster, else a recent full scope.
+
+    result.count describes how many rows have been released, not how many
+    securities should exist. The daily table can be internally consistent but
+    still incomplete shortly after 15:00, so count==len(data) is insufficient.
+    """
+    target = dt.date.fromisoformat(date)
+    candidates = []
+
+    def add(as_of, codes=None, count=None, exact=False):
+        try:
+            age = (target - dt.date.fromisoformat(as_of)).days
+        except (ValueError, TypeError):
+            return
+        codes = set(codes) if codes is not None else None
+        count = len(codes) if codes is not None else count
+        if not isinstance(count, int) or count < 4000 or not 0 <= age <= 21:
+            return
+        if age == 0 and not exact:
+            return  # Never use this product's own same-day partial roster as proof.
+        if codes is not None and any(not valid_code(code[2:] + '.' + code[:2].upper()) for code in codes):
+            return
+        candidates.append({'date': as_of, 'codes': codes, 'count': count, 'exact': exact})
+
+    quality, quality_history = read_json(QUALITY_BASELINE), read_json(QUALITY_OUTPUT)
+    if isinstance(quality, dict) and isinstance(quality_history, dict):
+        stocks, rows = quality.get('stocks'), quality_history.get('series')
+        if isinstance(stocks, list) and isinstance(rows, list) and rows:
+            final = rows[-1]
+            codes = [row.get('code') for row in stocks if isinstance(row, dict)]
+            if (quality.get('schemaVersion') == 1 and final.get('date') == quality.get('asOfDate') and
+                    final.get('status') == 'close' and not final.get('provisional') and
+                    final.get('universeCount') == len(stocks) and len(set(codes)) == len(stocks) and
+                    all(isinstance(code, str) and len(code) == 8 for code in codes)):
+                add(quality['asOfDate'], codes, exact=quality['asOfDate'] == date)
+
+    baseline, history = read_json(BASELINE), read_json(OUTPUT)
+    if isinstance(history, dict) and isinstance(history.get('series'), list):
+        for row in history['series']:
+            if isinstance(row, dict) and row.get('status') == 'close':
+                add(row.get('date'), count=row.get('universe'))
+    if isinstance(baseline, dict) and isinstance(baseline.get('stocks'), list):
+        codes = [row.get('code') for row in baseline['stocks'] if isinstance(row, dict)]
+        if all(isinstance(code, str) and len(code) == 8 for code in codes):
+            add(baseline.get('asOfDate'), codes)
+    if cache_dir is not None:
+        # Inspect only earlier recent rosters; the target cache may be the
+        # incomplete one being repaired and must never validate itself.
+        for path in sorted(cache_dir.glob('universe-*.json'), reverse=True):
+            as_of = path.stem.removeprefix('universe-')
+            if as_of >= date:
+                continue
+            cached_symbols = read_json(path)
+            if isinstance(cached_symbols, dict):
+                add(as_of, cached_symbols)
+    if not candidates:
+        return None
+    return max(candidates, key=lambda item: (item['exact'], item['date'], item['count'], item['codes'] is not None))
+
+
+def validate_universe_scope(date, symbols, reference=None):
+    if (not isinstance(symbols, dict) or len(symbols) < 4000 or
+            any(not isinstance(code, str) or len(code) != 8 or
+                not valid_code(code[2:] + '.' + code[:2].upper()) for code in symbols)):
+        raise ValueError(f'{date}: invalid or undersized daily universe')
+    if reference is None:
+        return symbols
+    codes, expected = set(symbols), reference['codes']
+    if reference['exact']:
+        if codes != expected:
+            missing = len(expected - codes)
+            extra = len(codes - expected)
+            raise ValueError(f'{date}: published roster differs from calibrated same-day roster ({missing} missing, {extra} extra)')
+    else:
+        minimum = math.ceil(reference['count'] * .995)
+        if len(codes) < minimum or (expected is not None and len(codes & expected) < minimum):
+            raise ValueError(f'{date}: daily roster still incomplete ({len(codes)} vs {reference["count"]} on {reference["date"]})')
+    return symbols
+
+
+def load_universe(date, cache_dir=None, refresh=False, now=None):
+    """Recent caches are mutable until publication settles; validate before write."""
+    now = now or dt.datetime.now(TZ)
+    reference = universe_reference(date, cache_dir)
+    path = cache_dir / ('universe-' + date + '.json') if cache_dir is not None else None
+    recent = (now.date() - dt.date.fromisoformat(date)).days <= 7
+    if path is not None and not refresh and not recent:
+        stored = read_json(path)
+        if stored is not None:
+            try:
+                return validate_universe_scope(date, stored, reference)
+            except ValueError:
+                pass
+    symbols = validate_universe_scope(date, fetch_universe(date), reference)
+    if date == now.date().isoformat() and reference is None:
+        raise ValueError(f'{date}: current-day roster lacks an independent completeness reference')
+    if path is not None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_suffix('.tmp')
+        temporary.write_text(json.dumps(symbols, ensure_ascii=False, separators=(',', ':')))
+        temporary.replace(path)
     return symbols
 
 
@@ -364,7 +478,7 @@ def validate_ma_baseline(payload, latest, universe, now=None):
     return payload
 
 
-def complete_cached_snapshots(latest, now=None):
+def complete_cached_snapshots(latest, now=None, cache_dir=None):
     """Reuse requires both history products and their matching close baselines."""
     if not all(path.exists() for path in (OUTPUT, BASELINE, MA_OUTPUT, MA_BASELINE)):
         return False
@@ -376,10 +490,16 @@ def complete_cached_snapshots(latest, now=None):
         previous = old.get('series') or []
         validate_ma_history(ma, latest, now)
         validate_ma_baseline(ma_baseline, latest, ma['series'][-1]['universe'], now)
-        return (len(previous) == 60 and previous[-1].get('date') == latest and
+        structurally_complete = (len(previous) == 60 and previous[-1].get('date') == latest and
                 baseline.get('asOfDate') == latest and bool(baseline.get('validThrough')) and
                 bool(baseline.get('stocks')))
-    except (OSError, TypeError, ValueError, IndexError, AttributeError, KeyError, OverflowError):
+        if not structurally_complete:
+            return False
+        published = load_universe(latest, cache_dir, refresh=True, now=now)
+        codes = {row['code'] for row in baseline['stocks']}
+        return (codes == set(published) and len(codes) == len(baseline['stocks']) == previous[-1].get('universe') and
+                {row['code'] for row in ma_baseline['stocks']} == codes)
+    except (OSError, RuntimeError, TypeError, ValueError, IndexError, AttributeError, KeyError, OverflowError):
         return False
 
 
@@ -421,25 +541,27 @@ def refresh_history(cache_dir, workers=6, force=False):
     if len(dates) != 60:
         raise RuntimeError('Need 60 completed trading sessions')
     latest = dates[-1]
-    if not force and complete_cached_snapshots(latest, now):
+    if not force and complete_cached_snapshots(latest, now, cache_dir):
         print(f'Complete {latest} close snapshots already available; retained.', flush=True)
         return
     if latest == now.date().isoformat():
         try:
-            cached(cache_dir / ('universe-' + latest + '.json'), lambda: fetch_universe(latest))
+            load_universe(latest, cache_dir, refresh=True, now=now)
         except Exception as exc:
             # The daily constituent table is often released later than the
             # closing quote. Repair yesterday now, never label it as today.
+            existing = read_json(OUTPUT)
+            if isinstance(existing, dict) and (existing.get('series') or [{}])[-1].get('date') == latest:
+                raise RuntimeError(f'{latest}: roster verification unavailable; retaining existing dated snapshots') from exc
             dates = available_dates[:-1][-60:]
             if len(dates) != 60:
                 raise RuntimeError('Need 60 published sessions before current universe is released') from exc
             latest = dates[-1]
             print(f'Today constituent table unavailable; repairing through {latest}: {exc}', flush=True)
-            if not force and complete_cached_snapshots(latest, now):
+            if not force and complete_cached_snapshots(latest, now, cache_dir):
                 return
     print(f'Building {dates[0]} → {latest}', flush=True)
-    universes = parallel_map(dates, lambda date: cached(cache_dir / ('universe-' + date + '.json'),
-                                                      lambda: fetch_universe(date)), workers, 'universes')
+    universes = parallel_map(dates, lambda date: load_universe(date, cache_dir, refresh=date == latest, now=now), workers, 'universes')
     symbols = sorted(set().union(*(set(value) for value in universes.values())))
     # All histories use the same adjustment vintage; reuse only within this
     # completed-session build, never merge differently adjusted raw bars.
@@ -488,4 +610,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 

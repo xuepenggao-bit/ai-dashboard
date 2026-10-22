@@ -68,7 +68,10 @@ module.exports=(async()=>{
   assert.equal(c.captured[0].high,4000);assert.equal(c.captured[0].low,0);
   assert.equal(c.captured[0].eligible,4000);assert.equal(c.captured[0].asOf,'10:14');
   assert.ok(c.maxActive()<=4,'Bound parallel network work');
-  const count=c.requests();await c.ctx.refreshHighLow52Live();assert.equal(c.requests(),count,'Five-minute throttle');
+  const count=c.requests();await c.ctx.refreshHighLow52Live();assert.equal(c.requests(),count,'One-minute throttle');
+  assert.equal(c.ctx._hl52Fresh({date:'2026-10-09',time:'10:09'},{date:'2026-10-09',minute:615}),false,'Old quotes cannot be labelled realtime');
+  assert.equal(c.ctx._hl52Fresh({date:'2026-10-09',time:'11:30'},{date:'2026-10-09',minute:750}),true,'Lunch retains the valid morning close');
+  assert.equal(c.ctx._hl52Fresh({date:'2026-10-09',time:'25:00'},{date:'2026-10-09',minute:615}),false,'Invalid source time is rejected');
   for(const config of [{manyMissing:true},{holiday:true},{baseline:{...baseline,asOfDate:'2026-09-29'}},
     {baseline:{...baseline,validThrough:'2026-10-08'}}]){
     const t=context(config);await t.ctx.refreshHighLow52Live(true);assert.equal(t.captured.length,0,JSON.stringify(config).slice(0,100));
@@ -102,4 +105,5 @@ module.exports=(async()=>{
   assert.equal(hidden.requests(),0,'Hidden tab makes no requests');
   return 'PASS: live scans, explicit missing/stale coverage, 99% minimum, 364-day expiry, holiday rejection, ex-dividend correction, IPO/suspension rules, bounded concurrency and throttling';
 })();
+
 

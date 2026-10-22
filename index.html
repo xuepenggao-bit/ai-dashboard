@@ -1992,7 +1992,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
     <div class="market-series-plot" style="height:225px"><canvas id="cHighLow52" role="img" aria-label="沪深A股52周新高与新低家数趋势"></canvas></div>
     <div class="market-series-delta" style="height:135px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0"><canvas id="cHighLow52Net" role="img" aria-label="52周新高减新低家数"></canvas></div>
-    <div class="tx3 mt4" id="highLow52LiveStatus" role="status" aria-live="polite" style="color:#475569;font-size:13px">盘中约每5分钟更新 · 保留实际统计时间</div>
+    <div class="tx3 mt4" id="highLow52LiveStatus" role="status" aria-live="polite" style="color:#475569;font-size:13px">盘中约每分钟更新 · 保留实际统计时间</div>
     <div class="tx3 mt4 market-series-footer" id="highLow52Footer">来源：腾讯财经前复权日线 · 52自然周（364天）· 当日最高/最低触及窗口极值 · 上市满52周 · 沪深A股含ST、不含北交所 · 加载中…</div>
   </div>
 
@@ -13071,7 +13071,9 @@ function _renderHighLow52(){
   }
   const last=rows[rows.length-1],value=last.high-last.low;
   const put=(id,text)=>{const el=document.getElementById(id);if(el)el.textContent=text;};
-  const phase=last.status==='close'?'收盘':last.date===_highLow52Clock().date?(last.missing?'盘中估算':'盘中快照'):'历史盘中快照';
+  const clock=_highLow52Clock();
+  const phase=last.status==='close'?'收盘':last.date!==clock.date?'历史盘中快照':
+    (last.asOf>='15:00'?'收盘行情快照':clock.minute>=900?'盘中快照（待收盘更新）':clock.minute>=690&&clock.minute<780?'午间休市快照':'盘中实时')+(last.missing?' · 部分待核验':'');
   put('highLow52KpiDate',last.date+' · '+phase+' '+last.asOf);
   put('highLow52KpiHigh',last.high.toLocaleString('zh-CN')+' 家');
   put('highLow52KpiLow',last.low.toLocaleString('zh-CN')+' 家');
@@ -13137,10 +13139,11 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="assets/ma-breadth.js?v=20261014a" defer></script>
 <script src="assets/market-risk.js?v=20261015a" defer></script>
-<script src="assets/market-quality.js?v=20261015a" defer></script>
+<script src="assets/market-quality.js?v=20261022a" defer></script>
 <script src="assets/market-heat-engine.js?v=20261015a" defer></script>
 <script src="assets/market-heat.js?v=20261015a" defer></script>
-<script src="assets/high-low-52w-live.js?v=20261021a" defer></script>
+<script src="assets/high-low-52w-live.js?v=20261022a" defer></script>
 </body>
 </html>
+
 

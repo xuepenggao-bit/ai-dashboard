@@ -9,11 +9,12 @@ on:
       - 'tests/test_refresh_high_low_52w.py'
       - 'tests/test_refresh_ma_breadth.py'
       - 'tests/test_refresh_high_low_recovery.py'
+      - 'tests/test_refresh_high_low_universe.py'
   schedule:
     # Beijing 08:15 repairs yesterday's baseline before the open if needed.
     - cron: '15 0 * * 1-5'
-    # Beijing 15:15 and 16:15. A complete current close is reused on retry.
-    - cron: '15 7,8 * * 1-5'
+    # Beijing 15:15 / 16:15, then 20:15 when daily constituent publication settles.
+    - cron: '15 7,8,12 * * 1-5'
   workflow_dispatch:
 
 concurrency:
@@ -42,7 +43,9 @@ jobs:
         run: python -m unittest discover -s tests -p test_refresh_ma_breadth.py -v
       - name: Test daily-source fallback and bounded recovery
         run: python -m unittest discover -s tests -p test_refresh_high_low_recovery.py -v
-      - name: Restore immutable dated universe cache
+      - name: Test staged constituent publication and cache repair
+        run: python -m unittest discover -s tests -p test_refresh_high_low_universe.py -v
+      - name: Restore dated universe cache (recent rosters are revalidated)
         uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}/high-low-52w-cache/universe-*.json
@@ -63,4 +66,5 @@ jobs:
             sleep $((attempt * 2))
           done
           exit 1
+
 

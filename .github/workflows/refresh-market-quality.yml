@@ -5,24 +5,62 @@ on:
     branches: [main]
     paths:
       - '.github/scripts/refresh_market_quality.py'
+      - '.github/scripts/refresh_market_quality_close.py'
       - '.github/workflows/refresh-market-quality.yml'
       - 'tests/test_refresh_market_quality.py'
+      - 'tests/test_refresh_market_quality_close.py'
   schedule:
-    # Beijing 15:25, 16:25 and 20:25; visible intraday charts reuse the shared quote scan.
+    # Quick closing quotes at Beijing 15:05, 15:15 and 15:25.
+    - cron: '5,15,25 7 * * 1-5'
+    # Full daily-roster calibration at Beijing 15:25, 16:25 and 20:25.
     - cron: '25 7,8,12 * * 1-5'
   workflow_dispatch:
-
-concurrency:
-  group: refresh-market-quality
-  cancel-in-progress: false
 
 permissions:
   contents: write
 
 jobs:
+  close-snapshot:
+    if: github.event_name != 'schedule' || github.event.schedule == '5,15,25 7 * * 1-5'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: refresh-market-quality-close
+      cancel-in-progress: false
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test complete closing-quote coverage and snapshot safety
+        run: python -m unittest discover -s tests -p test_refresh_market_quality_close.py -v
+      - name: Refresh current-day closing snapshot without waiting for daily tables
+        run: python .github/scripts/refresh_market_quality_close.py --workers 4
+      - name: Persist independently verified closing snapshot
+        run: |
+          test -f data/market_quality_close.json || exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/market_quality_close.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: publish A-share closing quote snapshot $(date -u '+%Y-%m-%d %H:%M UTC')"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
   refresh:
+    if: github.event_name != 'schedule' || github.event.schedule == '25 7,8,12 * * 1-5'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: refresh-market-quality
+      cancel-in-progress: false
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     steps:
@@ -55,3 +93,4 @@ jobs:
             sleep $((attempt * 2))
           done
           exit 1
+

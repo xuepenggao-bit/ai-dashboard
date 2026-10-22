@@ -1,5 +1,6 @@
 /* One bounded asynchronous quote scan shared by all full-market indicators. */
 let _hl52LivePending=null,_hl52LiveAttempt=0,_hl52LiveSuccess=0,_hl52Baseline=null,_hl52BaselineAt=0;
+let _hl52AdjustmentDate='',_hl52Adjustments=new Map();
 function _hl52Status(message){if(typeof _setHighLow52LiveStatus==='function')_setHighLow52LiveStatus(message);}
 const _hl52BaselineUrls=['./data/market_high_low_52w_baseline.json',
   'https://raw.githubusercontent.com/xuepenggao-bit/ai-dashboard/main/data/market_high_low_52w_baseline.json'];
@@ -97,11 +98,17 @@ function _hl52Classify(quote,threshold,date){
   if(quote.time<'09:30'||!Number.isFinite(quote.high)||!Number.isFinite(quote.low)||quote.high<=0||quote.low<=0||quote.high<quote.low)throw Error('个股盘中高低价无效');
   return{high:Number(quote.high>=threshold.high-1e-7),low:Number(quote.low<=threshold.low+1e-7)};
 }
+function _hl52Minute(value){return typeof value==='string'&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)?Number(value.slice(0,2))*60+Number(value.slice(3)):NaN;}
+function _hl52Fresh(quote,clock){
+  const minute=_hl52Minute(quote.time),reference=clock.minute>690&&clock.minute<780?690:Math.min(clock.minute,900);
+  return quote.date===clock.date&&Number.isFinite(minute)&&minute>=reference-5&&minute<=clock.minute+1;
+}
 async function _hl52CollectLive(){
   const clock=_highLow52Clock(),date=clock.date;
+  if(_hl52AdjustmentDate!==date){_hl52Adjustments.clear();_hl52AdjustmentDate=date;}
   const indices=await _hl52GetQuotes(['sh000001','sz399106']);
   const iq=[...indices.values()];
-  if(iq.some(q=>q.date!==date||q.time<'09:30')){_hl52Status('暂无当日开盘行情 · 保留最近统计');return false;} // Includes real exchange holidays.
+  if(iq.some(q=>q.time<'09:30'||!_hl52Fresh(q,clock))){_hl52Status('暂无有效当日实时行情 · 保留最近统计');return false;} // Includes real exchange holidays.
   const calendar=await _hl52Daily('sh000001',10);
   const previous=calendar.map(r=>r[0]).filter(d=>d<date).sort().pop();
   let baseline=await _hl52LoadBaseline();
@@ -135,7 +142,7 @@ async function _hl52CollectLive(){
   const allQuotes=new Map();
   const batches=[];
   for(let i=0;i<codes.length;i+=80)batches.push(codes.slice(i,i+80));
-  let cursor=0,high=0,low=0,observed=0,completed=0;
+  let cursor=0,high=0,low=0,observed=0,completed=0,earliest='15:00';
   // At most four requests at a time; the chart and the rest of the dashboard
   // remain usable while a full-market scan completes in the background.
   const results=await Promise.allSettled(Array.from({length:4},async()=>{
@@ -152,15 +159,19 @@ async function _hl52CollectLive(){
         const quote=quotes.get(code);
         if(!quote)continue;
         try{
+        if(quote.volume>0&&!_hl52Fresh(quote,_highLow52Clock()))throw Error('个股行情时间待更新');
         let threshold=_hl52Thresholds(stock,date);
         if(quote.volume>0&&Math.abs(quote.previous-stock.close)>.012){
           // Never apply unadjusted quotes to a previous-vintage adjusted price.
           // Re-read only affected stocks (e.g. ex-dividend/split) in today's basis.
-          quote.adjustedRows=await _hl52Daily(stock.code);
+          const key=stock.code+'|'+baseline.updatedAt+'|'+quote.previous+'|'+(stock.lastDate||previous);
+          quote.adjustedRows=_hl52Adjustments.get(key)||await _hl52Daily(stock.code);
           threshold=_hl52DailyThresholds(quote.adjustedRows,date,previous,stock.lastDate||previous);
           if(Math.abs(quote.previous-threshold.close)>.012)throw Error('除权基准仍不一致');
+          _hl52Adjustments.set(key,quote.adjustedRows);
         }
         const result=_hl52Classify(quote,threshold,date);high+=result.high;low+=result.low;observed++;
+        if(quote.volume>0&&quote.time<earliest)earliest=quote.time;
         }catch(error){console.warn('[52周个股待核验]',code,error.message);}
       }
       completed+=batch.length;_hl52Status('正在统计 · '+completed.toLocaleString('zh-CN')+'/'+codes.length.toLocaleString('zh-CN')+' 只');
@@ -169,14 +180,14 @@ async function _hl52CollectLive(){
   const failure=results.find(result=>result.status==='rejected');
   if(failure)throw failure.reason;
   if(_highLow52Clock().date!==date)throw Error('交易日已切换');
-  const time=[...iq.map(q=>q.time),'15:00'].sort()[0];
+  const time=[...iq.map(q=>q.time),earliest,'15:00'].sort()[0];
   // Unknown observations are never zero or extrapolated. Only publish a
   // near-complete observation, with explicit coverage on the chart.
   let highLowUpdated=false;
   if(observed>=Math.ceil(eligible.length*.99)){
     highLowUpdated=_setHighLow52LivePoint({date,high,low,eligible:eligible.length,universe:baseline.stocks.length,
       observed,missing:eligible.length-observed,asOf:time,status:'live'},{source:'东方财富股票名单 · 腾讯财经复权日线 + 盘中行情'});
-    _hl52Status('截至 '+time+' · '+(observed===eligible.length?'全样本核验':'覆盖 '+(observed/eligible.length*100).toFixed(2)+'% · '+(eligible.length-observed)+' 只待核验')+' · 约每5分钟更新');
+    _hl52Status('截至 '+time+' · '+(observed===eligible.length?'全样本核验':'覆盖 '+(observed/eligible.length*100).toFixed(2)+'% · '+(eligible.length-observed)+' 只待核验')+' · 盘中约每分钟更新');
   }else _hl52Status('本轮覆盖 '+(observed/eligible.length*100).toFixed(2)+'%，保留上次统计 · 将自动重试');
   let maUpdated=false;
   if(maBaseline&&typeof window.applyMaBreadthLiveQuotes==='function'){
@@ -195,7 +206,9 @@ function refreshHighLow52Live(force=false){
   if(document.hidden||!document.getElementById('t0')?.classList.contains('active')||
      day===0||day===6||clock.minute<570||clock.minute>960)return Promise.resolve(false);
   if(_hl52LivePending)return _hl52LivePending;
-  if(!force&&_hl52LiveAttempt&&Date.now()-_hl52LiveAttempt<(_hl52LiveSuccess>=_hl52LiveAttempt?300000:60000))return Promise.resolve(false);
+  const qualityClose=typeof window.marketQualityClosePending==='function'?window.marketQualityClosePending():null;
+  if(qualityClose)return qualityClose;
+  if(!force&&_hl52LiveAttempt&&Date.now()-_hl52LiveAttempt<60000)return Promise.resolve(false);
   _hl52LiveAttempt=Date.now();
   _hl52Status('正在读取盘中行情…');
   _hl52LivePending=_hl52CollectLive().then(ok=>{if(ok)_hl52LiveSuccess=Date.now();return ok;}).catch(e=>{
@@ -210,4 +223,5 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('visibilitychange',run);
   window.addEventListener('pageshow',run);
 });
+
 
