@@ -141,7 +141,7 @@ test('腾讯指数quote解析不将坏时间和缺失字段构造为有效行情
 test('图表激活后双帧resize，后台不发请求，资产无危险innerHTML外部字符串',()=>{
   const code=fs.readFileSync(filename,'utf8');
   assert.match(code,/requestAnimationFrame\(\(\)=>requestAnimationFrame/);assert.match(code,/if\(!active\(\)\)return;restore/);
-  assert.match(code,/Date\.now\(\)-riskAttempt<300000/);assert.match(code,/Date\.now\(\)-etfAttempt<1800000/);
+  assert.match(code,/Date\.now\(\)-riskAttempt<300000/);assert.match(code,/now-etfAttempt<\(closeWindow\?60000:1800000\)/);
   assert.match(code,/r\?\.deltaShares==null\?null:r\.deltaShares\/1e8/);assert.match(code,/c\?\.resize\(\)/);
 });
 test('缓存盘中点保存原始报价输入，恢复后复算；篡改RV或原始最高价不得恢复',()=>{

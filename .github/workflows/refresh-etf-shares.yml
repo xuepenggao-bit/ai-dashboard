@@ -8,8 +8,10 @@ on:
       - '.github/workflows/refresh-etf-shares.yml'
       - 'tests/test_refresh_etf_shares.py'
   schedule:
-    # Beijing 08:25, 16:15, 17:55 and 21:25. Recheck after the market closes,
-    # retaining later checks for newly disclosed post-clearing shares/NAV.
+    # Start at Beijing 15:05, then retry every 15 minutes until 15:50.
+    # Retain 08:25 / 16:15 / 17:55 / 21:25 for post-clearing shares and NAV.
+    # Scheduling is best-effort; never label undisclosed shares as today's data.
+    - cron: '5,20,35,50 7 * * 1-5'
     - cron: '25 0,13 * * 1-5'
     - cron: '15 8 * * 1-5'
     - cron: '55 9 * * 1-5'

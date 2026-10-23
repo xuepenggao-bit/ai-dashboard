@@ -179,10 +179,20 @@
     try{return await riskPending;}finally{riskPending=null;}
   }
   async function refreshEtf(force=false){
-    restore();renderEtf();if(etfPending)return etfPending;if(!force&&etfAttempt&&Date.now()-etfAttempt<1800000)return FUNDS.some(f=>orderedEtf(f.code).length);
+    restore();renderEtf();if(etfPending)return etfPending;
+    const now=Date.now(),closeWindow=etfCloseWindow(now);
+    // A pre-close read must not delay the first 15:00 check by thirty minutes.
+    const crossedClose=closeWindow&&etfAttempt&&(!etfCloseWindow(etfAttempt)||clock(etfAttempt).date!==clock(now).date);
+    if(!force&&!crossedClose&&etfAttempt&&now-etfAttempt<(closeWindow?60000:1800000))return FUNDS.some(f=>orderedEtf(f.code).length);
     etfAttempt=Date.now();etfPending=(async()=>{const result=await Promise.allSettled(ETF_URLS.map(async u=>{if(!acceptEtf(await fetchData(u)))throw Error('无有效已披露份额');}));
       etfFailed=result.every(r=>r.status==='rejected');renderEtf();return !etfFailed;})();
     try{return await etfPending;}finally{etfPending=null;}
+  }
+  function etfCloseWindow(now=Date.now()){
+    const c=clock(now),weekday=new Date(now+28800000).getUTCDay();
+    if(weekday===0||weekday===6||c.minute<900||c.minute>=1380)return false;
+    try{const session=global.PortfolioMarketSession?.marketState('A',now);if(session?.calendarKnown&&session.isClosed)return false;}catch(_){}
+    return true;
   }
   function put(id,text){const el=typeof document!=='undefined'?document.getElementById(id):null;if(el)el.textContent=text;}
   function signed(v,digits=2){return number(v)?(v>0?'+':'')+v.toFixed(digits):'—';}
@@ -228,7 +238,9 @@
       rows.push('<tr><td title="'+escapeHtml(fund.label)+'">'+fund.index+' · '+fund.code+'</td><td>'+(last?last.date:'—')+'</td><td>'+(last?(last.shares/1e8).toFixed(3):'—')+'</td><td class="'+(last?.deltaShares>0?'etf-shares-up':last?.deltaShares<0?'etf-shares-down':'')+'">'+shareChange+'</td><td>'+changePct+'</td><td title="'+escapeHtml(metricNote(last)+(last?.navSource?' · '+last.navSource:''))+'">'+flow+'</td></tr>');
     }
     if(kpis)kpis.innerHTML=cards.join('');if(table)table.innerHTML=rows.join('');
-    dates=[...new Set(dates)].sort();put('etfSharesDate',dates.length===1?'最新披露 '+dates[0]:dates.length?'各基金最新披露 '+dates[0]+' 至 '+dates[dates.length-1]:'等待已披露份额数据');
+    dates=[...new Set(dates)].sort();
+    const waiting=etfCloseWindow()&&dates.some(d=>d<clock().date);
+    put('etfSharesDate',(dates.length===1?'最新披露 '+dates[0]:dates.length?'各基金最新披露 '+dates[0]+' 至 '+dates[dates.length-1]:'等待已披露份额数据')+(waiting?' · 待今日披露':''));
     put('etfSharesFooter','来源：'+(etfMeta?.source||'交易所公布的 ETF 份额与基金净值')+' · 仅覆盖3只代表 ETF，非对应指数全市场合计。每日份额净变化仅在相邻交易日观测完整时计算；跨缺失日或疑似拆份不计算当日变化。净申赎估算=份额净变化×同日单位净值，不等于实际资金净流入。交易所份额与同日单位净值（历史备源：天天基金）分开校验，净值未同步时不估算金额。点击图例可单独观察一只 ETF。'+(etfFailed?' 本次读取未成功，保留已验证披露记录。':''));
     const dateList=etfDates();put('etfSharesRange',dateList.length?'展示 '+dateList.length+' 个披露日 · '+dateList[0]+' 至 '+dateList[dateList.length-1]+' · 各基金可用历史范围不同，未披露或不可比观测留空':'尚无可用历史披露记录，缺失数据不显示为0');
     if(etfChart){etfChart.data.labels=dateList.map(d=>d.slice(5));FUNDS.forEach((f,i)=>{etfChart.data.datasets[i].data=dateList.map(d=>{const r=etfRows.get(f.code)?.get(d);return r?.deltaShares==null?null:r.deltaShares/1e8;});});etfChart.update('none');}
@@ -237,7 +249,7 @@
   function resize(){if(resizePending)return;resizePending=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{resizePending=false;if(active())for(const c of [riskVolChart,riskDrawChart,etfChart])c?.resize();}));}
   function visible(force=false){if(!active())return;restore();renderRisk();renderEtf();resize();refreshRisk(force).catch(e=>console.warn('[市场风险]',e.message));refreshEtf(force).catch(e=>console.warn('[ETF份额]',e.message));}
   global.refreshMarketRisk=refreshRisk;global.refreshEtfShares=refreshEtf;global.renderMarketRisk=renderRisk;global.renderEtfShares=renderEtf;
-  if(typeof module==='object'&&module.exports)module.exports={clock,dateValid,cleanBars,computeRisk,riskRow,canReplace,acceptRisk,orderedRisk,getRiskBars:()=>riskBars.map(r=>({...r})),etfRow,acceptEtf,orderedEtf,parseQuote,buildLive,signed,etfDates,metricNote};
+  if(typeof module==='object'&&module.exports)module.exports={clock,dateValid,cleanBars,computeRisk,riskRow,canReplace,acceptRisk,orderedRisk,getRiskBars:()=>riskBars.map(r=>({...r})),etfRow,acceptEtf,orderedEtf,parseQuote,buildLive,signed,etfDates,metricNote,etfCloseWindow,refreshEtf};
   if(typeof document!=='undefined'){const start=()=>{restore();renderRisk();renderEtf();visible(true);const tab=document.getElementById('t0');
       if(tab&&typeof MutationObserver==='function')new MutationObserver(()=>visible(false)).observe(tab,{attributes:true,attributeFilter:['class']});
       setInterval(()=>visible(false),60000);document.addEventListener('visibilitychange',()=>visible(false));global.addEventListener('pageshow',()=>visible(false));global.addEventListener('resize',resize);};
