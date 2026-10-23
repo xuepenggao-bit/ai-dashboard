@@ -10413,6 +10413,59 @@ const _SECTOR_VOLUME_META = [
 ];
 var _sectorVolumeCache = {};
 var _sectorVolumeFetching = false;
+var _sectorVolumeRestored = false;
+const _SECTOR_VOLUME_STORAGE = 'sector-close-snapshots-v1';
+
+function _sectorVolumeValid(data){
+  const clock=_breadthBeijingClock();
+  if(!data||!/^\d{4}-\d{2}-\d{2}$/.test(data.todayDate)||data.todayDate>clock.date) return false;
+  const labels=data.labels,amounts=data.todayAmount;
+  if(!Array.isArray(labels)||labels.length<2||labels.length>250||!Array.isArray(amounts)||amounts.length!==labels.length) return false;
+  if(!Array.isArray(data.todayPct)||data.todayPct.length!==labels.length||!Array.isArray(data.yesterdayAmount)||data.yesterdayAmount.length!==labels.length) return false;
+  if(data.yesterdaySeries&&(!Array.isArray(data.yesterdaySeries)||data.yesterdaySeries.length>250||!data.yesterdaySeries.every((point,i)=>
+    Array.isArray(point)&&/^\d{2}:\d{2}$/.test(point[0])&&Number.isFinite(point[1])&&point[1]>=0
+    &&(!i||(point[0]>data.yesterdaySeries[i-1][0]&&point[1]>=data.yesterdaySeries[i-1][1]))))) return false;
+  return labels.every((time,i)=>/^\d{2}:\d{2}$/.test(time)&&((time>='09:30'&&time<='11:30')||(time>='13:00'&&time<='15:00'))&&(!i||time>labels[i-1])
+    &&Number.isFinite(amounts[i])&&amounts[i]>=0&&(!i||amounts[i]>=amounts[i-1])
+    &&(data.todayPct[i]===null||Number.isFinite(data.todayPct[i]))&&Number.isFinite(data.yesterdayAmount[i])&&data.yesterdayAmount[i]>=0)
+    &&data.tod===labels[labels.length-1]&&data.todayCum===amounts[amounts.length-1]&&data.todayCum>0
+    &&(data.todayDate!==clock.date||data.tod<=clock.time)
+    &&Number.isFinite(data.yesterdaySame)&&Number.isFinite(data.yesterdayFull)
+    &&(data.lastPct===null||Number.isFinite(data.lastPct))&&(data.lastPrice===null||Number.isFinite(data.lastPrice));
+}
+function _sectorVolumeCompleteLabels(labels){
+  const times=new Set(labels);
+  for(let minute=571;minute<=900;minute++){
+    if(minute>690&&minute<781) continue;
+    const time=String(Math.floor(minute/60)).padStart(2,'0')+':'+String(minute%60).padStart(2,'0');
+    if(!times.has(time)) return false;
+  }
+  return true;
+}
+function _sectorVolumeIsClose(data){
+  // 只把完整的 15:00 分钟序列认作收盘；14:59 或残缺曲线仍需补取。
+  return _sectorVolumeValid(data)&&data.tod==='15:00'&&_sectorVolumeCompleteLabels(data.labels)
+    &&data.lastPrice>0&&Number.isFinite(data.lastPct)&&Number.isFinite(data.todayPct[data.todayPct.length-1]);
+}
+function _sectorVolumeSave(){
+  try{localStorage.setItem(_SECTOR_VOLUME_STORAGE,JSON.stringify({version:1,quotes:_sectorVolumeCache,shares:_sectorShareLastGood}));}catch(e){}
+}
+function _sectorVolumeRestore(){
+  if(_sectorVolumeRestored) return;
+  _sectorVolumeRestored=true;
+  try{
+    const saved=JSON.parse(localStorage.getItem(_SECTOR_VOLUME_STORAGE)||'null');
+    if(!saved||saved.version!==1) return;
+    _SECTOR_VOLUME_META.forEach(meta=>{
+      const entry=saved.quotes&&saved.quotes[meta.code],share=saved.shares&&saved.shares[meta.code];
+      if(!entry||!_sectorVolumeValid(entry.data)) return;
+      if(!_sectorVolumeCache[meta.code]) _sectorVolumeCache[meta.code]={ts:0,data:entry.data};
+      if(share&&share.date===entry.data.todayDate&&Number.isFinite(share.pct)&&share.pct>=0&&share.pct<=100
+        &&/^\d{2}:\d{2}$/.test(share.tod)&&share.tod<=entry.data.tod
+        &&/^\d{2}:\d{2}$/.test(share.marketTime)&&/^\d{2}:\d{2}$/.test(share.sectorTime)) _sectorShareLastGood[meta.code]=share;
+    });
+  }catch(e){}
+}
 
 function _sectorVolumeParse(raw){
   const byDay={};
@@ -10422,6 +10475,7 @@ function _sectorVolumeParse(raw){
     const date=stamp.slice(0,splitAt),tod=stamp.slice(splitAt+1,splitAt+6);
     const price=parseFloat(p[1]),amount=parseFloat(p[2]);
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^\d{2}:\d{2}$/.test(tod)||!isFinite(amount)||amount<0) return;
+    if(!((tod>='09:30'&&tod<='11:30')||(tod>='13:00'&&tod<='15:00'))) return;
     (byDay[date]=byDay[date]||[]).push({tod,amount,price:isFinite(price)&&price>0?price:null});
   });
   Object.keys(byDay).forEach(date=>{
@@ -10433,11 +10487,12 @@ function _sectorVolumeParse(raw){
 }
 
 async function _sectorVolumeRequest(meta){
+  const clock=_breadthBeijingClock(),afterClose=clock.minute>=900;
   const query='?secid=90.'+meta.code+'&fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11&fields2=f51,f53,f57&iscr=0&ndays=';
   let raw=null,preClose=null,lastError=null;
   const readPayload=j=>{
     const data=j&&j.data,rows=data&&data.trends,base=Number(data&&data.preClose);
-    if(!Array.isArray(rows)||!rows.length) throw new Error('实时分钟数据为空');
+    if(!Array.isArray(rows)||!rows.length||(data.code&&data.code!==meta.code)) throw new Error('实时分钟数据为空或代码不匹配');
     return {rows,preClose:isFinite(base)&&base>0?base:null};
   };
   const fetchRealtime=async()=>{
@@ -10455,6 +10510,19 @@ async function _sectorVolumeRequest(meta){
     }
     throw fallbackError||new Error('实时分钟数据为空');
   };
+  // 只在收盘分钟缺失时使用历史 K 线兜底；盘中和其它模块的接口不变。
+  const fetchClosedHistory=async()=>{
+      const url='https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=90.'+meta.code
+        +'&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f53,f57&klt=1&fqt=0&lmt=500&beg=0&end=20500101';
+      let j;
+      try{j=await _idxFetch(url,{timeout:5200,retries:0});}
+      catch(e){if(typeof _idxJsonp!=='function')throw e;j=await _idxJsonp(url,5200);}
+      const data=j&&j.data;
+      if(!data||data.code!==meta.code||!Array.isArray(data.klines)||data.klines.length<2) throw new Error('收盘分钟数据为空');
+      const days=_sectorVolumeParse(data.klines),latest=Object.keys(days).sort().pop();
+      if(latest!==clock.date||!_sectorVolumeCompleteLabels(days[latest].map(point=>point.tod))) throw new Error('收盘分钟数据尚未齐全');
+      return {rows:data.klines,preClose:Number(data.preKPrice)>0?Number(data.preKPrice):null};
+  };
   // 历史域名通常一次返回最近两个交易日，能够做严格的同一时刻比较。
   try{
     const j=await _idxFetch('https://push2his.eastmoney.com/api/qt/stock/trends2/get'+query+'2&_='+Date.now(),{timeout:5200,retries:1});
@@ -10466,12 +10534,10 @@ async function _sectorVolumeRequest(meta){
   if(!raw){
     try{const payload=await fetchRealtime();raw=payload.rows;preClose=payload.preClose;}catch(e){lastError=e;}
   }
-  if(!raw) throw lastError||new Error('板块分钟成交额为空');
-
-  const byDay=_sectorVolumeParse(raw),clock=_breadthBeijingClock();
+  const byDay=_sectorVolumeParse(raw||[]);
   let dates=Object.keys(byDay).sort();
   // 盘中若历史域名仍停留在上一交易日，再向实时域名补取当日数据；补取失败则明确标为源延迟。
-  if(clock.isTrading&&dates[dates.length-1]!==clock.date){
+  if(raw&&(clock.isTrading||afterClose)&&(dates[dates.length-1]!==clock.date||(afterClose&&byDay[clock.date]&&byDay[clock.date][byDay[clock.date].length-1].tod!=='15:00'))){
     try{
       const livePayload=await fetchRealtime(),liveByDay=_sectorVolumeParse(livePayload.rows);
       if(liveByDay[clock.date]) byDay[clock.date]=liveByDay[clock.date];
@@ -10479,14 +10545,25 @@ async function _sectorVolumeRequest(meta){
       dates=Object.keys(byDay).sort();
     }catch(e){lastError=e;}
   }
-  if(!dates.length) throw new Error('板块成交额格式异常');
+  if(afterClose&&(!byDay[clock.date]||!_sectorVolumeCompleteLabels(byDay[clock.date].map(point=>point.tod)))){
+    try{
+      const closed=await fetchClosedHistory(),closedDays=_sectorVolumeParse(closed.rows);
+      Object.assign(byDay,closedDays);
+      if(closed.preClose) preClose=closed.preClose;
+      dates=Object.keys(byDay).sort();
+    }catch(e){lastError=e;}
+  }
+  if(!dates.length) throw lastError||new Error('板块成交额格式异常');
   const todayDate=dates[dates.length-1],yesterdayDate=dates.length>1?dates[dates.length-2]:'';
   const todayRows=byDay[todayDate]||[],yesterdayRows=byDay[yesterdayDate]||[];
   if(!todayRows.length) throw new Error('板块分钟点不足');
-  const labels=todayRows.map(point=>point.tod),yesterdayMap=new Map(yesterdayRows.map(point=>[point.tod,point.amount]));
+  const labels=todayRows.map(point=>point.tod);
   let todayRun=0,yesterdayRun=0;
   const todayAmount=labels.map((_,i)=>{todayRun+=todayRows[i].amount;return todayRun;});
-  const yesterdayAmount=labels.map(tod=>{yesterdayRun+=yesterdayMap.get(tod)||0;return yesterdayRun;});
+  const yesterdaySeries=yesterdayRows.map(point=>{yesterdayRun+=point.amount;return [point.tod,yesterdayRun];});
+  let priorIndex=0,priorAmount=0;
+  const yesterdayAmount=labels.map(tod=>{while(priorIndex<yesterdaySeries.length&&yesterdaySeries[priorIndex][0]<=tod) priorAmount=yesterdaySeries[priorIndex++][1];return priorAmount;});
+  yesterdayRun=priorAmount;
   const yesterdayFull=yesterdayRows.reduce((sum,point)=>sum+point.amount,0);
   const previousClose=[...yesterdayRows].reverse().find(point=>point.price!=null);
   const priceBase=previousClose&&previousClose.price>0?previousClose.price:preClose;
@@ -10494,20 +10571,36 @@ async function _sectorVolumeRequest(meta){
   const latestPricePoint=[...todayRows].reverse().find(point=>point.price!=null);
   const latestPctPoint=[...todayPct].reverse().find(value=>typeof value==='number'&&Number.isFinite(value));
   const out={
-    todayDate,yesterdayDate,labels,todayAmount,yesterdayAmount,
+    todayDate,yesterdayDate,labels,todayAmount,yesterdayAmount,yesterdaySeries,
     todayCum:todayRun,yesterdaySame:yesterdayRun,yesterdayFull,tod:labels[labels.length-1],
     todayPct,lastPrice:latestPricePoint?latestPricePoint.price:null,lastPct:Number.isFinite(latestPctPoint)?latestPctPoint:null,
-    delayed:clock.isTrading&&todayDate!==clock.date,
+    delayed:(clock.isTrading||afterClose)&&todayDate!==clock.date,
   };
   // 接口短暂回退到旧快照时，不用旧交易日或更早分钟覆盖已显示的新数据。
   const existing=_sectorVolumeCache[meta.code]&&_sectorVolumeCache[meta.code].data;
   if(existing&&String(existing.todayDate||'')+' '+String(existing.tod||'')>String(out.todayDate||'')+' '+String(out.tod||'')) return existing;
+  if(!_sectorVolumeValid(out)) throw new Error('板块分钟数据不完整');
+  if(existing&&existing.todayDate===out.todayDate){
+    // 同分钟残缺响应不能抹去已完整保存的收盘曲线和成交额。
+    if(existing.tod===out.tod&&(out.labels.length<existing.labels.length||out.todayCum<existing.todayCum||(_sectorVolumeIsClose(existing)&&!_sectorVolumeIsClose(out)))) return existing;
+    // 收盘 K 线可能只返回当日，保留本浏览器此前取得的前一日比较曲线。
+    if(!out.yesterdayFull&&existing.yesterdayFull>0&&Array.isArray(existing.yesterdaySeries)&&existing.yesterdaySeries.length){
+      out.yesterdayDate=existing.yesterdayDate;out.yesterdayFull=existing.yesterdayFull;
+      out.yesterdaySeries=existing.yesterdaySeries;
+      let i=0,amount=0;
+      out.yesterdayAmount=out.labels.map(time=>{while(i<existing.yesterdaySeries.length&&existing.yesterdaySeries[i][0]<=time){amount=existing.yesterdaySeries[i++][1];}return amount;});
+      out.yesterdaySame=out.yesterdayAmount[out.yesterdayAmount.length-1];
+    }
+  }
   _sectorVolumeCache[meta.code]={ts:Date.now(),data:out};
+  _sectorVolumeSave();
   return out;
 }
 
 async function _sectorVolumeCompare(meta){
   const cached=_sectorVolumeCache[meta.code];
+  const clock=_breadthBeijingClock();
+  if(cached&&cached.data.todayDate===clock.date&&clock.minute>=900&&_sectorVolumeIsClose(cached.data)) return cached.data;
   if(cached&&cached.data&&Date.now()-cached.ts<25000) return cached.data;
   return _sectorVolumeRequest(meta);
 }
@@ -10642,7 +10735,10 @@ function _updateSectorAmountShare(meta,data){
   if(!box||!value||!note||!data) return;
   const fresh=_sectorAmountShareSnapshot(data),previous=_sectorShareLastGood[meta.code];
   // 同日有效值粘性保留；不同交易日绝不混算或冒充今日占比。
-  if(fresh&&(!previous||previous.date!==fresh.date||fresh.tod>=previous.tod)) _sectorShareLastGood[meta.code]=fresh;
+  if(fresh&&(!previous||previous.date!==fresh.date||fresh.tod>=previous.tod)){
+    _sectorShareLastGood[meta.code]=fresh;
+    if(typeof _sectorVolumeSave==='function') _sectorVolumeSave();
+  }
   const saved=_sectorShareLastGood[meta.code];
   const snapshot=saved&&saved.date===data.todayDate?saved:null;
   if(!snapshot){
@@ -10670,6 +10766,7 @@ function _renderSectorVolume(meta,data,cached){
   const body=document.getElementById('sectorVolumeBody-'+meta.code),ts=document.getElementById('sectorVolumeTs-'+meta.code);
   if(!body||!data) return;
   const clock=_breadthBeijingClock(),sameTradingDay=data.todayDate===clock.date;
+  const closed=_sectorVolumeIsClose(data),awaitingClose=sameTradingDay&&clock.minute>=900&&!closed;
   const elapsed=_sectorVolumeElapsed(clock),hasPrevious=data.yesterdaySame>0&&data.yesterdayFull>0;
   const growth=hasPrevious&&data.todayCum>0?(data.todayCum/data.yesterdaySame-1)*100:null;
   const predicted=growth!==null&&sameTradingDay&&elapsed>0&&elapsed<235
@@ -10684,7 +10781,7 @@ function _renderSectorVolume(meta,data,cached){
   const priceChart=_sectorPriceChartSvg(meta,data);
   const todayLast=data.todayAmount[data.todayAmount.length-1]||0;
   const yesterdayLast=hasYesterday?(data.yesterdayAmount[data.yesterdayAmount.length-1]||0):0;
-  const primaryLabel=data.delayed?'最近交易日累计':'本交易日累计';
+  const primaryLabel=closed?'收盘成交额':sameTradingDay?'本交易日累计':'最近交易日累计';
   const priceClass=data.lastPct==null?'flat':data.lastPct>0?'up':data.lastPct<0?'down':'flat';
   const priceText=data.lastPct==null?'—':(data.lastPct>0?'+':'')+data.lastPct.toFixed(2)+'%';
   const priceTitle=sameTradingDay?'指数今日涨跌走势':'指数最近交易日走势 · '+(data.todayDate?data.todayDate.slice(5):'');
@@ -10705,31 +10802,47 @@ function _renderSectorVolume(meta,data,cached){
     +`<div class="sector-volume-foot">${meta.sourceName} · ${meta.code} · 东方财富分钟行情${data.delayed?' · 源延迟':''}${cached?' · 缓存':''}</div>`;
   _updateSectorAmountShare(meta,data);
   const dateLabel=data.todayDate?data.todayDate.slice(5):'';
-  if(ts) ts.textContent=(dateLabel?dateLabel+' ':'')+data.tod+(data.delayed?' · 源延迟':'')+(cached?' · 缓存':'');
+  if(ts) ts.textContent=(dateLabel?dateLabel+' ':'')+data.tod+(closed?' · 收盘':awaitingClose?' · 待收盘补齐':!sameTradingDay?' · 历史快照':'')+(cached?' · 已保存':'');
 }
 
 async function _doFetchSectorVolumes(){
   if(_sectorVolumeFetching) return;
   _sectorVolumeFetching=true;
+  _sectorVolumeRestore();
+  _SECTOR_VOLUME_META.forEach(meta=>{const saved=_sectorVolumeCache[meta.code];if(saved) _renderSectorVolume(meta,saved.data,true);});
   try{
     // 轻微错峰，减少与成交分析、涨跌统计同时争抢东方财富连接的概率。
-    const jobs=_SECTOR_VOLUME_META.map((meta,index)=>new Promise(resolve=>setTimeout(resolve,(index+1)*180)).then(()=>_sectorVolumeCompare(meta)));
-    const settled=await Promise.allSettled(jobs);
-    settled.forEach((result,index)=>{
-      const meta=_SECTOR_VOLUME_META[index],cached=_sectorVolumeCache[meta.code]&&_sectorVolumeCache[meta.code].data;
-      if(result.status==='fulfilled') _renderSectorVolume(meta,result.value,false);
-      else if(cached) _renderSectorVolume(meta,cached,true);
-      else{
+    const jobs=_SECTOR_VOLUME_META.map(async(meta,index)=>{
+      await new Promise(resolve=>setTimeout(resolve,(index+1)*180));
+      try{_renderSectorVolume(meta,await _sectorVolumeCompare(meta),false);}
+      catch(error){
+        const cached=_sectorVolumeCache[meta.code]&&_sectorVolumeCache[meta.code].data;
+        if(cached){_renderSectorVolume(meta,cached,true);return;}
         const body=document.getElementById('sectorVolumeBody-'+meta.code),ts=document.getElementById('sectorVolumeTs-'+meta.code);
         if(body){body.className='sector-volume-error';body.innerHTML='暂未取得板块分钟成交额<br>稍后将自动重试';}
         if(ts) ts.textContent='';
-        console.warn('['+meta.title+']',result.reason&&result.reason.message||result.reason);
+        console.warn('['+meta.title+']',error&&error.message||error);
       }
     });
+    await Promise.allSettled(jobs);
   }finally{ _sectorVolumeFetching=false; }
 }
 
 function fetchSectorVolumes(){return _doFetchSectorVolumes();}
+
+// 主行情定时器收盘后会停止；三个板块单独补取最后一分钟，不牵动其它模块。
+var _sectorCloseAttempt=0;
+function _refreshSectorClose(){
+  if(document.hidden||!document.getElementById('tPort')?.classList.contains('active')) return;
+  const clock=_breadthBeijingClock();
+  if(clock.weekday<1||clock.weekday>5||clock.minute<900||clock.minute>1080||Date.now()-_sectorCloseAttempt<120000) return;
+  _sectorVolumeRestore();
+  if(_SECTOR_VOLUME_META.every(meta=>{const saved=_sectorVolumeCache[meta.code];return saved&&saved.data.todayDate===clock.date&&_sectorVolumeIsClose(saved.data);})) return;
+  _sectorCloseAttempt=Date.now();_doFetchSectorVolumes();
+}
+setInterval(_refreshSectorClose,60000);
+document.addEventListener('visibilitychange',_refreshSectorClose);
+window.addEventListener('pageshow',_refreshSectorClose);
 
 // ── 市场风格（国证 399372~399377，腾讯当日分钟行情）───────────────
 // 颜色区分大/中/小盘，实线=成长、虚线=价值；全部换算为相对昨收涨跌幅后同轴比较。
