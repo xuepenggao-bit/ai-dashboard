@@ -54,8 +54,22 @@
 .cm-badge.wait {background: #f2e9ed; border-color: #d9c4cd; color: #754857;}
 .cm-badge.missing {background: #edf0f4; border-color: #ccd5df; color: #45566a;}
 .cm-matrix-layout {display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(370px, .85fr); gap: 24px; align-items: start;}
-.cm-chart {height: 610px; position: relative; padding: 12px; background: #f8fafc; border: 1px solid #e0e7ef; border-radius: 12px;}
+.cm-chart {height: 420px; position: relative; padding: 12px; background: #f8fafc; border: 1px solid #e0e7ef; border-radius: 12px;}
 .cm-chart-column {min-width: 0;}
+.cm-map-coverage {display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0 2px 10px; color: #264e70; font-size: 13px;}
+.cm-map-coverage strong {font-size: 15px; font-weight: 750;}
+.cm-map-coverage span {color: #546b81;}
+.cm-map-pending {margin-top: 13px; padding: 12px; border: 1px dashed #b7c9da; border-radius: 11px; background: #f3f7fb;}
+.cm-map-pending-title {font-size: 12px; color: #50657a; font-weight: 650; margin-bottom: 9px;}
+.cm-map-pending-grid {display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px;}
+.cm-map-pending-item {text-align: left; border: 1px solid #cbd8e5; border-radius: 9px; background: #fff; padding: 10px 12px; font: inherit; cursor: pointer; color: #244b70; line-height: 1.55;}
+.cm-map-pending-item:hover {border-color: #7e9fbd; background: #f8fbff;}
+.cm-map-pending-item strong {display: block; font-size: 14px; font-weight: 750;}
+.cm-map-pending-item span {display: block; font-size: 11px; color: #597084; margin-top: 3px;}
+.cm-map-pending-item small {display: block; font-size: 11px; color: #657687; margin-top: 4px;}
+.cm-watch-heading {display: flex; flex-wrap: wrap; gap: 7px; align-items: center;}
+.cm-watch-reason {font-size: 12px; color: #526e86; font-weight: 650;}
+.cm-watch-dates {font-size: 11px; line-height: 1.7; color: #587086; margin-top: 15px;}
 .cm-bubble-note {display: flex; align-items: center; gap: 9px; padding: 10px 4px 0; color: #395a77; font-size: 12px; line-height: 1.6;}
 .cm-bubble-symbol {flex: 0 0 17px; width: 17px; height: 17px; border: 1.5px solid #386b9b; border-radius: 50%; background: #d8e8f5;}
 .cm-chart-empty {height: 350px; display: flex; align-items: center; justify-content: center; background: #f8fafc; color: var(--cm-muted); border-radius: 10px;}
@@ -152,7 +166,7 @@
 .cm-method li + li {margin-top: 7px;}
 .cm-loading {padding: 48px; text-align: center; color: #486581; background: #f8fafc; border: 1px solid var(--cm-line); border-radius: 14px;}
 .cm-asof-alert {background: #fff4e2; color: #795019; border: 1px solid #e6cda2; border-radius: 10px; padding: 12px 15px; font-size: 14px; line-height: 1.75; margin: 14px 0;}
-.cm-refresh:focus-visible, .cm-sector-btn:focus-visible, .cm-growth-row button:focus-visible, .cm-select:focus-visible, .cm-source-details summary:focus-visible, .cm-table-wrap:focus-visible {outline: 3px solid #88b7df; outline-offset: 3px;}
+.cm-refresh:focus-visible, .cm-sector-btn:focus-visible, .cm-growth-row button:focus-visible, .cm-map-pending-item:focus-visible, .cm-select:focus-visible, .cm-source-details summary:focus-visible, .cm-table-wrap:focus-visible {outline: 3px solid #88b7df; outline-offset: 3px;}
 @media (max-width: 1180px) {
   .cm-research-context {grid-template-columns: 1fr;}
   .cm-opportunities {grid-template-columns: repeat(2, minmax(0, 1fr));}

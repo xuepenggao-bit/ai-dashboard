@@ -33,6 +33,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify map coverage, comparable periods and evidence watchlist
+        run: node --test tests/test_chain_monitor.cjs tests/test_chain_map.cjs
       - name: Verify reported earnings, TTM and loss-base rules
         run: python -m unittest discover -s tests -p test_refresh_chain_monitor.py -v
       - name: Refresh reported results and valuation snapshots
