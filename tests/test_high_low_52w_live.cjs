@@ -45,7 +45,7 @@ function context(config={}){
           if(config.stale&&code==='sh600000')return quote(code,{30:'20260930150000'});
           if(config.suspend&&code==='sh600000')return quote(code,{6:'0',33:'0',34:'0'});
           if(config.adjust&&code==='sh600000')return quote(code,{4:'6',33:'8',34:'4'});
-          return quote(code);
+          return quote(code,config.stamp?{30:config.stamp}:{});
         }).join('\n');
       }
       throw Error('Unexpected URL '+url);
@@ -76,6 +76,18 @@ module.exports=(async()=>{
     {baseline:{...baseline,validThrough:'2026-10-08'}}]){
     const t=context(config);await t.ctx.refreshHighLow52Live(true);assert.equal(t.captured.length,0,JSON.stringify(config).slice(0,100));
   }
+  const recoveringConfig={baseline:{...baseline,asOfDate:'2026-09-29',updatedAt:'2026-09-29T08:00:00Z'}};
+  const recovering=context(recoveringConfig);
+  await recovering.ctx.refreshHighLow52Live(true);
+  assert.equal(recovering.captured.length,0,'Stale comparison prices cannot produce a false live count');
+  recoveringConfig.baseline={...baseline};
+  await recovering.ctx.refreshHighLow52Live(true);
+  assert.equal(recovering.captured.length,1,'A repaired baseline must be picked up immediately without reloading the page');
+  assert.equal(recovering.captured[0].asOf,'10:14');
+  recoveringConfig.stamp='20261009101500';
+  await recovering.ctx.refreshHighLow52Live(true);
+  assert.equal(recovering.captured.length,2,'The same session continues to publish fresh observations');
+  assert.equal(recovering.captured[1].asOf,'10:15');
   for(const config of [{missing:true},{stale:true},{adjust:true,badAdjustment:true}]){
     const partial=context(config);await partial.ctx.refreshHighLow52Live(true);
     assert.equal(partial.captured.length,1,'Isolated unavailable stock no longer cancels whole market');

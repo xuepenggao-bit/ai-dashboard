@@ -11,7 +11,8 @@ on:
       - 'tests/test_refresh_high_low_recovery.py'
       - 'tests/test_refresh_high_low_universe.py'
   schedule:
-    # Beijing 08:15 repairs yesterday's baseline before the open if needed.
+    # Beijing 07:15 / 08:15 repair yesterday's baseline before the open.
+    - cron: '15 23 * * 0-4'
     - cron: '15 0 * * 1-5'
     # Beijing 15:15 / 16:15, then 20:15 when daily constituent publication settles.
     - cron: '15 7,8,12 * * 1-5'
@@ -45,14 +46,21 @@ jobs:
         run: python -m unittest discover -s tests -p test_refresh_high_low_recovery.py -v
       - name: Test staged constituent publication and cache repair
         run: python -m unittest discover -s tests -p test_refresh_high_low_universe.py -v
-      - name: Restore dated universe cache (recent rosters are revalidated)
-        uses: actions/cache@v4
+      - name: Restore completed-session symbol histories and dated rosters
+        id: history-cache
+        uses: actions/cache/restore@v4
         with:
-          path: ${{ runner.temp }}/high-low-52w-cache/universe-*.json
-          key: high-low-universe-${{ github.run_id }}
-          restore-keys: high-low-universe-
+          path: ${{ runner.temp }}/high-low-52w-cache
+          key: high-low-session-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: high-low-session-v2-
       - name: Calculate complete 60-session history
-        run: python .github/scripts/refresh_high_low_52w.py --workers 6
+        run: python .github/scripts/refresh_high_low_52w.py --workers 6 --max-seconds 1500
+      - name: Keep successful whole-symbol histories even if collection failed
+        if: always() && steps.history-cache.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/high-low-52w-cache
+          key: high-low-session-v2-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Persist verified history and next-session comparison prices
         run: |
           git config user.name 'github-actions[bot]'

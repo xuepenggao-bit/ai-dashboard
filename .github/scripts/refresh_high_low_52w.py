@@ -19,6 +19,8 @@ import math
 import os
 from pathlib import Path
 import re
+import shutil
+import threading
 import time
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -39,14 +41,23 @@ MA_METHOD = ('沪深A股（含ST、不含北交所）；按每个交易日当时
              '以同一批前复权日线计算20/60/120日收盘均线（含当日）；'
              '收盘价严格高于均线计入分子；当日无行情、停牌无成交或该窗口历史不足的股票不计入该窗口分母；占比=高于均线家数/可比家数。')
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36'
+_REFRESH_DEADLINE = None
+_DAILY_SOURCE_HEALTH = {}
+_DAILY_SOURCE_LOCK = threading.Lock()
+
+
+def check_deadline():
+    if _REFRESH_DEADLINE is not None and time.monotonic() >= _REFRESH_DEADLINE:
+        raise RuntimeError('Collection time budget reached; completed symbol caches retained for the next run')
 
 
 def get_json(url, attempts=3):
     error = None
     for attempt in range(attempts):
+        check_deadline()
         try:
             req = Request(url, headers={'User-Agent': UA, 'Referer': 'https://gu.qq.com/'})
-            with urlopen(req, timeout=25) as response:
+            with urlopen(req, timeout=12) as response:
                 return json.loads(response.read().decode('utf-8'))
         except Exception as exc:
             error = exc
@@ -59,13 +70,90 @@ def valid_code(secucode):
     return bool(re.fullmatch(r'(?:60\d{4}|68\d{4})\.SH|(?:00\d{4}|30\d{4})\.SZ', str(secucode)))
 
 
-def cached(path, loader):
-    if path.exists():
-        return json.loads(path.read_text())
-    result = loader()
+def cached_bars(cache_dir, latest, code, loader):
+    """Resume whole-symbol histories only within the same completed-session build.
+
+    A cache file contains one provider's full adjusted series, never a patchwork
+    of bars collected on different days or from different price sources.
+    """
+    path = cache_dir / latest / (code + '.json')
+    stored = read_json(path)
+    if (isinstance(stored, dict) and stored.get('schemaVersion') == 1 and
+            stored.get('asOfDate') == latest and stored.get('code') == code):
+        try:
+            return validate_cached_bars(stored.get('bars'), latest)
+        except (ValueError, TypeError, KeyError):
+            pass
+    result = validate_cached_bars([row for row in loader() if row['date'] <= latest], latest)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(result, ensure_ascii=False, separators=(',', ':')))
+    temporary = path.with_suffix('.tmp')
+    temporary.write_text(json.dumps({'schemaVersion': 1, 'asOfDate': latest, 'code': code,
+                                     'bars': result}, ensure_ascii=False, separators=(',', ':')))
+    temporary.replace(path)
     return result
+
+
+def validate_cached_bars(rows, latest):
+    if not isinstance(rows, list) or not rows:
+        raise ValueError('Cached daily series is empty')
+    previous = ''
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError('Invalid cached daily bar')
+        date = row.get('date')
+        if not isinstance(date, str) or dt.date.fromisoformat(date).isoformat() != date or not previous < date <= latest:
+            raise ValueError('Cached daily dates are unordered or outside the completed session')
+        values = [row.get(key) for key in ('close', 'high', 'low', 'volume')]
+        if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) for value in values):
+            raise ValueError('Invalid cached daily price')
+        if row['high'] < row['low'] or row['volume'] < 0:
+            raise ValueError('Invalid cached daily OHLC')
+        previous = date
+    return rows
+
+
+def daily_source_ready(host):
+    with _DAILY_SOURCE_LOCK:
+        return _DAILY_SOURCE_HEALTH.get(host, {}).get('until', 0) <= time.monotonic()
+
+
+def daily_source_result(host, success):
+    with _DAILY_SOURCE_LOCK:
+        if success:
+            _DAILY_SOURCE_HEALTH.pop(host, None)
+        else:
+            state = _DAILY_SOURCE_HEALTH.setdefault(host, {'failures': 0, 'until': 0})
+            state['failures'] += 1
+            if state['failures'] >= 8:
+                state['until'] = time.monotonic() + 30
+
+
+def prune_dated_history_caches(cache_dir, keep=3, now=None):
+    """Bound this tool's dated history cache without touching roster files.
+
+    Future dates, symlinks and all non-date entries are outside cleanup scope.
+    The current Beijing date is always retained if its directory exists.
+    """
+    today = (now or dt.datetime.now(TZ)).date().isoformat()
+    try:
+        candidates = []
+        for path in cache_dir.iterdir():
+            if path.is_symlink() or not path.is_dir() or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', path.name):
+                continue
+            try:
+                date = dt.date.fromisoformat(path.name).isoformat()
+            except ValueError:
+                continue
+            if date <= today:
+                candidates.append(path)
+        dated = sorted(candidates, key=lambda path: path.name, reverse=True)
+        for path in dated[max(1, keep):]:
+            if path.name != today:
+                shutil.rmtree(path)
+    except OSError as exc:
+        # Cleanup failure must not invalidate verified output or mask the
+        # original collection error; the next scheduled run can retry it.
+        print(f'Dated history cache cleanup deferred: {exc}', flush=True)
 
 
 def fetch_universe(date):
@@ -231,19 +319,31 @@ def parse_bars(payload, code):
 
 def fetch_bars(code):
     errors = []
-    for host in ('https://web.ifzq.gtimg.cn/appstock/app/fqkline/get',
-                 'https://proxy.finance.qq.com/ifzqgtimg/appstock/app/fqkline/get'):
+    hosts = ('https://web.ifzq.gtimg.cn/appstock/app/fqkline/get',
+             'https://proxy.finance.qq.com/ifzqgtimg/appstock/app/fqkline/get',
+             'https://push2his.eastmoney.com/api/qt/stock/kline/get')
+    # A source-wide outage should not incur the same long timeout for every
+    # stock. Pause that endpoint briefly; still probe it again after cooldown.
+    while not any(daily_source_ready(host) for host in hosts):
+        check_deadline()
+        time.sleep(1)
+    for host in hosts:
+        check_deadline()
+        if not daily_source_ready(host):
+            errors.append(host + ': brief source cooldown')
+            continue
         try:
-            payload = get_json(host + '?' + urlencode({'param': f'{code},day,,,500,qfq'}), attempts=1)
-            return parse_bars(payload, code)
+            if host == hosts[-1]:
+                # Each successful fallback supplies a whole adjusted history.
+                result = fetch_eastmoney_bars(code)
+            else:
+                payload = get_json(host + '?' + urlencode({'param': f'{code},day,,,500,qfq'}), attempts=1)
+                result = parse_bars(payload, code)
+            daily_source_result(host, True)
+            return result
         except Exception as exc:
+            daily_source_result(host, False)
             errors.append(str(exc))
-    # Keep the entire adjusted history from one provider and one retrieval.
-    # A failed Tencent request must not be patched with individual raw bars.
-    try:
-        return fetch_eastmoney_bars(code)
-    except Exception as exc:
-        errors.append(str(exc))
     raise RuntimeError(f'{code}: all adjusted daily endpoints failed: {errors}')
 
 
@@ -506,7 +606,11 @@ def complete_cached_snapshots(latest, now=None, cache_dir=None):
 def parallel_map(items, fn, workers=6, label='fetch', attempts=3):
     result, errors = {}, {}
     pending = list(items)
+    def collect(item):
+        check_deadline()
+        return fn(item)
     for attempt in range(max(1, min(attempts, 3))):
+        check_deadline()
         if attempt:
             # A short bounded cooldown; retry only missing symbols, preserving
             # successful same-run histories in their original adjustment basis.
@@ -515,7 +619,7 @@ def parallel_map(items, fn, workers=6, label='fetch', attempts=3):
         errors = {}
         total = len(pending)
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-            futures = {pool.submit(fn, item): item for item in pending}
+            futures = {pool.submit(collect, item): item for item in pending}
             for number, future in enumerate(concurrent.futures.as_completed(futures), 1):
                 item = futures[future]
                 try:
@@ -565,8 +669,8 @@ def refresh_history(cache_dir, workers=6, force=False):
     symbols = sorted(set().union(*(set(value) for value in universes.values())))
     # All histories use the same adjustment vintage; reuse only within this
     # completed-session build, never merge differently adjusted raw bars.
-    prices = parallel_map(symbols, lambda code: cached(cache_dir / latest / (code + '.json'),
-                                                     lambda: fetch_bars(code)), workers, 'daily bars')
+    prices = parallel_map(symbols, lambda code: cached_bars(cache_dir, latest, code,
+                                                          lambda: fetch_bars(code)), workers, 'daily bars')
     # Daily APIs can already include a live/future bar. Neither historical
     # series nor next-session comparison prices may use an uncompleted bar.
     prices = {code: [row for row in bars if row['date'] <= latest] for code, bars in prices.items()}
@@ -600,12 +704,21 @@ def refresh_history(cache_dir, workers=6, force=False):
 
 
 def main():
+    global _REFRESH_DEADLINE
     parser = argparse.ArgumentParser()
     parser.add_argument('--cache-dir', type=Path, default=Path(os.environ.get('RUNNER_TEMP', '/tmp')) / 'high-low-52w-cache')
     parser.add_argument('--workers', type=int, default=6)
     parser.add_argument('--force', action='store_true', help='Rebuild even on a non-trading day')
+    parser.add_argument('--max-seconds', type=int, default=1500,
+                        help='Leave time to save successful symbol caches before the job timeout')
     args = parser.parse_args()
-    refresh_history(args.cache_dir, max(1, min(args.workers, 10)), args.force)
+    _REFRESH_DEADLINE = time.monotonic() + max(60, args.max_seconds)
+    try:
+        refresh_history(args.cache_dir, max(1, min(args.workers, 10)), args.force)
+    finally:
+        # ThreadPoolExecutor has joined all workers before refresh_history
+        # returns or raises, so no cache file is being written during pruning.
+        prune_dated_history_caches(args.cache_dir)
 
 
 if __name__ == '__main__':
