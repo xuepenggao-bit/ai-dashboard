@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const m=require('../assets/chain-monitor.js');
-const today=new Date().toISOString().slice(0,10),period=m.expectedReportDate(today);
+const today=m.beijingDay(),period=m.expectedReportDate(today);
 function stock(overrides={}){
   return {code:'300308',group:'optical',name:'测试公司',reportDate:period,
     financials:{current:{revenue:130,netProfit:30,deductedProfit:28,operatingCashFlow:22},
@@ -82,36 +82,53 @@ test('bubble area is proportional to sample market cap with no minimum-radius di
   assert.equal(m.bubbleRadius(null,400),0);assert.equal(m.bubbleRadius(-1,400),0);assert.equal(m.bubbleRadius(100,0),0);
 });
 test('qualitative research is dated, covers all groups and keeps previous underwriting',()=>{
-  const fs=require('node:fs'),r=JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'../data/chain_research.json')));
-  assert.equal(m.validResearch(r,'2026-10-14'),true);
-  assert.equal(r.groups.length,10);assert.equal(r.groups.filter(g=>g.industry&&g.valuationJudgment&&g.catalyst&&g.falsifier).length,10);
-  assert.equal(r.previousRevision.asOf,'2026-10-09');
-  const previous=JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'../'+r.previousRevision.path)));
-  assert.equal(previous.asOf,'2026-10-09');assert.equal(previous.groups.length,10);
-  const server=r.groups.find(g=>g.id==='server');
-  assert.ok(server.fact.includes('累计预告')&&server.fact.includes('未经预审计'));
-  assert.ok(server.stockNotes['000977'].includes('不替代已披露TTM'));
-  assert.ok(r.groups.find(g=>g.id==='memory').fact.includes('同比百分比不适用'));
+  const fs=require('node:fs'),path=require('node:path');
+  const read=relative=>JSON.parse(fs.readFileSync(path.join(__dirname,'../',relative)));
+  const r=read('data/chain_research.json'),monitor=read('data/chain_monitor.json');
+  const expectedIds=monitor.groups.map(g=>g.id).sort();
+  assert.equal(m.validResearch(r,today),true);
+  assert.equal(expectedIds.length,10);
+  assert.deepEqual(r.groups.map(g=>g.id).sort(),expectedIds);
+  for(const group of r.groups){
+    for(const field of ['fact','industry','valuationJudgment','catalyst','falsifier']){
+      assert.ok(typeof group[field]==='string'&&group[field].trim(),`${group.id}.${field} must be meaningful text`);
+    }
+    assert.ok(group.sources.length>0,`${group.id} must have a dated source`);
+  }
+  assert.match(r.previousRevision.path,/^data\/chain_research_history\/[a-zA-Z0-9._-]+\.json$/);
+  const previous=read(r.previousRevision.path);
+  assert.equal(previous.asOf,r.previousRevision.asOf);
+  assert.ok(previous.asOf<r.asOf,'the archived research must predate the current review');
+  assert.equal(m.validResearch(previous,r.asOf),true);
+  assert.deepEqual(previous.groups.map(g=>g.id).sort(),expectedIds);
 });
+function researchFixture(asOf='2020-10-14',revision='a'){
+  return {schemaVersion:1,asOf,revision,
+    groups:Array.from({length:10},(_,i)=>({id:'sector-'+i,fact:'Disclosed operating evidence',sources:[{url:'https://example.com/report',date:asOf}]})),
+    marketContext:[{title:'Market context',fact:'Dated market evidence',sources:[{url:'https://example.com/context',date:asOf}]}]};
+}
+function shiftDay(date,days){return new Date(Date.parse(date+'T00:00:00Z')+days*86400000).toISOString().slice(0,10);}
 test('future, incomplete, duplicate or future-sourced research cannot replace a valid review',()=>{
-  const r=require('../data/chain_research.json');
-  assert.equal(m.validResearch(null,'2026-10-14'),false);
-  assert.equal(m.validResearch({...r,asOf:'2099-10-14'},'2026-10-14'),false);
-  assert.equal(m.validResearch({...r,groups:[]},'2026-10-14'),false);
+  const r=researchFixture(),reviewDay=r.asOf,nextDay=shiftDay(reviewDay,1);
+  assert.equal(m.validResearch(r,reviewDay),true);
+  assert.equal(m.validResearch(null,reviewDay),false);
+  assert.equal(m.validResearch(researchFixture(nextDay),reviewDay),false);
+  assert.equal(m.validResearch({...r,groups:[]},reviewDay),false);
   const duplicate=structuredClone(r);duplicate.groups[1].id=duplicate.groups[0].id;
-  assert.equal(m.validResearch(duplicate,'2026-10-14'),false);
-  const future=structuredClone(r);future.groups[0].sources[0].date='2026-10-15';
-  assert.equal(m.chooseResearch(r,future,'2026-10-14'),r);
-  const context=structuredClone(r);context.marketContext[0].sources[0].date='2026-10-15';
-  assert.equal(m.validResearch(context,'2026-10-14'),false);
+  assert.equal(m.validResearch(duplicate,reviewDay),false);
+  const future=structuredClone(r);future.groups[0].sources[0].date=nextDay;
+  assert.equal(m.chooseResearch(r,future,reviewDay),r);
+  const context=structuredClone(r);context.marketContext[0].sources[0].date=nextDay;
+  assert.equal(m.validResearch(context,reviewDay),false);
 });
 test('older financial snapshot cannot overwrite newer qualitative research',()=>{
-  const fresh=require('../data/chain_research.json'),old=require('../data/chain_research_history/2026-10-09.json');
-  assert.equal(m.chooseResearch(fresh,old,'2026-10-14'),fresh);
-  assert.equal(m.chooseResearch(old,fresh,'2026-10-14'),fresh);
-  assert.equal(m.chooseResearch(fresh,undefined,'2026-10-14'),fresh);
-  const later={...fresh,revision:'20261014b'};
-  assert.equal(m.chooseResearch(fresh,later,'2026-10-14'),later);
+  const fresh=researchFixture(),reviewDay=fresh.asOf,old=researchFixture(shiftDay(reviewDay,-1));
+  assert.equal(m.chooseResearch(fresh,old,reviewDay),fresh);
+  assert.equal(m.chooseResearch(old,fresh,reviewDay),fresh);
+  assert.equal(m.chooseResearch(fresh,undefined,reviewDay),fresh);
+  const later={...fresh,revision:'b'};
+  assert.equal(m.chooseResearch(fresh,later,reviewDay),later);
+  assert.equal(m.chooseResearch(later,fresh,reviewDay),later);
 });
 test('research valuation requires two positive TTM samples rather than one-stock industry PE',()=>{
   const a=stock(),g={stocks:[a],pe:20,peCount:1,total:2};
