@@ -10420,16 +10420,17 @@ function _sectorVolumeValid(data){
   const clock=_breadthBeijingClock();
   if(!data||!/^\d{4}-\d{2}-\d{2}$/.test(data.todayDate)||data.todayDate>clock.date) return false;
   const labels=data.labels,amounts=data.todayAmount;
-  if(!Array.isArray(labels)||labels.length<2||labels.length>250||!Array.isArray(amounts)||amounts.length!==labels.length) return false;
+  if(!Array.isArray(labels)||labels.length<1||labels.length>250||!Array.isArray(amounts)||amounts.length!==labels.length) return false;
   if(!Array.isArray(data.todayPct)||data.todayPct.length!==labels.length||!Array.isArray(data.yesterdayAmount)||data.yesterdayAmount.length!==labels.length) return false;
   if(data.yesterdaySeries&&(!Array.isArray(data.yesterdaySeries)||data.yesterdaySeries.length>250||!data.yesterdaySeries.every((point,i)=>
     Array.isArray(point)&&/^\d{2}:\d{2}$/.test(point[0])&&Number.isFinite(point[1])&&point[1]>=0
     &&(!i||(point[0]>data.yesterdaySeries[i-1][0]&&point[1]>=data.yesterdaySeries[i-1][1]))))) return false;
-  return labels.every((time,i)=>/^\d{2}:\d{2}$/.test(time)&&((time>='09:30'&&time<='11:30')||(time>='13:00'&&time<='15:00'))&&(!i||time>labels[i-1])
+  return labels.every((time,i)=>/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)&&((time>='09:30'&&time<='11:30')||(time>='13:00'&&time<='15:00'))&&(!i||time>labels[i-1])
     &&Number.isFinite(amounts[i])&&amounts[i]>=0&&(!i||amounts[i]>=amounts[i-1])
     &&(data.todayPct[i]===null||Number.isFinite(data.todayPct[i]))&&Number.isFinite(data.yesterdayAmount[i])&&data.yesterdayAmount[i]>=0)
     &&data.tod===labels[labels.length-1]&&data.todayCum===amounts[amounts.length-1]&&data.todayCum>0
-    &&(data.todayDate!==clock.date||data.tod<=clock.time)
+    // 东方财富按区间结束分钟标记正在形成的柱：10:42:43 对应 10:43。
+    &&(data.todayDate!==clock.date||Number(data.tod.slice(0,2))*60+Number(data.tod.slice(3))<=clock.minute+1)
     &&Number.isFinite(data.yesterdaySame)&&Number.isFinite(data.yesterdayFull)
     &&(data.lastPct===null||Number.isFinite(data.lastPct))&&(data.lastPrice===null||Number.isFinite(data.lastPrice));
 }
@@ -10444,6 +10445,11 @@ function _sectorVolumeCompleteLabels(labels){
 }
 function _sectorVolumeIsClose(data){
   // 只把完整的 15:00 分钟序列认作收盘；14:59 或残缺曲线仍需补取。
+  if(!data) return false;
+  const clock=_breadthBeijingClock(),closedAt=Date.parse(data.todayDate+'T15:00:00+08:00');
+  const observed=Number.isFinite(data.sourceTime)?data.sourceTime:data.observedAt;
+  // 14:59 正在形成的最后一柱也标为 15:00，不能据此提前冻结收盘数据。
+  if((data.todayDate===clock.date&&clock.minute<900)||(Number.isFinite(observed)&&observed<closedAt)) return false;
   return _sectorVolumeValid(data)&&data.tod==='15:00'&&_sectorVolumeCompleteLabels(data.labels)
     &&data.lastPrice>0&&Number.isFinite(data.lastPct)&&Number.isFinite(data.todayPct[data.todayPct.length-1]);
 }
@@ -10489,11 +10495,12 @@ function _sectorVolumeParse(raw){
 async function _sectorVolumeRequest(meta){
   const clock=_breadthBeijingClock(),afterClose=clock.minute>=900;
   const query='?secid=90.'+meta.code+'&fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11&fields2=f51,f53,f57&iscr=0&ndays=';
-  let raw=null,preClose=null,lastError=null;
+  let raw=null,preClose=null,sourceTime=null,lastError=null;
   const readPayload=j=>{
     const data=j&&j.data,rows=data&&data.trends,base=Number(data&&data.preClose);
     if(!Array.isArray(rows)||!rows.length||(data.code&&data.code!==meta.code)) throw new Error('实时分钟数据为空或代码不匹配');
-    return {rows,preClose:isFinite(base)&&base>0?base:null};
+    const stamp=Number(data.time)*1000;
+    return {rows,preClose:isFinite(base)&&base>0?base:null,sourceTime:Number.isFinite(stamp)&&stamp>0&&stamp<=Date.now()+60000?stamp:null};
   };
   const fetchRealtime=async()=>{
     const urls=[
@@ -10527,12 +10534,12 @@ async function _sectorVolumeRequest(meta){
   try{
     const j=await _idxFetch('https://push2his.eastmoney.com/api/qt/stock/trends2/get'+query+'2&_='+Date.now(),{timeout:5200,retries:1});
     const payload=readPayload(j);
-    if(payload.rows.length>1){raw=payload.rows;preClose=payload.preClose;}
+    if(payload.rows.length>1){raw=payload.rows;preClose=payload.preClose;sourceTime=payload.sourceTime;}
     else throw new Error('历史分钟数据为空');
   }catch(e){ lastError=e; }
   // 弱网或历史域名受限时，退回实时域名；至少保留今日曲线和累计成交额。
   if(!raw){
-    try{const payload=await fetchRealtime();raw=payload.rows;preClose=payload.preClose;}catch(e){lastError=e;}
+    try{const payload=await fetchRealtime();raw=payload.rows;preClose=payload.preClose;sourceTime=payload.sourceTime;}catch(e){lastError=e;}
   }
   const byDay=_sectorVolumeParse(raw||[]);
   let dates=Object.keys(byDay).sort();
@@ -10540,8 +10547,10 @@ async function _sectorVolumeRequest(meta){
   if(raw&&(clock.isTrading||afterClose)&&(dates[dates.length-1]!==clock.date||(afterClose&&byDay[clock.date]&&byDay[clock.date][byDay[clock.date].length-1].tod!=='15:00'))){
     try{
       const livePayload=await fetchRealtime(),liveByDay=_sectorVolumeParse(livePayload.rows);
-      if(liveByDay[clock.date]) byDay[clock.date]=liveByDay[clock.date];
-      if(livePayload.preClose) preClose=livePayload.preClose;
+      if(liveByDay[clock.date]){
+        byDay[clock.date]=liveByDay[clock.date];sourceTime=livePayload.sourceTime;
+        if(livePayload.preClose) preClose=livePayload.preClose;
+      }
       dates=Object.keys(byDay).sort();
     }catch(e){lastError=e;}
   }
@@ -10549,6 +10558,7 @@ async function _sectorVolumeRequest(meta){
     try{
       const closed=await fetchClosedHistory(),closedDays=_sectorVolumeParse(closed.rows);
       Object.assign(byDay,closedDays);
+      sourceTime=null;
       if(closed.preClose) preClose=closed.preClose;
       dates=Object.keys(byDay).sort();
     }catch(e){lastError=e;}
@@ -10571,11 +10581,13 @@ async function _sectorVolumeRequest(meta){
   const latestPricePoint=[...todayRows].reverse().find(point=>point.price!=null);
   const latestPctPoint=[...todayPct].reverse().find(value=>typeof value==='number'&&Number.isFinite(value));
   const out={
-    todayDate,yesterdayDate,labels,todayAmount,yesterdayAmount,yesterdaySeries,
+    todayDate,yesterdayDate,labels,todayAmount,yesterdayAmount,yesterdaySeries,sourceTime,observedAt:Date.now(),
     todayCum:todayRun,yesterdaySame:yesterdayRun,yesterdayFull,tod:labels[labels.length-1],
     todayPct,lastPrice:latestPricePoint?latestPricePoint.price:null,lastPct:Number.isFinite(latestPctPoint)?latestPctPoint:null,
     delayed:(clock.isTrading||afterClose)&&todayDate!==clock.date,
   };
+  const observed=new Date((sourceTime||out.observedAt)+8*3600000).toISOString();
+  out.asOf=observed.slice(0,10)===todayDate&&observed.slice(11,16)<out.tod?observed.slice(11,16):out.tod;
   // 接口短暂回退到旧快照时，不用旧交易日或更早分钟覆盖已显示的新数据。
   const existing=_sectorVolumeCache[meta.code]&&_sectorVolumeCache[meta.code].data;
   if(existing&&String(existing.todayDate||'')+' '+String(existing.tod||'')>String(out.todayDate||'')+' '+String(out.tod||'')) return existing;
@@ -10788,7 +10800,7 @@ function _renderSectorVolume(meta,data,cached){
   const pricePointText=data.lastPrice==null?'':` title="最新点位 ${Number(data.lastPrice).toLocaleString('zh-CN',{maximumFractionDigits:2})}"`;
   body.className='';
   body.innerHTML=`<div class="sector-volume-kpis">`
-    +`<div class="sector-volume-kpi primary"><div class="sector-volume-kpi-label">${primaryLabel}</div><div class="sector-volume-kpi-value">${_sectorAmountFmt(data.todayCum,false)}</div><div class="sector-volume-kpi-note">截至 ${data.tod}</div></div>`
+    +`<div class="sector-volume-kpi primary"><div class="sector-volume-kpi-label">${primaryLabel}</div><div class="sector-volume-kpi-value">${_sectorAmountFmt(data.todayCum,false)}</div><div class="sector-volume-kpi-note">截至 ${data.asOf||data.tod}</div></div>`
     +`<div class="sector-volume-kpi"><div class="sector-volume-kpi-label">${secondaryLabel}</div><div class="sector-volume-kpi-value">${secondaryValue>0?_sectorAmountFmt(secondaryValue,false):'—'}</div><div class="sector-volume-kpi-note">${secondaryNote}</div></div>`
     +`</div>`
     +`<div id="sectorAmountShare-${meta.code}" class="sector-volume-share is-pending"><div class="sector-volume-share-copy"><span class="sector-volume-share-label">占沪深两市成交额</span><span id="sectorAmountShareNote-${meta.code}" class="sector-volume-share-note">等待同日两市成交额口径</span></div><strong id="sectorAmountShareValue-${meta.code}" class="sector-volume-share-value">—</strong></div>`
@@ -10802,7 +10814,7 @@ function _renderSectorVolume(meta,data,cached){
     +`<div class="sector-volume-foot">${meta.sourceName} · ${meta.code} · 东方财富分钟行情${data.delayed?' · 源延迟':''}${cached?' · 缓存':''}</div>`;
   _updateSectorAmountShare(meta,data);
   const dateLabel=data.todayDate?data.todayDate.slice(5):'';
-  if(ts) ts.textContent=(dateLabel?dateLabel+' ':'')+data.tod+(closed?' · 收盘':awaitingClose?' · 待收盘补齐':!sameTradingDay?' · 历史快照':'')+(cached?' · 已保存':'');
+  if(ts) ts.textContent=(dateLabel?dateLabel+' ':'')+(data.asOf||data.tod)+(closed?' · 收盘':awaitingClose?' · 待收盘补齐':!sameTradingDay?' · 历史快照':'')+(cached?' · 已保存':'');
 }
 
 async function _doFetchSectorVolumes(){

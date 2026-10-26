@@ -16,8 +16,12 @@ function payload(code,values=rows()){return {data:{code,preClose:100,trends:valu
 function harness(storage=new Map()){
   const elements={},listeners={},calls=[];
   const clock={date:'2026-10-23',time:'16:00',minute:960,weekday:5,isTrading:false};
+  class FakeDate extends Date{
+    constructor(...args){super(...(args.length?args:[FakeDate.now()]));}
+    static now(){return Date.parse(clock.date+'T'+clock.time+':30+08:00');}
+  }
   let fetcher=async url=>payload(codes.find(code=>url.includes(code)),rows('2026-10-22',100).concat(rows()));
-  const context=vm.createContext({console,Date,Map,Set,Number,JSON,Math,Promise,
+  const context=vm.createContext({console,Date:FakeDate,Map,Set,Number,JSON,Math,Promise,
     setTimeout:fn=>{queueMicrotask(fn);return 1;},setInterval:fn=>{listeners.interval=fn;},
     window:{addEventListener:(name,fn)=>{listeners[name]=fn;}},
     document:{hidden:false,addEventListener:(name,fn)=>{listeners[name]=fn;},getElementById:id=>elements[id]||(elements[id]={innerHTML:'',textContent:'',className:'',classList:{contains:()=>true,add(){},remove(){}}})},
@@ -65,6 +69,39 @@ test('after-close minute K-line is a fallback only; first-ever closed visit surv
 test('complete original endpoint does not invoke a different source',async()=>{
   const h=harness();await h.c._sectorVolumeRequest(meta('BK0877'));
   assert.equal(h.calls.length,1);assert.equal(h.calls.some(u=>u.includes('/kline/')),false);
+});
+
+test('all three live minute-ending labels are accepted while true future minutes are rejected',async()=>{
+  const h=harness();Object.assign(h.clock,{time:'10:00',minute:600,isTrading:true});
+  h.setFetch(async url=>({data:{...payload(codes.find(code=>url.includes(code)),rows('2026-10-23',110,labels.filter(t=>t<='10:01'))).data,time:Date.parse('2026-10-23T10:00:29+08:00')/1000}}));
+  await h.c._doFetchSectorVolumes();
+  for(const code of codes){
+    const data=h.c._sectorVolumeCache[code].data;
+    assert.equal(data.tod,'10:01');assert.equal(data.asOf,'10:00');assert.equal(h.c._sectorVolumeValid(data),true);
+    assert.match(h.e['sectorVolumeTs-'+code].textContent,/10:00/);
+    const future={...data,labels:data.labels.slice(0,-1).concat('10:02'),tod:'10:02'};
+    assert.equal(h.c._sectorVolumeValid(future),false,'Only the one forming minute is allowed');
+  }
+});
+
+test('opening minute can display its genuine amount before a second point arrives',async()=>{
+  const h=harness();Object.assign(h.clock,{time:'09:30',minute:570,isTrading:true});
+  h.setFetch(async()=>payload('BK1136',rows('2026-10-23',110,['09:30'])));
+  const data=await h.c._sectorVolumeRequest(meta('BK1136'));
+  assert.equal(data.todayCum,1e6);assert.equal(h.c._sectorVolumeValid(data),true);
+});
+
+test('14:59 forming 15:00 bar cannot freeze an unfinished close after the clock reaches 15:00',async()=>{
+  const h=harness();Object.assign(h.clock,{time:'14:59',minute:899,isTrading:true});
+  h.setFetch(async()=>({data:{...payload('BK1136').data,time:Date.parse('2026-10-23T14:59:29+08:00')/1000}}));
+  const forming=await h.c._sectorVolumeRequest(meta('BK1136'));
+  assert.equal(forming.tod,'15:00');assert.equal(h.c._sectorVolumeIsClose(forming),false);
+  Object.assign(h.clock,{time:'15:00',minute:900});
+  assert.equal(h.c._sectorVolumeIsClose(forming),false,'A clock tick alone cannot complete the cached final bar');
+  h.c._sectorVolumeCache.BK1136.ts=0;
+  h.setFetch(async()=>({data:{...payload('BK1136',rows().map((r,i)=>i===239?r.replace(/1000000$/,'2000000'):r)).data,time:Date.parse('2026-10-23T15:00:29+08:00')/1000}}));
+  const closed=await h.c._sectorVolumeCompare(meta('BK1136'));
+  assert.equal(closed.todayCum,241e6);assert.equal(h.c._sectorVolumeIsClose(closed),true);
 });
 
 test('after-close fallback accepts validated JSONP when browser fetch is blocked',async()=>{
