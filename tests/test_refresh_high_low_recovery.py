@@ -2,6 +2,7 @@ import datetime as dt
 import importlib.util
 import json
 from pathlib import Path
+import re
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -93,6 +94,22 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(attempts.count('bad'), 3)
         self.assertEqual([c.args[0] for c in sleep.call_args_list], [5, 15])
 
+    def test_collection_logs_bounded_symbol_and_source_failure_samples(self):
+        symbols = ['sh' + str(600000 + index) for index in range(5)]
+        detail = 'https://web.ifzq.gtimg.cn: source interrupted ' + 'x' * 700
+        with patch('builtins.print') as log:
+            with self.assertRaisesRegex(RuntimeError, 'incomplete: 5 failures'):
+                m.parallel_map(symbols, lambda code: (_ for _ in ()).throw(RuntimeError(detail)),
+                               workers=1, label='daily bars', attempts=1)
+        messages = [' '.join(str(value) for value in call.args) for call in log.call_args_list]
+        samples = [message for message in messages if any(code in message for code in symbols)]
+        self.assertEqual(len(samples), 3, 'Log only the first three failures, not thousands of symbols')
+        for index, message in enumerate(samples):
+            self.assertIn(symbols[index], message)
+            self.assertIn('https://web.ifzq.gtimg.cn: source interrupted', message)
+            self.assertNotIn('x' * 501, message, 'Limit exception detail to at most 500 characters')
+            self.assertLessEqual(len(message), 560, 'Bound each failure log including its symbol and label')
+
     def test_same_day_complete_close_skips_expensive_full_market_rebuild(self):
         class FixedDateTime(dt.datetime):
             @classmethod
@@ -124,11 +141,25 @@ class RecoveryTests(unittest.TestCase):
         self.assertIn("cron: '15 23 * * 0-4'", source)
         self.assertIn("cron: '15 0 * * 1-5'", source)
         self.assertIn("cron: '15 7,8,12 * * 1-5'", source)
+        self.assertIn("cron: '43 23 * * 0-4'", source)
+        self.assertIn("cron: '43 0,1,2 * * 1-5'", source)
+        self.assertIn('timeout-minutes: 35', source)
         self.assertIn('uses: actions/cache/restore@v4', source)
         self.assertIn('uses: actions/cache/save@v4', source)
         self.assertIn("if: always() && steps.history-cache.outcome == 'success'", source)
         self.assertIn('path: ${{ runner.temp }}/high-low-52w-cache\n', source)
-        self.assertIn('--max-seconds 1500', source)
+        self.assertEqual(source.count('--max-seconds 900'), 2, 'Two bounded 15-minute attempts leave time for cache and publication')
+        self.assertNotIn('--max-seconds 1500', source)
+        collect = re.search(r'(?ms)^      - name: [^\n]+\n(?:(?!^      - ).)*?^        id: collect\n(?:(?!^      - ).)*', source)
+        self.assertIsNotNone(collect, 'Give the first collection step an explicit outcome to gate recovery')
+        self.assertIn('continue-on-error: true', collect.group(0))
+        self.assertIn('--max-seconds 900', collect.group(0))
+        self.assertRegex(source, r"(?m)^        if: .*steps\.collect\.outcome == 'failure'.*$")
+        first_collect = source.index('id: collect')
+        retry_gate = source.index("steps.collect.outcome == 'failure'")
+        persist = source.index('name: Persist verified history')
+        self.assertLess(first_collect, retry_gate)
+        self.assertLess(retry_gate, persist, 'Never publish before a failed collection receives its bounded recovery attempt')
 
     def test_failed_run_keeps_successful_symbols_for_next_run(self):
         calls = {'good': 0, 'bad': 0}

@@ -186,7 +186,13 @@
     if(series.length<60)throw new Error('fewer than 60 valid closed market-heat observations; existing output preserved');
     const previousLast=previous?.series?.at(-1)?.date;
     if(previousLast&&series.at(-1).date<previousLast)throw new Error('market heat date regression; existing output preserved');
-    return {...next,series,asOf:series.at(-1).date,refreshStatus:{rejectedIncompleteDates:rejected,latestClosedDate:series.at(-1).date,mode:'close_only',note:'各源分批更新期间保留已验证收盘数据，待核心指标齐备后更新当日得分'}};
+    const now=clock(options.nowMs),latestClosedDate=series.at(-1).date;
+    // Report the attempted completed session, not the file-write timestamp. A
+    // partial intraday observation is never a target for this closing model.
+    const attempted=next.series.filter(r=>tradingDateValid(r?.date)&&r.status==='close'&&r.asOf==='15:00'&&r.date<=now.date&&(r.date!==now.date||now.minute>=900)).sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
+    const targetDate=attempted?.date>latestClosedDate?attempted.date:latestClosedDate,pending=targetDate>latestClosedDate;
+    const blockedBy=pending?DEFINITIONS.filter(d=>!attempted.components?.find(c=>c?.id===d.id)?.available).map(d=>d.id):[];
+    return {...next,series,asOf:latestClosedDate,refreshStatus:{rejectedIncompleteDates:rejected,latestClosedDate,targetDate,pending,blockedBy,mode:'close_only',note:'各源分批更新期间保留已验证收盘数据，待核心指标齐备后更新当日得分'}};
   }
   return {VERSION,MIN_COVERAGE,DEFINITIONS,dateValid,tradingDateValid,clock,balanceScore,centered,phase,makeComponent,calendarOf,laggedWindow,amountScore,buildRow,build,expectedScore,scoreValue:expectedScore,validatePublishedRow,combineSupport,retainPublished};
 });

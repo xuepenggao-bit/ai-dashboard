@@ -13,20 +13,22 @@ function quote(code,change={}){
   return 'v_'+code+'="'+f.join('~')+'";';
 }
 function context(config={}){
-  let captured=[],requests=0,active=0,maxActive=0;
-  class FakeDate extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}
+  let captured=[],statuses=[],urls=[],requests=0,active=0,maxActive=0;
+  const fixedNow=config.now||now;
+  class FakeDate extends Date{constructor(...args){super(...(args.length?args:[fixedNow]));}static now(){return fixedNow;}}
   const ctx=vm.createContext({Date:FakeDate,Map,Set,Promise,Number,Math,Error,setTimeout,clearTimeout,setInterval:()=>0,
     console:{warn(){}},document:{hidden:false,addEventListener(){},getElementById:()=>({classList:{contains:()=>true}})},window:{addEventListener(){}},
-    _highLow52Clock:()=>({date:'2026-10-09',minute:615}),
+    _highLow52Clock:()=>config.clock||({date:'2026-10-09',minute:615}),
+    _setHighLow52LiveStatus:message=>statuses.push(message),
     _setHighLow52LivePoint:r=>{captured.push(r);return true;},
     _idxFetch:async url=>{
-      requests++;active++;maxActive=Math.max(maxActive,active);
+      requests++;urls.push(url);active++;maxActive=Math.max(maxActive,active);
       await Promise.resolve();active--;
       if(url.includes('baseline.json'))return config.baseline||baseline;
       if(url.includes('fqkline')){
         if(config.tencentDown)throw Error('HTTP 501');
         const code=/param=([^,]+)/.exec(url)[1];
-        const rows=code==='sh000001'?[['2026-09-30'],['2026-10-09']]:[
+        const rows=code==='sh000001'?(config.calendar||[['2026-09-30'],['2026-10-09']]):[
           ['2024-01-01','7','7','10','5','1'],['2026-09-30','6',config.badAdjustment?'6.5':'6','9','4','1'],['2026-10-09','6','7','8','4','1']];
         return{code:0,data:{[code]:{qfqday:rows}}};
       }
@@ -52,7 +54,7 @@ function context(config={}){
     },
   });
   vm.runInContext(source,ctx);
-  return{ctx,captured,requests:()=>requests,maxActive:()=>maxActive};
+  return{ctx,captured,statuses,urls,requests:()=>requests,maxActive:()=>maxActive};
 }
 module.exports=(async()=>{
   const c=context();
@@ -72,6 +74,21 @@ module.exports=(async()=>{
   assert.equal(c.ctx._hl52Fresh({date:'2026-10-09',time:'10:09'},{date:'2026-10-09',minute:615}),false,'Old quotes cannot be labelled realtime');
   assert.equal(c.ctx._hl52Fresh({date:'2026-10-09',time:'11:30'},{date:'2026-10-09',minute:750}),true,'Lunch retains the valid morning close');
   assert.equal(c.ctx._hl52Fresh({date:'2026-10-09',time:'25:00'},{date:'2026-10-09',minute:615}),false,'Invalid source time is rejected');
+  const lunchBaseline={...baseline,asOfDate:'2026-10-26',validThrough:'2026-11-16',updatedAt:'2026-10-27T10:14:00+08:00',
+    stocks:stocks.map(stock=>({...stock,lastDate:'2026-10-26'}))};
+  const lunchConfig={now:Date.parse('2026-10-27T12:06:00+08:00'),clock:{date:'2026-10-27',minute:726},
+    calendar:[['2026-10-23'],['2026-10-26'],['2026-10-27']],stamp:'20261027113000',baseline:lunchBaseline};
+  const lunch=context(lunchConfig);await lunch.ctx.refreshHighLow52Live(true);
+  assert.equal(lunch.captured.length,1,'A repaired previous-close baseline allows a fresh lunch observation without rebuilding history');
+  assert.equal(lunch.captured[0].date,'2026-10-27');assert.equal(lunch.captured[0].asOf,'11:30');
+  assert.equal(lunch.captured[0].high,4000);assert.equal(lunch.captured[0].low,0);
+  assert.equal(lunch.captured[0].observed,4000);assert.equal(lunch.captured[0].missing,0);
+  const staleLunch=context({...lunchConfig,baseline:{...lunchBaseline,asOfDate:'2026-10-23',
+    stocks:stocks.map(stock=>({...stock,lastDate:'2026-10-23'}))}});
+  await staleLunch.ctx.refreshHighLow52Live(true);
+  assert.equal(staleLunch.captured.length,0,'An older vintage must not be used to invent today\'s count');
+  assert.match(staleLunch.statuses.at(-1),/基准截至 2026-10-23，需 2026-10-26 收盘基准/,'State the actual missing baseline, not a generic realtime failure');
+  assert.equal(staleLunch.urls.some(url=>url.includes('q=sh600000')),false,'Reject an obsolete baseline before an expensive all-stock quote scan');
   for(const config of [{manyMissing:true},{holiday:true},{baseline:{...baseline,asOfDate:'2026-09-29'}},
     {baseline:{...baseline,validThrough:'2026-10-08'}}]){
     const t=context(config);await t.ctx.refreshHighLow52Live(true);assert.equal(t.captured.length,0,JSON.stringify(config).slice(0,100));
@@ -115,7 +132,7 @@ module.exports=(async()=>{
   assert.equal(ipo.captured[0].eligible,4000);assert.equal(ipo.captured[0].universe,4001,'Recent IPOs excluded from numerator');
   const hidden=context();hidden.ctx.document.hidden=true;await hidden.ctx.refreshHighLow52Live(true);
   assert.equal(hidden.requests(),0,'Hidden tab makes no requests');
-  return 'PASS: live scans, explicit missing/stale coverage, 99% minimum, 364-day expiry, holiday rejection, ex-dividend correction, IPO/suspension rules, bounded concurrency and throttling';
+  return 'PASS: live scans, repaired previous-close lunch observations, dated baseline-gap diagnostics, explicit missing/stale coverage, 99% minimum, 364-day expiry, holiday rejection, ex-dividend correction, IPO/suspension rules, bounded concurrency and throttling';
 })();
 
 

@@ -114,7 +114,7 @@ async function _hl52CollectLive(){
   let baseline=await _hl52LoadBaseline();
   if(baseline.asOfDate===date){_hl52Status('今日收盘统计已完成');return true;}
   if(baseline.asOfDate!==previous)baseline=await _hl52LoadBaseline(true);
-  if(baseline.asOfDate!==previous)throw Error('52周收盘基准待更新');
+  if(baseline.asOfDate!==previous)throw Error('52周基准截至 '+baseline.asOfDate+'，需 '+previous+' 收盘基准');
   if(!baseline.validThrough||baseline.validThrough<date)throw Error('52周比较窗口已过期');
   const start=_hl52Start(date),eligible=baseline.stocks.filter(s=>s.firstDate<=start);
   if(eligible.length<4000)throw Error('52周有效样本不足');

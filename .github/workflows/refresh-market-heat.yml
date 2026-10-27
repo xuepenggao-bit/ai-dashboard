@@ -5,10 +5,13 @@ on:
     branches: [main]
     paths:
       - 'assets/market-heat-engine.js'
+      - 'assets/market-heat.js'
       - '.github/scripts/refresh_market_heat.cjs'
       - '.github/scripts/refresh_market_heat_support.py'
       - '.github/workflows/refresh-market-heat.yml'
       - 'tests/test_market_heat.cjs'
+      - 'tests/test_market_heat_ui.cjs'
+      - 'tests/test_market_heat_freshness.cjs'
       - 'tests/test_refresh_market_heat_support.py'
   schedule:
     # Beijing 08:35, 16:35 and 20:35; upstream completions also recompute.
@@ -49,7 +52,7 @@ jobs:
         with:
           node-version: '22'
       - name: Test causal weights, disclosures and missing-data coverage
-        run: node --test tests/test_market_heat.cjs
+        run: node --test tests/test_market_heat.cjs tests/test_market_heat_ui.cjs tests/test_market_heat_freshness.cjs
       - name: Test actual warm-up amounts and lagged funding data
         run: python -m unittest discover -s tests -p test_refresh_market_heat_support.py -v
       - name: Restore verified support cache

@@ -626,6 +626,8 @@ def parallel_map(items, fn, workers=6, label='fetch', attempts=3):
                     result[item] = future.result()
                 except Exception as exc:
                     errors[item] = str(exc)
+                    if len(errors) <= 3:
+                        print(f'{label}: failed {item}: {str(exc)[:500]}', flush=True)
                 if number % 200 == 0 or number == total:
                     print(f'{label}: {number}/{total}; errors={len(errors)}', flush=True)
         if not errors:

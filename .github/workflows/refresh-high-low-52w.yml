@@ -14,6 +14,9 @@ on:
     # Beijing 07:15 / 08:15 repair yesterday's baseline before the open.
     - cron: '15 23 * * 0-4'
     - cron: '15 0 * * 1-5'
+    # Off-peak repair retries; completed sessions are checked before expensive work.
+    - cron: '43 23 * * 0-4'
+    - cron: '43 0,1,2 * * 1-5'
     # Beijing 15:15 / 16:15, then 20:15 when daily constituent publication settles.
     - cron: '15 7,8,12 * * 1-5'
   workflow_dispatch:
@@ -54,7 +57,12 @@ jobs:
           key: high-low-session-v2-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: high-low-session-v2-
       - name: Calculate complete 60-session history
-        run: python .github/scripts/refresh_high_low_52w.py --workers 6 --max-seconds 1500
+        id: collect
+        continue-on-error: true
+        run: python .github/scripts/refresh_high_low_52w.py --workers 6 --max-seconds 900
+      - name: Resume only missing symbol histories after an interrupted collection
+        if: steps.collect.outcome == 'failure'
+        run: python .github/scripts/refresh_high_low_52w.py --workers 6 --max-seconds 900
       - name: Keep successful whole-symbol histories even if collection failed
         if: always() && steps.history-cache.outcome == 'success'
         uses: actions/cache/save@v4
