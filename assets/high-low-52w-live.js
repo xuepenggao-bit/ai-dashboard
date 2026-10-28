@@ -318,7 +318,9 @@ function refreshHighLow52Live(force=false){
 }
 document.addEventListener('DOMContentLoaded',()=>{
   const run=()=>refreshHighLow52Live(false),macro=document.getElementById('t0');
-  setTimeout(run,1800);setInterval(run,60000);
+  // Timer phase can precede a tab-triggered scan. Check cheaply every 5s;
+  // refreshHighLow52Live still limits network scans to once per 60s.
+  setTimeout(run,1800);setInterval(run,5000);
   if(macro&&typeof MutationObserver==='function')new MutationObserver(run).observe(macro,{attributes:true,attributeFilter:['class']});
   document.addEventListener('visibilitychange',run);
   window.addEventListener('pageshow',run);

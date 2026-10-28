@@ -15,9 +15,10 @@ function quote(code,change={}){
 function context(config={}){
   let captured=[],statuses=[],urls=[],requests=0,active=0,maxActive=0;
   let displayed=(config.displayRows||[]).slice(),frames=[],scriptCount=0,maxFrames=0;
-  const fixedNow=config.now||now;
+  let fixedNow=config.now||now;
+  const listeners=new Map(),intervals=[];
   class FakeDate extends Date{constructor(...args){super(...(args.length?args:[fixedNow]));}static now(){return fixedNow;}}
-  const document={hidden:false,addEventListener(){},getElementById:()=>({classList:{contains:()=>true}}),
+  const document={hidden:false,addEventListener(name,callback){if(!listeners.has(name))listeners.set(name,[]);listeners.get(name).push(callback);},getElementById:()=>({classList:{contains:()=>true}}),
     body:{appendChild(frame){frames.push(frame);maxFrames=Math.max(maxFrames,frames.filter(f=>!f.removed).length);}},
     createElement(type){
       assert.equal(type,'iframe');const frame={style:{},setAttribute(){},contentWindow:{},removed:false,remove(){this.removed=true;}};
@@ -37,7 +38,7 @@ function context(config={}){
         });
       }}};return frame;
     }};
-  const ctx=vm.createContext({Date:FakeDate,Map,Set,Promise,Number,Math,Error,setTimeout:(fn,delay)=>setTimeout(fn,config.fastScriptTimeout&&delay===6500?1:delay),clearTimeout,setInterval:()=>0,
+  const ctx=vm.createContext({Date:FakeDate,Map,Set,Promise,Number,Math,Error,setTimeout:(fn,delay)=>config.captureSchedule&&delay===1800?0:setTimeout(fn,config.fastScriptTimeout&&delay===6500?1:delay),clearTimeout,setInterval:(callback,delay)=>{intervals.push({callback,delay});return intervals.length;},
     console:{warn(){}},document,window:{addEventListener(){}},
     _highLow52Clock:()=>config.clock||({date:'2026-10-09',minute:615}),
     _setHighLow52LiveStatus:message=>statuses.push(message),
@@ -83,7 +84,7 @@ function context(config={}){
     },
   });
   vm.runInContext(source,ctx);
-  return{ctx,captured,statuses,urls,frames,scripts:()=>scriptCount,maxFrames:()=>maxFrames,requests:()=>requests,maxActive:()=>maxActive};
+  return{ctx,captured,statuses,urls,frames,intervals,advance:ms=>{fixedNow+=ms;},emit:name=>(listeners.get(name)||[]).forEach(callback=>callback()),scripts:()=>scriptCount,maxFrames:()=>maxFrames,requests:()=>requests,maxActive:()=>maxActive};
 }
 module.exports=(async()=>{
   const c=context();
@@ -102,6 +103,26 @@ module.exports=(async()=>{
   assert.equal(c.scripts(),0,'A successful fetch never creates a script request');
   assert.ok(c.maxActive()<=4,'Bound parallel network work');
   const count=c.requests();await c.ctx.refreshHighLow52Live();assert.equal(c.requests(),count,'One-minute throttle');
+  const scheduled=context({captureSchedule:true});
+  scheduled.emit('DOMContentLoaded');
+  assert.equal(scheduled.intervals.length,1,'Only one live wakeup scheduler is installed');
+  const wakeup=scheduled.intervals[0];
+  assert.equal(wakeup.delay,5000,'Lightweight wakeups avoid a full extra minute after a tab activation');
+  scheduled.advance(2000);
+  await scheduled.ctx.refreshHighLow52Live(true);
+  assert.equal(scheduled.captured.length,1,'Tab activation starts the first full scan');
+  const afterFirst=scheduled.requests();
+  scheduled.advance(58000);
+  await wakeup.callback();
+  assert.equal(scheduled.requests(),afterFirst,'The page-load 60-second boundary is still throttled after a later tab activation');
+  scheduled.advance(5000);
+  const nextScan=wakeup.callback(),concurrentWakeup=wakeup.callback();
+  assert.equal(nextScan,concurrentWakeup,'Concurrent scheduler and snapshot wakeups share the pending scan');
+  await nextScan;
+  assert.equal(scheduled.captured.length,2,'The next wakeup completes an automatic scan within 65 seconds instead of waiting until 120 seconds');
+  const afterSecond=scheduled.requests();
+  scheduled.advance(5000);await wakeup.callback();
+  assert.equal(scheduled.requests(),afterSecond,'Five-second wakeups do not increase the one-minute network scan frequency');
   assert.equal(c.ctx._hl52Fresh({date:'2026-10-09',time:'10:09'},{date:'2026-10-09',minute:615}),false,'Old quotes cannot be labelled realtime');
   assert.equal(c.ctx._hl52Fresh({date:'2026-10-09',time:'11:30'},{date:'2026-10-09',minute:750}),true,'Lunch retains the valid morning close');
   assert.equal(c.ctx._hl52Fresh({date:'2026-10-09',time:'25:00'},{date:'2026-10-09',minute:615}),false,'Invalid source time is rejected');
