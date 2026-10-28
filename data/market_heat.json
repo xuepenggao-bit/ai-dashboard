@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "modelVersion": "2026-10-15-v1",
-  "updatedAt": "2026-10-27T18:49:26.041Z",
+  "updatedAt": "2026-10-28T02:24:00.946Z",
   "scope": "沪深A股",
   "source": "本页沪深A股市场广度、个股收益、成交额、趋势位置及已披露资金数据；中证全指风险趋势含其官方成分范围",
   "methodology": "收盘综合热度，固定权重100分；市场广度35、赚钱效应20、成交热度25、趋势位置10、资金需求10。仅使用评分日及此前可获得数据；缺项不作零分，有效权重至少85且20/60日均线广度、个股收益中位数、成交活跃度及60日高点位置齐备才出分；有效项按其权重重新归一至100分。分数越高代表交易环境更热，不代表预期收益或市场健康。",
@@ -115,274 +115,6 @@
     }
   ],
   "series": [
-    {
-      "date": "2026-07-27",
-      "asOf": "15:00",
-      "status": "close",
-      "score": 49.527788,
-      "phase": "适中",
-      "coveragePct": 100,
-      "coverage": 100,
-      "availableWeight": 100,
-      "coreReady": true,
-      "components": [
-        {
-          "id": "ma20",
-          "label": "20日均线广度",
-          "group": "市场广度",
-          "weight": 8,
-          "unit": "%",
-          "formula": "收盘价高于20日均线的股票占有效样本比例，直接作为0—100分",
-          "value": 29.6589,
-          "score": 29.6589,
-          "contribution": 2.372712,
-          "available": true,
-          "sourceDate": "2026-07-27",
-          "date": "2026-07-27",
-          "availableOn": "2026-07-27",
-          "availability": "当日收盘数据",
-          "reason": ""
-        },
-        {
-          "id": "ma60",
-          "label": "60日均线广度",
-          "group": "市场广度",
-          "weight": 4,
-          "unit": "%",
-          "formula": "收盘价高于60日均线的股票占有效样本比例，直接作为0—100分",
-          "value": 11.9351,
-          "score": 11.9351,
-          "contribution": 0.477404,
-          "available": true,
-          "sourceDate": "2026-07-27",
-          "date": "2026-07-27",
-          "availableOn": "2026-07-27",
-          "availability": "当日收盘数据",
-          "reason": ""
-        },
-        {
-          "id": "ma120",
-          "label": "120日均线广度",
-          "group": "市场广度",
-          "weight": 3,
-          "unit": "%",
-          "formula": "收盘价高于120日均线的股票占有效样本比例，直接作为0—100分",
-          "value": 12.0054,
-          "score": 12.0054,
-          "contribution": 0.360162,
-          "available": true,
-          "sourceDate": "2026-07-27",
-          "date": "2026-07-27",
-          "availableOn": "2026-07-27",
-          "availability": "当日收盘数据",
-          "reason": ""
-        },
-        {
-          "id": "advanceRatio",
-          "label": "上涨股票占比",
-          "group": "市场广度",
-          "weight": 8,
-          "unit": "%",
-          "formula": "上涨家数÷（上涨家数+下跌家数）×100；平盘不计入分母；涨跌均为零时50分",
-          "value": 94.798137,
-          "score": 94.798137,
-          "contribution": 7.583851,
-          "available": true,
-          "sourceDate": "2026-07-27",
-          "date": "2026-07-27",
-          "availableOn": "2026-07-27",
-          "availability": "当日收盘数据",
-          "reason": ""
-        },
-        {
-          "id": "newHighLowBalance",
-          "label": "52周新高新低强弱",
-          "group": "市场广度",
-          "weight": 6,
-          "unit": "%",
-          "formula": "（新高家数−新低家数）÷52周有效股票数×100；-5%、0%、+5%对应0、50、100分",
-          "value": -4.820453,
-          "score": 1.795472,
-          "contribution": 0.107728,
-          "available": true,
-          "sourceDate": "2026-07-27",
-          "date": "2026-07-27",
-          "availableOn": "2026-07-27",
-          "availability": "当日收盘数据",
-          "reason": ""
-        },
-        {
-          "id": "limitBalance",
-          "label": "涨跌停强弱",
-          "group": "市场广度",
-          "weight": 6,
-          "unit": "%",
-          "formula": "（涨停家数−跌停家数）÷当日有成交且收益有效的沪深A股数×100；-2%、0%、+2%对应0、50、100分；分母来自同日个股收益统计，不推算未知平盘家数",
-          "value": 2.137493,
-          "score": 100,
-          "contribution": 6,
-          "available": true,
-          "sourceDate": "2026-07-27",
-          "date": "2026-07-27",
-          "availableOn": "2026-07-27",
-          "availability": "当日收盘数据",
-          "reason": ""
-        },
-        {
-          "id": "medianReturn",
-          "label": "个股收益中位数",
-          "group": "赚钱效应",
-          "weight": 20,
-          "unit": "%",
-          "formula": "中位数收益-3%、0%、+3%分别对应0、50、100分，区间线性映射并封顶封底",
-          "value": 2.78174,
-          "score": 96.362333,
-          "contribution": 19.272467,
-          "available": true,
-          "sourceDate": "2026-07-27",
-          "date": "2026-07-27",
-          "availableOn": "2026-07-27",
-          "availability": "当日收盘数据",
-          "reason": ""
-        },
-        {
-          "id": "amountRatio20",
-          "label": "成交活跃度",
-          "group": "成交热度",
-          "weight": 20,
-          "unit": "倍",
-          "formula": "当日成交额÷此前20个已收盘交易日平均成交额；0.5、1、1.5倍对应0、50、100分；不含当日均值，不回填未来数据",
-          "value": 0.72593,
-          "score": 22.593048,
-          "contribution": 4.51861,
-          "available": true,
-          "sourceDate": "2026-07-27",
-          "date": "2026-07-27",
-          "availableOn": "2026-07-27",
-          "availability": "当日收盘数据",
-          "reason": ""
-        },
-        {
-          "id": "concentration",
-          "label": "头部成交拥挤度",
-          "group": "成交热度",
-          "weight": 5,
-          "unit": "%",
-          "formula": "成交额前20只股票占比5%、12.5%、20%对应0、50、100分；拥挤只代表热度，不代表市场健康",
-          "value": 19.217369,
-          "score": 94.78246,
-          "contribution": 4.739123,
-          "available": true,
-          "sourceDate": "2026-07-27",
-          "date": "2026-07-27",
-          "availableOn": "2026-07-27",
-          "availability": "当日收盘数据",
-          "reason": ""
-        },
-        {
-          "id": "drawdown",
-          "label": "60日高点位置",
-          "group": "趋势位置",
-          "weight": 10,
-          "unit": "%",
-          "formula": "中证全指距离最近60日高点回撤-20%到0%线性映射至0到100分",
-          "value": -13.5865,
-          "score": 32.0675,
-          "contribution": 3.20675,
-          "available": true,
-          "sourceDate": "2026-07-27",
-          "date": "2026-07-27",
-          "availableOn": "2026-07-27",
-          "availability": "当日收盘数据",
-          "reason": ""
-        },
-        {
-          "id": "margin5d",
-          "label": "融资余额5日变化",
-          "group": "资金需求",
-          "weight": 5,
-          "unit": "%",
-          "formula": "使用严格早于评分日的最近已披露沪深两市融资余额，相比5个交易日前变化；-3%、0%、+3%对应0、50、100分；交易所融资需求代理指标，证券范围遵循源站口径",
-          "value": -3.306245,
-          "score": 0,
-          "contribution": 0,
-          "available": true,
-          "sourceDate": "2026-07-24",
-          "date": "2026-07-24",
-          "availableOn": "2026-07-27",
-          "availability": "采用上一交易日已披露融资余额",
-          "reason": ""
-        },
-        {
-          "id": "etf5d",
-          "label": "代表ETF份额5日变化",
-          "group": "资金需求",
-          "weight": 5,
-          "unit": "%",
-          "formula": "使用严格早于评分日的最近已披露份额，三只代表ETF各自5交易日份额增速等权平均；-3%、0%、+3%对应0、50、100分；非全市场合计",
-          "value": -1.933223,
-          "score": 17.779624,
-          "contribution": 0.888981,
-          "available": true,
-          "sourceDate": "2026-07-24",
-          "date": "2026-07-24",
-          "availableOn": "2026-07-27",
-          "availability": "采用上一交易日已披露份额",
-          "reason": ""
-        }
-      ],
-      "groups": [
-        {
-          "id": "市场广度",
-          "label": "市场广度",
-          "weight": 35,
-          "availableWeight": 35,
-          "score": 48.29102,
-          "contribution": 16.901857
-        },
-        {
-          "id": "赚钱效应",
-          "label": "赚钱效应",
-          "weight": 20,
-          "availableWeight": 20,
-          "score": 96.362335,
-          "contribution": 19.272467
-        },
-        {
-          "id": "成交热度",
-          "label": "成交热度",
-          "weight": 25,
-          "availableWeight": 25,
-          "score": 37.030932,
-          "contribution": 9.257733
-        },
-        {
-          "id": "趋势位置",
-          "label": "趋势位置",
-          "weight": 10,
-          "availableWeight": 10,
-          "score": 32.0675,
-          "contribution": 3.20675
-        },
-        {
-          "id": "资金需求",
-          "label": "资金需求",
-          "weight": 10,
-          "availableWeight": 10,
-          "score": 8.88981,
-          "contribution": 0.888981
-        }
-      ],
-      "contexts": {
-        "rv20": 33.6916,
-        "volatilityStress": "高波动"
-      },
-      "activityReference": {
-        "meanPrevious20AmountYuan": 2860432107250,
-        "window": 20,
-        "excludesCurrent": true
-      }
-    },
     {
       "date": "2026-07-28",
       "asOf": "15:00",
@@ -16194,20 +15926,283 @@
         "window": 20,
         "excludesCurrent": true
       }
+    },
+    {
+      "date": "2026-10-27",
+      "asOf": "15:00",
+      "status": "close",
+      "score": 24.833064,
+      "phase": "偏冷",
+      "coveragePct": 100,
+      "coverage": 100,
+      "availableWeight": 100,
+      "coreReady": true,
+      "components": [
+        {
+          "id": "ma20",
+          "label": "20日均线广度",
+          "group": "市场广度",
+          "weight": 8,
+          "unit": "%",
+          "formula": "收盘价高于20日均线的股票占有效样本比例，直接作为0—100分",
+          "value": 14.8695,
+          "score": 14.8695,
+          "contribution": 1.18956,
+          "available": true,
+          "sourceDate": "2026-10-27",
+          "date": "2026-10-27",
+          "availableOn": "2026-10-27",
+          "availability": "当日收盘数据",
+          "reason": ""
+        },
+        {
+          "id": "ma60",
+          "label": "60日均线广度",
+          "group": "市场广度",
+          "weight": 4,
+          "unit": "%",
+          "formula": "收盘价高于60日均线的股票占有效样本比例，直接作为0—100分",
+          "value": 15.0424,
+          "score": 15.0424,
+          "contribution": 0.601696,
+          "available": true,
+          "sourceDate": "2026-10-27",
+          "date": "2026-10-27",
+          "availableOn": "2026-10-27",
+          "availability": "当日收盘数据",
+          "reason": ""
+        },
+        {
+          "id": "ma120",
+          "label": "120日均线广度",
+          "group": "市场广度",
+          "weight": 3,
+          "unit": "%",
+          "formula": "收盘价高于120日均线的股票占有效样本比例，直接作为0—100分",
+          "value": 13.8884,
+          "score": 13.8884,
+          "contribution": 0.416652,
+          "available": true,
+          "sourceDate": "2026-10-27",
+          "date": "2026-10-27",
+          "availableOn": "2026-10-27",
+          "availability": "当日收盘数据",
+          "reason": ""
+        },
+        {
+          "id": "advanceRatio",
+          "label": "上涨股票占比",
+          "group": "市场广度",
+          "weight": 8,
+          "unit": "%",
+          "formula": "上涨家数÷（上涨家数+下跌家数）×100；平盘不计入分母；涨跌均为零时50分",
+          "value": 11.128284,
+          "score": 11.128284,
+          "contribution": 0.890263,
+          "available": true,
+          "sourceDate": "2026-10-27",
+          "date": "2026-10-27",
+          "availableOn": "2026-10-27",
+          "availability": "当日收盘数据",
+          "reason": ""
+        },
+        {
+          "id": "newHighLowBalance",
+          "label": "52周新高新低强弱",
+          "group": "市场广度",
+          "weight": 6,
+          "unit": "%",
+          "formula": "（新高家数−新低家数）÷52周有效股票数×100；-5%、0%、+5%对应0、50、100分",
+          "value": -2.062658,
+          "score": 29.373419,
+          "contribution": 1.762405,
+          "available": true,
+          "sourceDate": "2026-10-27",
+          "date": "2026-10-27",
+          "availableOn": "2026-10-27",
+          "availability": "当日收盘数据",
+          "reason": ""
+        },
+        {
+          "id": "limitBalance",
+          "label": "涨跌停强弱",
+          "group": "市场广度",
+          "weight": 6,
+          "unit": "%",
+          "formula": "（涨停家数−跌停家数）÷当日有成交且收益有效的沪深A股数×100；-2%、0%、+2%对应0、50、100分；分母来自同日个股收益统计，不推算未知平盘家数",
+          "value": 0.364194,
+          "score": 59.10485,
+          "contribution": 3.546291,
+          "available": true,
+          "sourceDate": "2026-10-27",
+          "date": "2026-10-27",
+          "availableOn": "2026-10-27",
+          "availability": "当日收盘数据",
+          "reason": ""
+        },
+        {
+          "id": "medianReturn",
+          "label": "个股收益中位数",
+          "group": "赚钱效应",
+          "weight": 20,
+          "unit": "%",
+          "formula": "中位数收益-3%、0%、+3%分别对应0、50、100分，区间线性映射并封顶封底",
+          "value": -3.018268,
+          "score": 0,
+          "contribution": 0,
+          "available": true,
+          "sourceDate": "2026-10-27",
+          "date": "2026-10-27",
+          "availableOn": "2026-10-27",
+          "availability": "当日收盘数据",
+          "reason": ""
+        },
+        {
+          "id": "amountRatio20",
+          "label": "成交活跃度",
+          "group": "成交热度",
+          "weight": 20,
+          "unit": "倍",
+          "formula": "当日成交额÷此前20个已收盘交易日平均成交额；0.5、1、1.5倍对应0、50、100分；不含当日均值，不回填未来数据",
+          "value": 0.886761,
+          "score": 38.676094,
+          "contribution": 7.735219,
+          "available": true,
+          "sourceDate": "2026-10-27",
+          "date": "2026-10-27",
+          "availableOn": "2026-10-27",
+          "availability": "当日收盘数据",
+          "reason": ""
+        },
+        {
+          "id": "concentration",
+          "label": "头部成交拥挤度",
+          "group": "成交热度",
+          "weight": 5,
+          "unit": "%",
+          "formula": "成交额前20只股票占比5%、12.5%、20%对应0、50、100分；拥挤只代表热度，不代表市场健康",
+          "value": 9.442511,
+          "score": 29.61674,
+          "contribution": 1.480837,
+          "available": true,
+          "sourceDate": "2026-10-27",
+          "date": "2026-10-27",
+          "availableOn": "2026-10-27",
+          "availability": "当日收盘数据",
+          "reason": ""
+        },
+        {
+          "id": "drawdown",
+          "label": "60日高点位置",
+          "group": "趋势位置",
+          "weight": 10,
+          "unit": "%",
+          "formula": "中证全指距离最近60日高点回撤-20%到0%线性映射至0到100分",
+          "value": -16.747,
+          "score": 16.265,
+          "contribution": 1.6265,
+          "available": true,
+          "sourceDate": "2026-10-27",
+          "date": "2026-10-27",
+          "availableOn": "2026-10-27",
+          "availability": "当日收盘数据",
+          "reason": ""
+        },
+        {
+          "id": "margin5d",
+          "label": "融资余额5日变化",
+          "group": "资金需求",
+          "weight": 5,
+          "unit": "%",
+          "formula": "使用严格早于评分日的最近已披露沪深两市融资余额，相比5个交易日前变化；-3%、0%、+3%对应0、50、100分；交易所融资需求代理指标，证券范围遵循源站口径",
+          "value": -2.29963,
+          "score": 11.672827,
+          "contribution": 0.583641,
+          "available": true,
+          "sourceDate": "2026-10-26",
+          "date": "2026-10-26",
+          "availableOn": "2026-10-27",
+          "availability": "采用上一交易日已披露融资余额",
+          "reason": ""
+        },
+        {
+          "id": "etf5d",
+          "label": "代表ETF份额5日变化",
+          "group": "资金需求",
+          "weight": 5,
+          "unit": "%",
+          "formula": "使用严格早于评分日的最近已披露份额，三只代表ETF各自5交易日份额增速等权平均；-3%、0%、+3%对应0、50、100分；非全市场合计",
+          "value": 18.937415,
+          "score": 100,
+          "contribution": 5,
+          "available": true,
+          "sourceDate": "2026-10-26",
+          "date": "2026-10-26",
+          "availableOn": "2026-10-27",
+          "availability": "采用上一交易日已披露份额",
+          "reason": ""
+        }
+      ],
+      "groups": [
+        {
+          "id": "市场广度",
+          "label": "市场广度",
+          "weight": 35,
+          "availableWeight": 35,
+          "score": 24.01962,
+          "contribution": 8.406867
+        },
+        {
+          "id": "赚钱效应",
+          "label": "赚钱效应",
+          "weight": 20,
+          "availableWeight": 20,
+          "score": 0,
+          "contribution": 0
+        },
+        {
+          "id": "成交热度",
+          "label": "成交热度",
+          "weight": 25,
+          "availableWeight": 25,
+          "score": 36.864224,
+          "contribution": 9.216056
+        },
+        {
+          "id": "趋势位置",
+          "label": "趋势位置",
+          "weight": 10,
+          "availableWeight": 10,
+          "score": 16.265,
+          "contribution": 1.6265
+        },
+        {
+          "id": "资金需求",
+          "label": "资金需求",
+          "weight": 10,
+          "availableWeight": 10,
+          "score": 55.83641,
+          "contribution": 5.583641
+        }
+      ],
+      "contexts": {
+        "rv20": 19.3709,
+        "volatilityStress": "波动平稳"
+      },
+      "activityReference": {
+        "meanPrevious20AmountYuan": 1647367160140,
+        "window": 20,
+        "excludesCurrent": true
+      }
     }
   ],
-  "asOf": "2026-10-26",
+  "asOf": "2026-10-27",
   "refreshStatus": {
-    "rejectedIncompleteDates": 1,
-    "latestClosedDate": "2026-10-26",
+    "rejectedIncompleteDates": 0,
+    "latestClosedDate": "2026-10-27",
     "targetDate": "2026-10-27",
-    "pending": true,
-    "blockedBy": [
-      "ma20",
-      "ma60",
-      "ma120",
-      "newHighLowBalance"
-    ],
+    "pending": false,
+    "blockedBy": [],
     "mode": "close_only",
     "note": "各源分批更新期间保留已验证收盘数据，待核心指标齐备后更新当日得分"
   },
@@ -16217,16 +16212,16 @@
       "latestDate": "2026-10-27"
     },
     "ma": {
-      "updatedAt": "2026-10-27T10:06:08+08:00",
-      "latestDate": "2026-10-26"
+      "updatedAt": "2026-10-28T10:17:42+08:00",
+      "latestDate": "2026-10-27"
     },
     "breadth": {
       "updatedAt": "2026-10-27T22:32+08:00",
       "latestDate": "2026-10-27"
     },
     "highLow": {
-      "updatedAt": "2026-10-27T10:06:08+08:00",
-      "latestDate": "2026-10-26"
+      "updatedAt": "2026-10-28T10:17:42+08:00",
+      "latestDate": "2026-10-27"
     },
     "risk": {
       "updatedAt": "2026-10-28T02:42:43+08:00",
@@ -16242,11 +16237,11 @@
     },
     "margin": {
       "updatedAt": null,
-      "latestDate": "2026-10-26"
+      "latestDate": "2026-10-27"
     },
     "support": {
-      "updatedAt": "2026-10-28T02:49:23+08:00",
-      "latestDate": "2026-10-27"
+      "updatedAt": "2026-10-28T10:23:58+08:00",
+      "latestDate": "2026-10-28"
     }
   }
 }
