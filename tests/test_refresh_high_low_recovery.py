@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 import re
 import tempfile
+import os
+import textwrap
 import unittest
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlparse
@@ -143,17 +145,23 @@ class RecoveryTests(unittest.TestCase):
         self.assertIn("cron: '15 7,8,12 * * 1-5'", source)
         self.assertIn("cron: '43 23 * * 0-4'", source)
         self.assertIn("cron: '43 0,1,2 * * 1-5'", source)
-        self.assertIn('timeout-minutes: 35', source)
+        self.assertIn('timeout-minutes: 18', source)
+        self.assertIn('shard: [0, 1, 2, 3, 4, 5]', source)
+        self.assertIn('--phase plan', source)
+        self.assertIn('--phase publish', source)
+        self.assertEqual(source.count('--phase collect'), 2)
+        self.assertIn("needs.collect.result == 'success'", source)
         self.assertIn('uses: actions/cache/restore@v4', source)
         self.assertIn('uses: actions/cache/save@v4', source)
         self.assertIn("if: always() && steps.history-cache.outcome == 'success'", source)
         self.assertIn('path: ${{ runner.temp }}/high-low-52w-cache\n', source)
-        self.assertEqual(source.count('--max-seconds 900'), 2, 'Two bounded 15-minute attempts leave time for cache and publication')
+        self.assertEqual(source.count('--max-seconds 600'), 1)
+        self.assertEqual(source.count('--max-seconds 300'), 2, 'Bound recovery and final assembly independently')
         self.assertNotIn('--max-seconds 1500', source)
         collect = re.search(r'(?ms)^      - name: [^\n]+\n(?:(?!^      - ).)*?^        id: collect\n(?:(?!^      - ).)*', source)
         self.assertIsNotNone(collect, 'Give the first collection step an explicit outcome to gate recovery')
         self.assertIn('continue-on-error: true', collect.group(0))
-        self.assertIn('--max-seconds 900', collect.group(0))
+        self.assertIn('--max-seconds 600', collect.group(0))
         self.assertRegex(source, r"(?m)^        if: .*steps\.collect\.outcome == 'failure'.*$")
         first_collect = source.index('id: collect')
         retry_gate = source.index("steps.collect.outcome == 'failure'")
@@ -179,6 +187,18 @@ class RecoveryTests(unittest.TestCase):
             resumed = m.parallel_map(calls, collect, workers=1, attempts=1)
             self.assertEqual(resumed, {'good': rows, 'bad': rows})
             self.assertEqual(calls, {'good': 1, 'bad': 2})
+
+    def test_workflow_plan_outputs_use_real_separate_lines(self):
+        source = (Path(__file__).resolve().parents[1] / '.github/workflows/refresh-high-low-52w.yml').read_text()
+        code = textwrap.dedent(re.search(r"python - <<'PY'\n(.*?)\n          PY", source, re.S).group(1))
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / 'high-low-plan').mkdir()
+            (root / 'high-low-plan/plan.json').write_text(json.dumps({'skip': False}))
+            output = root / 'outputs.txt'
+            with patch.dict(os.environ, {'RUNNER_TEMP': str(root), 'GITHUB_OUTPUT': str(output)}), patch('subprocess.check_output', return_value='verified-source-sha\n'):
+                exec(compile(code, '<workflow-plan-output>', 'exec'), {})
+            self.assertEqual(output.read_text().splitlines(), ['needed=true', 'source_sha=verified-source-sha'])
 
     def test_symbol_cache_never_crosses_completed_session_or_merges_vintages(self):
         old = [{'date': '2026-10-22', 'close': 8, 'high': 10, 'low': 5, 'volume': 1}]

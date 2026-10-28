@@ -8231,6 +8231,20 @@ function _macroRefreshTask(name,run,required=true){
     .finally(()=>clearTimeout(timer));
 }
 
+function _macroRefreshCaption(report,now=Date.now()){
+  const ts=document.getElementById('macroTs');
+  const clock=_beijingMarketClock(now),date=new Date(now+8*3600000).toISOString().slice(0,10);
+  let live=null;try{if(typeof window.highLow52LiveState==='function')live=window.highLow52LiveState();}catch(_){}
+  const waiting=clock.day!==0&&clock.day!==6&&clock.minutes>=570&&clock.minutes<=960&&live?.date===date&&live.status!=='ready';
+  report.realtimePending=!!waiting;
+  const time=new Date(report.completedAt).toLocaleTimeString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false});
+  if(ts)ts.textContent=report.ok?(waiting?'快照核验完成 · 52周今日统计待更新 · '+time:'快照核验完成 · '+time+' · 盘中数据以图内时间为准')
+    :'已完成核验 · '+report.failed.length+'项源暂不可用，保留有效数据 · '+time;
+  if(ts)ts.title=[report.failed.length?'未成功：'+report.failed.join('、'):'各图保留实际来源日期，不将历史读取成功视为今日实时成功。',waiting?live.message:''].filter(Boolean).join('；');
+}
+window.addEventListener('highlow52-live-state',()=>{
+  if(!refreshMacro.pending&&refreshMacro.lastReport)_macroRefreshCaption(refreshMacro.lastReport);
+});
 async function refreshMacro(options={}){
   if(refreshMacro.pending)return refreshMacro.pending;
   const force=options===true||options.force===true;
@@ -8263,10 +8277,8 @@ async function refreshMacro(options={}){
     const results=await Promise.all(jobs),completedAt=Date.now();
     const failed=results.filter(result=>result.required&&!result.ok).map(result=>result.name);
     const report={ok:failed.length===0,forced:force,startedAt,completedAt,failed,results};
-    const time=new Date(completedAt).toLocaleTimeString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false});
-    if(ts)ts.textContent=report.ok?'全部指标已核验 · '+time+' · 各项保留实际数据日期'
-      :'已完成核验 · '+failed.length+'项源暂不可用，保留有效数据 · '+time;
-    if(ts)ts.title=failed.length?'未成功：'+failed.join('、'):'包括所有图表及月度/清算后披露数据；未公布的数据不伪造成今日值。';
+    refreshMacro.lastReport=report;
+    _macroRefreshCaption(report,completedAt);
     const idx=TAB_ORDER.indexOf('t0');if(idx>=0)_TAB_TS[idx]=completedAt;
     if(window.MarketCloseRefresh&&typeof window.MarketCloseRefresh.observe==='function')window.MarketCloseRefresh.observe(report);
     return report;
@@ -13254,6 +13266,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="assets/market-quality.js?v=20261022a" defer></script>
 <script src="assets/market-heat-engine.js?v=20261027a" defer></script>
 <script src="assets/market-heat.js?v=20261027a" defer></script>
-<script src="assets/high-low-52w-live.js?v=20261027a" defer></script>
+<script src="assets/high-low-52w-live.js?v=20261028a" defer></script>
 </body>
 </html>

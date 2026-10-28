@@ -14,6 +14,7 @@ import argparse
 from bisect import bisect_right
 import concurrent.futures
 import datetime as dt
+import hashlib
 import json
 import math
 import os
@@ -33,6 +34,7 @@ MA_BASELINE = ROOT / 'data/market_ma_breadth_baseline.json'
 QUALITY_OUTPUT = ROOT / 'data/market_quality.json'
 QUALITY_BASELINE = ROOT / 'data/market_quality_baseline.json'
 MA_WINDOWS = (20, 60, 120)
+MIN_UNIVERSE = 4000
 TZ = dt.timezone(dt.timedelta(hours=8))
 METHOD = ('沪深A股（含ST、不含北交所）；按每个交易日当时的股票名单，'
           '统计上市满52周、当日有成交的股票；前复权日内最高/最低价触及52周滚动窗口（回溯364自然日，含边界日）极值；差值=新高-新低。')
@@ -178,7 +180,7 @@ def fetch_universe(date):
         if str(row.get('TRADE_DATE', ''))[:10] != date:
             raise RuntimeError(f'{date}: mismatched source date')
         symbols[symbol] = row.get('SECURITY_NAME_ABBR', '')
-    if len(symbols) < 4000:
+    if len(symbols) < MIN_UNIVERSE:
         raise RuntimeError(f'{date}: suspicious universe size {len(symbols)}')
     return symbols
 
@@ -207,7 +209,7 @@ def universe_reference(date, cache_dir=None):
             return
         codes = set(codes) if codes is not None else None
         count = len(codes) if codes is not None else count
-        if not isinstance(count, int) or count < 4000 or not 0 <= age <= 21:
+        if not isinstance(count, int) or count < MIN_UNIVERSE or not 0 <= age <= 21:
             return
         if age == 0 and not exact:
             return  # Never use this product's own same-day partial roster as proof.
@@ -252,7 +254,7 @@ def universe_reference(date, cache_dir=None):
 
 
 def validate_universe_scope(date, symbols, reference=None):
-    if (not isinstance(symbols, dict) or len(symbols) < 4000 or
+    if (not isinstance(symbols, dict) or len(symbols) < MIN_UNIVERSE or
             any(not isinstance(code, str) or len(code) != 8 or
                 not valid_code(code[2:] + '.' + code[:2].upper()) for code in symbols)):
         raise ValueError(f'{date}: invalid or undersized daily universe')
@@ -414,7 +416,7 @@ def build_series(dates, universes, prices):
             eligible += int(yes)
             high += int(up)
             low += int(down)
-        if eligible < 4000:
+        if eligible < MIN_UNIVERSE:
             raise ValueError(f'{date}: insufficient 52-week history ({eligible})')
         series.append({'date': date, 'high': high, 'low': low, 'eligible': eligible,
                        'universe': len(universes[date]), 'asOf': '15:00', 'status': 'close'})
@@ -638,18 +640,81 @@ def parallel_map(items, fn, workers=6, label='fetch', attempts=3):
     return result
 
 
-def refresh_history(cache_dir, workers=6, force=False):
-    now = dt.datetime.now(TZ)
-    index_bars = fetch_bars('sh000001')
-    available_dates = [row['date'] for row in index_bars if row['volume'] > 0 and row['date'] <= now.date().isoformat() and
-                       (row['date'] < now.date().isoformat() or now.hour >= 15)]
+def canonical_hash(payload):
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(',', ':'), allow_nan=False)
+    return hashlib.sha256(raw.encode('utf-8')).hexdigest()
+
+
+def atomic_json(path, payload):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + f'.{os.getpid()}.tmp')
+    temporary.write_text(json.dumps(payload, ensure_ascii=False, separators=(',', ':'), allow_nan=False) + '\n')
+    temporary.replace(path)
+
+
+def closed_dates(dates, now):
+    if not isinstance(dates, list) or len(dates) < 60:
+        raise ValueError('Need at least 60 verified index trading dates')
+    for date in dates:
+        parsed = valid_date(date)
+        if parsed > now.date() or (parsed == now.date() and now.hour < 15):
+            raise ValueError('Index calendar includes an uncompleted trading session')
+    if dates != sorted(set(dates)):
+        raise ValueError('Index trading dates must be unique and ordered')
+    return dates
+
+
+def load_completed_calendar(cache_dir, now=None):
+    """A retry may reuse an already observed calendar, never invent a new day.
+
+    The fallback is deliberately short-lived. A previous-date observation must
+    have been made after that date's close and include that actual close; an
+    old pre-open observation must not masquerade as yesterday's calendar.
+    """
+    now = now or dt.datetime.now(TZ)
+    cache_dir = Path(cache_dir)
+    path = cache_dir / 'verified-index-calendar.json'
+    try:
+        bars = fetch_bars('sh000001')
+    except Exception as source_error:
+        saved = read_json(path)
+        try:
+            if not isinstance(saved, dict) or saved.get('schemaVersion') != 1:
+                raise ValueError('Missing verified index calendar')
+            content = {key: value for key, value in saved.items() if key != 'calendarId'}
+            if saved.get('calendarId') != canonical_hash(content):
+                raise ValueError('Verified index calendar hash mismatch')
+            observed = dt.datetime.fromisoformat(str(saved.get('observedAt', '')).replace('Z', '+00:00'))
+            if observed.tzinfo is None or not 0 <= (now - observed).total_seconds() <= 36 * 3600:
+                raise ValueError('Verified index calendar is stale or future-dated')
+            dates = closed_dates(saved.get('dates'), now)
+            local_observed = observed.astimezone(TZ)
+            closed_dates(dates, local_observed)
+            if local_observed.date() < now.date() and (local_observed.hour < 15 or dates[-1] != local_observed.date().isoformat()):
+                raise ValueError('Prior observation did not verify its completed trading day')
+        except (TypeError, ValueError, KeyError) as invalid:
+            raise RuntimeError(f'Index calendar unavailable and no current verified fallback: {source_error}; {invalid}') from source_error
+        print(f'Index calendar source unavailable; reusing verified {dates[-1]} calendar observed {saved["observedAt"]}', flush=True)
+        return dates
+    dates = [row['date'] for row in bars if row['volume'] > 0 and row['date'] <= now.date().isoformat() and
+             (row['date'] < now.date().isoformat() or now.hour >= 15)]
+    closed_dates(dates, now)
+    saved = {'schemaVersion': 1, 'observedAt': now.isoformat(timespec='seconds'), 'dates': dates}
+    saved['calendarId'] = canonical_hash(saved)
+    atomic_json(path, saved)
+    return dates
+
+
+def select_completed_sessions(cache_dir, now, force=False):
+    available_dates = load_completed_calendar(cache_dir, now)
     dates = available_dates[-60:]
     if len(dates) != 60:
         raise RuntimeError('Need 60 completed trading sessions')
     latest = dates[-1]
     if not force and complete_cached_snapshots(latest, now, cache_dir):
         print(f'Complete {latest} close snapshots already available; retained.', flush=True)
-        return
+        return dates, True
     if latest == now.date().isoformat():
         try:
             load_universe(latest, cache_dir, refresh=True, now=now)
@@ -665,16 +730,32 @@ def refresh_history(cache_dir, workers=6, force=False):
             latest = dates[-1]
             print(f'Today constituent table unavailable; repairing through {latest}: {exc}', flush=True)
             if not force and complete_cached_snapshots(latest, now, cache_dir):
-                return
-    print(f'Building {dates[0]} → {latest}', flush=True)
-    universes = parallel_map(dates, lambda date: load_universe(date, cache_dir, refresh=date == latest, now=now), workers, 'universes')
-    symbols = sorted(set().union(*(set(value) for value in universes.values())))
-    # All histories use the same adjustment vintage; reuse only within this
-    # completed-session build, never merge differently adjusted raw bars.
-    prices = parallel_map(symbols, lambda code: cached_bars(cache_dir, latest, code,
-                                                          lambda: fetch_bars(code)), workers, 'daily bars')
-    # Daily APIs can already include a live/future bar. Neither historical
-    # series nor next-session comparison prices may use an uncompleted bar.
+                return dates, True
+    return dates, False
+
+
+def assert_no_date_regression(latest):
+    for path in (OUTPUT, BASELINE, MA_OUTPUT, MA_BASELINE):
+        current = read_json(path)
+        if not isinstance(current, dict):
+            continue
+        rows = current.get('series')
+        date = current.get('asOfDate') or (rows[-1].get('date') if isinstance(rows, list) and rows and isinstance(rows[-1], dict) else None)
+        if date is None:
+            continue
+        try:
+            valid_date(date)
+        except (TypeError, ValueError):
+            continue
+        if date > latest:
+            raise RuntimeError(f'Refusing date regression: {path.name} already contains {date}, plan ends {latest}')
+
+
+def publish_snapshots(dates, universes, prices, now=None):
+    """One unchanged mathematical path for full runs and verified shard merge."""
+    now = now or dt.datetime.now(TZ)
+    latest = dates[-1]
+    assert_no_date_regression(latest)
     prices = {code: [row for row in bars if row['date'] <= latest] for code, bars in prices.items()}
     require_complete_prices(dates, universes, prices)
     series = build_series(dates, universes, prices)
@@ -695,14 +776,165 @@ def refresh_history(cache_dir, workers=6, force=False):
                             'highs': extrema_queue(prices[code], 'high', start, through),
                             'lows': extrema_queue(prices[code], 'low', start, through)}
                            for code in sorted(universes[latest])]}
-    # No output writes above: publish only after both products validate.
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + '\n')
-    BASELINE.write_text(json.dumps(baseline, ensure_ascii=False, separators=(',', ':')) + '\n')
-    MA_OUTPUT.write_text(json.dumps(ma_payload, ensure_ascii=False, indent=2) + '\n')
-    MA_BASELINE.write_text(json.dumps(ma_baseline, ensure_ascii=False, separators=(',', ':')) + '\n')
+    # Validate every product before staging any of the four output files.
+    prepared = [(OUTPUT, payload, True), (BASELINE, baseline, False),
+                (MA_OUTPUT, ma_payload, True), (MA_BASELINE, ma_baseline, False)]
+    staged = []
+    try:
+        for path, value, pretty in prepared:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            temporary = path.with_suffix(path.suffix + f'.{os.getpid()}.tmp')
+            text = json.dumps(value, ensure_ascii=False, indent=2 if pretty else None,
+                              separators=None if pretty else (',', ':'), allow_nan=False) + '\n'
+            temporary.write_text(text)
+            staged.append((temporary, path))
+        assert_no_date_regression(latest)
+        for temporary, path in staged:
+            temporary.replace(path)
+    finally:
+        for temporary, _ in staged:
+            temporary.unlink(missing_ok=True)
     print(f'Published {len(series)} sessions; last={series[-1]}', flush=True)
     print(f'Moving-average breadth: last={ma_series[-1]}', flush=True)
+
+
+def validate_plan(plan, now=None):
+    now = now or dt.datetime.now(TZ)
+    if not isinstance(plan, dict) or type(plan.get('schemaVersion')) is not int or plan['schemaVersion'] != 1 or plan.get('kind') != 'high-low-52w-plan':
+        raise ValueError('Invalid collection plan schema')
+    content = {key: value for key, value in plan.items() if key != 'planId'}
+    if not isinstance(plan.get('planId'), str) or plan['planId'] != canonical_hash(content):
+        raise ValueError('Collection plan hash mismatch')
+    created = dt.datetime.fromisoformat(str(plan.get('createdAt', '')).replace('Z', '+00:00'))
+    if created.tzinfo is None or not 0 <= (now - created).total_seconds() <= 36 * 3600:
+        raise ValueError('Collection plan is stale or future-dated')
+    dates = closed_dates(plan.get('dates'), now)
+    closed_dates(dates, created.astimezone(TZ))
+    if len(dates) != 60 or plan.get('latest') != dates[-1]:
+        raise ValueError('Collection plan must contain the exact 60 completed sessions')
+    if type(plan.get('shardCount')) is not int or not 1 <= plan['shardCount'] <= 64 or type(plan.get('skip')) is not bool:
+        raise ValueError('Invalid collection plan sharding/skip state')
+    universes, symbols = plan.get('universes'), plan.get('symbols')
+    if not isinstance(universes, dict) or not isinstance(symbols, list):
+        raise ValueError('Invalid collection plan universe/symbols')
+    if plan['skip']:
+        if universes or symbols:
+            raise ValueError('A skipped plan cannot contain collection work')
+        return plan
+    if set(universes) != set(dates):
+        raise ValueError('Plan daily universes do not match its sessions')
+    for date in dates:
+        codes = universes[date]
+        if not isinstance(codes, list) or len(codes) < MIN_UNIVERSE or any(not isinstance(code, str) or len(code) != 8 or not valid_code(code[2:] + '.' + code[:2].upper()) for code in codes) or codes != sorted(set(codes)):
+            raise ValueError(f'{date}: invalid or incomplete plan universe')
+    union = sorted(set().union(*(set(codes) for codes in universes.values())))
+    if symbols != union:
+        raise ValueError('Plan symbols are not the exact union of daily universes')
+    return plan
+
+
+def create_plan(plan_path, cache_dir, workers=6, force=False, shard_count=6):
+    now = dt.datetime.now(TZ)
+    dates, skip = select_completed_sessions(cache_dir, now, force)
+    universes = {} if skip else parallel_map(dates, lambda date: load_universe(date, cache_dir, refresh=date == dates[-1], now=now), workers, 'universes')
+    universes = {date: sorted(codes) for date, codes in universes.items()}
+    plan = {'schemaVersion': 1, 'kind': 'high-low-52w-plan', 'createdAt': now.isoformat(timespec='seconds'),
+            'dates': dates, 'latest': dates[-1], 'skip': skip, 'shardCount': shard_count,
+            'universes': universes, 'symbols': sorted(set().union(*(set(codes) for codes in universes.values()))) if universes else []}
+    plan['planId'] = canonical_hash(plan)
+    validate_plan(plan, now)
+    atomic_json(plan_path, plan)
+    print(json.dumps({'planId': plan['planId'], 'latest': plan['latest'], 'skip': skip,
+                      'symbols': len(plan['symbols']), 'shardCount': shard_count}), flush=True)
+    return plan
+
+
+def collect_shard(plan_path, parts_dir, cache_dir, shard_index, shard_count, workers=6):
+    plan = validate_plan(read_json(Path(plan_path)))
+    if type(shard_index) is not int or type(shard_count) is not int or shard_count != plan['shardCount'] or not 0 <= shard_index < shard_count:
+        raise ValueError('Shard index/count does not match the verified plan')
+    parts_dir, cache_dir = Path(parts_dir), Path(cache_dir)
+    codes = plan['symbols'][shard_index::shard_count]
+    latest, error = plan['latest'], None
+    try:
+        if not plan['skip']:
+            parallel_map(codes, lambda code: cached_bars(cache_dir, latest, code, lambda: fetch_bars(code)), workers, f'daily shard {shard_index}')
+    except Exception as exc:
+        error = exc
+    finally:
+        hashes = {}
+        for code in codes:
+            record = read_json(cache_dir / latest / (code + '.json'))
+            try:
+                if not isinstance(record, dict) or type(record.get('schemaVersion')) is not int or record.get('schemaVersion') != 1 or record.get('asOfDate') != latest or record.get('code') != code:
+                    continue
+                validate_cached_bars(record.get('bars'), latest)
+            except (TypeError, ValueError, KeyError):
+                continue
+            atomic_json(parts_dir / 'prices' / (code + '.json'), record)
+            hashes[code] = canonical_hash(record)
+        manifest = {'schemaVersion': 1, 'planId': plan['planId'], 'latest': latest,
+                    'shardIndex': shard_index, 'shardCount': shard_count, 'expectedCodes': codes,
+                    'codes': sorted(hashes), 'fileHashes': hashes,
+                    'complete': error is None and len(hashes) == len(codes),
+                    'error': str(error)[:2000] if error else None}
+        atomic_json(parts_dir / f'manifest-{shard_index}.json', manifest)
+        print(json.dumps({'shardIndex': shard_index, 'required': len(codes), 'collected': len(hashes),
+                          'complete': manifest['complete']}), flush=True)
+    if error is not None:
+        raise error
+    if not manifest['complete']:
+        raise RuntimeError('Shard finished without all required whole-symbol histories')
+    return manifest
+
+
+def publish_plan(plan_path, parts_dir):
+    now = dt.datetime.now(TZ)
+    plan = validate_plan(read_json(Path(plan_path)), now)
+    assert_no_date_regression(plan['latest'])
+    if plan['skip']:
+        print(f'Skipped complete {plan["latest"]} plan; no output changed.', flush=True)
+        return
+    parts_dir = Path(parts_dir)
+    files = sorted(parts_dir.glob('manifest-*.json'))
+    if len(files) != plan['shardCount']:
+        raise ValueError('Missing or extra shard manifests')
+    seen, prices = set(), {}
+    for path in files:
+        part = read_json(path)
+        if not isinstance(part, dict) or type(part.get('schemaVersion')) is not int or part.get('schemaVersion') != 1 or part.get('planId') != plan['planId'] or part.get('latest') != plan['latest'] or type(part.get('shardCount')) is not int or part.get('shardCount') != plan['shardCount'] or part.get('complete') is not True:
+            raise ValueError('Incomplete or mismatched shard manifest')
+        index = part.get('shardIndex')
+        if type(index) is not int or not 0 <= index < plan['shardCount'] or index in seen:
+            raise ValueError('Invalid or duplicate shard index')
+        seen.add(index)
+        expected = plan['symbols'][index::plan['shardCount']]
+        if path.name != f'manifest-{index}.json' or part.get('expectedCodes') != expected or part.get('codes') != expected or not isinstance(part.get('fileHashes'), dict) or set(part['fileHashes']) != set(expected):
+            raise ValueError('Shard contains missing, extra or incorrectly assigned symbols')
+        for code in expected:
+            record = read_json(parts_dir / 'prices' / (code + '.json'))
+            if not isinstance(record, dict) or type(record.get('schemaVersion')) is not int or record.get('schemaVersion') != 1 or record.get('asOfDate') != plan['latest'] or record.get('code') != code or canonical_hash(record) != part['fileHashes'][code]:
+                raise ValueError(f'{code}: mismatched or corrupted shard price record')
+            prices[code] = validate_cached_bars(record.get('bars'), plan['latest'])
+    if set(prices) != set(plan['symbols']) or {path.stem for path in (parts_dir / 'prices').glob('*.json')} != set(plan['symbols']):
+        raise ValueError('Aggregated prices do not match the complete plan universe')
+    publish_snapshots(plan['dates'], plan['universes'], prices, now)
+
+
+def refresh_history(cache_dir, workers=6, force=False):
+    now = dt.datetime.now(TZ)
+    dates, skip = select_completed_sessions(cache_dir, now, force)
+    if skip:
+        return
+    latest = dates[-1]
+    print(f'Building {dates[0]} → {latest}', flush=True)
+    universes = parallel_map(dates, lambda date: load_universe(date, cache_dir, refresh=date == latest, now=now), workers, 'universes')
+    symbols = sorted(set().union(*(set(value) for value in universes.values())))
+    # All histories use the same adjustment vintage; reuse only within this
+    # completed-session build, never merge differently adjusted raw bars.
+    prices = parallel_map(symbols, lambda code: cached_bars(cache_dir, latest, code,
+                                                          lambda: fetch_bars(code)), workers, 'daily bars')
+    publish_snapshots(dates, universes, prices, now)
 
 
 def main():
@@ -711,12 +943,31 @@ def main():
     parser.add_argument('--cache-dir', type=Path, default=Path(os.environ.get('RUNNER_TEMP', '/tmp')) / 'high-low-52w-cache')
     parser.add_argument('--workers', type=int, default=6)
     parser.add_argument('--force', action='store_true', help='Rebuild even on a non-trading day')
+    parser.add_argument('--phase', choices=('full', 'plan', 'collect', 'publish'), default='full')
+    parser.add_argument('--plan', type=Path, help='Verified shared collection manifest')
+    parser.add_argument('--parts-dir', type=Path, help='Shard manifests and whole-symbol price records')
+    parser.add_argument('--shard-index', type=int, default=0)
+    parser.add_argument('--shard-count', type=int, default=6)
     parser.add_argument('--max-seconds', type=int, default=1500,
                         help='Leave time to save successful symbol caches before the job timeout')
     args = parser.parse_args()
     _REFRESH_DEADLINE = time.monotonic() + max(60, args.max_seconds)
     try:
-        refresh_history(args.cache_dir, max(1, min(args.workers, 10)), args.force)
+        workers = max(1, min(args.workers, 10))
+        if args.phase == 'full':
+            refresh_history(args.cache_dir, workers, args.force)
+        elif args.phase == 'plan':
+            if args.plan is None:
+                parser.error('--phase plan requires --plan')
+            create_plan(args.plan, args.cache_dir, workers, args.force, args.shard_count)
+        elif args.phase == 'collect':
+            if args.plan is None or args.parts_dir is None:
+                parser.error('--phase collect requires --plan and --parts-dir')
+            collect_shard(args.plan, args.parts_dir, args.cache_dir, args.shard_index, args.shard_count, workers)
+        else:
+            if args.plan is None or args.parts_dir is None:
+                parser.error('--phase publish requires --plan and --parts-dir')
+            publish_plan(args.plan, args.parts_dir)
     finally:
         # ThreadPoolExecutor has joined all workers before refresh_history
         # returns or raises, so no cache file is being written during pruning.

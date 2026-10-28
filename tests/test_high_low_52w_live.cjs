@@ -14,17 +14,45 @@ function quote(code,change={}){
 }
 function context(config={}){
   let captured=[],statuses=[],urls=[],requests=0,active=0,maxActive=0;
+  let displayed=(config.displayRows||[]).slice(),frames=[],scriptCount=0,maxFrames=0;
   const fixedNow=config.now||now;
   class FakeDate extends Date{constructor(...args){super(...(args.length?args:[fixedNow]));}static now(){return fixedNow;}}
-  const ctx=vm.createContext({Date:FakeDate,Map,Set,Promise,Number,Math,Error,setTimeout,clearTimeout,setInterval:()=>0,
-    console:{warn(){}},document:{hidden:false,addEventListener(){},getElementById:()=>({classList:{contains:()=>true}})},window:{addEventListener(){}},
+  const document={hidden:false,addEventListener(){},getElementById:()=>({classList:{contains:()=>true}}),
+    body:{appendChild(frame){frames.push(frame);maxFrames=Math.max(maxFrames,frames.filter(f=>!f.removed).length);}},
+    createElement(type){
+      assert.equal(type,'iframe');const frame={style:{},setAttribute(){},contentWindow:{},removed:false,remove(){this.removed=true;}};
+      frame.contentDocument={createElement(kind){assert.equal(kind,'script');return{removed:false,remove(){this.removed=true;}};},head:{appendChild(script){
+        scriptCount++;frame.script=script;if(config.scriptTimeout)return;
+        Promise.resolve().then(()=>{
+          if(frame.removed)return;
+          if(config.scriptError){script.onerror?.();return;}
+          const codes=/q=([^&]+)/.exec(script.src)[1].split(',');
+          for(const code of codes){
+            if(config.scriptMissing===code||(config.missing&&code==='sh600000')||(config.manyMissing&&/^sh6000/.test(code)))continue;
+            const change={...(config.stamp?{30:config.stamp}:{}),...(config.scriptByFrame?{3:String(8+frames.indexOf(frame))}:{})};
+            frame.contentWindow['v_'+code]=quote(code,change).match(/="([^"]*)"/)[1];
+          }
+          frame.contentWindow.v_sh999999=quote('sh999999').match(/="([^"]*)"/)[1];
+          script.onload?.();
+        });
+      }}};return frame;
+    }};
+  const ctx=vm.createContext({Date:FakeDate,Map,Set,Promise,Number,Math,Error,setTimeout:(fn,delay)=>setTimeout(fn,config.fastScriptTimeout&&delay===6500?1:delay),clearTimeout,setInterval:()=>0,
+    console:{warn(){}},document,window:{addEventListener(){}},
     _highLow52Clock:()=>config.clock||({date:'2026-10-09',minute:615}),
     _setHighLow52LiveStatus:message=>statuses.push(message),
-    _setHighLow52LivePoint:r=>{captured.push(r);return true;},
+    _setHighLow52LivePoint:r=>{if(config.rejectDisplay)return false;captured.push(r);displayed=displayed.filter(old=>old.date!==r.date);displayed.push(r);return true;},
+    _highLow52OrderedRows:()=>displayed.slice().sort((a,b)=>a.date.localeCompare(b.date)),
+    _acceptHighLow52Payload:payload=>{
+      const clock=config.clock||({date:'2026-10-09',minute:615});let accepted=false;
+      for(const row of payload?.series||[])if(row.date===clock.date&&row.status==='close'&&row.asOf==='15:00'&&clock.minute>=900&&Number.isInteger(row.eligible)&&row.eligible>=4000){displayed=displayed.filter(old=>old.date!==row.date);displayed.push(row);accepted=true;}
+      return accepted;
+    },
     _idxFetch:async url=>{
       requests++;urls.push(url);active++;maxActive=Math.max(maxActive,active);
       await Promise.resolve();active--;
       if(url.includes('baseline.json'))return config.baseline||baseline;
+      if(url.includes('market_high_low_52w.json'))return config.history||{series:[]};
       if(url.includes('fqkline')){
         if(config.tencentDown)throw Error('HTTP 501');
         const code=/param=([^,]+)/.exec(url)[1];
@@ -38,6 +66,7 @@ function context(config={}){
           '2024-01-01,7,7,10,5,10','2026-09-30,7,7,10,5,10','2026-10-09,7,8,10,6,10']}};
       }
       if(url.includes('qt.gtimg')){
+        if(config.quoteFetchFails)throw Error(config.quoteError||'Failed to fetch');
         const codes=/q=([^&]+)/.exec(url)[1].split(',');
         return codes.map(code=>{
           if(config.missing&&code==='sh600000')return '';
@@ -54,7 +83,7 @@ function context(config={}){
     },
   });
   vm.runInContext(source,ctx);
-  return{ctx,captured,statuses,urls,requests:()=>requests,maxActive:()=>maxActive};
+  return{ctx,captured,statuses,urls,frames,scripts:()=>scriptCount,maxFrames:()=>maxFrames,requests:()=>requests,maxActive:()=>maxActive};
 }
 module.exports=(async()=>{
   const c=context();
@@ -69,6 +98,8 @@ module.exports=(async()=>{
   assert.equal(c.captured.length,1,'Only publish a complete full-market observation');
   assert.equal(c.captured[0].high,4000);assert.equal(c.captured[0].low,0);
   assert.equal(c.captured[0].eligible,4000);assert.equal(c.captured[0].asOf,'10:14');
+  assert.equal(c.ctx.window.highLow52LiveState().status,'ready');assert.equal(c.ctx.window.highLow52LiveState().asOf,'10:14');
+  assert.equal(c.scripts(),0,'A successful fetch never creates a script request');
   assert.ok(c.maxActive()<=4,'Bound parallel network work');
   const count=c.requests();await c.ctx.refreshHighLow52Live();assert.equal(c.requests(),count,'One-minute throttle');
   assert.equal(c.ctx._hl52Fresh({date:'2026-10-09',time:'10:09'},{date:'2026-10-09',minute:615}),false,'Old quotes cannot be labelled realtime');
@@ -89,6 +120,54 @@ module.exports=(async()=>{
   assert.equal(staleLunch.captured.length,0,'An older vintage must not be used to invent today\'s count');
   assert.match(staleLunch.statuses.at(-1),/基准截至 2026-10-23，需 2026-10-26 收盘基准/,'State the actual missing baseline, not a generic realtime failure');
   assert.equal(staleLunch.urls.some(url=>url.includes('q=sh600000')),false,'Reject an obsolete baseline before an expensive all-stock quote scan');
+  assert.equal(staleLunch.ctx.window.highLow52LiveState().status,'blocked');
+  assert.equal(staleLunch.ctx.window.highLow52LiveState().baselineDate,'2026-10-23');
+  assert.equal(staleLunch.ctx.window.highLow52LiveState().requiredBaselineDate,'2026-10-26');
+  const todayBaseline={...lunchBaseline,asOfDate:'2026-10-27',updatedAt:'2026-10-27T20:00:00+08:00',stocks:stocks.map(stock=>({...stock,lastDate:'2026-10-27'}))};
+  const todayConfig={now:Date.parse('2026-10-28T10:15:00+08:00'),clock:{date:'2026-10-28',minute:615},calendar:[['2026-10-26'],['2026-10-27'],['2026-10-28']],stamp:'20261028101400',baseline:todayBaseline};
+  const today=context(todayConfig);assert.equal(today.ctx.window.highLow52LiveState().status,'idle');
+  const todayPending=today.ctx.refreshHighLow52Live(true);assert.equal(today.ctx.window.highLow52LiveState().status,'loading');await todayPending;
+  assert.equal(today.captured[0].date,'2026-10-28');assert.equal(today.captured[0].asOf,'10:14');
+  assert.equal(today.ctx.window.highLow52LiveState().status,'ready');assert.equal(today.ctx.window.highLow52LiveState().baselineDate,'2026-10-27');
+  const independentState=today.ctx.window.highLow52LiveState();independentState.status='error';assert.equal(today.ctx.window.highLow52LiveState().status,'ready','External readers cannot mutate collector state');
+  const rejected=context({...todayConfig,rejectDisplay:true});await rejected.ctx.refreshHighLow52Live(true);
+  assert.equal(rejected.ctx.window.highLow52LiveState().status,'blocked','Collector success cannot conceal a rejected display point');
+  assert.equal(rejected.ctx.window.highLow52LiveState().asOf,null);
+  const throughScript=context({...todayConfig,quoteFetchFails:true});throughScript.ctx.window.v_sh600000='dashboard-owned-value';
+  await throughScript.ctx.refreshHighLow52Live(true);
+  assert.equal(throughScript.captured[0].date,'2026-10-28');assert.equal(throughScript.ctx.window.highLow52LiveState().status,'ready');
+  assert.ok(throughScript.scripts()>1);assert.ok(throughScript.maxFrames()<=4,'Script fallback keeps the bounded worker pool');
+  assert.equal(throughScript.ctx.window.v_sh600000,'dashboard-owned-value','Fallback must not mutate the dashboard global quote namespace');
+  assert.ok(throughScript.frames.every(frame=>frame.removed&&frame.script.removed&&frame.script.onload===null&&frame.script.onerror===null),'Every successful isolated script batch is cleaned up');
+  assert.equal(new Set(throughScript.frames.map(frame=>frame.id)).size,throughScript.frames.length,'Each batch owns a unique isolated frame');
+  const concurrent=context({quoteFetchFails:true,scriptByFrame:true});
+  const parallel=await Promise.all([concurrent.ctx._hl52GetQuotes(['sh600000']),concurrent.ctx._hl52GetQuotes(['sh600000'])]);
+  assert.equal(parallel[0].get('sh600000').price,8);assert.equal(parallel[1].get('sh600000').price,9,'Concurrent same-symbol batches read only their own response');
+  assert.equal(parallel[0].has('sh999999'),false,'Unrequested symbols are never imported from the script response');
+  const incompleteScript=context({quoteFetchFails:true,scriptMissing:'sh600001'});
+  await assert.rejects(incompleteScript.ctx._hl52GetQuotes(['sh600000','sh600001']),/未完整返回/);
+  assert.ok(incompleteScript.frames.every(frame=>frame.removed&&frame.script.removed),'A partial script response still releases its isolated frame');
+  const scriptFailure=context({...todayConfig,quoteFetchFails:true,scriptError:true});await scriptFailure.ctx.refreshHighLow52Live(true);
+  assert.equal(scriptFailure.ctx.window.highLow52LiveState().status,'error');assert.equal(scriptFailure.ctx.window.highLow52LiveState().asOf,null);
+  assert.ok(scriptFailure.frames.every(frame=>frame.removed&&frame.script.removed));
+  const scriptTimeoutConfig={...todayConfig,quoteFetchFails:true,scriptTimeout:true,fastScriptTimeout:true},timedOut=context(scriptTimeoutConfig);
+  await timedOut.ctx.refreshHighLow52Live(true);assert.equal(timedOut.ctx.window.highLow52LiveState().status,'error');
+  assert.match(timedOut.ctx.window.highLow52LiveState().message,/超时/);assert.ok(timedOut.frames.every(frame=>frame.removed&&frame.script.removed));
+  scriptTimeoutConfig.scriptTimeout=false;await timedOut.ctx.refreshHighLow52Live(true);assert.equal(timedOut.ctx.window.highLow52LiveState().status,'ready','A timeout releases the scan lock and may recover without reloading');
+  assert.throws(()=>concurrent.ctx._hl52QuoteCodes(['sh600000&evil=1']),/范围无效/);
+  assert.throws(()=>concurrent.ctx._hl52QuoteCodes(['sh600000','sh600000']),/范围无效/);
+  assert.throws(()=>concurrent.ctx._hl52QuoteCodes(Array(81).fill('sh600000')),/范围无效/);
+  const completedConfig={...todayConfig,now:Date.parse('2026-10-28T15:30:00+08:00'),clock:{date:'2026-10-28',minute:930},stamp:'20261028150000',baseline:{...todayBaseline,asOfDate:'2026-10-28'}};
+  const noCompleted=context(completedConfig);await noCompleted.ctx.refreshHighLow52Live(true);
+  assert.equal(noCompleted.ctx.window.highLow52LiveState().status,'blocked','A same-day baseline alone cannot declare the chart up to date');
+  assert.ok(noCompleted.urls.some(url=>url.includes('market_high_low_52w.json')),'Read the completed history without recursively launching the live refresh');
+  const completeRow={date:'2026-10-28',status:'close',asOf:'15:00',high:123,low:45,eligible:4000,universe:4000,observed:4000,missing:0};
+  const completed=context({...completedConfig,history:{series:[completeRow]}});await completed.ctx.refreshHighLow52Live(true);
+  assert.equal(completed.ctx.window.highLow52LiveState().status,'ready');assert.equal(completed.ctx.window.highLow52LiveState().asOf,'15:00');assert.equal(completed.captured.length,0,'A valid same-day close does not trigger another all-stock scan');
+  const sanitizing=context(todayConfig);sanitizing.ctx._hl52Status('<img src=x onerror=alert(1)>source failed','error');
+  assert.equal(sanitizing.ctx.window.highLow52LiveState().message,'source failed');
+  sanitizing.ctx._hl52SetState('blocked',{baselineDate:'2026-02-30',requiredBaselineDate:'2099-01-01'});
+  assert.equal(sanitizing.ctx.window.highLow52LiveState().baselineDate,null);assert.equal(sanitizing.ctx.window.highLow52LiveState().requiredBaselineDate,null);
   for(const config of [{manyMissing:true},{holiday:true},{baseline:{...baseline,asOfDate:'2026-09-29'}},
     {baseline:{...baseline,validThrough:'2026-10-08'}}]){
     const t=context(config);await t.ctx.refreshHighLow52Live(true);assert.equal(t.captured.length,0,JSON.stringify(config).slice(0,100));

@@ -10,14 +10,12 @@ on:
       - 'tests/test_refresh_ma_breadth.py'
       - 'tests/test_refresh_high_low_recovery.py'
       - 'tests/test_refresh_high_low_universe.py'
+      - 'tests/test_refresh_high_low_shards.py'
   schedule:
-    # Beijing 07:15 / 08:15 repair yesterday's baseline before the open.
     - cron: '15 23 * * 0-4'
     - cron: '15 0 * * 1-5'
-    # Off-peak repair retries; completed sessions are checked before expensive work.
     - cron: '43 23 * * 0-4'
     - cron: '43 0,1,2 * * 1-5'
-    # Beijing 15:15 / 16:15, then 20:15 when daily constituent publication settles.
     - cron: '15 7,8,12 * * 1-5'
   workflow_dispatch:
 
@@ -28,12 +26,16 @@ concurrency:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
-  refresh:
+  prepare:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    timeout-minutes: 10
+    outputs:
+      needed: ${{ steps.plan.outputs.needed }}
+      source_sha: ${{ steps.plan.outputs.source_sha }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,41 +43,119 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Test exact window and complete-universe rules
-        run: python -m unittest discover -s tests -p test_refresh_high_low_52w.py -v
-      - name: Test moving-average windows and completed-close baselines
-        run: python -m unittest discover -s tests -p test_refresh_ma_breadth.py -v
-      - name: Test daily-source fallback and bounded recovery
-        run: python -m unittest discover -s tests -p test_refresh_high_low_recovery.py -v
-      - name: Test staged constituent publication and cache repair
-        run: python -m unittest discover -s tests -p test_refresh_high_low_universe.py -v
-      - name: Restore completed-session symbol histories and dated rosters
+      - name: Verify exact windows, complete rosters, safe recovery and shard assembly
+        run: |
+          python -m unittest discover -s tests -p 'test_refresh_high_low*.py' -v
+          python -m unittest discover -s tests -p test_refresh_ma_breadth.py -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify browser quote fallback and truthful live status
+        run: node --test tests/test_high_low_52w.cjs tests/test_high_low_52w_live.cjs tests/test_high_low_52w_status.cjs
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/high-low-plan-cache
+          key: high-low-plan-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: high-low-plan-v1-
+      - name: Prepare one verified completed-session calendar and roster plan
+        id: plan
+        shell: bash
+        run: |
+          python .github/scripts/refresh_high_low_52w.py --phase plan --plan "$RUNNER_TEMP/high-low-plan/plan.json" --cache-dir "$RUNNER_TEMP/high-low-plan-cache" --shard-count 6 --workers 4 --max-seconds 360
+          python - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          plan = json.loads((Path(os.environ['RUNNER_TEMP']) / 'high-low-plan/plan.json').read_text())
+          sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              print('needed=' + ('false' if plan['skip'] else 'true'), file=output)
+              print('source_sha=' + sha, file=output)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.plan.outputs.needed == 'true'
+        with:
+          name: high-low-plan
+          path: ${{ runner.temp }}/high-low-plan/plan.json
+          retention-days: 1
+
+  collect:
+    needs: prepare
+    if: needs.prepare.outputs.needed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          name: high-low-plan
+          path: ${{ runner.temp }}/high-low-plan
+      - name: Restore verified same-session whole-symbol histories
         id: history-cache
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/high-low-52w-cache
-          key: high-low-session-v2-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: high-low-session-v2-
-      - name: Calculate complete 60-session history
+          key: high-low-shard-v3-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            high-low-shard-v3-${{ matrix.shard }}-
+            high-low-session-v2-
+      - name: Collect one bounded shard without refetching its calendar
         id: collect
         continue-on-error: true
-        run: python .github/scripts/refresh_high_low_52w.py --workers 6 --max-seconds 900
-      - name: Resume only missing symbol histories after an interrupted collection
+        run: python .github/scripts/refresh_high_low_52w.py --phase collect --plan "$RUNNER_TEMP/high-low-plan/plan.json" --parts-dir "$RUNNER_TEMP/high-low-part" --cache-dir "$RUNNER_TEMP/high-low-52w-cache" --shard-index ${{ matrix.shard }} --shard-count 6 --workers 3 --max-seconds 600
+      - name: Resume only missing histories from the same verified plan
         if: steps.collect.outcome == 'failure'
-        run: python .github/scripts/refresh_high_low_52w.py --workers 6 --max-seconds 900
-      - name: Keep successful whole-symbol histories even if collection failed
+        run: python .github/scripts/refresh_high_low_52w.py --phase collect --plan "$RUNNER_TEMP/high-low-plan/plan.json" --parts-dir "$RUNNER_TEMP/high-low-part" --cache-dir "$RUNNER_TEMP/high-low-52w-cache" --shard-index ${{ matrix.shard }} --shard-count 6 --workers 3 --max-seconds 300
+      - name: Preserve successful histories even when a shard needs another run
         if: always() && steps.history-cache.outcome == 'success'
         uses: actions/cache/save@v4
         with:
           path: ${{ runner.temp }}/high-low-52w-cache
-          key: high-low-session-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          key: high-low-shard-v3-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: high-low-part-${{ matrix.shard }}
+          path: ${{ runner.temp }}/high-low-part
+          retention-days: 1
+
+  publish:
+    needs: [prepare, collect]
+    if: needs.prepare.outputs.needed == 'true' && needs.collect.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          name: high-low-plan
+          path: ${{ runner.temp }}/high-low-plan
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: high-low-part-*
+          path: ${{ runner.temp }}/high-low-completed
+          merge-multiple: true
+      - name: Validate every shard and publish the complete market atomically
+        run: python .github/scripts/refresh_high_low_52w.py --phase publish --plan "$RUNNER_TEMP/high-low-plan/plan.json" --parts-dir "$RUNNER_TEMP/high-low-completed" --max-seconds 300
       - name: Persist verified history and next-session comparison prices
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add data/market_high_low_52w.json data/market_high_low_52w_baseline.json data/market_ma_breadth.json data/market_ma_breadth_baseline.json
           git diff --staged --quiet && exit 0
-          git commit -m "chore: refresh 52-week and moving-average market breadth $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git commit -m "chore: publish complete sharded 52-week and MA breadth $(date -u '+%Y-%m-%d %H:%M UTC')"
           for attempt in 1 2 3 4 5; do
             git pull --rebase origin main
             if git push origin HEAD:main; then exit 0; fi
