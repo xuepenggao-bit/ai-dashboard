@@ -5,7 +5,8 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(root){
   'use strict';
   const OFFSET=8*60*60*1000,CLOSE_MINUTE=16*60+10;
-  const KEY='market_close_refresh_v1:',LEASE_MS=5*60*1000;
+  const KEY='market_close_refresh_v1:',LEASE_MS=5*60*1000,MAX_ATTEMPTS=96,MAX_BACKOFF_MS=30*60*1000;
+  function retryDelay(attempts){return attempts===1?60000:attempts===2?300000:attempts===3?900000:MAX_BACKOFF_MS;}
   function beijingClock(ms){
     const d=new Date(ms+OFFSET);
     return {date:d.toISOString().slice(0,10),weekday:d.getUTCDay(),
@@ -31,9 +32,9 @@
     function validMeta(value,c,time){
       if(!value||value.date!==c.date) return null;
       const m=fresh(c.date);
-      if(Number.isInteger(value.attempts)&&value.attempts>=0&&value.attempts<=3) m.attempts=value.attempts;
+      if(Number.isInteger(value.attempts)&&value.attempts>=0&&value.attempts<=MAX_ATTEMPTS) m.attempts=value.attempts;
       if(timestamp(value.lastAttemptAt)!=null&&value.lastAttemptAt<=time) m.lastAttemptAt=value.lastAttemptAt;
-      if(timestamp(value.nextAttemptAt)!=null&&value.nextAttemptAt<=time+LEASE_MS) m.nextAttemptAt=value.nextAttemptAt;
+      if(timestamp(value.nextAttemptAt)!=null&&value.nextAttemptAt<=time+MAX_BACKOFF_MS) m.nextAttemptAt=value.nextAttemptAt;
       const start=timestamp(value.startedAt),end=timestamp(value.completedAt);
       // A saved flag alone is not proof: only a completed forced post-close round counts.
       if(value.forced===true&&start!=null&&end!=null&&start>=c.cutoff&&end>=start&&end<=time&&beijingClock(end).date===c.date){
@@ -117,12 +118,14 @@
         m.nextAttemptAt=time+1000;write(m);schedule(1000);
         return publish('scheduled',m,c,{waitingForFreshRound:true});
       }
-      m.attempts=Math.min(3,m.attempts+1);
+      m.attempts=Math.min(MAX_ATTEMPTS,m.attempts+1);
       m.failed=Array.isArray(actual&&actual.failed)&&actual.failed.length?
         actual.failed.filter(v=>typeof v==='string').slice(0,30):['刷新未完整完成'];
-      m.nextAttemptAt=m.attempts===1?time+60000:m.attempts===2?time+300000:0;
+      // Disclosures can arrive well after 16:10. Keep checking with bounded
+      // backoff instead of permanently stopping after the first three tries.
+      m.nextAttemptAt=m.attempts<MAX_ATTEMPTS?time+retryDelay(m.attempts):0;
       write(m);
-      if(m.attempts<3) schedule(m.nextAttemptAt-time);
+      if(m.attempts<MAX_ATTEMPTS) schedule(m.nextAttemptAt-time);
       return publish('partial',m,c,{retryAt:m.nextAttemptAt||null});
     }
     function ensure(){
@@ -133,7 +136,7 @@
       if(c.minute<CLOSE_MINUTE) return Promise.resolve(publish('scheduled',m,c));
       if(!visible()||!active()) return Promise.resolve(publish('inactive',m,c));
       if(flight) return flight.promise;
-      if(m.attempts>=3) return Promise.resolve(publish('partial',m,c,{retryAt:null}));
+      if(m.attempts>=MAX_ATTEMPTS) return Promise.resolve(publish('partial',m,c,{retryAt:null}));
       if(m.nextAttemptAt>time) return Promise.resolve(publish(m.attempts?'partial':'scheduled',m,c,{retryAt:m.nextAttemptAt}));
       if(m.lease&&m.lease.owner!==owner) return Promise.resolve(publish('refreshing',m,c));
       m.lastAttemptAt=time;m.lease={owner,until:time+LEASE_MS};write(m);

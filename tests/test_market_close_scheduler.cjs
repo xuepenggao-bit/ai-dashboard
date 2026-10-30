@@ -57,15 +57,55 @@ test('an observed valid report and returned report are deduplicated',async()=>{
   await h.controller.ensure();await h.controller.ensure();assert.equal(h.calls.length,1);
   assert.equal(h.controller.getStatus().state,'complete');assert.equal(h.controller.getStatus().attempts,0);
 });
-test('failed rounds retry after 60 and 300 seconds, at most three times',async()=>{
+test('failed rounds back off for 1, 5, 15 then 30 minutes instead of stopping after three',async()=>{
   const h=harness('16:10:00',{refresh:()=>({ok:false,forced:true,startedAt:at('16:10:00'),completedAt:at('16:10:00'),failed:['ETF']})});
   await h.controller.ensure();assert.equal(h.calls.length,1);assert.equal(h.controller.getStatus().attempts,1);
   h.setTime('16:10:59');await h.controller.ensure();assert.equal(h.calls.length,1);
   h.setTime('16:11:00');await h.controller.ensure();assert.equal(h.calls.length,2);
   h.setTime('16:15:59');await h.controller.ensure();assert.equal(h.calls.length,2);
   h.setTime('16:16:00');await h.controller.ensure();assert.equal(h.calls.length,3);
-  h.setTime('17:00:00');await h.controller.ensure();assert.equal(h.calls.length,3);
+  h.setTime('16:30:59');await h.controller.ensure();assert.equal(h.calls.length,3);
+  h.setTime('16:31:00');await h.controller.ensure();assert.equal(h.calls.length,4);
+  h.setTime('17:00:59');await h.controller.ensure();assert.equal(h.calls.length,4);
+  h.setTime('17:01:00');await h.controller.ensure();assert.equal(h.calls.length,5);
+  h.setTime('17:30:59');await h.controller.ensure();assert.equal(h.calls.length,5);
+  h.setTime('17:31:00');await h.controller.ensure();assert.equal(h.calls.length,6);
+  assert.equal(h.controller.getStatus().attempts,6);
+  assert.equal(h.controller.getStatus().retryAt,at('18:01:00'));
+});
+test('late valid data can complete the same day after repeated incomplete rounds',async()=>{
+  let h;h=harness('16:10:00',{refresh:()=>({ok:false,forced:true,startedAt:h.now(),completedAt:h.now(),failed:['均线广度']})});
+  for(const time of ['16:10:00','16:11:00','16:16:00','16:31:00','17:01:00','17:31:00','18:01:00']){
+    h.setTime(time);await h.controller.ensure();
+  }
+  assert.equal(h.calls.length,7);assert.equal(h.controller.getStatus().state,'partial');
+  h.setTime('18:31:00');h.setRefresh(()=>({ok:true,forced:true,startedAt:h.now(),completedAt:h.now(),failed:[]}));
+  await h.controller.ensure();assert.equal(h.calls.length,8);assert.equal(h.controller.getStatus().state,'complete');
+  h.setTime('22:00:00');await h.controller.ensure();assert.equal(h.calls.length,8);
+});
+test('30-minute backoff survives a reload and hidden sleep without frequent network work',async()=>{
+  let first;first=harness('16:10:00',{refresh:()=>({ok:false,forced:true,startedAt:first.now(),completedAt:first.now(),failed:['ETF']})});
+  for(const time of ['16:10:00','16:11:00','16:16:00','16:31:00']){first.setTime(time);await first.controller.ensure();}
+  const second=harness('16:40:00',{storage:first.storage});
+  await second.controller.ensure();assert.equal(second.calls.length,0);assert.equal(second.controller.getStatus().attempts,4);
+  assert.equal(second.controller.getStatus().retryAt,at('17:01:00'),'A long persisted retry is not discarded by the shorter cross-tab lease limit');
+  second.setVisible(false);second.setTime('18:20:00');await second.controller.ensure();assert.equal(second.calls.length,0);
+  second.setVisible(true);await second.controller.ensure();assert.equal(second.calls.length,1);assert.equal(second.controller.getStatus().state,'complete');
+});
+test('an incomplete late-night retry resets at midnight and waits for the next close',async()=>{
+  let h;h=harness('23:50:00',{refresh:()=>({ok:false,forced:true,startedAt:h.now(),completedAt:h.now(),failed:['融资融券']})});
+  await h.controller.ensure();h.setTime('23:51:00');await h.controller.ensure();h.setTime('23:56:00');await h.controller.ensure();
   assert.equal(h.controller.getStatus().attempts,3);
+  h.setTime('2026-10-21T00:01:00+08:00');await h.controller.ensure();
+  assert.equal(h.controller.getStatus().attempts,0);assert.equal(h.controller.getStatus().state,'scheduled');assert.equal(h.calls.length,3);
+  h.setTime('2026-10-21T16:10:00+08:00');h.setRefresh(()=>({ok:true,forced:true,startedAt:h.now(),completedAt:h.now(),failed:[]}));
+  await h.controller.ensure();assert.equal(h.calls.length,4);assert.equal(h.controller.getStatus().state,'complete');
+});
+test('legacy three-failure metadata resumes but malformed excessive attempt counts do not lock out recovery',async()=>{
+  for(const attempts of [3,97]){
+    const h=harness('19:00:00');h.store.set('market_close_refresh_v1:2026-10-20',JSON.stringify({date:'2026-10-20',attempts,nextAttemptAt:0,lastAttemptAt:at('16:16:00'),failed:['旧状态']}));
+    await h.controller.ensure();assert.equal(h.calls.length,1);assert.equal(h.controller.getStatus().state,'complete');
+  }
 });
 test('empty success markers, missing forced flag and future report cannot complete the day',async()=>{
   const h=harness();

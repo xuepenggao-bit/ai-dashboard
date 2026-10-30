@@ -189,31 +189,74 @@ function _hl52Fresh(quote,clock){
   const minute=_hl52Minute(quote.time),reference=clock.minute>690&&clock.minute<780?690:Math.min(clock.minute,900);
   return quote.date===clock.date&&Number.isFinite(minute)&&minute>=reference-5&&minute<=clock.minute+1;
 }
+function _hl52OfficialPreviousDate(today){
+  const calendar=window.PortfolioMarketSession;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(today)||typeof calendar?.marketState!=='function')throw Error('官方交易日历尚未覆盖');
+  const start=Date.parse(today+'T16:30:00+08:00');
+  if(!Number.isFinite(start))throw Error('交易日期无效');
+  const current=calendar.marketState('A',start);
+  if(current?.calendarKnown!==true||current.date!==today||current.market!=='A'||current.isTradingDay!==true||current.isClosed!==false)
+    throw Error('官方交易日历尚未确认当日开市');
+  for(let offset=1;offset<=370;offset++){
+    const stamp=start-offset*86400000,date=new Date(stamp+8*3600000).toISOString().slice(0,10),state=calendar.marketState('A',stamp);
+    if(state?.calendarKnown!==true||state.date!==date||state.market!=='A')throw Error('官方交易日历尚未覆盖 '+date);
+    if(state.isTradingDay===true&&state.isClosed===false&&state.phase==='after_close'&&Number.isInteger(state.closeMinute)&&state.closeMinute<=990)return date;
+    if(state.isClosed!==true||state.isTradingDay!==false)throw Error('官方交易日历状态未确认');
+  }
+  throw Error('官方交易日历没有可验证的上一交易日');
+}
+async function _hl52PreviousTradingDate(today){
+  try{
+    const daily=await _hl52Daily('sh000001',10);let last='';
+    for(const row of daily){
+      const date=row?.[0],stamp=typeof date==='string'?Date.parse(date+'T00:00:00Z'):NaN;
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(date||'')||!Number.isFinite(stamp)||new Date(stamp).toISOString().slice(0,10)!==date||date<=last||date>today||[0,6].includes(new Date(stamp).getUTCDay()))throw Error('指数交易日历无效');
+      last=date;
+    }
+    const previous=daily.map(row=>row[0]).filter(date=>date<today).pop();
+    if(!previous)throw Error('指数上一交易日缺失');return previous;
+  }catch(error){
+    // This is a published exchange calendar, not a weekday guess. Quotes must
+    // still carry today's fresh session and every comparator keeps its gate.
+    return _hl52OfficialPreviousDate(today);
+  }
+}
 async function _hl52CollectLive(){
   const clock=_highLow52Clock(),date=clock.date;
   if(_hl52AdjustmentDate!==date){_hl52Adjustments.clear();_hl52AdjustmentDate=date;}
   const indices=await _hl52GetQuotes(['sh000001','sz399106']);
   const iq=[...indices.values()];
   if(iq.some(q=>q.time<'09:30'||!_hl52Fresh(q,clock))){_hl52Status('暂无有效当日实时行情 · 保留最近统计','blocked');return false;} // Includes real exchange holidays.
-  const calendar=await _hl52Daily('sh000001',10);
-  const previous=calendar.map(r=>r[0]).filter(d=>d<date).sort().pop();
-  let baseline=await _hl52LoadBaseline();
-  _hl52SetState('loading',{baselineDate:baseline.asOfDate,requiredBaselineDate:previous});
-  if(baseline.asOfDate===date){
-    const completed=await _hl52LoadCompletedPoint(date);
-    if(!completed)throw _hl52Blocked('今日收盘基准已更新，等待同日有效统计');
-    _hl52Status('今日收盘统计已完成 · '+completed.asOf,'ready',{asOf:completed.asOf});return true;
+  const previous=await _hl52PreviousTradingDate(date);
+  let baseline=null,eligible=[],highLowUpdated=false;
+  // Each consumer owns its comparison baseline. A delayed 52-week history
+  // must not disable current MA breadth or the complete market quote pool.
+  try{
+    baseline=await _hl52LoadBaseline();
+    _hl52SetState('loading',{baselineDate:baseline.asOfDate,requiredBaselineDate:previous});
+    if(baseline.asOfDate===date){
+      const completed=await _hl52LoadCompletedPoint(date);
+      if(!completed)throw _hl52Blocked('今日收盘基准已更新，等待同日有效统计');
+      highLowUpdated=true;
+      _hl52Status('今日收盘统计已完成 · '+completed.asOf,'ready',{asOf:completed.asOf});
+    }else{
+      if(baseline.asOfDate!==previous)baseline=await _hl52LoadBaseline(true);
+      _hl52SetState('loading',{baselineDate:baseline.asOfDate,requiredBaselineDate:previous});
+      if(baseline.asOfDate!==previous)throw _hl52Blocked('52周基准截至 '+baseline.asOfDate+'，需 '+previous+' 收盘基准');
+      if(!baseline.validThrough||baseline.validThrough<date)throw _hl52Blocked('52周比较窗口已过期');
+      const start=_hl52Start(date);eligible=baseline.stocks.filter(s=>s.firstDate<=start);
+      if(eligible.length<4000)throw Error('52周有效样本不足');
+    }
+  }catch(error){
+    eligible=[];
+    _hl52Status(error.message+' · 保留最近有效统计，将自动重试',error.hl52Blocked?'blocked':'error',
+      {baselineDate:baseline?.asOfDate||null,requiredBaselineDate:previous});
   }
-  if(baseline.asOfDate!==previous)baseline=await _hl52LoadBaseline(true);
-  _hl52SetState('loading',{baselineDate:baseline.asOfDate,requiredBaselineDate:previous});
-  if(baseline.asOfDate!==previous)throw _hl52Blocked('52周基准截至 '+baseline.asOfDate+'，需 '+previous+' 收盘基准');
-  if(!baseline.validThrough||baseline.validThrough<date)throw _hl52Blocked('52周比较窗口已过期');
-  const start=_hl52Start(date),eligible=baseline.stocks.filter(s=>s.firstDate<=start);
-  if(eligible.length<4000)throw Error('52周有效样本不足');
   let maBaseline=null;
   if(typeof window.loadMaBreadthBaseline==='function'){
     try{
-      const candidate=await window.loadMaBreadthBaseline(false);
+      let candidate=await window.loadMaBreadthBaseline(false);
+      if(candidate.asOfDate!==previous&&candidate.asOfDate!==date)candidate=await window.loadMaBreadthBaseline(true);
       if(candidate.asOfDate===previous&&candidate.stocks.length>=4000)maBaseline=candidate;
       else console.warn('[均线广度] 上一交易日基准待更新');
     }catch(error){console.warn('[均线广度基准]',error.message);}
@@ -231,6 +274,7 @@ async function _hl52CollectLive(){
   const requiredHighLow=new Map(eligible.map(stock=>[stock.code,stock]));
   const codes=[...new Set([...requiredHighLow.keys(),...(maBaseline?maBaseline.stocks.map(stock=>stock.code):[]),
     ...(qualityBaseline?qualityBaseline.stocks.map(stock=>stock.code):[])])];
+  if(!codes.length)return highLowUpdated;
   const allQuotes=new Map();
   const batches=[];
   for(let i=0;i<codes.length;i+=80)batches.push(codes.slice(i,i+80));
@@ -266,7 +310,8 @@ async function _hl52CollectLive(){
         if(quote.volume>0&&quote.time<earliest)earliest=quote.time;
         }catch(error){console.warn('[52周个股待核验]',code,error.message);}
       }
-      completed+=batch.length;_hl52Status('正在统计 · '+completed.toLocaleString('zh-CN')+'/'+codes.length.toLocaleString('zh-CN')+' 只');
+      completed+=batch.length;
+      if(eligible.length)_hl52Status('正在统计 · '+completed.toLocaleString('zh-CN')+'/'+codes.length.toLocaleString('zh-CN')+' 只');
     }
   }));
   const failure=results.find(result=>result.status==='rejected');
@@ -275,13 +320,12 @@ async function _hl52CollectLive(){
   const time=[...iq.map(q=>q.time),earliest,'15:00'].sort()[0];
   // Unknown observations are never zero or extrapolated. Only publish a
   // near-complete observation, with explicit coverage on the chart.
-  let highLowUpdated=false;
-  if(observed>=Math.ceil(eligible.length*.99)){
+  if(eligible.length&&observed>=Math.ceil(eligible.length*.99)){
     highLowUpdated=_setHighLow52LivePoint({date,high,low,eligible:eligible.length,universe:baseline.stocks.length,
       observed,missing:eligible.length-observed,asOf:time,status:'live'},{source:'东方财富股票名单 · 腾讯财经复权日线 + 盘中行情'});
     if(highLowUpdated)_hl52Status('截至 '+time+' · '+(observed===eligible.length?'全样本核验':'覆盖 '+(observed/eligible.length*100).toFixed(2)+'% · '+(eligible.length-observed)+' 只待核验')+' · 盘中约每分钟更新','ready',{asOf:_hl52CurrentPoint(date)?.asOf||time});
     else _hl52Status('今日统计未通过显示校验 · 保留最近有效数据','blocked');
-  }else _hl52Status('本轮覆盖 '+(observed/eligible.length*100).toFixed(2)+'%，保留上次统计 · 将自动重试','blocked');
+  }else if(eligible.length)_hl52Status('本轮覆盖 '+(observed/eligible.length*100).toFixed(2)+'%，保留上次统计 · 将自动重试','blocked');
   let maUpdated=false;
   if(maBaseline&&typeof window.applyMaBreadthLiveQuotes==='function'){
     try{maUpdated=await window.applyMaBreadthLiveQuotes(maBaseline,allQuotes,date,time,previous);}

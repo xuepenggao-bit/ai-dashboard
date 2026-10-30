@@ -21,4 +21,12 @@ test('payload rejects missing scope, timezone and nonchronological series',()=>{
 test('complete quote pool uses supplied daily return, not rounded recomputation',()=>{const m=fresh(),{baseline,quotes}=liveFixture(),r=m.computeLiveQuotes(baseline,quotes,'2026-10-15','11:30','2026-10-14',at);assert.ok(r);assert.equal(r.medianReturnPct,0);assert.equal(r.q25ReturnPct,-1);assert.equal(r.q75ReturnPct,1);assert.equal(r.eligibleCount,4100);assert.equal(r.top20SharePct,20/4100*100);});
 test('one missing stock or amount invalidates the whole live point',()=>{const m=fresh(),{baseline,quotes}=liveFixture();quotes.delete(baseline.stocks[0].code);assert.equal(m.computeLiveQuotes(baseline,quotes,'2026-10-15','11:30','2026-10-14',at),null);const f=liveFixture();delete f.quotes.get(f.baseline.stocks[0].code).amountYuan;assert.equal(m.computeLiveQuotes(f.baseline,f.quotes,'2026-10-15','11:30','2026-10-14',at),null);});
 test('explicit suspended stocks are excluded; stale active quote is rejected',()=>{const m=fresh(),f=liveFixture(),q=f.quotes.get(f.baseline.stocks[0].code);q.volume=0;q.amountYuan=0;const r=m.computeLiveQuotes(f.baseline,f.quotes,'2026-10-15','11:30','2026-10-14',at);assert.equal(r.eligibleCount,4099);assert.equal(r.universeCount,4100);q.amountYuan=1;assert.equal(m.computeLiveQuotes(f.baseline,f.quotes,'2026-10-15','11:30','2026-10-14',at),null);});
+test('old-dated explicit suspension is excluded before live date checks; stale traded or missing records still fail',()=>{
+  const m=fresh(),f=liveFixture(),code=f.baseline.stocks[0].code,q=f.quotes.get(code);
+  Object.assign(q,{date:'2026-10-14',time:'15:00',volume:0,amountYuan:0});
+  const r=m.computeLiveQuotes(f.baseline,f.quotes,'2026-10-15','11:30','2026-10-14',at);
+  assert.equal(r.eligibleCount,4099);assert.equal(r.universeCount,4100);
+  q.volume=1;q.amountYuan=1;assert.equal(m.computeLiveQuotes(f.baseline,f.quotes,'2026-10-15','11:30','2026-10-14',at),null);
+  f.quotes.delete(code);assert.equal(m.computeLiveQuotes(f.baseline,f.quotes,'2026-10-15','11:30','2026-10-14',at),null);
+});
 test('live source dates, baselines and quote times must match the actual session',()=>{const m=fresh();for(const mutate of [f=>f.quotes.get(f.baseline.stocks[0].code).date='2026-10-14',f=>f.quotes.get(f.baseline.stocks[0].code).time='11:31',f=>f.baseline.asOfDate='2026-10-13',f=>f.baseline.stocks[1].code=f.baseline.stocks[0].code]){const f=liveFixture();mutate(f);assert.equal(m.computeLiveQuotes(f.baseline,f.quotes,'2026-10-15','11:30','2026-10-14',at),null);}});

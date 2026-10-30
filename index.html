@@ -27,7 +27,7 @@
 <link rel="stylesheet" href="assets/market-quality.css?v=20261015a">
 <link rel="stylesheet" href="assets/market-heat.css?v=20261015a">
 <link rel="stylesheet" href="assets/market-environment.css?v=20261019a">
-<script defer src="assets/market-close-refresh.js?v=20261019a"></script>
+<script defer src="assets/market-close-refresh.js?v=20261030a"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -1877,7 +1877,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div class="market-environment-hero">
     <div class="market-environment-title-line"><h1 class="stitle market-environment-title">市场环境</h1><span class="stag market-environment-tag">A股日频 · 市场全景</span><button id="macroBtnRefresh" type="button" class="market-refresh-button" onclick="refreshMacro({force:true,reason:'manual'})">刷新全部</button></div>
     <p class="market-environment-subtitle">从市场热度、交易活跃到资金与风险，观察 A 股整体状态。</p>
-    <div class="market-refresh-meta"><span id="marketCloseStatus">收盘补刷 · 北京时间16:10后</span><span id="macroTs" role="status" aria-live="polite">各指标按实际数据日期显示</span></div>
+    <div class="market-refresh-meta"><span id="marketCloseStatus">收盘补刷 · 北京时间16:10后</span><span id="macroTs" role="status" aria-live="polite">各指标按实际数据日期显示</span><span id="marketFreshnessStatus" role="status">盘中指标约每分钟更新 · 日频、月频指标按实际披露更新</span></div>
   </div>
 
   <!-- KPI Row -->
@@ -8141,10 +8141,12 @@ async function fetchMacroKpis(force=false){
       const txReverseMap = {};
       Object.entries(PE_CFG).forEach(([sc, cfg])=>{ txReverseMap[cfg.txCode]=sc; });
 
-      const txRaw = await fetch(
+      const txController=new AbortController(),txTimer=setTimeout(()=>txController.abort(),7000);
+      let txRaw;
+      try{txRaw = await fetch(
         `https://qt.gtimg.cn/q=${txCodes}&_=${Date.now()}`,
-        {cache:'no-store'}
-      ).then(r=>r.arrayBuffer()).catch(()=>null);
+        {cache:'no-store',signal:txController.signal}
+      ).then(r=>r.arrayBuffer()).catch(()=>null);}finally{clearTimeout(txTimer);}
 
       if(txRaw){
         const txTxt = new TextDecoder('gbk').decode(txRaw);
@@ -8185,7 +8187,8 @@ async function fetchMacroKpis(force=false){
           + `&pageSize=10&sortTypes=-1&sortColumns=TRADE_DATE`
           + `&reportName=${c.report}&columns=TRADE_DATE,SECUCODE,${c.peCol}`
           + `&filter=${encodeURIComponent(filterStr)}&_=${Date.now()}`;
-        const res = await fetch(url,{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
+        const dcController=new AbortController(),dcTimer=setTimeout(()=>dcController.abort(),3500);
+        let res;try{res=await fetch(url,{cache:'no-store',signal:dcController.signal}).then(r=>r.ok?r.json():null).catch(()=>null);}finally{clearTimeout(dcTimer);}
         const data = res?.result?.data;
         if(!data?.length || data[0][c.peCol]==null) continue;
         const latest = {};
@@ -8237,10 +8240,12 @@ function _macroRefreshCaption(report,now=Date.now()){
   let live=null;try{if(typeof window.highLow52LiveState==='function')live=window.highLow52LiveState();}catch(_){}
   const waiting=clock.day!==0&&clock.day!==6&&clock.minutes>=570&&clock.minutes<=960&&live?.date===date&&live.status!=='ready';
   report.realtimePending=!!waiting;
+  let stale=[];try{stale=(window.MarketEnvironmentFreshness?.inspect(now)||[]).filter(item=>item.state==='stale'||item.state==='pending');}catch(_){}
+  report.freshnessPending=stale.map(item=>item.label);
   const time=new Date(report.completedAt).toLocaleTimeString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false});
-  if(ts)ts.textContent=report.ok?(waiting?'快照核验完成 · 52周今日统计待更新 · '+time:'快照核验完成 · '+time+' · 盘中数据以图内时间为准')
+  if(ts)ts.textContent=report.ok?(stale.length?'读取完成 · '+stale.length+'项数据待更新 · '+time:waiting?'快照核验完成 · 52周今日统计待更新 · '+time:'快照核验完成 · '+time+' · 盘中数据以图内时间为准')
     :'已完成核验 · '+report.failed.length+'项源暂不可用，保留有效数据 · '+time;
-  if(ts)ts.title=[report.failed.length?'未成功：'+report.failed.join('、'):'各图保留实际来源日期，不将历史读取成功视为今日实时成功。',waiting?live.message:''].filter(Boolean).join('；');
+  if(ts)ts.title=[report.failed.length?'未成功：'+report.failed.join('、'):'各图保留实际来源日期，不将历史读取成功视为今日实时成功。',...stale.map(item=>item.label+'：'+item.message),waiting?live.message:''].filter(Boolean).join('；');
 }
 window.addEventListener('highlow52-live-state',()=>{
   if(!refreshMacro.pending&&refreshMacro.lastReport)_macroRefreshCaption(refreshMacro.lastReport);
@@ -8276,6 +8281,13 @@ async function refreshMacro(options={}){
     jobs.push(_macroRefreshTask('iVIX',fetchVixChart,false));
     const results=await Promise.all(jobs),completedAt=Date.now();
     const failed=results.filter(result=>result.required&&!result.ok).map(result=>result.name);
+    // A successful old JSON read is not proof of a completed closing refresh.
+    // Publication-based/monthly indicators have their own expected-date rules.
+    if(_beijingMarketClock(completedAt).minutes>=970&&window.MarketEnvironmentFreshness){
+      for(const item of window.MarketEnvironmentFreshness.inspect(completedAt)){
+        if(['stale','pending','unknown'].includes(item.state)&&item.cadence!=='monthly'&&!failed.includes(item.label))failed.push(item.label);
+      }
+    }
     const report={ok:failed.length===0,forced:force,startedAt,completedAt,failed,results};
     refreshMacro.lastReport=report;
     _macroRefreshCaption(report,completedAt);
@@ -13261,11 +13273,13 @@ document.addEventListener('DOMContentLoaded',()=>{
 // HIGH_LOW52_MODULE_END
 
 </script>
-<script src="assets/ma-breadth.js?v=20261014a" defer></script>
-<script src="assets/market-risk.js?v=20261023a" defer></script>
-<script src="assets/market-quality.js?v=20261022a" defer></script>
+<script src="assets/ma-breadth.js?v=20261030a" defer></script>
+<script src="assets/market-risk.js?v=20261030a" defer></script>
+<script src="assets/market-quality.js?v=20261030a" defer></script>
 <script src="assets/market-heat-engine.js?v=20261027a" defer></script>
 <script src="assets/market-heat.js?v=20261027a" defer></script>
-<script src="assets/high-low-52w-live.js?v=20261028b" defer></script>
+<script src="assets/high-low-52w-live.js?v=20261030a" defer></script>
+<script src="assets/market-freshness.js?v=20261030a" defer></script>
+<script src="assets/market-refresh-scheduler.js?v=20261030a" defer></script>
 </body>
 </html>

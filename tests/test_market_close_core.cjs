@@ -70,7 +70,7 @@ function macroFixture(overrides = {}, stamp = afterClose) {
   Object.assign(values, overrides.values || {});
   Object.assign(window, overrides.window || {});
   values.window = window;
-  const context = evaluate(['_macroRefreshTask', 'refreshMacro'], values);
+  const context = evaluate(['_macroRefreshTask', '_macroRefreshCaption', 'refreshMacro'], values);
   return {context, calls, observations, button, status, alert, classes};
 }
 
@@ -85,7 +85,7 @@ test('forced after-close refresh invokes all nine mandatory production modules',
   assert.equal(report.ok, true);
   assert.equal(report.failed.length, 0);
   assert.equal(f.observations[0], report);
-  assert.match(f.status.textContent, /全部指标已核验/);
+  assert.match(f.status.textContent, /快照核验完成/);
   assert.equal(f.button.disabled, false);
   assert.equal(f.classes.has('loading'), false);
 });
@@ -241,6 +241,17 @@ test('KPI refresh propagates force and waits for the real market-cap job before 
 test('KPI success requires both a successful market-cap read and all four valid PE observations', async () => {
   assert.equal(await kpiFixture(Promise.resolve(false), peText).context.fetchMacroKpis(true), false);
   assert.equal(await kpiFixture(Promise.resolve(true), '').context.fetchMacroKpis(true), false);
+});
+
+test('a successful read of old files cannot complete the post-close freshness check',async()=>{
+  const f=macroFixture({window:{MarketEnvironmentFreshness:{inspect:()=>[
+    {label:'均线广度',state:'stale',cadence:'intraday',message:'上一日基准待更新'},
+    {label:'ETF份额',state:'scheduled',cadence:'reported-daily',message:'等待清算'},
+    {label:'个人开户数',state:'periodic',cadence:'monthly',message:'按月披露'},
+  ]}}});
+  const report=await f.context.refreshMacro({force:true,reason:'close'});
+  assert.equal(report.ok,false);assert.deepEqual([...report.failed],['均线广度']);
+  assert.deepEqual([...report.freshnessPending],['均线广度']);
 });
 
 function accountFixture(fetcher) {

@@ -135,9 +135,19 @@ test('an MA-only missing quote does not block complete 52-week data or publish a
   assert.equal(c.maApi.ordered().length,0,'Real MA validation rejects the incomplete independent universe');
   assert.equal(c.maErrors.length,1);assert.match(c.maErrors[0].message,/报价/);
 });
-test('a missing quote required by 52-week data blocks both publications',async()=>{
+test('one absent stock is explicit in 99-percent 52-week coverage but never becomes a subset MA percentage',async()=>{
   const c=context({missingCode:'sh600000'});await c.ctx.refreshHighLow52Live(true);
-  assert.equal(c.highLow.length,0);assert.equal(c.maCalls.length,0);assert.equal(c.maApi.ordered().length,0);
+  assert.equal(c.highLow.length,1);assert.equal(c.highLow[0].missing,1);assert.equal(c.highLow[0].observed,3999);
+  assert.equal(c.maCalls.length,1);assert.equal(c.maApi.ordered().length,0);assert.equal(c.maErrors.length,1);
+});
+test('stale 52-week comparison history does not block a complete current MA baseline',async()=>{
+  const c=context({hlBaseline:{...hlBaseline,asOfDate:'2026-10-12',updatedAt:'2026-10-12T18:00:00+08:00',
+    stocks:hlStocks.map(s=>({...s,lastDate:'2026-10-12',highs:[['2026-10-12',10]],lows:[['2026-10-12',5]]}))}});
+  await c.ctx.refreshHighLow52Live(true);
+  assert.equal(c.highLow.length,0,'No 52-week point can use the wrong previous close');
+  assert.equal(c.maCalls.length,1);assert.equal(c.maErrors.length,0);assert.equal(c.maApi.ordered().at(-1).date,today);
+  assert.equal(c.maApi.ordered().at(-1).windows[20].eligible,4001,'The independently valid complete MA universe is updated');
+  assert.equal(c.ctx.window.highLow52LiveState().status,'blocked');
 });
 test('an MA baseline from the wrong trading day is not used; the 52-week path remains available',async()=>{
   const c=context({maBaseline:{...maBaseline,asOfDate:'2026-10-12',stocks:maStocks.map(s=>({...s,lastDate:'2026-10-12'})),updatedAt:'2026-10-12T18:00:00+08:00'}});

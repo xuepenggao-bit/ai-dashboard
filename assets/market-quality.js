@@ -56,8 +56,9 @@
     if(!normalizeBaseline(baseline,now)||baseline.asOfDate!==previous||!dateValid(previous)||previous>=date||!dateValid(date)||date!==c.date||!finite(asOf)||asOf<570||asOf>900||asOf>c.minute||!quotes||typeof quotes.get!=='function')return null;
     const seen=new Set(),stocks=[];let earliest=time;
     for(const item of baseline.stocks){const code=typeof item==='string'?item:item?.code;if(!CODE.test(code)||seen.has(code))return null;seen.add(code);const q=quotes.get(code);
-      if(!q||q.date!==date||!finite(q.price)||q.price<=0||!finite(q.previous)||q.previous<=0||!finite(q.volume)||q.volume<0||!finite(q.amountYuan)||q.amountYuan<0)return null;
-      if(q.volume===0){if(q.amountYuan!==0)return null;continue;}
+      if(!q||!dateValid(q.date)||q.date>date||!finite(q.price)||q.price<=0||!finite(q.previous)||q.previous<=0||!finite(q.volume)||q.volume<0||!finite(q.amountYuan)||q.amountYuan<0)return null;
+      if(q.volume===0){const qt=minutes(q.time);if(q.amountYuan!==0||!finite(qt)||(q.date===c.date&&qt>c.minute))return null;continue;}
+      if(q.date!==date)return null;
       const qt=minutes(q.time);if(!finite(qt)||qt<570||qt>900||qt>c.minute||q.amountYuan<=0)return null;
       const computedReturn=(q.price/q.previous-1)*100,returnPct=q.returnPct===undefined?computedReturn:q.returnPct;if(!finite(returnPct)||returnPct<=-100||Math.abs(returnPct-computedReturn)>.02)return null;
       if(q.time<earliest)earliest=q.time;stocks.push({returnPct,amountYuan:q.amountYuan});}
@@ -74,8 +75,9 @@
     if(!valid||date!==c.date||c.minute<900||valid.asOfDate>date||Date.parse(date)-Date.parse(valid.asOfDate)>20*86400000||!quotes||typeof quotes.get!=='function')return null;
     const stocks=[];
     for(const item of valid.stocks){const q=quotes.get(item.code),time=minutes(q?.time);
-      if(!q||q.date!==date||!finite(time)||time>c.minute||!finite(q.price)||q.price<=0||!finite(q.previous)||q.previous<=0||!finite(q.volume)||q.volume<0||!finite(q.amountYuan)||q.amountYuan<0)return null;
+      if(!q||!dateValid(q.date)||q.date>date||!finite(time)||(q.date===c.date&&time>c.minute)||!finite(q.price)||q.price<=0||!finite(q.previous)||q.previous<=0||!finite(q.volume)||q.volume<0||!finite(q.amountYuan)||q.amountYuan<0)return null;
       if(q.volume===0){if(q.amountYuan!==0)return null;continue;}
+      if(q.date!==date)return null;
       if(time<900||q.amountYuan<=0||!finite(q.returnPct)||q.returnPct<=-100||Math.abs(q.returnPct-(q.price/q.previous-1)*100)>.02)return null;
       stocks.push({returnPct:q.returnPct,amountYuan:q.amountYuan});
     }

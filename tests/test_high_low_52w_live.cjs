@@ -52,17 +52,19 @@ function context(config={}){
     _idxFetch:async url=>{
       requests++;urls.push(url);active++;maxActive=Math.max(maxActive,active);
       await Promise.resolve();active--;
-      if(url.includes('baseline.json'))return config.baseline||baseline;
+      if(url.includes('baseline.json')){if(config.baselineFails)throw Error('比较基准源暂不可用');return config.baseline||baseline;}
       if(url.includes('market_high_low_52w.json'))return config.history||{series:[]};
       if(url.includes('fqkline')){
         if(config.tencentDown)throw Error('HTTP 501');
         const code=/param=([^,]+)/.exec(url)[1];
+        if(config.calendarDown&&code==='sh000001')throw Error('calendar source unavailable');
         const rows=code==='sh000001'?(config.calendar||[['2026-09-30'],['2026-10-09']]):[
           ['2024-01-01','7','7','10','5','1'],['2026-09-30','6',config.badAdjustment?'6.5':'6','9','4','1'],['2026-10-09','6','7','8','4','1']];
         return{code:0,data:{[code]:{qfqday:rows}}};
       }
       if(url.includes('push2his.eastmoney.com')){
         const code=/secid=\d\.([^&]+)/.exec(url)[1];
+        if(config.calendarDown&&code==='000001')throw Error('calendar backup unavailable');
         return{rc:0,data:{code:config.badBackup?'000000':code,market:code==='399106'?0:1,klines:[
           '2024-01-01,7,7,10,5,10','2026-09-30,7,7,10,5,10','2026-10-09,7,8,10,6,10']}};
       }
@@ -144,6 +146,31 @@ module.exports=(async()=>{
   assert.equal(staleLunch.ctx.window.highLow52LiveState().status,'blocked');
   assert.equal(staleLunch.ctx.window.highLow52LiveState().baselineDate,'2026-10-23');
   assert.equal(staleLunch.ctx.window.highLow52LiveState().requiredBaselineDate,'2026-10-26');
+  const publishedCalendar=require('../assets/market-session.js');
+  const holidayRecovery=context({now:Date.parse('2026-10-08T10:15:00+08:00'),clock:{date:'2026-10-08',minute:615},
+    calendarDown:true,stamp:'20261008101400'});
+  holidayRecovery.ctx.window.PortfolioMarketSession=publishedCalendar;
+  assert.equal(holidayRecovery.ctx._hl52OfficialPreviousDate('2026-10-08'),'2026-09-30','Published holiday coverage, not weekday guessing, crosses the National Day break');
+  await holidayRecovery.ctx.refreshHighLow52Live(true);
+  assert.equal(holidayRecovery.captured.length,1,'Calendar CORS failure does not prevent a current quote scan with verified exchange coverage');
+  assert.equal(holidayRecovery.captured[0].date,'2026-10-08');assert.equal(holidayRecovery.ctx.window.highLow52LiveState().requiredBaselineDate,'2026-09-30');
+  const unknownCalendar=context({calendarDown:true});unknownCalendar.ctx.window.PortfolioMarketSession={marketState:()=>({calendarKnown:false})};
+  await unknownCalendar.ctx.refreshHighLow52Live(true);assert.equal(unknownCalendar.captured.length,0);
+  assert.equal(unknownCalendar.urls.some(url=>url.includes('q=sh600000')),false,'Unknown calendar coverage cannot trigger a guessed session scan');
+  assert.throws(()=>holidayRecovery.ctx._hl52OfficialPreviousDate('2027-01-04'),/官方交易日历/,'Unpublished future years are not inferred');
+  for(const config of [{baseline:{...lunchBaseline,asOfDate:'2026-10-23'}},{baselineFails:true}]){
+    const separate=context({...lunchConfig,...config});let maUpdates=0,qualityUpdates=0;
+    separate.ctx.window.loadMaBreadthBaseline=async()=>lunchBaseline;
+    separate.ctx.window.loadMarketQualityBaseline=async()=>lunchBaseline;
+    separate.ctx.window.applyMaBreadthLiveQuotes=async(base,quotes)=>{maUpdates++;assert.equal(quotes.size,4000);return true;};
+    separate.ctx.window.applyMarketQualityLiveQuotes=async(base,quotes)=>{qualityUpdates++;assert.equal(quotes.size,4000);return true;};
+    await separate.ctx.refreshHighLow52Live(true);
+    assert.equal(maUpdates,1,'Independent MA baseline still gets a current full-market quote pool');
+    assert.equal(qualityUpdates,1,'Independent return/concentration baseline is not blocked by 52-week history');
+    assert.equal(separate.captured.length,0,'A stale or absent 52-week baseline never produces a false point');
+    assert.notEqual(separate.ctx.window.highLow52LiveState().status,'ready','Other consumers cannot declare 52-week data ready');
+    assert.ok(separate.maxActive()<=4,'Independent consumers reuse one bounded quote scan');
+  }
   const todayBaseline={...lunchBaseline,asOfDate:'2026-10-27',updatedAt:'2026-10-27T20:00:00+08:00',stocks:stocks.map(stock=>({...stock,lastDate:'2026-10-27'}))};
   const todayConfig={now:Date.parse('2026-10-28T10:15:00+08:00'),clock:{date:'2026-10-28',minute:615},calendar:[['2026-10-26'],['2026-10-27'],['2026-10-28']],stamp:'20261028101400',baseline:todayBaseline};
   const today=context(todayConfig);assert.equal(today.ctx.window.highLow52LiveState().status,'idle');

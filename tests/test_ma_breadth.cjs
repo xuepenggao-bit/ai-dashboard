@@ -75,6 +75,16 @@ test('zero eligible samples are null, not zero percent',async()=>{
   const {api}=context();await api.applyLive(baseline(),new Map([['sh600000',quote({volume:0})]]),today,'10:14',previous);
   for(const window of [20,60,120])assert.deepEqual(plain(api.ordered().at(-1).windows[window]),{above:0,eligible:0,pct:null});
 });
+test('explicit zero-turnover suspension may retain its previous date without blocking active stocks',async()=>{
+  const {api}=context(),b=baseline([stock('sh600000'),stock('sh600001')]);
+  const quotes=new Map([['sh600000',quote()],['sh600001',quote({date:previous,time:'15:00',volume:0})]]);
+  await api.applyLive(b,quotes,today,'10:14',previous);
+  assert.equal(api.ordered().at(-1).windows[20].eligible,1);assert.equal(api.ordered().at(-1).windows[20].pct,100);
+  quotes.get('sh600001').volume=1;
+  await assert.rejects(api.applyLive(b,quotes,today,'10:14',previous),/报价/,'A stale traded quote is never treated as suspended');
+  quotes.delete('sh600001');
+  await assert.rejects(api.applyLive(b,quotes,today,'10:14',previous),/报价/,'Missing quotes remain missing, not zero turnover');
+});
 test('snapshot arbitration keeps newer time, close wins over live, and preserves 60 sessions',()=>{
   const {api}=context();assert.equal(api.acceptPayload(payload()),true);
   const close=api.ordered().at(-1);assert.equal(close.windows[20].pct,50);

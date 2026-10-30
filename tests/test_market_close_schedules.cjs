@@ -70,7 +70,7 @@ for (const [name, close, existing] of added) {
 }
 
 for (const [name, expected] of [
-  ['refresh-high-low-52w.yml', '15 7,8 * * 1-5'],
+  ['refresh-high-low-52w.yml', '15 7,8,12 * * 1-5'],
   ['refresh-market-quality.yml', '25 7,8,12 * * 1-5'],
   ['refresh-market-heat.yml', '35 0,8,12 * * 1-5'],
 ]) {

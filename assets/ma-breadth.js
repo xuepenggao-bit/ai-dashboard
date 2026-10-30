@@ -112,6 +112,11 @@
   }
   function validateQuote(q,date){
     const time=minute(q?.time),c=clock();
+    // An explicit zero-turnover quote is a suspension, not a missing quote.
+    // Sources may retain its last traded date; exclude it before freshness.
+    if(q?.volume===0&&dateValid(q.date)&&q.date<=date&&Number.isFinite(q.price)&&q.price>0&&
+      Number.isFinite(q.previous)&&q.previous>0&&Number.isFinite(time)&&
+      (q.date!==c.date||time<=c.minute+5))return;
     if(!q||q.date!==date||typeof q.price!=='number'||!Number.isFinite(q.price)||q.price<=0||
       typeof q.previous!=='number'||!Number.isFinite(q.previous)||q.previous<=0||
       typeof q.volume!=='number'||!Number.isFinite(q.volume)||q.volume<0||!Number.isFinite(time)||time<570||time>900||

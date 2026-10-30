@@ -138,6 +138,35 @@ test('腾讯指数quote解析不将坏时间和缺失字段构造为有效行情
   const q=api.parseQuote('v_sh000985="'+f.join('~')+'";');assert.equal(q.date,'2025-10-14');assert.equal(q.asOf,'11:30');assert.equal(q.high,4120);
   f[30]='20251014';assert.equal(api.parseQuote('v_sh000985="'+f.join('~')+'";'),null);
 });
+test('one-minute risk quotes refresh independently of the five-minute history throttle without duplicate requests',async()=>{
+  const b=bars(80),base=b.at(-1),today='2025-08-21',state={now:Date.parse(today+'T10:00:00+08:00'),quotes:0,history:0,calendar:0};
+  class FakeDate extends Date{constructor(...args){super(...(args.length?args:[state.now]));}static now(){return state.now;}}
+  const p=riskPayload(b,base.date+'T18:00:00+08:00');
+  const {api,sandbox}=fresh({Date:FakeDate,document:{hidden:false,readyState:'loading',addEventListener(){},getElementById:id=>id==='t0'?{classList:{contains:()=>true}}:null},
+    localStorage:{getItem(){return null;},setItem(){}},setTimeout,clearTimeout,
+    _hl52Daily:async()=>{state.calendar++;return b.slice(-10).map(r=>[r.date,r.close,r.close,r.high,r.low,r.volume]);},
+    _idxFetch:async url=>{
+      if(url.includes('market_risk')){state.history++;return p;}
+      if(!url.includes('qt.gtimg'))throw Error('unexpected URL');state.quotes++;await Promise.resolve();
+      const f=Array(40).fill(''),stamp=new Date(state.now+8*3600000).toISOString().replace(/[-:T]/g,'').slice(0,14);
+      Object.assign(f,{2:'000985',3:String(base.close+.2),4:String(base.close),6:'1000',30:stamp,33:String(base.close+2),34:String(base.close-2)});
+      return 'v_sh000985="'+f.join('~')+'";';
+    }});
+  await api.refreshRisk(true);assert.equal(state.history,2);assert.equal(state.quotes,1);assert.equal(api.orderedRisk().at(-1).status,'live');
+  state.now+=59000;await api.refreshRisk(false);assert.equal(state.quotes,1,'A short wakeup does not add quote requests');
+  state.now+=6000;await Promise.all([api.refreshRisk(false),api.refreshLive(false),api.refreshLive(false)]);
+  assert.equal(state.history,2,'The historical snapshot is still cached for five minutes');assert.equal(state.quotes,2);assert.equal(state.calendar,2);
+  assert.equal(api.orderedRisk().at(-1).asOf,'10:01');
+  sandbox.document.hidden=true;state.now+=65000;await api.refreshLive(false);assert.equal(state.quotes,2,'Background pages do not poll');
+});
+test('risk calendar request failure falls back only to verified exchange dates including holidays',async()=>{
+  const calendar=require('../assets/market-session.js'),{api}=fresh({PortfolioMarketSession:calendar,_hl52Daily:async()=>{throw Error('calendar CORS');}});
+  assert.equal(await api.previousTradingDate('2026-10-08'),'2026-09-30');
+  assert.equal(await api.previousTradingDate('2026-10-30'),'2026-10-29');
+  await assert.rejects(api.previousTradingDate('2027-01-04'),/官方交易日历/,'A missing official year never becomes a weekday guess');
+  const unknown=fresh({PortfolioMarketSession:{marketState:()=>({calendarKnown:false})},_hl52Daily:async()=>{throw Error('calendar CORS');}}).api;
+  await assert.rejects(unknown.previousTradingDate('2026-10-30'),/官方交易日历/);
+});
 test('图表激活后双帧resize，后台不发请求，资产无危险innerHTML外部字符串',()=>{
   const code=fs.readFileSync(filename,'utf8');
   assert.match(code,/requestAnimationFrame\(\(\)=>requestAnimationFrame/);assert.match(code,/if\(!active\(\)\)return;restore/);

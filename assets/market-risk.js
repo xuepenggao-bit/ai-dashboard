@@ -147,20 +147,36 @@
       if(!response.ok)throw Error('市场风险 HTTP '+response.status);return opt.gbk?new TextDecoder('gbk').decode(await response.arrayBuffer()):await response.json();
     }finally{clearTimeout(timer);}
   }
+  function officialPreviousTradingDate(today){
+    if(typeof _hl52OfficialPreviousDate==='function')return _hl52OfficialPreviousDate(today);
+    const calendar=global.PortfolioMarketSession,start=Date.parse(today+'T16:30:00+08:00');
+    if(!dateValid(today)||!Number.isFinite(start)||typeof calendar?.marketState!=='function')throw Error('官方交易日历尚未覆盖');
+    const current=calendar.marketState('A',start);
+    if(current?.calendarKnown!==true||current.date!==today||current.market!=='A'||current.isTradingDay!==true||current.isClosed!==false)throw Error('官方交易日历尚未确认当日开市');
+    for(let offset=1;offset<=370;offset++){
+      const stamp=start-offset*86400000,date=clock(stamp).date,state=calendar.marketState('A',stamp);
+      if(state?.calendarKnown!==true||state.date!==date||state.market!=='A')throw Error('官方交易日历尚未覆盖 '+date);
+      if(state.isTradingDay===true&&state.isClosed===false&&state.phase==='after_close'&&Number.isInteger(state.closeMinute)&&state.closeMinute<=990)return date;
+      if(state.isClosed!==true||state.isTradingDay!==false)throw Error('官方交易日历状态未确认');
+    }
+    throw Error('官方交易日历没有可验证的上一交易日');
+  }
   async function previousTradingDate(today){
-    let daily;
-    if(typeof _hl52Daily==='function')daily=await _hl52Daily('sh000985',10);
-    else{const p=await fetchData('https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh000985,day,,,10,qfq');
-      if(p?.code!==0)throw Error('交易日历无效');daily=p.data?.sh000985?.qfqday||p.data?.sh000985?.day;}
-    if(!Array.isArray(daily)||!daily.length)throw Error('上一交易日尚未验证');
-    let last='';for(const r of daily){if(!Array.isArray(r)||!dateValid(r[0])||r[0]<=last||r[0]>today||[0,6].includes(new Date(r[0]+'T00:00:00Z').getUTCDay())||!positive(Number(r[2])))throw Error('交易日历日期无效');last=r[0];}
-    const previous=daily.map(r=>r[0]).filter(d=>d<today).pop();if(!previous)throw Error('上一交易日缺失');return previous;
+    try{
+      let daily;
+      if(typeof _hl52Daily==='function')daily=await _hl52Daily('sh000985',10);
+      else{const p=await fetchData('https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh000985,day,,,10,qfq');
+        if(p?.code!==0)throw Error('交易日历无效');daily=p.data?.sh000985?.qfqday||p.data?.sh000985?.day;}
+      if(!Array.isArray(daily)||!daily.length)throw Error('上一交易日尚未验证');
+      let last='';for(const r of daily){if(!Array.isArray(r)||!dateValid(r[0])||r[0]<=last||r[0]>today||[0,6].includes(new Date(r[0]+'T00:00:00Z').getUTCDay())||!positive(Number(r[2])))throw Error('交易日历日期无效');last=r[0];}
+      const previous=daily.map(r=>r[0]).filter(d=>d<today).pop();if(!previous)throw Error('上一交易日缺失');return previous;
+    }catch(error){return officialPreviousTradingDate(today);}
   }
   function active(){return typeof document!=='undefined'&&!document.hidden&&document.getElementById('t0')?.classList.contains('active');}
   async function refreshLive(force=false){
     if(!active()||livePending)return livePending;
     const c=clock();if(c.minute<570||c.minute>920||riskRows.get(c.date)?.status==='close')return false;
-    if(!force&&liveAttempt&&Date.now()-liveAttempt<300000)return false;liveAttempt=Date.now();
+    if(!force&&liveAttempt&&Date.now()-liveAttempt<60000)return false;liveAttempt=Date.now();
     livePending=(async()=>{try{
       const [text,previous]=await Promise.all([fetchData('https://qt.gtimg.cn/q=sh000985',{gbk:true}),previousTradingDate(c.date)]);
       if(clock().date!==c.date)return false;
@@ -173,7 +189,8 @@
   function restore(){if(restored)return;restored=true;try{acceptRisk(JSON.parse(localStorage.getItem(RISK_KEY)||'null'),{persist:false,fromCache:true});}catch(e){}
     try{acceptEtf(JSON.parse(localStorage.getItem(ETF_KEY)||'null'),{persist:false,fromCache:true});}catch(e){}}
   async function refreshRisk(force=false){
-    restore();renderRisk();if(riskPending)return riskPending;if(!force&&riskAttempt&&Date.now()-riskAttempt<300000)return !!riskRows.size;
+    restore();renderRisk();if(riskPending)return riskPending;
+    if(!force&&riskAttempt&&Date.now()-riskAttempt<300000){await refreshLive(false);return !!riskRows.size;}
     riskAttempt=Date.now();riskPending=(async()=>{const result=await Promise.allSettled(RISK_URLS.map(async u=>{if(!acceptRisk(await fetchData(u)))throw Error('无有效风险数据');}));
       riskFailed=result.every(r=>r.status==='rejected');renderRisk();await refreshLive(force);return !riskFailed;})();
     try{return await riskPending;}finally{riskPending=null;}
@@ -248,10 +265,14 @@
   }
   function resize(){if(resizePending)return;resizePending=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{resizePending=false;if(active())for(const c of [riskVolChart,riskDrawChart,etfChart])c?.resize();}));}
   function visible(force=false){if(!active())return;restore();renderRisk();renderEtf();resize();refreshRisk(force).catch(e=>console.warn('[市场风险]',e.message));refreshEtf(force).catch(e=>console.warn('[ETF份额]',e.message));}
-  global.refreshMarketRisk=refreshRisk;global.refreshEtfShares=refreshEtf;global.renderMarketRisk=renderRisk;global.renderEtfShares=renderEtf;
-  if(typeof module==='object'&&module.exports)module.exports={clock,dateValid,cleanBars,computeRisk,riskRow,canReplace,acceptRisk,orderedRisk,getRiskBars:()=>riskBars.map(r=>({...r})),etfRow,acceptEtf,orderedEtf,parseQuote,buildLive,signed,etfDates,metricNote,etfCloseWindow,refreshEtf};
+  global.refreshMarketRisk=refreshRisk;global.refreshMarketRiskLive=refreshLive;global.refreshEtfShares=refreshEtf;global.renderMarketRisk=renderRisk;global.renderEtfShares=renderEtf;
+  if(typeof module==='object'&&module.exports)module.exports={clock,dateValid,cleanBars,computeRisk,riskRow,canReplace,acceptRisk,orderedRisk,getRiskBars:()=>riskBars.map(r=>({...r})),etfRow,acceptEtf,orderedEtf,parseQuote,buildLive,signed,etfDates,metricNote,etfCloseWindow,refreshEtf,refreshRisk,refreshLive,previousTradingDate,officialPreviousTradingDate};
   if(typeof document!=='undefined'){const start=()=>{restore();renderRisk();renderEtf();visible(true);const tab=document.getElementById('t0');
       if(tab&&typeof MutationObserver==='function')new MutationObserver(()=>visible(false)).observe(tab,{attributes:true,attributeFilter:['class']});
-      setInterval(()=>visible(false),60000);document.addEventListener('visibilitychange',()=>visible(false));global.addEventListener('pageshow',()=>visible(false));global.addEventListener('resize',resize);};
+      setInterval(()=>visible(false),60000);
+      // The 5-minute historical read and 1-minute live quote have independent
+      // schedules; short wakeups only check the guarded live deadline.
+      setInterval(()=>{if(active())refreshLive(false).catch(e=>console.warn('[市场风险盘中]',e.message));},5000);
+      document.addEventListener('visibilitychange',()=>visible(false));global.addEventListener('pageshow',()=>visible(false));global.addEventListener('resize',resize);};
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();}
 })(typeof window!=='undefined'?window:globalThis);
