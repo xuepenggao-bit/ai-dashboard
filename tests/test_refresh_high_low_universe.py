@@ -16,6 +16,15 @@ def ref(codes=None,exact=True):
     return {'date':'2026-10-21' if exact else '2026-10-20','codes':codes,'count':len(codes),'exact':exact}
 
 class UniverseTests(unittest.TestCase):
+    def setUp(self):
+        fixture_dir=tempfile.TemporaryDirectory()
+        self.addCleanup(fixture_dir.cleanup)
+        root=Path(fixture_dir.name)
+        paths={name:root/(name+'.json') for name in
+               ('OUTPUT','BASELINE','MA_OUTPUT','MA_BASELINE','QUALITY_OUTPUT','QUALITY_BASELINE')}
+        fixture_patch=patch.multiple(m,**paths)
+        fixture_patch.start();self.addCleanup(fixture_patch.stop)
+
     def test_same_day_partial_source_count_is_not_a_complete_roster(self):
         with self.assertRaisesRegex(ValueError,'439 missing'):
             m.validate_universe_scope('2026-10-21',symbols(4785),ref())
@@ -28,7 +37,13 @@ class UniverseTests(unittest.TestCase):
             m.validate_universe_scope('2026-10-21',symbols(4785),ref(exact=False))
         self.assertEqual(len(m.validate_universe_scope('2026-10-21',symbols(5225),ref(exact=False))),5225)
     def test_quality_reference_uses_real_universe_count_schema(self):
-        baseline=json.loads((ROOT/'data/market_quality_baseline.json').read_text())
+        # Exercise the production schema without depending on whatever date or
+        # stock membership a scheduled data refresh last committed to main.
+        baseline={'schemaVersion':1,'asOfDate':'2026-10-21',
+                  'stocks':[{'code':code,'lastDate':'2026-10-21','close':10} for code in symbols()]}
+        m.QUALITY_BASELINE.write_text(json.dumps(baseline))
+        m.QUALITY_OUTPUT.write_text(json.dumps({'series':[{'date':'2026-10-21','status':'close',
+                                                          'universeCount':len(baseline['stocks'])}]}))
         actual=m.universe_reference(baseline['asOfDate'])
         self.assertTrue(actual['exact']);self.assertEqual(actual['count'],len(baseline['stocks']))
         self.assertEqual(actual['codes'],{s['code'] for s in baseline['stocks']})

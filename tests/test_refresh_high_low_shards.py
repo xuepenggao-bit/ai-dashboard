@@ -81,6 +81,18 @@ class ShardTests(unittest.TestCase):
     def setUp(self):
         m._REFRESH_DEADLINE = None
         m._DAILY_SOURCE_HEALTH.clear()
+        # Frozen historical plans must never inspect the repository's advancing
+        # published snapshots. Otherwise the production no-regression guard
+        # correctly rejects this test's old plan and stops every scheduled run.
+        fixture_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(fixture_dir.cleanup)
+        self.fixture_root = Path(fixture_dir.name)
+        fixture_paths = output_paths(self.fixture_root / 'outputs')
+        fixture_paths.update(QUALITY_OUTPUT=self.fixture_root / 'quality.json',
+                             QUALITY_BASELINE=self.fixture_root / 'quality-baseline.json')
+        self.path_patch = patch.multiple(m, **fixture_paths)
+        self.path_patch.start()
+        self.addCleanup(self.path_patch.stop)
         self.time_patch = patch.object(m.dt, 'datetime', FixedDateTime)
         self.time_patch.start()
         self.addCleanup(self.time_patch.stop)
@@ -215,6 +227,23 @@ class ShardTests(unittest.TestCase):
             self.assertEqual(set(prices), set(p['symbols'])); self.assertEqual(now, NOW)
             self.assertTrue(all(rows == simple_bars() for rows in prices.values()))
 
+    def test_frozen_fixture_never_reads_advancing_repository_snapshots(self):
+        for name in ('OUTPUT', 'BASELINE', 'MA_OUTPUT', 'MA_BASELINE', 'QUALITY_OUTPUT', 'QUALITY_BASELINE'):
+            self.assertTrue(getattr(m, name).is_relative_to(self.fixture_root), name)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            # A future published snapshot outside the fixture output directory
+            # is deliberately irrelevant to this fixed-date mathematical test.
+            write_json(root / 'live-data' / 'market_high_low_52w.json',
+                       {'series': [{'date': '2030-12-31'}]})
+            plan_path, parts, _ = self.populated_parts(root)
+            with patch.object(m, 'MIN_UNIVERSE', 2), patch.object(m, 'publish_snapshots') as publish, \
+                    patch.object(m, 'read_json', wraps=m.read_json) as read:
+                m.publish_plan(plan_path, parts)
+            publish.assert_called_once()
+            self.assertTrue(all(not Path(call.args[0]).is_relative_to(ROOT / 'data')
+                                for call in read.call_args_list))
+
     def test_partial_mixed_corrupt_or_extra_shards_preserve_every_existing_output(self):
         def manifest(parts, index=0):
             return m.read_json(parts / f'manifest-{index}.json')
@@ -274,14 +303,18 @@ class ShardTests(unittest.TestCase):
             self.assertEqual(len(m.read_json(paths['MA_BASELINE'])['stocks']), 4)
 
     def test_plan_cannot_regress_a_newer_verified_output_date(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); p = plan_fixture(); plan_path = root / 'plan.json'; write_json(plan_path, p)
-            paths = output_paths(root); write_json(paths['OUTPUT'], {'series': [{'date': '2026-10-28'}]})
-            before = paths['OUTPUT'].read_bytes()
-            with patch.multiple(m, **paths), patch.object(m, 'MIN_UNIVERSE', 2):
-                with self.assertRaisesRegex(RuntimeError, 'date regression'):
-                    m.publish_plan(plan_path, root / 'missing-parts')
-            self.assertEqual(paths['OUTPUT'].read_bytes(), before)
+        for name in ('OUTPUT', 'BASELINE', 'MA_OUTPUT', 'MA_BASELINE'):
+            with self.subTest(output=name), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp); p = plan_fixture(); plan_path = root / 'plan.json'; write_json(plan_path, p)
+                paths = output_paths(root)
+                payload = ({'asOfDate': '2030-12-31'} if 'BASELINE' in name
+                           else {'series': [{'date': '2030-12-31'}]})
+                write_json(paths[name], payload)
+                before = paths[name].read_bytes()
+                with patch.multiple(m, **paths), patch.object(m, 'MIN_UNIVERSE', 2):
+                    with self.assertRaisesRegex(RuntimeError, 'date regression'):
+                        m.publish_plan(plan_path, root / 'missing-parts')
+                self.assertEqual(paths[name].read_bytes(), before)
 
     def test_verified_calendar_recovers_without_guessing_a_new_trading_day(self):
         with tempfile.TemporaryDirectory() as tmp:
