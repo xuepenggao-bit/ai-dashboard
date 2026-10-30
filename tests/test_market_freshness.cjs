@@ -64,3 +64,8 @@ test('browser inspect reads current DOM on every call without requests or date m
   assert.equal(first.find(v=>v.id==='highLow52').state,'stale','Earlier results are independent snapshots');
   assert.equal(values.highLow52KpiDate,'2026-10-30 · 盘中实时 10:35');
 });
+test('a dated amount without a source minute is neither falsely realtime nor a false missing-data warning',()=>{
+  const card=F.CARDS.find(c=>c.id==='hkAmount');
+  const value=F.classify(card,'2026-10-30 · 盘中累计',at('2026-10-30T11:00:00'),S);
+  assert.equal(value.state,'untimed');assert.match(value.message,/未提供具体行情时刻/);
+});

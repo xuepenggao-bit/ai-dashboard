@@ -23,10 +23,11 @@
   }
   function renderFreshness(){
     const el=root.document?.getElementById('marketFreshnessStatus');if(!el||!root.MarketEnvironmentFreshness)return;
-    const items=root.MarketEnvironmentFreshness.inspect(),stale=items.filter(item=>item.state==='stale'),pending=items.filter(item=>item.state==='pending');
+    const items=root.MarketEnvironmentFreshness.inspect(),stale=items.filter(item=>item.state==='stale'),pending=items.filter(item=>item.state==='pending'),untimed=items.filter(item=>item.state==='untimed');
     el.textContent=stale.length?'待补齐：'+stale.map(item=>item.label).join('、'):
-      pending.length?'盘中统计正在更新 · '+pending.map(item=>item.label).join('、'):'盘中指标约每分钟更新 · 日频、月频指标按实际披露更新';
+      pending.length?'盘中统计正在更新 · '+pending.map(item=>item.label).join('、'):untimed.length?'盘中指标约每分钟更新 · '+untimed.map(item=>item.label).join('、')+'源未提供具体行情时刻':'盘中指标约每分钟更新 · 日频、月频指标按实际披露更新';
     el.style.color=stale.length?'#b45309':'#64748b';el.title=items.map(item=>item.label+'：'+item.message).join('\n');
+    if(!root.refreshMacro?.pending&&root.refreshMacro?.lastReport&&typeof root._macroRefreshCaption==='function')root._macroRefreshCaption(root.refreshMacro.lastReport);
     return items;
   }
   const api={createController,renderFreshness};root.MarketEnvironmentRefresh=api;

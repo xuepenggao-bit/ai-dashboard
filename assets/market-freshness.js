@@ -84,7 +84,7 @@
       if(observed.minute!==null&&observed.minute<expected.closeMinute-5)return result(card,'stale',observed.date,'上一交易日盘中快照 · 待补收盘数据');
       return result(card,'current',observed.date,'最近交易日收盘 · '+observed.date);
     }
-    if(observed.minute===null)return result(card,'pending',observed.date,'已到今日 · 行情时点待确认');
+    if(observed.minute===null)return result(card,'untimed',observed.date,'已到今日 · 数据源未提供具体行情时刻，不冒充逐分钟实时');
     if(observed.minute>c.minute)return result(card,'unknown',observed.date,'行情时间超前，待核验');
     let target=c.minute;
     if(state.phase==='lunch')target=card.market==='HK'?720:690;
