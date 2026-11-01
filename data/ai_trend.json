@@ -1,12 +1,12 @@
 {
   "updated": "2026-11-01 13:56:00",
-  "last_checked": "2026-11-01 13:56:00",
+  "last_checked": "2026-11-01 14:19:17",
   "scan_interval_hours": 3,
   "scanner_method": "local-evidence-v2",
   "capex_as_of": "2026-10-29",
   "capex_reviewed_at": "2026-11-01",
   "capex_unit": "USD 100 million",
-  "note": "本次按截至2026-11-01可获得的公司财报、SEC文件及官方业绩会文字稿核验；2026指引均为自然年，各公司现金支出和融资租赁口径不同，合计仅作规模观察，不是纯AI支出或严格可比同比。",
+  "note": "GitHub Actions每3小时自动扫描三大云业务季度收入和四家公司Capex；优先采用公司官方投资者关系披露，业绩会仅在官方文字稿不可得时采用AP/Reuters/CNBC直接报道",
   "hyperscaler_capex_2026e_low_yi": 7200,
   "hyperscaler_capex_2026e_mid_yi": 7300,
   "hyperscaler_capex_2026e_high_yi": 7400,
@@ -31,11 +31,24 @@
       "source_url": "https://s206.q4cdn.com/479360582/files/doc_events/2026/Oct/28/2026_Q3_Earnings_Transcript.pdf",
       "source_tag": "Transcript Prepared | p.12, CFO investment outlook | CY2026 guidance unchanged",
       "guidance_change": "维持$195–205B；不是以本季$51.355B下调全年计划",
-      "latest_quarter": {"period": "CY2026Q3", "ended": "2026-09-30", "capex_yi": 513.55, "basis": "cash purchases of property and equipment", "source_url": "https://s206.q4cdn.com/479360582/files/doc_financials/2026/q3/2026q3-alphabet-earnings-slides.pdf", "source_tag": "Earnings Deck | p.11, Capital Expenditures ($MM)"},
+      "latest_quarter": {
+        "period": "CY2026Q3",
+        "ended": "2026-09-30",
+        "capex_yi": 513.55,
+        "basis": "cash purchases of property and equipment",
+        "source_url": "https://s206.q4cdn.com/479360582/files/doc_financials/2026/q3/2026q3-alphabet-earnings-slides.pdf",
+        "source_tag": "Earnings Deck | p.11, Capital Expenditures ($MM)"
+      },
       "call_commentary": "技术基础设施本季约65%为服务器和网络、35%为数据中心；预计2027年Capex显著增加，但尚未给数值区间。第三方算力扩容及折旧、能源费用可能压低近期云利润率。",
-      "forward_guidance": {"period": "CY2027", "numeric": false, "summary": "预计显著增加；数值待Q4业绩会披露"},
+      "forward_guidance": {
+        "period": "CY2027",
+        "numeric": false,
+        "summary": "预计显著增加；数值待Q4业绩会披露"
+      },
       "research_readthrough": "推断：高速互连、服务器与数据中心扩容需求仍有支撑；不能把客户公司总Capex直接映射为任一A股公司的订单或利润。",
-      "corroborating_urls": ["https://www.sec.gov/Archives/edgar/data/1652044/000165204426000080/googexhibit991q32026.htm"]
+      "corroborating_urls": [
+        "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000080/googexhibit991q32026.htm"
+      ]
     },
     "microsoft": {
       "display_name": "Microsoft",
@@ -43,8 +56,17 @@
       "actual_2025_yi": 1180,
       "actual_2025_basis": "CY2025 reported Capex including finance leases; sum of four reported calendar quarters",
       "actual_2025_source_tag": "Model | CY2025 quarters 21.4+24.2+34.9+37.5 USD billion | sum of official CFO reported Capex",
-      "actual_2025_source_urls": ["https://www.microsoft.com/en-us/investor/events/fy-2025/earnings-fy-2025-q3", "https://www.microsoft.com/en-us/investor/events/fy-2025/earnings-fy-2025-q4", "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q1", "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q2"],
-      "legacy_cash_ppe_history": {"FY2024_yi": 444.8, "FY2025_yi": 645.5, "note": "旧表为微软财年现金PP&E支出，不能作为自然年含新增融资租赁Capex的同比基数"},
+      "actual_2025_source_urls": [
+        "https://www.microsoft.com/en-us/investor/events/fy-2025/earnings-fy-2025-q3",
+        "https://www.microsoft.com/en-us/investor/events/fy-2025/earnings-fy-2025-q4",
+        "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q1",
+        "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q2"
+      ],
+      "legacy_cash_ppe_history": {
+        "FY2024_yi": 444.8,
+        "FY2025_yi": 645.5,
+        "note": "旧表为微软财年现金PP&E支出，不能作为自然年含新增融资租赁Capex的同比基数"
+      },
       "guidance_low_yi": 1700,
       "guidance_high_yi": 1700,
       "guidance_type": "point",
@@ -57,10 +79,30 @@
       "comparison_comparable": false,
       "comparison_note": "FY27起数据中心及办公楼预计使用寿命由15年延长至25年，使更多未来租赁归为经营租赁、不计入报告Capex；不代表同幅度削减投资。",
       "guidance_change": "CY2026约$175B调整至约$170B，管理层归因第三方产能交付延迟；FY27下半年预期加速",
-      "prior_guidance": {"low_yi": 1750, "high_yi": 1750, "source_date": "2026-07-29", "source_url": "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q4"},
-      "latest_quarter": {"period": "FY2027Q1 / CY2026Q3", "ended": "2026-09-30", "capex_yi": 452, "cash_ppe_yi": 394, "finance_lease_additions_yi": 74, "basis": "reported Capex includes full principal at finance-lease commencement; cash PP&E is a separate measure", "source_url": "https://www.microsoft.com/en-us/Investor/events/fy-2027/earnings-fy-2027-q1", "source_tag": "Transcript Prepared | Amy Hood, Q1 capital expenditure review"},
+      "prior_guidance": {
+        "low_yi": 1750,
+        "high_yi": 1750,
+        "source_date": "2026-07-29",
+        "source_url": "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q4"
+      },
+      "latest_quarter": {
+        "period": "FY2027Q1 / CY2026Q3",
+        "ended": "2026-09-30",
+        "capex_yi": 452,
+        "cash_ppe_yi": 394,
+        "finance_lease_additions_yi": 74,
+        "basis": "reported Capex includes full principal at finance-lease commencement; cash PP&E is a separate measure",
+        "source_url": "https://www.microsoft.com/en-us/Investor/events/fy-2027/earnings-fy-2027-q1",
+        "source_tag": "Transcript Prepared | Amy Hood, Q1 capital expenditure review"
+      },
       "call_commentary": "本季约四分之三为CPU、GPU等短寿命资产，含内存和存储成本上升；FY27 Q2 Capex预计超过$50B，下半财年因芯片投入及递延第三方交付加速。",
-      "forward_guidance": {"period": "FY2027Q2", "numeric": true, "lower_bound_yi": 500, "comparison": ">", "summary": "下一财季超过$50B；不是CY2027全年预算"},
+      "forward_guidance": {
+        "period": "FY2027Q2",
+        "numeric": true,
+        "lower_bound_yi": 500,
+        "comparison": ">",
+        "summary": "下一财季超过$50B；不是CY2027全年预算"
+      },
       "research_readthrough": "推断：交付节奏与租赁会计会扰动单季Capex，应同时观察上电、CPU/GPU与内存采购及云收入转化。"
     },
     "amazon": {
@@ -77,11 +119,24 @@
       "source_url": "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Third-Quarter-Results/default.aspx",
       "source_tag": "Earnings PR | Fourth Quarter 2026 Guidance, cash capital expenditures",
       "guidance_change": "维持CY2026现金Capex约$220B；不是本次重新上调",
-      "latest_quarter": {"period": "CY2026Q3", "ended": "2026-09-30", "capex_yi": 759, "basis": "cash capital expenditures per 10-Q management discussion; not gross cash purchases of property and equipment", "source_url": "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000040/amzn-20260930.htm", "source_tag": "10-Q | p.28, Liquidity and Capital Resources | Q3 cash capital expenditures"},
+      "latest_quarter": {
+        "period": "CY2026Q3",
+        "ended": "2026-09-30",
+        "capex_yi": 759,
+        "basis": "cash capital expenditures per 10-Q management discussion; not gross cash purchases of property and equipment",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000040/amzn-20260930.htm",
+        "source_tag": "10-Q | p.28, Liquidity and Capital Resources | Q3 cash capital expenditures"
+      },
       "call_commentary": "10-Q披露Q3现金Capex$75.9B、前九个月$172.2B；公司预计2027年现金Capex显著增加，主要由技术基础设施驱动，尚未给出全年数值。",
-      "forward_guidance": {"period": "CY2027", "numeric": false, "summary": "预计现金Capex显著增加，未披露全年金额"},
+      "forward_guidance": {
+        "period": "CY2027",
+        "numeric": false,
+        "summary": "预计现金Capex显著增加，未披露全年金额"
+      },
       "research_readthrough": "推断：AWS扩容继续支持算力、互连及电力基础设施；现金流和履约网络占比需与AI供给链订单分开判断。",
-      "corroborating_urls": ["https://www.sec.gov/Archives/edgar/data/1018724/000101872426000040/amzn-20260930.htm"]
+      "corroborating_urls": [
+        "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000040/amzn-20260930.htm"
+      ]
     },
     "meta": {
       "display_name": "Meta",
@@ -97,10 +152,26 @@
       "source_url": "https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Third-Quarter-2026-Results/",
       "source_tag": "Earnings PR | CFO Outlook Commentary; FCF reconciliation",
       "guidance_change": "由$130–145B收窄至$135–145B，下限上调而上限不变",
-      "prior_guidance": {"low_yi": 1300, "high_yi": 1450},
-      "latest_quarter": {"period": "CY2026Q3", "ended": "2026-09-30", "capex_yi": 349.06, "cash_ppe_yi": 339.42, "finance_lease_principal_payments_yi": 9.64, "basis": "cash PP&E purchases plus principal payments on finance leases", "source_url": "https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Third-Quarter-2026-Results/", "source_tag": "Earnings PR | Reconciliation of GAAP to Non-GAAP Results, Q3 2026"},
+      "prior_guidance": {
+        "low_yi": 1300,
+        "high_yi": 1450
+      },
+      "latest_quarter": {
+        "period": "CY2026Q3",
+        "ended": "2026-09-30",
+        "capex_yi": 349.06,
+        "cash_ppe_yi": 339.42,
+        "finance_lease_principal_payments_yi": 9.64,
+        "basis": "cash PP&E purchases plus principal payments on finance leases",
+        "source_url": "https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Third-Quarter-2026-Results/",
+        "source_tag": "Earnings PR | Reconciliation of GAAP to Non-GAAP Results, Q3 2026"
+      },
       "call_commentary": "公司仍在制定2027预算与产能计划，将继续积极投入核心业务和AI；未披露2027年Capex数值。",
-      "forward_guidance": {"period": "CY2027", "numeric": false, "summary": "继续积极投入；预算与产能计划尚在制定"},
+      "forward_guidance": {
+        "period": "CY2027",
+        "numeric": false,
+        "summary": "继续积极投入；预算与产能计划尚在制定"
+      },
       "research_readthrough": "推断：广告变现改善提供现金支撑，但更高基建投入及非核心项目的回报周期仍需观察。"
     }
   },
