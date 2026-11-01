@@ -1,44 +1,67 @@
 {
-  "updated": "2026-11-01 08:11:23",
-  "last_checked": "2026-11-01 13:45:21",
+  "updated": "2026-11-01 13:56:00",
+  "last_checked": "2026-11-01 13:56:00",
   "scan_interval_hours": 3,
   "scanner_method": "local-evidence-v2",
-  "capex_as_of": "2026-10-28",
+  "capex_as_of": "2026-10-29",
+  "capex_reviewed_at": "2026-11-01",
   "capex_unit": "USD 100 million",
-  "note": "GitHub Actions每3小时自动扫描三大云业务季度收入和四家公司Capex；优先采用公司官方投资者关系披露，业绩会仅在官方文字稿不可得时采用AP/Reuters/CNBC直接报道",
-  "hyperscaler_capex_2026e_low_yi": 5813.6,
-  "hyperscaler_capex_2026e_mid_yi": 5863.6,
-  "hyperscaler_capex_2026e_high_yi": 5913.6,
-  "hyperscaler_capex_2026e_yi": 5863.6,
-  "hyperscaler_capex_2025a_yi": 3564.9,
-  "hyperscaler_yoy_pct": 64.5,
-  "hyperscaler_detail": "ALPHABET ~$51.36B · MICROSOFT ~$175B · AMAZON ~$220B · META $135–145B",
+  "note": "本次按截至2026-11-01可获得的公司财报、SEC文件及官方业绩会文字稿核验；2026指引均为自然年，各公司现金支出和融资租赁口径不同，合计仅作规模观察，不是纯AI支出或严格可比同比。",
+  "hyperscaler_capex_2026e_low_yi": 7200,
+  "hyperscaler_capex_2026e_mid_yi": 7300,
+  "hyperscaler_capex_2026e_high_yi": 7400,
+  "hyperscaler_capex_2026e_yi": 7300,
+  "hyperscaler_capex_2025a_yi": 4099.4,
+  "hyperscaler_yoy_pct": null,
+  "comparison_comparable": false,
+  "comparison_note": "合计采用各公司披露口径，不能称为纯AI或数据中心支出；微软2026融资租赁分类发生变化，2025历史值与2026指引不作严格同比。",
+  "hyperscaler_detail": "Alphabet $195–205B · Microsoft ~$170B · Amazon ~$220B · Meta $135–145B；按各公司披露口径合计$720–740B",
   "capex_companies": {
     "alphabet": {
       "display_name": "Alphabet / Google",
       "actual_2024_yi": 525,
       "actual_2025_yi": 914,
-      "guidance_low_yi": 513.6,
-      "guidance_high_yi": 513.6,
-      "guidance_type": "point",
+      "guidance_low_yi": 1950,
+      "guidance_high_yi": 2050,
+      "guidance_type": "range",
       "period": "CY2026",
-      "basis_note": "CY2026 · 公司业绩会指引（可信媒体转述）",
-      "source_label": "CNBC · 公司业绩会",
+      "basis_note": "CY2026 · 公司整体Capex，主要为技术基础设施；Q3实际$51.355B不能替代全年指引",
+      "source_label": "Alphabet 2026 Q3官方业绩会 · CFO Anat Ashkenazi",
       "source_date": "2026-10-28",
-      "source_url": "https://www.cnbc.com/2026/10/28/alphabet-googl-earnings-q3-2026.html"
+      "source_url": "https://s206.q4cdn.com/479360582/files/doc_events/2026/Oct/28/2026_Q3_Earnings_Transcript.pdf",
+      "source_tag": "Transcript Prepared | p.12, CFO investment outlook | CY2026 guidance unchanged",
+      "guidance_change": "维持$195–205B；不是以本季$51.355B下调全年计划",
+      "latest_quarter": {"period": "CY2026Q3", "ended": "2026-09-30", "capex_yi": 513.55, "basis": "cash purchases of property and equipment", "source_url": "https://s206.q4cdn.com/479360582/files/doc_financials/2026/q3/2026q3-alphabet-earnings-slides.pdf", "source_tag": "Earnings Deck | p.11, Capital Expenditures ($MM)"},
+      "call_commentary": "技术基础设施本季约65%为服务器和网络、35%为数据中心；预计2027年Capex显著增加，但尚未给数值区间。第三方算力扩容及折旧、能源费用可能压低近期云利润率。",
+      "forward_guidance": {"period": "CY2027", "numeric": false, "summary": "预计显著增加；数值待Q4业绩会披露"},
+      "research_readthrough": "推断：高速互连、服务器与数据中心扩容需求仍有支撑；不能把客户公司总Capex直接映射为任一A股公司的订单或利润。",
+      "corroborating_urls": ["https://www.sec.gov/Archives/edgar/data/1652044/000165204426000080/googexhibit991q32026.htm"]
     },
     "microsoft": {
       "display_name": "Microsoft",
-      "actual_2024_yi": 444.8,
-      "actual_2025_yi": 645.5,
-      "guidance_low_yi": 1750,
-      "guidance_high_yi": 1750,
+      "actual_2024_yi": null,
+      "actual_2025_yi": 1180,
+      "actual_2025_basis": "CY2025 reported Capex including finance leases; sum of four reported calendar quarters",
+      "actual_2025_source_tag": "Model | CY2025 quarters 21.4+24.2+34.9+37.5 USD billion | sum of official CFO reported Capex",
+      "actual_2025_source_urls": ["https://www.microsoft.com/en-us/investor/events/fy-2025/earnings-fy-2025-q3", "https://www.microsoft.com/en-us/investor/events/fy-2025/earnings-fy-2025-q4", "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q1", "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q2"],
+      "legacy_cash_ppe_history": {"FY2024_yi": 444.8, "FY2025_yi": 645.5, "note": "旧表为微软财年现金PP&E支出，不能作为自然年含新增融资租赁Capex的同比基数"},
+      "guidance_low_yi": 1700,
+      "guidance_high_yi": 1700,
       "guidance_type": "point",
       "period": "CY2026",
-      "basis_note": "CY2026 · 公司正式Capex指引",
-      "source_label": "Microsoft 官方业绩披露",
-      "source_date": "2026-08-08",
-      "source_url": "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q4"
+      "basis_note": "CY2026 · 报告Capex，含租赁开始时确认的融资租赁；不是纯现金PP&E，且FY27起租赁分类变化影响可比性",
+      "source_label": "Microsoft FY27 Q1官方业绩会 · CFO Amy Hood",
+      "source_date": "2026-10-28",
+      "source_url": "https://www.microsoft.com/en-us/Investor/events/fy-2027/earnings-fy-2027-q1",
+      "source_tag": "Transcript Prepared | Amy Hood, capital expenditures outlook | calendar year 2026",
+      "comparison_comparable": false,
+      "comparison_note": "FY27起数据中心及办公楼预计使用寿命由15年延长至25年，使更多未来租赁归为经营租赁、不计入报告Capex；不代表同幅度削减投资。",
+      "guidance_change": "CY2026约$175B调整至约$170B，管理层归因第三方产能交付延迟；FY27下半年预期加速",
+      "prior_guidance": {"low_yi": 1750, "high_yi": 1750, "source_date": "2026-07-29", "source_url": "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q4"},
+      "latest_quarter": {"period": "FY2027Q1 / CY2026Q3", "ended": "2026-09-30", "capex_yi": 452, "cash_ppe_yi": 394, "finance_lease_additions_yi": 74, "basis": "reported Capex includes full principal at finance-lease commencement; cash PP&E is a separate measure", "source_url": "https://www.microsoft.com/en-us/Investor/events/fy-2027/earnings-fy-2027-q1", "source_tag": "Transcript Prepared | Amy Hood, Q1 capital expenditure review"},
+      "call_commentary": "本季约四分之三为CPU、GPU等短寿命资产，含内存和存储成本上升；FY27 Q2 Capex预计超过$50B，下半财年因芯片投入及递延第三方交付加速。",
+      "forward_guidance": {"period": "FY2027Q2", "numeric": true, "lower_bound_yi": 500, "comparison": ">", "summary": "下一财季超过$50B；不是CY2027全年预算"},
+      "research_readthrough": "推断：交付节奏与租赁会计会扰动单季Capex，应同时观察上电、CPU/GPU与内存采购及云收入转化。"
     },
     "amazon": {
       "display_name": "Amazon",
@@ -48,10 +71,17 @@
       "guidance_high_yi": 2200,
       "guidance_type": "point",
       "period": "CY2026",
-      "basis_note": "CY2026 · 现金Capex约$220B；内存成本上升推动较此前$200B指引上调",
-      "source_label": "AP · Amazon 2026 Q2业绩会",
-      "source_date": "2026-07-30",
-      "source_url": "https://apnews.com/article/b4ce02b4666a35b8975823c5c22072ee"
+      "basis_note": "CY2026 · 现金Capex约$220B；技术基础设施主要支持AWS，但也包含履约网络，不是纯AI支出",
+      "source_label": "Amazon 2026 Q3财报及10-Q",
+      "source_date": "2026-10-29",
+      "source_url": "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Third-Quarter-Results/default.aspx",
+      "source_tag": "Earnings PR | Fourth Quarter 2026 Guidance, cash capital expenditures",
+      "guidance_change": "维持CY2026现金Capex约$220B；不是本次重新上调",
+      "latest_quarter": {"period": "CY2026Q3", "ended": "2026-09-30", "capex_yi": 759, "basis": "cash capital expenditures per 10-Q management discussion; not gross cash purchases of property and equipment", "source_url": "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000040/amzn-20260930.htm", "source_tag": "10-Q | p.28, Liquidity and Capital Resources | Q3 cash capital expenditures"},
+      "call_commentary": "10-Q披露Q3现金Capex$75.9B、前九个月$172.2B；公司预计2027年现金Capex显著增加，主要由技术基础设施驱动，尚未给出全年数值。",
+      "forward_guidance": {"period": "CY2027", "numeric": false, "summary": "预计现金Capex显著增加，未披露全年金额"},
+      "research_readthrough": "推断：AWS扩容继续支持算力、互连及电力基础设施；现金流和履约网络占比需与AI供给链订单分开判断。",
+      "corroborating_urls": ["https://www.sec.gov/Archives/edgar/data/1018724/000101872426000040/amzn-20260930.htm"]
     },
     "meta": {
       "display_name": "Meta",
@@ -61,10 +91,17 @@
       "guidance_high_yi": 1450.0,
       "guidance_type": "range",
       "period": "CY2026",
-      "basis_note": "CY2026 · 公司业绩会指引（可信媒体转述）",
-      "source_label": "CNBC · 公司业绩会",
+      "basis_note": "CY2026 · Capex包含融资租赁本金支付；与微软新增租赁开始时全额确认的口径不同",
+      "source_label": "Meta 2026 Q3官方财报 · CFO展望",
       "source_date": "2026-10-21",
-      "source_url": "https://www.cnbc.com/2026/10/21/meta-earnings-q3-2026-live-updates.html"
+      "source_url": "https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Third-Quarter-2026-Results/",
+      "source_tag": "Earnings PR | CFO Outlook Commentary; FCF reconciliation",
+      "guidance_change": "由$130–145B收窄至$135–145B，下限上调而上限不变",
+      "prior_guidance": {"low_yi": 1300, "high_yi": 1450},
+      "latest_quarter": {"period": "CY2026Q3", "ended": "2026-09-30", "capex_yi": 349.06, "cash_ppe_yi": 339.42, "finance_lease_principal_payments_yi": 9.64, "basis": "cash PP&E purchases plus principal payments on finance leases", "source_url": "https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Third-Quarter-2026-Results/", "source_tag": "Earnings PR | Reconciliation of GAAP to Non-GAAP Results, Q3 2026"},
+      "call_commentary": "公司仍在制定2027预算与产能计划，将继续积极投入核心业务和AI；未披露2027年Capex数值。",
+      "forward_guidance": {"period": "CY2027", "numeric": false, "summary": "继续积极投入；预算与产能计划尚在制定"},
+      "research_readthrough": "推断：广告变现改善提供现金支撑，但更高基建投入及非核心项目的回报周期仍需观察。"
     }
   },
   "mag7_pe_median": 25,
@@ -141,69 +178,73 @@
     }
   },
   "cloud_revenue": {
-    "as_of": "2026-07-30",
+    "as_of": "2026-10-29",
     "unit": "USD billion",
     "quarters": [
-      "2025 Q3",
       "2025 Q4",
       "2026 Q1",
-      "2026 Q2"
+      "2026 Q2",
+      "2026 Q3"
     ],
-    "method_note": "口径说明：Google Cloud 与 AWS 为公司分部收入；Microsoft Cloud 包含 Microsoft 365 Commercial cloud、Azure、LinkedIn 商业部分及 Dynamics 365，并非 Azure 单项收入，因此三家公司绝对收入不宜直接视作同口径市场份额。投资强度=最新年度 Capex 指引中值÷最新季度云收入年化值，仅作方向性比较。",
+    "method_note": "统一按自然季度展示最近四季。Google Cloud与AWS为公司分部收入；Google Cloud本季含TPU系统销售。Microsoft采用FY27 Q1指标表中重列的Microsoft Cloud（Azure、Microsoft 365 commercial cloud、Industry solutions cloud），不是Azure单项。不同范围不宜当作同口径市场份额；投资强度=公司全年Capex指引中值÷（最新季度云收入×4），仅作方向性观察，不代表云业务自身资本回报率。",
     "companies": {
       "alphabet": {
         "display_name": "Google Cloud",
         "metric": "Google Cloud segment revenue",
         "revenue_b": [
-          15.157,
           17.664,
           20.028,
-          24.768
+          24.768,
+          30.709
         ],
-        "latest_yoy_pct": 82,
-        "source_label": "Alphabet 2026 Q2 财报",
-        "source_date": "2026-07-22",
-        "source_url": "https://abc.xyz/investor/news/news-details/2026/Alphabet-Announces-Second-Quarter-2026-Results-2026-Y3uQ6H4ZJa/default.aspx",
+        "latest_yoy_pct": 103,
+        "scope_note": "公司分部收入，含GCP、Workspace及TPU系统销售，不能全部视作经常性软件订阅收入。",
+        "source_label": "Alphabet 2026 Q3 财报",
+        "source_date": "2026-10-28",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000080/googexhibit991q32026.htm",
+        "source_tag": "Earnings PR | Supplemental Information, Google Cloud revenue | USD million converted to billion",
         "quarter_sources": [
-          "https://www.sec.gov/Archives/edgar/data/1652044/000165204425000087/googexhibit991q32025.htm",
           "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000012/googexhibit991q42025.htm",
           "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000043/googexhibit991q12026.htm",
-          "https://abc.xyz/investor/news/news-details/2026/Alphabet-Announces-Second-Quarter-2026-Results-2026-Y3uQ6H4ZJa/default.aspx"
+          "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/googexhibit991q22026.htm",
+          "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000080/googexhibit991q32026.htm"
         ]
       },
       "amazon": {
         "display_name": "Amazon Web Services",
         "metric": "AWS segment net sales",
         "revenue_b": [
-          33.006,
           35.579,
           37.587,
-          42.232
+          42.232,
+          45.984
         ],
-        "latest_yoy_pct": 36.8,
-        "source_label": "Amazon 2026 Q2 财报",
-        "source_date": "2026-07-30",
-        "source_url": "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Second-Quarter-Results/default.aspx",
+        "latest_yoy_pct": 39,
+        "source_label": "Amazon 2026 Q3 财报",
+        "source_date": "2026-10-29",
+        "source_url": "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Third-Quarter-Results/default.aspx",
+        "source_tag": "Earnings PR | Supplemental Financial Information, AWS net sales | USD million converted to billion",
         "quarter_sources": [
-          "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Second-Quarter-Results/default.aspx"
+          "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Third-Quarter-Results/default.aspx"
         ]
       },
       "microsoft": {
         "display_name": "Microsoft Cloud",
         "metric": "Microsoft Cloud revenue",
         "revenue_b": [
-          49.1,
           51.5,
           54.5,
-          59.3
+          59.3,
+          63.9
         ],
-        "latest_yoy_pct": 27,
-        "scope_note": "包含 Microsoft 365 Commercial cloud、Azure and other cloud services、LinkedIn 商业部分与 Dynamics 365；不是 Azure 单独收入。",
-        "source_label": "Microsoft FY26 Q4 财报",
-        "source_date": "2026-07-29",
-        "source_url": "https://www.microsoft.com/en-us/Investor/earnings/FY-2026-Q4/press-release-webcast",
+        "latest_yoy_pct": 30,
+        "scope_note": "采用FY27 Q1官方指标表重列口径：Azure、Microsoft 365 commercial cloud及Industry solutions cloud；不是Azure单独收入。对应自然年2026Q3为微软FY2027Q1。",
+        "source_label": "Microsoft FY27 Q1 财报及重列指标表",
+        "source_date": "2026-10-28",
+        "source_url": "https://www.microsoft.com/en-us/Investor/earnings/FY-2027-Q1/metrics",
+        "source_tag": "Company IR | FY27 Q1 Investor Metrics, Microsoft Cloud revenue | FY26 Q2-Q4 and FY27 Q1",
         "quarter_sources": [
-          "https://www.microsoft.com/en-us/Investor/earnings/FY-2026-Q4/metrics"
+          "https://www.microsoft.com/en-us/Investor/earnings/FY-2027-Q1/metrics"
         ]
       }
     }

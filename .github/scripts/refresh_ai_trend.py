@@ -14,6 +14,7 @@ is deterministic and local because GitHub Models was retired on 2026-07-30.
 import datetime
 import html
 import json
+import math
 import os
 import re
 import xml.etree.ElementTree as ET
@@ -498,6 +499,28 @@ _MONEY_RE = re.compile(
 _CAPEX_RE = re.compile(
     r"\b(?:cash\s+)?(?:capital expenditures?|capex|capital spending)\b", re.I
 )
+_CAPEX_RANGE_RE = re.compile(
+    r"(?<![\d.])\$?\s*([0-9]{1,3}(?:\.[0-9]+)?)\s*"
+    r"(billion|bn|million|mn)?\s*(to|through|[-–—]|and)\s*"
+    r"\$?\s*([0-9]{1,3}(?:\.[0-9]+)?)\s*(billion|bn|million|mn)\b", re.I
+)
+
+
+def _capex_statement(text, anchor):
+    """Bind one amount to its own statement, not a distant annual outlook.
+
+    Decimal points are not sentence boundaries. Contrasts introduce a separate
+    prior guide/actual and must not supply the current guidance's year or verb.
+    """
+    boundaries = [0, len(text)]
+    for match in re.finditer(
+        r"(?<!\d)[.!?;](?!\d)\s*|\b(?:compared with|compared to|versus|whereas)\b|"
+        r",\s*(?:and|but|while)\s+(?=(?:we|our|for|in|the company)\b)", text, re.I
+    ):
+        boundaries.extend((match.start(), match.end()))
+    return max(value for value in boundaries if value <= anchor), min(
+        value for value in boundaries if value > anchor
+    )
 
 
 def _money_yi(match):
@@ -526,24 +549,28 @@ def _capex_candidate(key, cfg, results):
         )
         lower = text.lower()
         for capex_match in _CAPEX_RE.finditer(lower):
-            window_start = max(0, capex_match.start() - 260)
-            window_end = min(len(text), capex_match.end() + 300)
+            statement_start, statement_end = _capex_statement(text, capex_match.start())
+            window_start = max(statement_start, capex_match.start() - 260)
+            window_end = min(statement_end, capex_match.end() + 300)
             window = text[window_start:window_end]
             relative_capex = capex_match.start() - window_start
-            # Call reports commonly say "this year" instead of repeating the
-            # calendar year. The source date has already been verified above,
-            # so that wording safely binds the guidance to its publication year.
-            source_year = source_date[:4]
-            period_window = text[
-                max(0, capex_match.start() - 650) : min(
-                    len(text), capex_match.end() + 650
-                )
-            ]
-            if source_year not in period_window and not re.search(
-                r"\b(?:this|current|full)[- ]year(?:['’]s)?\b|\bfor the year\b",
-                period_window,
-                re.I,
-            ):
+            # This field is specifically CY2026. A fiscal year, quarter, nine
+            # months, or next-year plan cannot become that annual guide merely
+            # because the release title/publication date contains "2026".
+            if re.search(r"\bfiscal\b|\bFY\s*(?:20)?\d{2}\b", window, re.I):
+                continue
+            if re.search(r"\bQ[1-4]\b|\bquarter(?:s|ly)?\b|\b(?:three|six|nine|3|6|9)[- ]months?\b|\b[369]M\b|"
+                         r"\bfirst half\b|\byear[- ]to[- ]date\b|\bYTD\b", window, re.I):
+                continue
+            years = set(re.findall(r"\b20\d{2}\b", window))
+            current_year = source_date.startswith("2026-") and bool(re.search(
+                r"\b(?:this|current)[- ]year(?:['’]s)?\b|\bfor the year\b", window, re.I
+            ))
+            if (years and years != {"2026"}) or ("2026" not in years and not current_year):
+                continue
+            # Microsoft normally discusses fiscal-year investment. Without an
+            # explicit calendar-year label, do not silently rename FY as CY.
+            if key == "microsoft" and not re.search(r"\b(?:calendar(?: year)?|CY)\s*2026\b", window, re.I):
                 continue
             if not is_official:
                 entities = []
@@ -568,22 +595,25 @@ def _capex_candidate(key, cfg, results):
             money = list(_MONEY_RE.finditer(window))
             if not money:
                 continue
-            # Prefer a genuine written range when two adjacent monetary values
-            # are joined by "to", "through", a dash, or "between ... and".
+            # Accept both "$185 to $190 billion" and "$185 billion to
+            # $190 billion". A lone unit must apply to both endpoints.
             range_values = None
-            for left, right in zip(money, money[1:]):
-                between = window[left.end():right.start()].lower()
-                if len(between) <= 55 and re.search(
-                    r"\b(?:to|through|and)\b|[-–—]", between
-                ):
-                    lo, hi = _money_yi(left), _money_yi(right)
-                    if minimum <= lo <= hi <= maximum:
-                        range_values = (lo, hi)
-                        break
+            range_matches = sorted(_CAPEX_RANGE_RE.finditer(window), key=lambda item:
+                min(abs(item.start() - relative_capex), abs(item.end() - relative_capex)))
+            for interval in range_matches:
+                left_value, left_unit, connector, right_value, right_unit = interval.groups()
+                if connector.lower() == "and" and not re.search(r"\bbetween\s*$", window[max(0, interval.start()-20):interval.start()], re.I):
+                    continue
+                left_unit = (left_unit or right_unit).lower()
+                right_unit = right_unit.lower()
+                lo = float(left_value) * (10 if left_unit in ("billion", "bn") else .01)
+                hi = float(right_value) * (10 if right_unit in ("billion", "bn") else .01)
+                if minimum <= lo <= hi <= maximum:
+                    range_values = (lo, hi, interval.start(), interval.end())
+                    break
             if range_values:
-                low, high = range_values
+                low, high, selected_start, selected_end = range_values
                 guidance_type = "range"
-                selected_start, selected_end = left.start(), right.end()
             else:
                 # The closest monetary value to the Capex phrase is normally
                 # the current point guidance; this avoids selecting a prior
@@ -609,17 +639,27 @@ def _capex_candidate(key, cfg, results):
                 len(window), max(relative_capex_end, selected_end) + 80
             )
             focus = window[focus_start:focus_end].lower()
+            # "Capex was $X ... we expect demand to grow" still reports an
+            # actual, even if its sentence happens to contain a forward verb.
+            if relative_capex_end <= selected_start:
+                amount_bridge = window[relative_capex_end:selected_start].lower()
+                if re.search(r"\b(?:was|were|totaled|totalled|amounted|reached)\b", amount_bridge) and not re.search(
+                    r"\b(?:expected|planned|estimated|forecast|guidance|outlook)\b", amount_bridge
+                ):
+                    continue
             local_forward = bool(
                 re.search(
-                    r"\bexpect|\bplan|\bguidance|\bwill\s+(?:spend|invest)|"
-                    r"\bapproximately|\babout|\broughly|\bthis year",
+                    r"\bexpect|\bplan|\bguidance|\bwill\s+(?:be|total|amount|reach|spend|invest)|"
+                    r"\boutlook|\bforecast",
                     focus,
                 )
             )
+            if not local_forward:
+                continue
             if re.search(
-                r"\blast year|\bprior year|\bprevious year|\ball of last year|\bactual",
+                r"\blast year|\bprior\b|\bprevious\b|\bpreviously\b|\bearlier\b|\bactual",
                 focus,
-            ) and not local_forward:
+            ):
                 continue
             evidence = window.lower()
             forward_score = sum(
@@ -630,7 +670,7 @@ def _capex_candidate(key, cfg, results):
                     r"\bplan",
                     r"\bguidance",
                     r"\bapproximately|\babout|\broughly",
-                    r"\bwill\s+(?:spend|invest)",
+                    r"\bwill\s+(?:be|total|amount|reach|spend|invest)",
                     r"\bfull[- ]year|\bcalendar year",
                 )
             )
@@ -892,6 +932,39 @@ def _valid_date(value):
     return value if re.fullmatch(r"20\d{2}-\d{2}-\d{2}", value) else ""
 
 
+def _update_capex_totals(base, companies):
+    """Refresh scale totals without reviving a known incomparable YoY claim."""
+    if not all(key in companies for key in COMPANIES):
+        return False
+    lows = [_number(companies[key].get("guidance_low_yi")) for key in COMPANIES]
+    highs = [_number(companies[key].get("guidance_high_yi")) for key in COMPANIES]
+    if any(value is None or not math.isfinite(value) for value in lows + highs):
+        return False
+    if any(low <= 0 or high < low for low, high in zip(lows, highs)):
+        return False
+    low_total, high_total = round(sum(lows), 1), round(sum(highs), 1)
+    mid_total = round((low_total + high_total) / 2, 1)
+    base.update({"hyperscaler_capex_2026e_low_yi": low_total,
+                 "hyperscaler_capex_2026e_mid_yi": mid_total,
+                 "hyperscaler_capex_2026e_high_yi": high_total,
+                 "hyperscaler_capex_2026e_yi": mid_total})
+    actuals = [_number(companies[key].get("actual_2025_yi")) for key in COMPANIES]
+    actuals_valid = all(value is not None and math.isfinite(value) and value > 0 for value in actuals)
+    if actuals_valid:
+        base["hyperscaler_capex_2025a_yi"] = round(sum(actuals), 1)
+    comparable = base.get("comparison_comparable") is not False and all(
+        companies[key].get("comparison_comparable") is not False for key in COMPANIES
+    )
+    # A later headline-number refresh cannot erase a reviewed accounting-basis
+    # warning (e.g. lease classification) or silently calculate a mixed YoY.
+    if not comparable:
+        base["comparison_comparable"] = False
+        if not str(base.get("comparison_note") or "").strip():
+            base["comparison_note"] = "公司披露口径或租赁分类不一致；合计仅作规模观察，不作严格同比。"
+    base["hyperscaler_yoy_pct"] = round((mid_total / sum(actuals) - 1) * 100, 1) if comparable and actuals_valid else None
+    return True
+
+
 def _last_numeric(values):
     for value in reversed(values or []):
         number = _number(value)
@@ -1038,24 +1111,7 @@ def main():
             print(f"  [{key}] updated to {low}-{high} from {url}")
 
         if capex_changed and all(key in current for key in COMPANIES):
-            lows = [float(current[key]["guidance_low_yi"]) for key in COMPANIES]
-            highs = [float(current[key]["guidance_high_yi"]) for key in COMPANIES]
-            actuals = [
-                _number(current[key].get("actual_2025_yi")) for key in COMPANIES
-            ]
-            low_total = round(sum(lows), 1)
-            high_total = round(sum(highs), 1)
-            mid_total = round((low_total + high_total) / 2, 1)
-            base["hyperscaler_capex_2026e_low_yi"] = low_total
-            base["hyperscaler_capex_2026e_mid_yi"] = mid_total
-            base["hyperscaler_capex_2026e_high_yi"] = high_total
-            base["hyperscaler_capex_2026e_yi"] = mid_total
-            if all(value is not None for value in actuals):
-                actual_total = round(sum(actuals), 1)
-                base["hyperscaler_capex_2025a_yi"] = actual_total
-                base["hyperscaler_yoy_pct"] = round(
-                    (mid_total / actual_total - 1) * 100, 1
-                )
+            _update_capex_totals(base, current)
             source_dates = [
                 item.get("source_date", "")
                 for item in current.values()

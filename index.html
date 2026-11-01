@@ -5381,6 +5381,7 @@ let _aiTrendCache = null;
 let _aiTrendAutoRefreshStarted = false;
 
 function _capexNum(v){
+  if(v===null||v===undefined||v==='')return '—';
   const n=Number(v);
   return Number.isFinite(n) ? n.toLocaleString('zh-CN',{maximumFractionDigits:1}) : '—';
 }
@@ -5402,7 +5403,7 @@ function _capexGuideText(c){
 
 function _setCapexSource(id,c){
   const el=document.getElementById(id); if(!el||!c) return;
-  const allowed=['abc.xyz','www.abc.xyz','microsoft.com','www.microsoft.com','ir.aboutamazon.com','investor.atmeta.com','apnews.com','www.apnews.com','reuters.com','www.reuters.com','cnbc.com','www.cnbc.com'];
+  const allowed=['abc.xyz','www.abc.xyz','s206.q4cdn.com','sec.gov','www.sec.gov','microsoft.com','www.microsoft.com','ir.aboutamazon.com','investor.atmeta.com','apnews.com','www.apnews.com','reuters.com','www.reuters.com','cnbc.com','www.cnbc.com'];
   try{
     const u=new URL(c.source_url||'');
     if(u.protocol==='https:' && allowed.includes(u.hostname)) el.href=u.href;
@@ -5453,7 +5454,7 @@ function _renderArrLatestEvent(d){
 
 function _setCloudSource(id,item){
   const el=document.getElementById(id); if(!el||!item) return;
-  const allowed=['abc.xyz','sec.gov','ir.aboutamazon.com','microsoft.com'];
+  const allowed=['abc.xyz','s206.q4cdn.com','sec.gov','ir.aboutamazon.com','microsoft.com'];
   try{
     const u=new URL(item.source_url||'');
     if(u.protocol!=='https:'||!allowed.some(host=>u.hostname===host||u.hostname.endsWith('.'+host))) return;
@@ -5494,7 +5495,8 @@ function _renderCloudCompare(d){
       mid/10,
     ];
   });
-  if(keys.every(key=>capexSeries[key].every(Number.isFinite))){
+  {
+    keys.forEach(key=>{capexSeries[key]=capexSeries[key].map(v=>Number.isFinite(v)?v:null);});
     BASE.cloudCapex={years:['2024A','2025A','2026E'],...capexSeries};
     if(CH.cloudCapex){
       CH.cloudCapex.data.labels=[...BASE.cloudCapex.years];
@@ -5536,18 +5538,20 @@ function _updateCapexCharts(d){
     const c=cs[k]||{}, lo=_capexValue(c.guidance_low_yi), hi=_capexValue(c.guidance_high_yi);
     return Number.isFinite(lo)&&Number.isFinite(hi)?(lo+hi)/2:(Number.isFinite(hi)?hi:lo);
   });
-  if(y2024.every(Number.isFinite)) BASE.capex.y2024=y2024;
-  if(y2025.every(Number.isFinite)) BASE.capex.y2025=y2025;
-  if(y2026.every(Number.isFinite)) BASE.capex.y2026e=y2026;
+  // Missing historical accounting bases create gaps, not old static figures or zeros.
+  BASE.capex.y2024=y2024.map(v=>Number.isFinite(v)?v:null);
+  BASE.capex.y2025=y2025.map(v=>Number.isFinite(v)?v:null);
+  BASE.capex.y2026e=y2026.map(v=>Number.isFinite(v)?v:null);
   if(CH.capex){
     CH.capex.data.datasets[0].data=[...BASE.capex.y2024];
     CH.capex.data.datasets[1].data=[...BASE.capex.y2025];
     CH.capex.data.datasets[2].data=[...BASE.capex.y2026e];
     CH.capex.update('none');
   }
-  const total24=BASE.capex.y2024.reduce((a,b)=>a+b,0);
-  const total25=Number(d.hyperscaler_capex_2025a_yi)||BASE.capex.y2025.reduce((a,b)=>a+b,0);
-  const total26=Number(d.hyperscaler_capex_2026e_mid_yi)||BASE.capex.y2026e.reduce((a,b)=>a+b,0);
+  const sum=values=>values.every(Number.isFinite)?values.reduce((a,b)=>a+b,0):null;
+  const total24=sum(BASE.capex.y2024);
+  const total25=Number.isFinite(_capexValue(d.hyperscaler_capex_2025a_yi))?Number(d.hyperscaler_capex_2025a_yi):sum(BASE.capex.y2025);
+  const total26=Number.isFinite(_capexValue(d.hyperscaler_capex_2026e_mid_yi))?Number(d.hyperscaler_capex_2026e_mid_yi):sum(BASE.capex.y2026e);
   BASE.trendYears=['2024A','2025A','2026E中值'];
   BASE.trendCapex=[total24,total25,total26];
   if(CH.trend){
@@ -5624,7 +5628,8 @@ function _renderAiTrend(d){
   if(Number.isFinite(low)&&Number.isFinite(high)) _set('kCapex26','$'+_capexNum(low)+'–'+_capexNum(high)+'亿');
   else if(d.hyperscaler_capex_2026e_yi!=null) _set('kCapex26','$'+_capexNum(d.hyperscaler_capex_2026e_yi)+'亿');
   if(d.hyperscaler_capex_2025a_yi!=null) _set('kCapex25','$'+_capexNum(d.hyperscaler_capex_2025a_yi)+'亿');
-  if(d.hyperscaler_yoy_pct!=null) _set('kYoy26','中值同比 '+(Number(d.hyperscaler_yoy_pct)>=0?'+':'')+d.hyperscaler_yoy_pct+'%');
+  if(d.comparison_comparable===false)_set('kYoy26','披露口径不同 · 不作同比');
+  else if(d.hyperscaler_yoy_pct!=null) _set('kYoy26','中值同比 '+(Number(d.hyperscaler_yoy_pct)>=0?'+':'')+d.hyperscaler_yoy_pct+'%');
   // 美股7姐妹 PE
   if(d.mag7_pe_median!=null) _set('kMag7Pe', d.mag7_pe_median+'x');
   if(d.mag7_pe_avg!=null)    _set('kMag7Avg', d.mag7_pe_avg+'x');
@@ -5642,7 +5647,7 @@ function _renderAiTrend(d){
   _renderCloudCompare(d);
   _renderCreditRatings(d);
   const sourceSummary=document.getElementById('capexSourceSummary');
-  if(sourceSummary) sourceSummary.textContent='口径：亿美元；2026E 为公司指引，2025A 为各公司已披露财年口径'+(d.capex_as_of?' · 最新披露截至 '+d.capex_as_of:'');
+  if(sourceSummary) sourceSummary.textContent='口径：亿美元；2026E 为自然年指引；各公司现金支出、融资租赁及历史会计口径不同，合计仅作规模观察，非纯AI开支。'+(d.comparison_note||'')+(d.capex_as_of?' · 最新披露截至 '+d.capex_as_of:'');
   // OpenAI / Anthropic 年化收入：仅接受等长、逐家公司不倒退的公开里程碑。
   const _validArr=(series,labels)=>{
     if(!Array.isArray(series)||series.length!==labels.length) return false;

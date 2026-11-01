@@ -33,6 +33,8 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: pip install requests duckduckgo_search
+      - name: Verify annual guidance periods, quarterly exclusions and comparable bases
+        run: python -m unittest discover -s tests -p test_refresh_ai_trend_capex.py -v
       - name: Scan Capex disclosures and ARR milestones
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
