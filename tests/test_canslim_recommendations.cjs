@@ -58,3 +58,41 @@ test('Published research has 12 unique issuers, dated filings and consistent sco
     }
   }
 });
+test('A/H are sixteen securities for twelve issuers, paired and valued independently',()=>{
+  const raw=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/canslim_recommendations.json'),'utf8'));
+  const d=api.prepare(raw),rows=d.sectors.flatMap(g=>g.securities);
+  assert.equal(rows.length,16);assert.equal(new Set(rows.map(s=>s.id)).size,16);assert.equal(new Set(rows.map(s=>s.code)).size,12);
+  assert.deepEqual(rows.filter(s=>s.shareClass==='H').map(s=>s.securityCode).sort(),['02476','03228','03308','06166']);
+  for(const group of d.sectors){
+    for(let i=1;i<group.companies.length;i++)assert.ok(group.companies[i-1].bestScore>=group.companies[i].bestScore);
+    for(const company of group.companies){
+      assert.equal(company.securities[0].shareClass,'A');
+      if(company.securities.length===1)continue;
+      const [a,h]=company.securities;
+      assert.equal(h.shareClass,'H');assert.equal(h.currency,'HKD');assert.notEqual(a.metrics.price,h.metrics.price);
+      assert.equal(a.metrics.totalShares,h.metrics.totalShares);assert.equal(a.metrics.ttmParentNetProfit,h.metrics.ttmParentNetProfit);
+      const expected=h.metrics.price*h.fxCnyPerHkd*h.metrics.totalShares/h.metrics.ttmParentNetProfit;
+      assert.ok(Math.abs(expected-h.metrics.peTtm)<1e-8);
+      assert.ok(Math.abs((h.metrics.price*h.fxCnyPerHkd/a.metrics.price-1)*100-h.hShare.relativeToA)<1e-8);
+      for(const key of ['C','A','N'])assert.equal(a.scores[key].score,h.scores[key].score);
+      assert.match(h.scores.M.reason,/恒生指数/);assert.match(a.scores.M.reason,/中证全指/);
+      assert.equal(h.scores.I.score,2);assert.equal(h.scores.I.missing,true);
+      if(h.metrics.barCount<127){assert.equal(h.metrics.excess126,null);assert.equal(h.scores.L.score,2);assert.equal(h.scores.L.missing,true);}
+      for(const id of h.scores.L.sourceIds)assert.equal(h.sources.find(x=>x.id===id).kind,'market_hk');
+    }
+  }
+  const a=rows.find(s=>s.id==='A-603083'),h=rows.find(s=>s.id==='H-06166');
+  assert.ok(a.gates.some(x=>x.startsWith('估值高于')));assert.ok(!h.gates.some(x=>x.startsWith('估值高于')));
+  assert.ok(rows.find(s=>s.id==='H-03308').hShare.relativeToA>0,'H can be more expensive than A; never force a discount');
+});
+test('Industry outlook has sourced scenarios, parameter monitoring and nonduplicated samples',()=>{
+  const raw=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/canslim_recommendations.json'),'utf8'));
+  for(const group of raw.sectors){
+    const r=group.outlook,m=group.industryMetrics;assert.equal(r.scenarios.length,3);assert.equal(r.monitoring.length,8);assert.equal(r.flow.length,4);assert.ok(r.analysis.length>=6);assert.ok(r.customers.length>=2);
+    const sourceIds=new Set(r.sources.map(s=>s.id));
+    const verify=o=>{if(!o||typeof o!=='object')return;if(Array.isArray(o)){o.forEach(verify);return}if(o.sourceIds)assert.ok(o.sourceIds.every(id=>sourceIds.has(id)));Object.values(o).forEach(verify)};verify(r);
+    assert.equal(m.quarters.length,3);assert.equal(m.returns.length,127);assert.ok(Math.abs(m.returns[0].sample)<1e-9);assert.ok(Math.abs(m.returns[0].benchmark)<1e-9);assert.equal(m.returns.at(-1).date,'2026-10-30');
+    for(const row of m.quarters)for(const k of ['revenue','profit'])assert.ok(Number.isFinite(row[k]));
+  }
+  const pcb=raw.sectors.find(g=>g.id==='pcb');assert.equal(pcb.industryMetrics.memberCodes.length,5);assert.ok(!pcb.industryMetrics.memberCodes.includes('688183'));
+});

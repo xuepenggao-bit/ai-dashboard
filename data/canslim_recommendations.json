@@ -3,7 +3,7 @@
   "asOf": "2026-11-01",
   "windowStart": "2026-10-02",
   "priceAsOf": "2026-10-30",
-  "generatedAt": "2026-11-01T06:55:42.197Z",
+  "generatedAt": "2026-11-01T07:21:48.685Z",
   "market": {
     "name": "中证全指",
     "code": "000985",
@@ -418,12 +418,24 @@
       "text": "只用正式季报前十股东/流通股东与中报比较：增加且有主要机构支持一般4分，混合3分，下降1分，证据不足2分。新进入前十不等于此前零持股；香港中央结算是托管汇总，不自动等于主动外资看法，调研名单不是持仓。"
     },
     {
-      "title": "M · 同一市场方向",
-      "text": "同一中证全指基准用于12股：收盘>MA50>MA200且MA50较20日前上升记5；高于两条均线记4；只在一条之上记3；均低于但MA50仍高于MA200记1；均线空头且收盘均低于记0；证据缺失记2。M是环境，不是公司质量。"
-    },
-    {
       "title": "时效、证据与估值边界",
       "text": "研究冻结2026-11-01，行情10-30。近月事件按披露日归档，季末持仓观察日另注明；H1仅作持仓比较基准。机构/公告是正式披露但季后有滞后；财务年度序列来自东方财富标准化报表，可能含重述，Q3逐股交叉核验原报告。估值仅为同组六股比较，不代表全行业公允价值。"
+    },
+    {
+      "title": "A/H两行 · 价格和证券指标分开",
+      "text": "12家公司、16只证券；A/H普通股共享C/A/N及同集团财务，价格、PE、L/M与S/I证据独立。PE=该股类价格折成人民币×现有全部A+H股本/同集团TTM归母利润，不用仅H流通市值除全集团利润。H新股不足126交易日不搬A走势，保守L=2并标缺失。"
+    },
+    {
+      "title": "M · 各自交易市场方向",
+      "text": "A股用中证全指，H股用恒生指数，均依据同一50/200日均线规则独立给分；收盘>MA50>MA200且MA50较20日前上升为5，两线之上4，一线之上3，两线之下但MA50>MA200为1，其余空头为0；证据缺失2。"
+    },
+    {
+      "title": "跨市场估值与排序边界",
+      "text": "公司按其最高证券总分降序，A/H相邻两行；评级在每个证券层面计算，不保证两行必然不同。PE门槛仍用6家A股比较组中位数×1.3，不当作H股公允价值。H便宜不自动抵消市场、现金、流动性和证据约束。汇率是10/30外汇交易日末、北京时间次日04:56的0.8480参考值，非两市同刻可成交套利汇率。"
+    },
+    {
+      "title": "行业图形与预测边界",
+      "text": "增长图为固定公司样本单季收入与扣非合计同比，非全行业；PCB去掉生益电子以避免母子合并重复。价格图为相同126个A股交易日的等权样本前复权价格收益，非总回报，H股不重复进入样本。未来2–4季度仅条件情景，不编造统计相关系数、行业增速区间或匿名客户专属映射。"
     }
   ],
   "sources": [
@@ -442,6 +454,16 @@
       "name": "Microsoft FY27Q1说明会",
       "url": "https://www.microsoft.com/en-us/Investor/events/fy-2027/earnings-fy-2027-q1",
       "date": "2026-10-28"
+    },
+    {
+      "name": "H股基准恒生指数",
+      "url": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=hkHSI%2Cday%2C%2C%2C400%2Cqfq",
+      "date": "2026-10-30"
+    },
+    {
+      "name": "HKD/CNY参考报价",
+      "url": "https://qt.gtimg.cn/q=whHKDCNY",
+      "date": "2026-10-30"
     }
   ],
   "sectors": [
@@ -779,7 +801,7 @@
             "ytdOperatingCashFlow": 8008444194.49,
             "ytdParentNetProfit": 22237939006.75,
             "cashConversion": 0.36012528823193346,
-            "peTtm": 25.14679534968628,
+            "peTtm": 25.146796564707053,
             "price": 553,
             "capYi": 6513.84,
             "priceDate": "2026-10-30",
@@ -803,7 +825,123 @@
             "downVolume50": 7918465,
             "upDownVolumeRatio50": 0.6900650568007815,
             "marketCapBasis": "total_shares_at_A_price",
-            "financialDisclosureDate": "2026-10-30"
+            "financialDisclosureDate": "2026-10-30",
+            "totalShares": 1177909641,
+            "ttmParentNetProfit": 25903260870.5
+          },
+          "hShare": {
+            "verified": true,
+            "code": "03308",
+            "listingDate": "2026-07-30",
+            "price": 676,
+            "priceDate": "2026-10-30",
+            "peTtm": 26.067542200949703,
+            "fxCnyPerHkd": 0.848,
+            "fxNote": "取交易日2026-10-30的最后市场报价，时刻为北京时间次日04:56:03；不是人民币官方中间价、不是港股收盘同一时点的可执行换汇价。",
+            "relativeToA": 3.6614828209764694,
+            "totalShares": 1177909641,
+            "metrics": {
+              "barCount": 65,
+              "startDate": "2026-07-30",
+              "endDate": "2026-10-30",
+              "close": 676,
+              "ma50": 1005.02,
+              "ma200": null,
+              "ma50Prior20": null,
+              "high252": 1322,
+              "highestClose252": 1270,
+              "distanceTo252HighPct": -48.86535552193646,
+              "distanceTo252HighestClosePct": -46.77165354330709,
+              "upVolume50": 37099222,
+              "downVolume50": 45994024,
+              "upDownVolumeRatio50": 0.8066096151969656,
+              "benchmarkName": "恒生指数",
+              "return126": null,
+              "excess126": null,
+              "return126Start": null,
+              "benchmarkReturn126": null,
+              "lMissingReason": "该H股上市交易历史不足127个收盘观测值，不能计算126交易日收益；不沿用A股走势。",
+              "totalShares": 1177909641,
+              "ttmParentNetProfit": 25903260870.5,
+              "priceCny": 573.2479999999999,
+              "quoteTimeBeijing": "2026-10-30T16:08:14+08:00",
+              "turnoverHkd": 2024245159.95
+            },
+            "assessments": {
+              "S": {
+                "score": 2,
+                "missing": true,
+                "reason": "未取得该H股完整未来六个月解禁/持仓供需证据；当日成交与托管股数不能证明机构持续吸纳，保守2分。",
+                "sourceIds": [
+                  "ah-zj-hshares"
+                ]
+              },
+              "I": {
+                "score": 2,
+                "missing": true,
+                "reason": "未取得该H股连续可比的机构实益持仓变化。HKSCC Nominees为代理托管，不等于一个机构；A股基金名单与员工持股不能沿用为H股机构支持。",
+                "sourceIds": []
+              }
+            },
+            "sources": [
+              {
+                "id": "ah-zj-listed",
+                "name": "中际旭创H股挂牌上市公告",
+                "url": "https://static.cninfo.com.cn/finalpage/2026-07-30/1225449717.PDF",
+                "date": "2026-07-30",
+                "pages": "p1",
+                "kind": "listing"
+              },
+              {
+                "id": "ah-zj-shares",
+                "name": "中际旭创2026Q3正式报表",
+                "url": "https://static.cninfo.com.cn/finalpage/2026-10-30/1225643953.PDF",
+                "date": "2026-10-30",
+                "pages": "p5 H股托管股数、p9股本",
+                "kind": "announcement"
+              },
+              {
+                "id": "ah-zj-hshares",
+                "name": "中际旭创悉数行使超额配售权公告",
+                "url": "https://static.cninfo.com.cn/finalpage/2026-08-27/1225515675.PDF",
+                "date": "2026-08-27",
+                "pages": "p1–2 H股股数变动",
+                "kind": "announcement"
+              },
+              {
+                "id": "ah-03308-quote",
+                "name": "腾讯H股报价",
+                "url": "https://qt.gtimg.cn/q=hk03308",
+                "date": "2026-10-30",
+                "kind": "market_hk"
+              },
+              {
+                "id": "ah-03308-daily",
+                "name": "腾讯H股前复权日线",
+                "url": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=hk03308%2Cday%2C%2C%2C400%2Cqfq",
+                "date": "2026-10-30",
+                "kind": "market_hk"
+              },
+              {
+                "id": "ah-fx",
+                "name": "港元/人民币交易日末参考报价",
+                "url": "https://qt.gtimg.cn/q=whHKDCNY",
+                "date": "2026-10-30",
+                "kind": "fx"
+              },
+              {
+                "id": "ah-hsi",
+                "name": "恒生指数历史行情",
+                "url": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=hkHSI%2Cday%2C%2C%2C400%2Cqfq",
+                "date": "2026-10-30",
+                "kind": "market_hk"
+              }
+            ],
+            "valuationView": "H股按本市场价格与同集团盈利单独估值；H较A折溢价来自价格与参考汇率，不代表公允价值差或无风险套利。H股PE比较锚仍为本组6家A股中位数，仅用于统一研究门槛，未建立独立H股同业估值模型。",
+            "notes": [
+              "Q3股本1,177,909,641股与腾讯H行情总股本一致；H股62,675,000股，含超额配售。",
+              "A股回购拟改注销不等于已完成注销，不提前减少全部股本。"
+            ]
           }
         },
         {
@@ -2259,7 +2397,7 @@
             "ytdOperatingCashFlow": -1626501737.94,
             "ytdParentNetProfit": 760638895.01,
             "cashConversion": -2.1383362704830087,
-            "peTtm": 63.300253092282475,
+            "peTtm": 63.3007576476249,
             "price": 125.2,
             "capYi": 484.14,
             "priceDate": "2026-10-30",
@@ -2283,11 +2421,1199 @@
             "downVolume50": 6079455,
             "upDownVolumeRatio50": 0.889053870782825,
             "marketCapBasis": "total_shares_at_A_price",
-            "financialDisclosureDate": "2026-10-31"
+            "financialDisclosureDate": "2026-10-31",
+            "totalShares": 386696373,
+            "ttmParentNetProfit": 764831065.2
+          },
+          "hShare": {
+            "verified": true,
+            "code": "06166",
+            "listingDate": "2025-10-28",
+            "price": 63,
+            "priceDate": "2026-10-30",
+            "peTtm": 27.011019780884286,
+            "fxCnyPerHkd": 0.848,
+            "fxNote": "取交易日2026-10-30的最后市场报价，时刻为北京时间次日04:56:03；不是人民币官方中间价、不是港股收盘同一时点的可执行换汇价。",
+            "relativeToA": -57.329073482428115,
+            "totalShares": 386696373,
+            "metrics": {
+              "barCount": 248,
+              "startDate": "2025-10-28",
+              "endDate": "2026-10-30",
+              "close": 63,
+              "ma50": 101.29700000000001,
+              "ma200": 100.96225,
+              "ma50Prior20": 99.23700000000001,
+              "return126": -50.66562255285827,
+              "excess126": -39.875804600542374,
+              "return126Start": "2026-04-29",
+              "benchmarkReturn126": -10.789817952315895,
+              "high252": 173,
+              "highestClose252": 160.2,
+              "distanceTo252HighPct": -63.58381502890174,
+              "distanceTo252HighestClosePct": -60.67415730337078,
+              "upVolume50": 267318098,
+              "downVolume50": 238879520,
+              "upDownVolumeRatio50": 1.1190498792027044,
+              "benchmarkName": "恒生指数",
+              "totalShares": 386696373,
+              "ttmParentNetProfit": 764831065.2,
+              "priceCny": 53.424,
+              "quoteTimeBeijing": "2026-10-30T16:08:15+08:00",
+              "turnoverHkd": 718770198.75
+            },
+            "assessments": {
+              "S": {
+                "score": 1,
+                "missing": false,
+                "reason": "10月12日已新增18,446,000股H股（新增后H股的16.60%）且存在可转债潜在稀释，供给压力已确认；不把转债当已转股。",
+                "sourceIds": [
+                  "ah-jq-shares"
+                ]
+              },
+              "I": {
+                "score": 2,
+                "missing": true,
+                "reason": "未取得该H股连续可比的机构实益持仓变化。HKSCC Nominees为代理托管，不等于一个机构；A股基金名单与员工持股不能沿用为H股机构支持。",
+                "sourceIds": []
+              }
+            },
+            "sources": [
+              {
+                "id": "ah-jq-listed",
+                "name": "剑桥科技H股发售结果公告",
+                "url": "https://www.hkexnews.hk/listedco/listconews/sehk/2025/1027/2025102701699_c.pdf",
+                "date": "2025-10-27",
+                "pages": "p1 开始买卖日期2025-10-28",
+                "kind": "listing"
+              },
+              {
+                "id": "ah-jq-shares",
+                "name": "完成配售新H股及发行可转债公告",
+                "url": "https://static.cninfo.com.cn/finalpage/2026-10-15/1225605853.PDF",
+                "date": "2026-10-15",
+                "pages": "p3 A/H及全部股本",
+                "kind": "announcement"
+              },
+              {
+                "id": "ah-06166-quote",
+                "name": "腾讯H股报价",
+                "url": "https://qt.gtimg.cn/q=hk06166",
+                "date": "2026-10-30",
+                "kind": "market_hk"
+              },
+              {
+                "id": "ah-06166-daily",
+                "name": "腾讯H股前复权日线",
+                "url": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=hk06166%2Cday%2C%2C%2C400%2Cqfq",
+                "date": "2026-10-30",
+                "kind": "market_hk"
+              },
+              {
+                "id": "ah-fx",
+                "name": "港元/人民币交易日末参考报价",
+                "url": "https://qt.gtimg.cn/q=whHKDCNY",
+                "date": "2026-10-30",
+                "kind": "fx"
+              },
+              {
+                "id": "ah-hsi",
+                "name": "恒生指数历史行情",
+                "url": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=hkHSI%2Cday%2C%2C%2C400%2Cqfq",
+                "date": "2026-10-30",
+                "kind": "market_hk"
+              }
+            ],
+            "valuationView": "H股按本市场价格与同集团盈利单独估值；H较A折溢价来自价格与参考汇率，不代表公允价值差或无风险套利。H股PE比较锚仍为本组6家A股中位数，仅用于统一研究门槛，未建立独立H股同业估值模型。",
+            "notes": [
+              "10月12日配售18,446,000股完成后：A股275,588,373、H股111,108,000、合计386,696,373股。",
+              "已发行39.6亿元可转换债券，估值未假设全部转股；稀释风险另列，不把未来转股数加为当前已发行股本。"
+            ]
           }
         }
       ],
-      "note": "天孚偏光器件/光引擎，华工科技含激光等多元业务，剑桥兼有接入业务；不是完全同质的纯光模块公司。同组PE中位数仅作研究风险约束，不当作公允估值。"
+      "note": "天孚偏光器件/光引擎，华工科技含激光等多元业务，剑桥兼有接入业务；不是完全同质的纯光模块公司。同组PE中位数仅作研究风险约束，不当作公允估值。",
+      "outlook": {
+        "headline": "光模块：盈利仍在上行，竞争焦点从扩产转向交付、芯片保供与新架构份额",
+        "summary": "800G与1.6T的规模交付已经反映在最新季报，而不是仅停留在AI概念阶段。未来2—4个季度的基准判断是高端产品结构继续升级、公司增长分化加大；决定相对优势的是客户认证、量产良率、关键物料和现金兑现。CPO/NPO/OCS扩展光互连市场，同时会重分配模块、激光器、光引擎与先进封装的价值，不能将光连接需求增长等同于所有现有模块厂利润同比增长。",
+        "sensitivity": "高速互连：高业务敏感度",
+        "flow": [
+          {
+            "title": "总预算",
+            "text": "先确认财报口径、实际支付和支出用途；建设土地、电力、楼宇不等于当期模块采购。"
+          },
+          {
+            "title": "AI设备与网络",
+            "text": "关注服务器/网络设备份额、交换机速率、scale-out/scale-up/scale-across拓扑；这些比总Capex更贴近光连接需求。"
+          },
+          {
+            "title": "供应商兑现",
+            "text": "明确PO、材料到货、客户验收、产品组合、ASP及良率共同决定公司收入；匿名大客户不能直接映射到特定CSP。"
+          },
+          {
+            "title": "股东回报",
+            "text": "检查经营现金与扩产开支；收入增长到自由现金改善可能继续存在时滞。"
+          }
+        ],
+        "capexNote": "CSP批准资本预算 → 数据中心电力与机柜按期上线 → GPU/ASIC及交换机交付 → 网络拓扑、端口数量和速率确定 → 模块/光引擎采购、验收 → 收入与现金回款。任何环节延期，都可能使光模块订单与总Capex当季表现错位。 业务敏感度判断，不是统计相关系数 四家支出口径不完全一致，不能把合计增速直接当光模块行业增速。 缺乏足够长、同口径、剔除产品升级及库存波动的供应商收入与客户采购序列，因此不报告Pearson相关系数、收入弹性或统一的交付时滞。 已读A股近月材料多数使用大客户匿名表述；本综述不把匿名客户强行配成Google、Meta、Microsoft或AWS，也不推定独供。",
+        "capexSourceIds": [
+          "opt-goog-q3",
+          "opt-msft-q1",
+          "opt-amzn-q3",
+          "opt-meta-q3",
+          "opt-zj-ir"
+        ],
+        "customers": [
+          {
+            "name": "Alphabet / Google",
+            "fact": "2026年Capex指引为1950—2050亿美元；Q3技术基础设施支出约65%投向服务器和网络设备。",
+            "readThrough": "服务器/网络结构比总额更有解释力；仍不能把这65%全部算作光模块，也不能据此确认某家A股公司的客户份额。",
+            "sourceIds": [
+              "opt-goog-q3"
+            ]
+          },
+          {
+            "name": "Microsoft",
+            "fact": "2026自然年支出约1700亿美元，部分第三方容量交付延后；管理层预计之后财年下半年支出加速。",
+            "readThrough": "需求强不排除采购跨期。应跟踪设备、容量和交付节点，而非将一次总指引调整机械解读为光模块砍单或增单。",
+            "sourceIds": [
+              "opt-msft-q1"
+            ]
+          },
+          {
+            "name": "Amazon / AWS",
+            "fact": "2026年现金资本开支指引约2200亿美元，为集团口径。",
+            "readThrough": "AWS数据中心网络是产业驱动之一，但集团支出还涵盖其它业务，不能把2200亿美元全部视为AI或光互连采购。",
+            "sourceIds": [
+              "opt-amzn-q3"
+            ]
+          },
+          {
+            "name": "Meta",
+            "fact": "2026年资本开支1350—1450亿美元，含融资租赁本金；2027仍计划积极投资，但未给出本次可核验的数值预算。",
+            "readThrough": "网络架构与自研芯片会影响光互连产品组合。下一年度金额尚不确定，不能用产业推测填成公司正式指引。",
+            "sourceIds": [
+              "opt-meta-q3"
+            ]
+          }
+        ],
+        "analysis": [
+          {
+            "title": "盈利主线已由正式报表验证，但不是全行业统一增速",
+            "text": "已披露 / 公司表述：中际旭创2026Q3收入同比增长171.83%、扣非利润增长190.13%；新易盛相应为80.30%和53.32%；天孚通信为31.50%和55.78%。 研究判断：三家公司体现不同的产品结构和兑现速度。这里是代表公司证据，不是全球光模块行业增速；公司样本曲线应固定口径，不能用龙头增长替代行业总量。",
+            "sourceIds": [
+              "opt-zj-q3",
+              "opt-eopt-q3",
+              "opt-tfc-q3"
+            ]
+          },
+          {
+            "title": "下一阶段增长取决于单端口价值和交付，不只看端口数量",
+            "text": "已披露 / 公司表述：中际近月IR把800G/1.6T订单增长和高端结构改善列为驱动；Broadcom已展示400G/lane DSP、1.6T与后续3.2T的技术路径，Coherent亦将1.6T列为加速爬坡、3.2T/6.4T列为开发中。 研究判断：研究判断：网络速率升级可提高每端口器件价值和技术门槛，但更高价值量可能被DSP、激光器、封装或客户议价重新分配；需要看模块ASP、良率和毛利率，而不能只按带宽倍增推算收入倍增。",
+            "sourceIds": [
+              "opt-zj-ir",
+              "opt-avgo-ofc",
+              "opt-cohr-ofc"
+            ]
+          },
+          {
+            "title": "收入向上，现金与股价暂未同步确认",
+            "text": "已披露 / 公司表述：最新前三季财报显示，中际和新易盛经营现金增长/绝对额明显弱于利润扩张；公司有备料与预付款安排。 研究判断：利润扩张不必然等于资本回报改善。若营运资金占用不能转为收款，增长越快反而可能扩大资金需求。股价的相对弱势应单独观察，不能把盈利增长描述成股票已经形成相对上升趋势。",
+            "sourceIds": [
+              "opt-zj-q3",
+              "opt-eopt-q3"
+            ]
+          },
+          {
+            "title": "模块制造与大规模交付 · 中国头部模块厂与Coherent等国际综合厂商",
+            "text": "公开证据：中际披露在高端产品交付、客户导入和供应链上的综合优势；Coherent的公开路线涵盖800G、1.6T、3.2T及6.4T。 研究判断：规模、可靠性和客户认证形成壁垒，但不能据此断言份额永久不变；产品迭代加快时，认证和良率失误也会放大份额变化。未取得可比的最新全行业份额，故不编制市场份额饼图。",
+            "sourceIds": [
+              "opt-zj-ir",
+              "opt-cohr-ofc"
+            ]
+          },
+          {
+            "title": "核心芯片与上游器件 · DSP、EML/CW激光器、硅光芯片与无源/精密光器件供应链",
+            "text": "公开证据：中际称DSP供给偏紧；Broadcom同时推进高速DSP、光器件与CPO，技术升级跨越多个层次。 研究判断：模块厂的出货优势必须经过关键物料可获得性检验。上游涨价若无法向客户传导，收入增长与利润增长会脱钩；供应更分散也可能提升模块竞争强度。",
+            "sourceIds": [
+              "opt-zj-ir",
+              "opt-avgo-ofc"
+            ]
+          },
+          {
+            "title": "系统平台与光引擎封装 · NVIDIA、Broadcom及先进封装生态",
+            "text": "公开证据：NVIDIA于2026年5月称Spectrum-X CPO已进入生产；10月又公布SPIL光引擎扩产目标，计划到2027年中达到原产能15倍。 研究判断：这是价值链迁移而非简单的模块需求消失：光连接总需求可以增加，但利润池可能流向光引擎、激光源、封装及平台认证。扩产目标不是已经兑现的出货。",
+            "sourceIds": [
+              "opt-nvda-rubin",
+              "opt-nvda-supply"
+            ]
+          },
+          {
+            "title": "架构并存，而非单一路线通吃 · 可插拔、CPO、NPO、OCS与短距铜互连",
+            "text": "公开证据：Lumentum的OCP议题包含外置光源、VCSEL及与Oracle工程师联合介绍OCS网络；中际的NPO时间表仍是2027下半年导入、2028年更大规模。 研究判断：不同客户、距离和场景可并行采用不同路线。不能把一家供应商NPO的时间表推广为全行业CPO尚未量产，也不能把技术展示等同采购合同。",
+            "sourceIds": [
+              "opt-lite-ocp",
+              "opt-zj-ir",
+              "opt-nvda-rubin"
+            ]
+          },
+          {
+            "title": "经营与相对价格分开判断",
+            "text": "经营维度偏上行：高速产品交付和产品结构升级有正式盈利证据，但公司之间增速及现金转换差异很大。 股票维度尚未确认相对上升：按本次已核验的10月30日前复权行情，六家光模块代表A股在过去126个交易日均跑输中证全指；不能把行业盈利向上写成股价趋势已转强。 研究上的相对上升，优先指高端产品在收入与利润池中的占比抬升；交易上的相对上升，则需股价对基准超额收益和均线共同确认。两者分开表达。",
+            "sourceIds": [
+              "opt-zj-q3",
+              "opt-eopt-q3",
+              "opt-tfc-q3",
+              "opt-tencent-bars"
+            ]
+          }
+        ],
+        "scenarios": [
+          {
+            "name": "基准情景",
+            "outlook": "高速互连收入继续增长、公司分化扩大；利润率更多由组合和交付质量驱动，现金改善可能滞后于利润。NPO/CPO收入需按各公司实际进度确认。",
+            "condition": "CSP设备和网络部署继续、已有PO按期执行；1.6T比重上升但物料逐步而非瞬间缓解，新光连接路线按客户节奏验证。",
+            "check": "出现连续订单延期/取消，或新增产能投产后客户验收和现金回款明显落后。 中等；方向有当期交付支持，幅度与客户采购未充分公开，不给统一增长率。",
+            "sourceIds": [
+              "opt-zj-ir",
+              "opt-msft-q1",
+              "opt-nvda-supply"
+            ]
+          },
+          {
+            "name": "上行情景",
+            "outlook": "高端组合、产能利用和现金回款形成共振，头部供应商可能在收入之外获得更好的经营杠杆。",
+            "condition": "1.6T客户扩围，关键芯片/激光器供给改善，交付和验收提速；新光引擎产品获得正式批量订单且良率爬坡顺利。",
+            "check": "高端占比虽增但ASP下降或物料涨价吞噬毛利；新产品只有演示或送样、没有可核验批量收入。 情景推演，非公司指引；不预设2027年行业百分比增速。",
+            "sourceIds": [
+              "opt-avgo-ofc",
+              "opt-cohr-ofc",
+              "opt-nvda-supply"
+            ]
+          },
+          {
+            "name": "下行情景",
+            "outlook": "收入增长放慢、毛利承压，前期备料转为存货和现金占用；高经营杠杆与估值重估可能叠加。",
+            "condition": "电力/容量交付继续错位，客户延迟订单、双供压价；DSP等瓶颈未解，或CPO/NPO价值重分配快于现有供应商转型。",
+            "check": "客户实际PO和收入继续兑现、现金恢复且新产品认证延续，则需降低对下行情景的权重。 风险情景而非必然预测；需要订单、库存和现金联合验证。",
+            "sourceIds": [
+              "opt-msft-q1",
+              "opt-zj-q3",
+              "opt-eopt-q3",
+              "opt-nvda-supply"
+            ]
+          }
+        ],
+        "monitoring": [
+          {
+            "parameter": "CSP网络/服务器实际部署，而非只看全年预算",
+            "baseline": "Alphabet给出技术设施中服务器/网络占比；微软存在容量交付跨期。",
+            "upside": "服务器和交换机按期上线，设备支出与已交付容量同步增长。",
+            "downside": "总Capex不变但设备采购推后，或楼宇/电力投入挤压当期网络采购。",
+            "frequency": "每次CSP季报/说明会及重大预算调整",
+            "sourceIds": [
+              "opt-goog-q3",
+              "opt-msft-q1"
+            ]
+          },
+          {
+            "parameter": "确定性PO、取消率与需求指引转订单",
+            "baseline": "中际对PO和guidance作了区分；匿名客户分拆和取消率未公开。",
+            "upside": "新增客户把计划转正式订单，现有PO按期验收。",
+            "downside": "订单延期/取消、交期持续向后，或用远期guidance替代当期PO。",
+            "frequency": "每次近月IR/重大经营公告；下一次年度预算窗口重点看2026Q4—2027Q1",
+            "sourceIds": [
+              "opt-zj-ir"
+            ]
+          },
+          {
+            "parameter": "1.6T等高端产品收入/出货占比与ASP",
+            "baseline": "高端占比改善已支持盈利，但多数公司未披露精确产品收入拆分。",
+            "upside": "高端交付提升且售价、毛利和良率没有同步恶化。",
+            "downside": "只披露带宽升级，不披露交付；产品提速而ASP或毛利下降。",
+            "frequency": "公司季度财报及IR",
+            "sourceIds": [
+              "opt-zj-ir",
+              "opt-avgo-ofc"
+            ]
+          },
+          {
+            "parameter": "DSP/激光器交期、采购价格与预付款",
+            "baseline": "关键DSP仍有紧张，供应链长协与预付款已影响资金占用。",
+            "upside": "交期缩短、第二供应商通过认证，且新增采购不继续抬升单位资金占用。",
+            "downside": "物料涨价与预付增加持续，客户价格又无法覆盖成本。",
+            "frequency": "每次IR；财报核对预付款和存货变化",
+            "sourceIds": [
+              "opt-zj-ir",
+              "opt-zj-q3"
+            ]
+          },
+          {
+            "parameter": "毛利率、营运资金周转与经营现金",
+            "baseline": "中际/新易盛利润扩张领先现金；不能以单个旺季或备货期直接认定会计质量问题。",
+            "upside": "毛利稳定、应收和存货周转改善，经营现金/归母利润向80%以上恢复。",
+            "downside": "连续报告期现金转化低于50%且周转恶化；上述50%/80%为本研究监测门槛，不是公司承诺。",
+            "frequency": "每季，优先看滚动或累计同季比较",
+            "sourceIds": [
+              "opt-zj-q3",
+              "opt-eopt-q3"
+            ]
+          },
+          {
+            "parameter": "新路线量产收入与客户认证，而非展会热度",
+            "baseline": "已有部分系统级CPO产品进入生产；模块厂、光引擎与封装供应商时间表不相同。",
+            "upside": "公开的批量采购、收入确认、可靠性/良率和重复订单逐项出现。",
+            "downside": "多年反复送样无商业收入，或价值迁移到其它环节而原模块厂缺少新认证。",
+            "frequency": "每次技术发布、客户采购与季度经营披露",
+            "sourceIds": [
+              "opt-nvda-rubin",
+              "opt-nvda-supply",
+              "opt-lite-ocp"
+            ]
+          },
+          {
+            "parameter": "竞争产能、客户双供和市场份额证据",
+            "baseline": "Coherent路线与国际系统平台扩产表明竞争持续；没有可比的全行业最新份额表。",
+            "upside": "新增产能被实际订单吸收、良率达标，客户认证扩围而利润没有被压缩。",
+            "downside": "多家同类产能同时释放导致报价下降，或大客户采购分配转移。",
+            "frequency": "主要竞争对手季报、制造扩产公告和本公司IR",
+            "sourceIds": [
+              "opt-cohr-ofc",
+              "opt-nvda-supply"
+            ]
+          },
+          {
+            "parameter": "股票相对强度与估值消化",
+            "baseline": "本次六股A股样本126交易日均跑输中证全指；经营增长与交易趋势尚有背离。",
+            "upside": "超额收益由负转正、价格恢复主要均线，同时盈利和现金证据保持。",
+            "downside": "股价反弹但盈利预期/现金继续下修，或PE压缩仍不足抵消增长减速。",
+            "frequency": "每交易日跟踪行情；研究结论在新财报或重大公告后复核",
+            "sourceIds": [
+              "opt-tencent-bars"
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "id": "opt-goog-q3",
+            "name": "Alphabet 2026Q3官方说明会",
+            "url": "https://s206.q4cdn.com/479360582/files/doc_events/2026/Oct/28/2026_Q3_Earnings_Transcript.pdf",
+            "date": "2026-10-28",
+            "pages": "p10、12",
+            "kind": "issuer"
+          },
+          {
+            "id": "opt-msft-q1",
+            "name": "Microsoft FY27Q1官方说明会",
+            "url": "https://www.microsoft.com/en-us/Investor/events/fy-2027/earnings-fy-2027-q1",
+            "date": "2026-10-28",
+            "pages": "CapEx outlook与供应交付问答",
+            "kind": "issuer"
+          },
+          {
+            "id": "opt-amzn-q3",
+            "name": "Amazon 2026Q3官方业绩发布",
+            "url": "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Third-Quarter-Results/default.aspx",
+            "date": "2026-10-29",
+            "pages": "Fourth Quarter Guidance",
+            "kind": "issuer"
+          },
+          {
+            "id": "opt-meta-q3",
+            "name": "Meta 2026Q3官方业绩发布",
+            "url": "https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Third-Quarter-2026-Results/",
+            "date": "2026-10-21",
+            "pages": "CFO Outlook Commentary",
+            "kind": "issuer"
+          },
+          {
+            "id": "opt-zj-q3",
+            "name": "中际旭创2026三季报",
+            "url": "https://static.cninfo.com.cn/finalpage/2026-10-30/1225643953.PDF",
+            "date": "2026-10-30",
+            "pages": "p2–4",
+            "kind": "issuer"
+          },
+          {
+            "id": "opt-eopt-q3",
+            "name": "新易盛2026三季报",
+            "url": "https://static.cninfo.com.cn/finalpage/2026-10-30/1225642947.PDF",
+            "date": "2026-10-30",
+            "pages": "p2–4",
+            "kind": "issuer"
+          },
+          {
+            "id": "opt-tfc-q3",
+            "name": "天孚通信2026三季报",
+            "url": "https://static.cninfo.com.cn/finalpage/2026-10-29/1225634414.PDF",
+            "date": "2026-10-29",
+            "pages": "p1–3",
+            "kind": "issuer"
+          },
+          {
+            "id": "opt-zj-ir",
+            "name": "中际旭创10月29日IR",
+            "url": "https://static.cninfo.com.cn/finalpage/2026-10-29/1225645972.PDF",
+            "date": "2026-10-29",
+            "pages": "p3–7；财务量化仍以正式三季报为准",
+            "kind": "issuer"
+          },
+          {
+            "id": "opt-avgo-ofc",
+            "name": "Broadcom OFC2026官方产品公告",
+            "url": "https://investors.broadcom.com/node/64036/pdf",
+            "date": "2026-03-12",
+            "pages": "p1–2",
+            "kind": "issuer"
+          },
+          {
+            "id": "opt-cohr-ofc",
+            "name": "Coherent技术创新简报",
+            "url": "https://ir.coherent.com/static-files/4d17c747-58b8-4ed4-8a97-968c65aa2112",
+            "date": "2026-03-17",
+            "pages": "p15–17；技术路线背景，非10月新财报",
+            "kind": "issuer"
+          },
+          {
+            "id": "opt-nvda-rubin",
+            "name": "NVIDIA Vera Rubin与CPO官方发布",
+            "url": "https://nvidianews.nvidia.com/news/vera-rubin-full-production-agentic-ai-factory",
+            "date": "2026-05-31",
+            "pages": "Building the Fabric for Million-GPU AI Factories",
+            "kind": "issuer"
+          },
+          {
+            "id": "opt-nvda-supply",
+            "name": "NVIDIA 10月21日供应链扩产公告",
+            "url": "https://nvidianews.nvidia.com/news/nvidia-and-supply-chain-partners-expand-capacity-to-accelerate-ai-infrastructure-buildout",
+            "date": "2026-10-21",
+            "pages": "Creating the Infrastructure for Co-Packaged Optics",
+            "kind": "issuer"
+          },
+          {
+            "id": "opt-lite-ocp",
+            "name": "Lumentum OCP2026官方议程",
+            "url": "https://investor.lumentum.com/financial-news-releases/news-details/2026/Lumentum-Announces-Speaker-Lineup-at-2026-OCP-Global-Summit/default.aspx",
+            "date": "2026-10-01",
+            "pages": "外置光源、VCSEL、OCS议题；背景来源非近月业绩",
+            "kind": "issuer"
+          },
+          {
+            "id": "opt-tencent-bars",
+            "name": "腾讯前复权日线与同日基准比较",
+            "url": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh000985%2Cday%2C%2C%2C400%2Cqfq",
+            "date": "2026-10-30",
+            "pages": "同轮量化文件六股与中证全指同起止日复算；非指数级行业收益",
+            "kind": "market"
+          }
+        ],
+        "limitations": "仅为公开证据下的情景研究，不构成个性化投资建议；未建立行业营收预测模型、统计相关模型或目标价模型。未来方向是条件性预估，管理层计划、公司技术展示和实际量产收入分别标识。"
+      },
+      "industryMetrics": {
+        "memberCodes": [
+          "300308",
+          "300502",
+          "300394",
+          "002281",
+          "000988",
+          "603083"
+        ],
+        "revenueYoy": 98.08492174577248,
+        "profitYoy": 128.43082668874226,
+        "excess126": -16.302010325110345,
+        "quarters": [
+          {
+            "label": "2026Q1",
+            "revenue": 106.64460555498714,
+            "profit": 145.45986546751766
+          },
+          {
+            "label": "2026Q2",
+            "revenue": 84.73455596157274,
+            "profit": 127.46086002487758
+          },
+          {
+            "label": "2026Q3",
+            "revenue": 104.7240794741691,
+            "profit": 119.49012700188493
+          }
+        ],
+        "returns": [
+          {
+            "date": "2026-04-23",
+            "sample": 0,
+            "benchmark": 0
+          },
+          {
+            "date": "2026-04-24",
+            "sample": -5.183141553337452,
+            "benchmark": -0.5065761292062709
+          },
+          {
+            "date": "2026-04-27",
+            "sample": -4.574382274851394,
+            "benchmark": -0.10550364106551857
+          },
+          {
+            "date": "2026-04-28",
+            "sample": -5.81355125393975,
+            "benchmark": -0.8946391458171443
+          },
+          {
+            "date": "2026-04-29",
+            "sample": -3.773850490011604,
+            "benchmark": 0.40075518395708
+          },
+          {
+            "date": "2026-04-30",
+            "sample": -2.0734995994625063,
+            "benchmark": 0.6212815915977776
+          },
+          {
+            "date": "2026-05-06",
+            "sample": 0.2849673382481798,
+            "benchmark": 2.578096492202242
+          },
+          {
+            "date": "2026-05-07",
+            "sample": 5.760866157673992,
+            "benchmark": 3.6526471101521407
+          },
+          {
+            "date": "2026-05-08",
+            "sample": 8.626066886620201,
+            "benchmark": 3.6369405530611854
+          },
+          {
+            "date": "2026-05-11",
+            "sample": 14.872445923865087,
+            "benchmark": 5.241547809807856
+          },
+          {
+            "date": "2026-05-12",
+            "sample": 16.625417374265204,
+            "benchmark": 4.8011296028938055
+          },
+          {
+            "date": "2026-05-13",
+            "sample": 19.40240646019004,
+            "benchmark": 6.088591328076642
+          },
+          {
+            "date": "2026-05-14",
+            "sample": 20.388579201760624,
+            "benchmark": 3.963922514318341
+          },
+          {
+            "date": "2026-05-15",
+            "sample": 18.23916561553997,
+            "benchmark": 2.8278148847392437
+          },
+          {
+            "date": "2026-05-18",
+            "sample": 20.362825367329304,
+            "benchmark": 2.762291570814357
+          },
+          {
+            "date": "2026-05-19",
+            "sample": 24.373254624531338,
+            "benchmark": 3.5368310831178196
+          },
+          {
+            "date": "2026-05-20",
+            "sample": 25.278545397142462,
+            "benchmark": 3.5214418302105255
+          },
+          {
+            "date": "2026-05-21",
+            "sample": 17.567578179676428,
+            "benchmark": 1.0366327680030318
+          },
+          {
+            "date": "2026-05-22",
+            "sample": 22.45626050098761,
+            "benchmark": 2.7965604226491747
+          },
+          {
+            "date": "2026-05-25",
+            "sample": 31.25055465820573,
+            "benchmark": 4.073233805587728
+          },
+          {
+            "date": "2026-05-26",
+            "sample": 30.212979113002106,
+            "benchmark": 3.6385270739794473
+          },
+          {
+            "date": "2026-05-27",
+            "sample": 27.614012658761254,
+            "benchmark": 2.2328695403848853
+          },
+          {
+            "date": "2026-05-28",
+            "sample": 34.6121667654536,
+            "benchmark": 2.8140121527502338
+          },
+          {
+            "date": "2026-05-29",
+            "sample": 31.10646746647569,
+            "benchmark": 1.0429788516761462
+          },
+          {
+            "date": "2026-06-01",
+            "sample": 25.220960965087553,
+            "benchmark": 0.2857324173819231
+          },
+          {
+            "date": "2026-06-02",
+            "sample": 32.09529237350307,
+            "benchmark": 1.0377433326458352
+          },
+          {
+            "date": "2026-06-03",
+            "sample": 39.69326384584274,
+            "benchmark": 1.471974107978613
+          },
+          {
+            "date": "2026-06-04",
+            "sample": 39.0917767438199,
+            "benchmark": 1.0350462470847699
+          },
+          {
+            "date": "2026-06-05",
+            "sample": 34.83010942376032,
+            "benchmark": -0.17308943218417028
+          },
+          {
+            "date": "2026-06-08",
+            "sample": 26.6629625355512,
+            "benchmark": -2.9169773603465066
+          },
+          {
+            "date": "2026-06-09",
+            "sample": 31.68301401276364,
+            "benchmark": -0.7672415160793977
+          },
+          {
+            "date": "2026-06-10",
+            "sample": 26.73789016513881,
+            "benchmark": -2.054068632894923
+          },
+          {
+            "date": "2026-06-11",
+            "sample": 25.47267686738415,
+            "benchmark": -2.575716710824838
+          },
+          {
+            "date": "2026-06-12",
+            "sample": 25.578122934242092,
+            "benchmark": -1.6950389490885454
+          },
+          {
+            "date": "2026-06-15",
+            "sample": 36.15602665449286,
+            "benchmark": 1.2225730196252504
+          },
+          {
+            "date": "2026-06-16",
+            "sample": 38.532855256095736,
+            "benchmark": 1.8743158128539772
+          },
+          {
+            "date": "2026-06-17",
+            "sample": 42.67746676908518,
+            "benchmark": 2.7600704415287503
+          },
+          {
+            "date": "2026-06-18",
+            "sample": 50.98600595887144,
+            "benchmark": 3.1132299979375055
+          },
+          {
+            "date": "2026-06-22",
+            "sample": 53.517905822219085,
+            "benchmark": 5.09130427884692
+          },
+          {
+            "date": "2026-06-23",
+            "sample": 47.605433789834386,
+            "benchmark": 2.8631943012168426
+          },
+          {
+            "date": "2026-06-24",
+            "sample": 51.67971823062016,
+            "benchmark": 3.619647475051946
+          },
+          {
+            "date": "2026-06-25",
+            "sample": 55.129683471238906,
+            "benchmark": 4.491916675921348
+          },
+          {
+            "date": "2026-06-26",
+            "sample": 44.58210549541448,
+            "benchmark": 1.553362631086297
+          },
+          {
+            "date": "2026-06-29",
+            "sample": 43.99081063103815,
+            "benchmark": 2.2243023274261864
+          },
+          {
+            "date": "2026-06-30",
+            "sample": 51.80340452086386,
+            "benchmark": 3.942821786105233
+          },
+          {
+            "date": "2026-07-01",
+            "sample": 43.8963272487399,
+            "benchmark": 4.125906300074567
+          },
+          {
+            "date": "2026-07-02",
+            "sample": 29.55693681937208,
+            "benchmark": 1.1622852247306747
+          },
+          {
+            "date": "2026-07-03",
+            "sample": 28.313163507166824,
+            "benchmark": 1.6071456902159165
+          },
+          {
+            "date": "2026-07-06",
+            "sample": 23.428145661775478,
+            "benchmark": 0.7581983468452069
+          },
+          {
+            "date": "2026-07-07",
+            "sample": 26.671079211345546,
+            "benchmark": -0.9054274880614388
+          },
+          {
+            "date": "2026-07-08",
+            "sample": 24.713467320073065,
+            "benchmark": -2.316796496961826
+          },
+          {
+            "date": "2026-07-09",
+            "sample": 34.60997884423244,
+            "benchmark": 0.021100728213108155
+          },
+          {
+            "date": "2026-07-10",
+            "sample": 30.776485964728668,
+            "benchmark": -1.395979755993093
+          },
+          {
+            "date": "2026-07-13",
+            "sample": 25.689886937564193,
+            "benchmark": -4.782567308149965
+          },
+          {
+            "date": "2026-07-14",
+            "sample": 34.676537882556545,
+            "benchmark": -2.9177706208056486
+          },
+          {
+            "date": "2026-07-15",
+            "sample": 29.412573853161973,
+            "benchmark": -3.6083831765321928
+          },
+          {
+            "date": "2026-07-16",
+            "sample": 22.93952482606365,
+            "benchmark": -5.498881502752617
+          },
+          {
+            "date": "2026-07-17",
+            "sample": 9.456357688681218,
+            "benchmark": -10.016499817550095
+          },
+          {
+            "date": "2026-07-20",
+            "sample": 5.24389854818843,
+            "benchmark": -10.54211419777571
+          },
+          {
+            "date": "2026-07-21",
+            "sample": 14.881785298890582,
+            "benchmark": -7.446653234122902
+          },
+          {
+            "date": "2026-07-22",
+            "sample": 11.190871036661903,
+            "benchmark": -8.128381272707086
+          },
+          {
+            "date": "2026-07-23",
+            "sample": 10.388704146975341,
+            "benchmark": -7.7266741761990225
+          },
+          {
+            "date": "2026-07-24",
+            "sample": 7.2864751552192315,
+            "benchmark": -9.77043042312513
+          },
+          {
+            "date": "2026-07-27",
+            "sample": 10.797690878134384,
+            "benchmark": -7.858038108232456
+          },
+          {
+            "date": "2026-07-28",
+            "sample": -3.2233437277625643,
+            "benchmark": -10.382034237121418
+          },
+          {
+            "date": "2026-07-29",
+            "sample": -3.628953723604372,
+            "benchmark": -9.68983516047659
+          },
+          {
+            "date": "2026-07-30",
+            "sample": -13.558967476939179,
+            "benchmark": -11.450397423490033
+          },
+          {
+            "date": "2026-07-31",
+            "sample": -9.365813234302395,
+            "benchmark": -9.865938982405487
+          },
+          {
+            "date": "2026-08-03",
+            "sample": -9.240840466261497,
+            "benchmark": -10.320794529675881
+          },
+          {
+            "date": "2026-08-04",
+            "sample": 1.583963436008255,
+            "benchmark": -8.515968333042478
+          },
+          {
+            "date": "2026-08-05",
+            "sample": -0.42534010118130955,
+            "benchmark": -6.683219368247373
+          },
+          {
+            "date": "2026-08-06",
+            "sample": 1.3749249788970814,
+            "benchmark": -6.453015183005196
+          },
+          {
+            "date": "2026-08-07",
+            "sample": 3.978804847720054,
+            "benchmark": -5.1530199425679495
+          },
+          {
+            "date": "2026-08-10",
+            "sample": -1.3607559027652807,
+            "benchmark": -4.657549459789633
+          },
+          {
+            "date": "2026-08-11",
+            "sample": 0.82084879472611,
+            "benchmark": -5.338801542098337
+          },
+          {
+            "date": "2026-08-12",
+            "sample": 4.3519817405450505,
+            "benchmark": -4.427186622455615
+          },
+          {
+            "date": "2026-08-13",
+            "sample": 6.587781577519429,
+            "benchmark": -5.232821944757338
+          },
+          {
+            "date": "2026-08-14",
+            "sample": 11.353822454188636,
+            "benchmark": -4.951214481762944
+          },
+          {
+            "date": "2026-08-17",
+            "sample": 16.43991639909257,
+            "benchmark": -3.0207358284019104
+          },
+          {
+            "date": "2026-08-18",
+            "sample": 15.0369777992678,
+            "benchmark": -3.261887007980202
+          },
+          {
+            "date": "2026-08-19",
+            "sample": 5.05581200799562,
+            "benchmark": -7.245323729593379
+          },
+          {
+            "date": "2026-08-20",
+            "sample": 6.080198991260488,
+            "benchmark": -6.673541590645882
+          },
+          {
+            "date": "2026-08-21",
+            "sample": 8.913304109176446,
+            "benchmark": -6.361790230204201
+          },
+          {
+            "date": "2026-08-24",
+            "sample": 2.189431516722551,
+            "benchmark": -7.688121717884854
+          },
+          {
+            "date": "2026-08-25",
+            "sample": 2.0580539149291797,
+            "benchmark": -7.45950405356095
+          },
+          {
+            "date": "2026-08-26",
+            "sample": 3.459305232822618,
+            "benchmark": -6.911837032571288
+          },
+          {
+            "date": "2026-08-27",
+            "sample": 7.02819942756528,
+            "benchmark": -5.46032904443845
+          },
+          {
+            "date": "2026-08-28",
+            "sample": 5.025839974332071,
+            "benchmark": -5.839507543906974
+          },
+          {
+            "date": "2026-08-31",
+            "sample": 5.5528813297958495,
+            "benchmark": -5.2953308689375085
+          },
+          {
+            "date": "2026-09-01",
+            "sample": 4.308934510100968,
+            "benchmark": -5.774301534165726
+          },
+          {
+            "date": "2026-09-02",
+            "sample": 1.186739032958619,
+            "benchmark": -7.016388761085812
+          },
+          {
+            "date": "2026-09-03",
+            "sample": 1.4585345502568072,
+            "benchmark": -6.915961986958797
+          },
+          {
+            "date": "2026-09-04",
+            "sample": 0.5154401015571365,
+            "benchmark": -7.503609335089079
+          },
+          {
+            "date": "2026-09-07",
+            "sample": 9.44541801313573,
+            "benchmark": -6.504894417032892
+          },
+          {
+            "date": "2026-09-08",
+            "sample": 9.689971520408653,
+            "benchmark": -6.478716821881303
+          },
+          {
+            "date": "2026-09-09",
+            "sample": 10.918071446702788,
+            "benchmark": -6.41065507448717
+          },
+          {
+            "date": "2026-09-10",
+            "sample": 11.866820687726117,
+            "benchmark": -7.159492947914526
+          },
+          {
+            "date": "2026-09-11",
+            "sample": 10.986349019551431,
+            "benchmark": -8.473290920340782
+          },
+          {
+            "date": "2026-09-14",
+            "sample": 7.033380593990575,
+            "benchmark": -8.586568513905856
+          },
+          {
+            "date": "2026-09-15",
+            "sample": 6.047050775723089,
+            "benchmark": -9.192460852596351
+          },
+          {
+            "date": "2026-09-16",
+            "sample": 12.351616272222012,
+            "benchmark": -8.020656502355983
+          },
+          {
+            "date": "2026-09-17",
+            "sample": 13.034461917300257,
+            "benchmark": -8.325268518665418
+          },
+          {
+            "date": "2026-09-18",
+            "sample": 16.58975193496894,
+            "benchmark": -6.997667814250141
+          },
+          {
+            "date": "2026-09-21",
+            "sample": 16.51196658870708,
+            "benchmark": -6.047500436293252
+          },
+          {
+            "date": "2026-09-22",
+            "sample": 14.757534231233956,
+            "benchmark": -6.022433405784455
+          },
+          {
+            "date": "2026-09-23",
+            "sample": 14.207434721282583,
+            "benchmark": -6.432390411067579
+          },
+          {
+            "date": "2026-09-24",
+            "sample": 10.258399047925735,
+            "benchmark": -8.16994812076597
+          },
+          {
+            "date": "2026-09-28",
+            "sample": 0.8388552818104724,
+            "benchmark": -10.67569925909474
+          },
+          {
+            "date": "2026-09-29",
+            "sample": 2.2940444362739267,
+            "benchmark": -10.357601814979933
+          },
+          {
+            "date": "2026-09-30",
+            "sample": 2.2811412284854873,
+            "benchmark": -10.389332233345506
+          },
+          {
+            "date": "2026-10-08",
+            "sample": -3.9469729588327573,
+            "benchmark": -11.789278291634275
+          },
+          {
+            "date": "2026-10-09",
+            "sample": -4.984140883413839,
+            "benchmark": -11.625707984959789
+          },
+          {
+            "date": "2026-10-12",
+            "sample": -10.448305685094997,
+            "benchmark": -12.883184464787167
+          },
+          {
+            "date": "2026-10-13",
+            "sample": -7.054405008934765,
+            "benchmark": -12.880487379226102
+          },
+          {
+            "date": "2026-10-14",
+            "sample": -11.353865001300326,
+            "benchmark": -14.251400104710388
+          },
+          {
+            "date": "2026-10-15",
+            "sample": -16.409334701588516,
+            "benchmark": -16.18870079802003
+          },
+          {
+            "date": "2026-10-16",
+            "sample": -16.68390289960818,
+            "benchmark": -16.08303850486269
+          },
+          {
+            "date": "2026-10-19",
+            "sample": -18.15253874841763,
+            "benchmark": -16.03798131078359
+          },
+          {
+            "date": "2026-10-20",
+            "sample": -18.43599901353905,
+            "benchmark": -15.810156906918827
+          },
+          {
+            "date": "2026-10-21",
+            "sample": -16.56061778337933,
+            "benchmark": -16.17616728276563
+          },
+          {
+            "date": "2026-10-22",
+            "sample": -23.565720364051643,
+            "benchmark": -18.230235915660554
+          },
+          {
+            "date": "2026-10-23",
+            "sample": -22.155554186399502,
+            "benchmark": -16.648474560137082
+          },
+          {
+            "date": "2026-10-26",
+            "sample": -25.464100261958567,
+            "benchmark": -17.279116625152714
+          },
+          {
+            "date": "2026-10-27",
+            "sample": -28.355471638004627,
+            "benchmark": -19.112500198315118
+          },
+          {
+            "date": "2026-10-28",
+            "sample": -24.189792798513892,
+            "benchmark": -17.857720804048803
+          },
+          {
+            "date": "2026-10-29",
+            "sample": -32.516635422126306,
+            "benchmark": -19.555932794973906
+          },
+          {
+            "date": "2026-10-30",
+            "sample": -37.72956184737718,
+            "benchmark": -21.427551522266832
+          }
+        ],
+        "scopeNote": "固定6家公司整体财务，含华工多元业务和剑桥接入业务，非纯光模块收入、非全行业增速；价格为6只A股等权，不含H股。",
+        "sources": [
+          {
+            "name": "中际旭创财务/季度序列",
+            "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22300308%22%29%29%28REPORT_DATE%3E%3D%272022-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-01%27%29%28NOTICE_DATE%3C%3D%272026-11-01%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
+            "date": "2026-11-01"
+          },
+          {
+            "name": "新易盛财务/季度序列",
+            "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22300502%22%29%29%28REPORT_DATE%3E%3D%272022-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-01%27%29%28NOTICE_DATE%3C%3D%272026-11-01%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
+            "date": "2026-11-01"
+          },
+          {
+            "name": "天孚通信财务/季度序列",
+            "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22300394%22%29%29%28REPORT_DATE%3E%3D%272022-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-01%27%29%28NOTICE_DATE%3C%3D%272026-11-01%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
+            "date": "2026-11-01"
+          },
+          {
+            "name": "光迅科技财务/季度序列",
+            "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22002281%22%29%29%28REPORT_DATE%3E%3D%272022-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-01%27%29%28NOTICE_DATE%3C%3D%272026-11-01%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
+            "date": "2026-11-01"
+          },
+          {
+            "name": "华工科技财务/季度序列",
+            "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22000988%22%29%29%28REPORT_DATE%3E%3D%272022-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-01%27%29%28NOTICE_DATE%3C%3D%272026-11-01%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
+            "date": "2026-11-01"
+          },
+          {
+            "name": "剑桥科技财务/季度序列",
+            "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22603083%22%29%29%28REPORT_DATE%3E%3D%272022-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-01%27%29%28NOTICE_DATE%3C%3D%272026-11-01%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
+            "date": "2026-11-01"
+          },
+          {
+            "name": "同起止日中证全指行情",
+            "url": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh000985%2Cday%2C%2C%2C400%2Cqfq",
+            "date": "2026-10-30"
+          }
+        ]
+      }
     },
     {
       "id": "pcb",
@@ -3549,7 +4875,7 @@
             "ytdOperatingCashFlow": 3520617335.05,
             "ytdParentNetProfit": 3383763767.52,
             "cashConversion": 1.0404441849172887,
-            "peTtm": 30.700580623107776,
+            "peTtm": 30.700670581816738,
             "price": 139.04,
             "capYi": 1366.46,
             "priceDate": "2026-10-30",
@@ -3573,7 +4899,122 @@
             "downVolume50": 8200316,
             "upDownVolumeRatio50": 0.7364554000114142,
             "marketCapBasis": "total_shares_at_A_price",
-            "financialDisclosureDate": "2026-10-30"
+            "financialDisclosureDate": "2026-10-30",
+            "totalShares": 982784813,
+            "ttmParentNetProfit": 4450925592.5
+          },
+          "hShare": {
+            "verified": true,
+            "code": "02476",
+            "listingDate": "2026-04-21",
+            "price": 123.1,
+            "priceDate": "2026-10-30",
+            "peTtm": 23.049526476058336,
+            "fxCnyPerHkd": 0.848,
+            "fxNote": "取交易日2026-10-30的最后市场报价，时刻为北京时间次日04:56:03；不是人民币官方中间价、不是港股收盘同一时点的可执行换汇价。",
+            "relativeToA": -24.92174913693901,
+            "totalShares": 982784813,
+            "metrics": {
+              "barCount": 133,
+              "startDate": "2026-04-21",
+              "endDate": "2026-10-30",
+              "close": 123.1,
+              "ma50": 193.648,
+              "ma200": null,
+              "ma50Prior20": 215.94799999999998,
+              "return126": -61.651090342679126,
+              "excess126": -50.86127239036323,
+              "return126Start": "2026-04-29",
+              "benchmarkReturn126": -10.789817952315895,
+              "high252": 475,
+              "highestClose252": 438.2,
+              "distanceTo252HighPct": -74.0842105263158,
+              "distanceTo252HighestClosePct": -71.9078046554085,
+              "upVolume50": 73944137,
+              "downVolume50": 108765480,
+              "upDownVolumeRatio50": 0.67984931432289,
+              "benchmarkName": "恒生指数",
+              "totalShares": 982784813,
+              "ttmParentNetProfit": 4450925592.5,
+              "priceCny": 104.38879999999999,
+              "quoteTimeBeijing": "2026-10-30T16:08:14+08:00",
+              "turnoverHkd": 1232317950
+            },
+            "assessments": {
+              "S": {
+                "score": 2,
+                "missing": true,
+                "reason": "未取得该H股完整未来六个月解禁/持仓供需证据；当日成交与托管股数不能证明机构持续吸纳，保守2分。",
+                "sourceIds": [
+                  "ah-sh-hshares"
+                ]
+              },
+              "I": {
+                "score": 2,
+                "missing": true,
+                "reason": "未取得该H股连续可比的机构实益持仓变化。HKSCC Nominees为代理托管，不等于一个机构；A股基金名单与员工持股不能沿用为H股机构支持。",
+                "sourceIds": []
+              }
+            },
+            "sources": [
+              {
+                "id": "ah-sh-listed",
+                "name": "胜宏科技公司官网上市公告",
+                "url": "https://www.shpcb.com/newsshow-19-565-1.html",
+                "date": "2026-04-23",
+                "pages": "上市日2026-04-21、代码2476",
+                "kind": "listing"
+              },
+              {
+                "id": "ah-sh-shares",
+                "name": "胜宏科技完成注册资本工商变更",
+                "url": "https://static.cninfo.com.cn/finalpage/2026-09-18/1225573325.PDF",
+                "date": "2026-09-18",
+                "pages": "p1",
+                "kind": "announcement"
+              },
+              {
+                "id": "ah-sh-hshares",
+                "name": "胜宏科技悉数行使超额配售权",
+                "url": "https://disc.static.szse.cn/download/disc/disk03/finalpage/2026-04-22/36bbf1fc-a0fa-4663-9668-e90248d1ceed.PDF",
+                "date": "2026-04-22",
+                "pages": "H股110,227,500、全部982,784,813",
+                "kind": "announcement"
+              },
+              {
+                "id": "ah-02476-quote",
+                "name": "腾讯H股报价",
+                "url": "https://qt.gtimg.cn/q=hk02476",
+                "date": "2026-10-30",
+                "kind": "market_hk"
+              },
+              {
+                "id": "ah-02476-daily",
+                "name": "腾讯H股前复权日线",
+                "url": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=hk02476%2Cday%2C%2C%2C400%2Cqfq",
+                "date": "2026-10-30",
+                "kind": "market_hk"
+              },
+              {
+                "id": "ah-fx",
+                "name": "港元/人民币交易日末参考报价",
+                "url": "https://qt.gtimg.cn/q=whHKDCNY",
+                "date": "2026-10-30",
+                "kind": "fx"
+              },
+              {
+                "id": "ah-hsi",
+                "name": "恒生指数历史行情",
+                "url": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=hkHSI%2Cday%2C%2C%2C400%2Cqfq",
+                "date": "2026-10-30",
+                "kind": "market_hk"
+              }
+            ],
+            "valuationView": "H股按本市场价格与同集团盈利单独估值；H较A折溢价来自价格与参考汇率，不代表公允价值差或无风险套利。H股PE比较锚仍为本组6家A股中位数，仅用于统一研究门槛，未建立独立H股同业估值模型。",
+            "notes": [
+              "同一已发行股本982,784,813股用于A/H两行；不使用H股流通市值/集团总利润。",
+              "A股员工持股计划买入不是H股机构持仓证据，不能搬用到H股I项。"
+            ]
           }
         },
         {
@@ -3850,7 +5291,7 @@
             "ytdOperatingCashFlow": 1217762346.02,
             "ytdParentNetProfit": 1615766253.89,
             "cashConversion": 0.7536748233775801,
-            "peTtm": 37.05271161004344,
+            "peTtm": 37.05289528388326,
             "price": 65.43,
             "capYi": 703.49,
             "priceDate": "2026-10-30",
@@ -3874,7 +5315,115 @@
             "downVolume50": 9061903,
             "upDownVolumeRatio50": 0.9754418028972501,
             "marketCapBasis": "total_shares_at_A_price",
-            "financialDisclosureDate": "2026-10-27"
+            "financialDisclosureDate": "2026-10-27",
+            "totalShares": 1075184911,
+            "ttmParentNetProfit": 1898619478.66
+          },
+          "hShare": {
+            "verified": true,
+            "code": "03228",
+            "listingDate": "2026-09-29",
+            "price": 50.5,
+            "priceDate": "2026-10-30",
+            "peTtm": 24.25115677268862,
+            "fxCnyPerHkd": 0.848,
+            "fxNote": "取交易日2026-10-30的最后市场报价，时刻为北京时间次日04:56:03；不是人民币官方中间价、不是港股收盘同一时点的可执行换汇价。",
+            "relativeToA": -34.5499006571909,
+            "totalShares": 1075184911,
+            "metrics": {
+              "barCount": 22,
+              "startDate": "2026-09-29",
+              "endDate": "2026-10-30",
+              "close": 50.5,
+              "ma50": null,
+              "ma200": null,
+              "ma50Prior20": null,
+              "high252": 88,
+              "highestClose252": 81.25,
+              "distanceTo252HighPct": -42.61363636363637,
+              "distanceTo252HighestClosePct": -37.846153846153854,
+              "upVolume50": 30035505,
+              "downVolume50": 47320653,
+              "upDownVolumeRatio50": 0.6347229612406237,
+              "benchmarkName": "恒生指数",
+              "return126": null,
+              "excess126": null,
+              "return126Start": null,
+              "benchmarkReturn126": null,
+              "lMissingReason": "该H股上市交易历史不足127个收盘观测值，不能计算126交易日收益；不沿用A股走势。",
+              "totalShares": 1075184911,
+              "ttmParentNetProfit": 1898619478.66,
+              "priceCny": 42.824,
+              "quoteTimeBeijing": "2026-10-30T16:08:15+08:00",
+              "turnoverHkd": 136625239.46
+            },
+            "assessments": {
+              "S": {
+                "score": 2,
+                "missing": true,
+                "reason": "未取得该H股完整未来六个月解禁/持仓供需证据；当日成交与托管股数不能证明机构持续吸纳，保守2分。",
+                "sourceIds": [
+                  "ah-jw-shares"
+                ]
+              },
+              "I": {
+                "score": 2,
+                "missing": true,
+                "reason": "未取得该H股连续可比的机构实益持仓变化。HKSCC Nominees为代理托管，不等于一个机构；A股基金名单与员工持股不能沿用为H股机构支持。",
+                "sourceIds": []
+              }
+            },
+            "sources": [
+              {
+                "id": "ah-jw-listed",
+                "name": "景旺电子H股挂牌上市暨股份变动",
+                "url": "https://www.kinwong.com/wp-content/uploads/2026/09/海外监管公告-%20关于%20H%20股挂牌并上市交易暨股份变动的公告.pdf",
+                "date": "2026-09-30",
+                "pages": "p2 代码3228、上市日9/29",
+                "kind": "listing"
+              },
+              {
+                "id": "ah-jw-shares",
+                "name": "景旺电子变更注册资本并修订章程",
+                "url": "https://www.kinwong.com/wp-content/uploads/2026/10/關於變更註冊資本並修訂《公司章程》的公告.pdf",
+                "date": "2026-10-26",
+                "pages": "p1–2 注销164,518股后全部股本",
+                "kind": "announcement"
+              },
+              {
+                "id": "ah-03228-quote",
+                "name": "腾讯H股报价",
+                "url": "https://qt.gtimg.cn/q=hk03228",
+                "date": "2026-10-30",
+                "kind": "market_hk"
+              },
+              {
+                "id": "ah-03228-daily",
+                "name": "腾讯H股前复权日线",
+                "url": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=hk03228%2Cday%2C%2C%2C400%2Cqfq",
+                "date": "2026-10-30",
+                "kind": "market_hk"
+              },
+              {
+                "id": "ah-fx",
+                "name": "港元/人民币交易日末参考报价",
+                "url": "https://qt.gtimg.cn/q=whHKDCNY",
+                "date": "2026-10-30",
+                "kind": "fx"
+              },
+              {
+                "id": "ah-hsi",
+                "name": "恒生指数历史行情",
+                "url": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=hkHSI%2Cday%2C%2C%2C400%2Cqfq",
+                "date": "2026-10-30",
+                "kind": "market_hk"
+              }
+            ],
+            "valuationView": "H股按本市场价格与同集团盈利单独估值；H较A折溢价来自价格与参考汇率，不代表公允价值差或无风险套利。H股PE比较锚仍为本组6家A股中位数，仅用于统一研究门槛，未建立独立H股同业估值模型。",
+            "notes": [
+              "Q3期末股本1,075,349,429股，10月已注销164,518股后按1,075,184,911股；与10月26日章程及腾讯当前总股本一致。",
+              "H股上市历史不足126交易日，不复制A股相对强度评分。"
+            ]
           }
         },
         {
@@ -4196,7 +5745,1488 @@
           }
         }
       ],
-      "note": "生益科技控股生益电子，母子公司财务与产业暴露有重叠，不能将二者当独立分散配置；覆铜板材料厂与PCB制造厂估值也不完全可比。"
+      "note": "生益科技控股生益电子，母子公司财务与产业暴露有重叠，不能将二者当独立分散配置；覆铜板材料厂与PCB制造厂估值也不完全可比。",
+      "outlook": {
+        "headline": "高端互连仍在升级周期；利润兑现、材料传导与海外良率决定分化",
+        "summary": "研究判断：未来2–4个季度的主线仍是AI服务器、高速交换机和光模块配套带来的高层数、高密度、低损耗材料升级，而不是所有PCB产能普遍短缺。美国云厂商是重要终端需求锚，但订单通常经过芯片/交换机平台、ODM/EMS和客户认证链条传导；资本开支总额不等于PCB可获得订单。国内龙头已有出货与盈利印证，TTM、台光等海外厂商也在扩张，持续领先要靠客户协同、批量良率和现金回报证明。盈利上行与股价上行必须分开判断。",
+        "sensitivity": "高端板高敏感 · 材料端高但间接",
+        "flow": [
+          {
+            "title": "终端预算",
+            "text": "美国hyperscaler批准服务器、网络和数据中心相关预算。先区分设备与土建、电力、融资租赁等项目，不能把总Capex全部分配给PCB。",
+            "type": "research_judgment",
+            "sourceIds": [
+              "pcb-alphabet-call",
+              "pcb-msft-call"
+            ]
+          },
+          {
+            "title": "平台与整机设计",
+            "text": "GPU/自研ASIC、交换机与机架方案确定板层、互连架构和材料要求，ODM/EMS或设备厂据此采购；同一云预算可由不同架构和供应商承接。",
+            "type": "research_judgment",
+            "sourceIds": [
+              "pcb-hudian-ir",
+              "pcb-ttm-expansion"
+            ]
+          },
+          {
+            "title": "认证与订单",
+            "text": "PCB/材料厂通过技术验证、可靠性和区域生产要求后进入订单与排产；送样、客户预测、已下单与实际交付不是相同确定性。",
+            "type": "research_judgment",
+            "sourceIds": [
+              "pcb-hudian-ir",
+              "pcb-shengyi-products"
+            ]
+          },
+          {
+            "title": "交付—利润—现金",
+            "text": "出货受材料、良率和交期约束；提价未必完全覆盖成本，利润也未必同步变现金。增长最终需要毛利率、存货周转和回款共同印证。",
+            "type": "research_judgment",
+            "sourceIds": [
+              "pcb-hudian-q3",
+              "pcb-shennan-q3",
+              "pcb-victory-q3"
+            ]
+          }
+        ],
+        "capexNote": "与云硬件支出高度相关，但多环节、非线性、公司间暴露差异大 这里的“相关度”是业务敏感性判断，不是统计相关系数ρ、收入弹性或固定滞后月数；未取得足够长、同口径的逐厂商AI硬件资本开支与PCB分业务收入序列。 未获得足够公开证据把本组每家公司逐一直接连到Google、Microsoft、Amazon或Meta；不绘制未经披露的客户专属供应关系。这里展示的是行业终端传导路径，最终客户与直接合同客户可能不同。",
+        "capexSourceIds": [
+          "pcb-alphabet-call",
+          "pcb-msft-call"
+        ],
+        "customers": [
+          {
+            "name": "Alphabet",
+            "fact": "10月28日维持2026年Capex指引1950—2050亿美元；Q3技术基础设施投资约65%用于服务器与网络设备，其余约35%用于数据中心。",
+            "readThrough": "设备支出是比总Capex更接近PCB需求的方向性锚，但没有披露PCB采购额，也不能由此指认具体A股直接大客户。",
+            "type": "management_guidance",
+            "sourceIds": [
+              "pcb-alphabet-call"
+            ]
+          },
+          {
+            "name": "Microsoft",
+            "fact": "10月28日预计自然年2026支出约1700亿美元，受第三方容量交付延迟影响；随后财年下半年预计因CPU、存储、GPU及顺延容量交付而加速。",
+            "readThrough": "预算调整可能是交付节奏而非终端需求等比例下降；应核对设备结构、排产与供应商交期，不用一个总额同比直接预测板厂利润。",
+            "type": "management_guidance",
+            "sourceIds": [
+              "pcb-msft-call"
+            ]
+          }
+        ],
+        "analysis": [
+          {
+            "title": "结构升级已进入报表，但不是普遍同速增长",
+            "text": "已披露 / 公司表述：2026Q3沪电单季营收同比+90.02%、扣非+159.50%；深南分别+66.29%、+102.78%；景旺分别+66.06%、+337.47%；胜宏分别+34.30%、+16.16%。均为公司整体口径，不等于纯AI收入增速。 研究判断：同一AI需求背景下利润弹性差距很大：技术路线、业务结构、良率、材料价格与费用共同影响业绩。优先跟踪已量产的高端产品，而不是依据行业标题给所有公司同样增长假设。",
+            "sourceIds": [
+              "pcb-hudian-q3",
+              "pcb-shennan-q3",
+              "pcb-kinwong-q3",
+              "pcb-victory-q3"
+            ]
+          },
+          {
+            "title": "高速升级提高材料和制造门槛，不是简单增加面积",
+            "text": "已披露 / 公司表述：沪电10月20日披露适配224Gbps产品已小批量供货，1.6T交换机PCB已批量出货，448Gbps和3.2T配套仍属预研。生益科技官网提供极低损耗高速材料系列；台光也公开多种低介损覆铜板规格。 研究判断：成长来自单位价值量、产品组合与良率提升，不仅来自板面积。更高规格有机会提高附加值，也会增加报废、加工和认证成本；不同厂商的材料等级名称不能机械视作同等性能、良率或客户资格。",
+            "sourceIds": [
+              "pcb-hudian-ir",
+              "pcb-shengyi-products",
+              "pcb-emc-products"
+            ]
+          },
+          {
+            "title": "国际收入验证需求，也验证竞争并未退出",
+            "text": "已披露 / 公司表述：TTM2026Q3数据中心与网络收入同比+115%，占销售额41%；台光2026Q3收入608.85亿新台币，按同表同比计算+142.13%，毛利率约37.70%，上年同期约30.13%。两者口径不同，不直接与A股扣非增速横比。 研究判断：AI互连景气并非仅由A股叙事支撑，但海外/台湾厂商同样受益并投入产能。行业增长不能自动变成某家A股公司的份额增长，需观察设计导入、扩产速度和毛利维持能力。",
+            "sourceIds": [
+              "pcb-ttm-q3",
+              "pcb-emc-q3"
+            ]
+          },
+          {
+            "title": "利润增长与价格相对强势是两条独立验证线",
+            "text": "已披露 / 公司表述：本模块六家代表公司的最新Q3扣非均为正增长，但前126交易日相对中证全指的超额收益方向分化；不能由财报增长直接推导未来股价上涨。具体股价与评分沿用下方同一日期的可复算数据。 研究判断：观察盈利上修、估值消化和相对价格强度能否形成共振。若利润增长仍强、股价却持续跑输，应先核对预期是否过高、现金与供给是否恶化，不把回撤本身当作低估证明。",
+            "sourceIds": [
+              "pcb-quant-inputs"
+            ]
+          },
+          {
+            "title": "制造端：高阶量产与海外经营能力竞争 · 本组沪电、深南、胜宏、景旺、生益电子；国际对照TTM及台湾金像电子等，业务组合不完全相同。",
+            "text": "公开证据：沪电泰国基地前三季已扭亏；TTM10月12日宣布额外4亿美元计划，扩充中国及马来西亚现有厂AI互连能力，属于此前2025—2029年12亿美元承诺之外的增量。 研究判断：竞争由扩产公告转向有效良率、客户资格、交付速度和区域协同。海外建厂不自动等于客户订单、盈利或免关税；TTM利用现有厂快速扩容，意味着国内厂不能只靠需求上行维持份额。",
+            "sourceIds": [
+              "pcb-hudian-q3",
+              "pcb-ttm-expansion",
+              "pcb-gce-profile"
+            ]
+          },
+          {
+            "title": "材料端：电性能、可靠性与认证壁垒竞争 · 本组生益科技；台湾台光EMC等是高速覆铜板重要国际对照。",
+            "text": "公开证据：生益和台光官网均提供低/极低介损系列及具体电性能参数。台光已在最新Q3财报显示高速材料周期中的量价与利润弹性，但公开报表未逐一披露每个材料型号的销量或毛利。 研究判断：可比重点是相同测试条件下的损耗、耐热/翘曲、批次一致性与客户验证，而非仅比型号等级。稀缺原料与产能释放既可能支持材料价格，也可能造成板厂成本压力；材料提价不等于整条链利润同步改善。",
+            "sourceIds": [
+              "pcb-shengyi-products",
+              "pcb-emc-products",
+              "pcb-emc-q3"
+            ]
+          },
+          {
+            "title": "技术路线：价值量可能重新分配 · 高多层板、HDI/mSAP、封装基板与新型光电互连并行演进。",
+            "text": "公开证据：沪电披露超高层堆栈、新材料和高密度互连研究；TTM扩产重点为N+M不对称互连技术。两者技术描述不直接等同，不能仅据产品名称判断谁已取代谁。 研究判断：更高速机架/网络架构有望提高部分板材要求，但也可能改变电连接与光连接的分工。需以平台定型、BOM、认证和实际份额检验，不把所有技术升级预设为PCB单位价值量无上限增加。",
+            "sourceIds": [
+              "pcb-hudian-ir",
+              "pcb-ttm-expansion"
+            ]
+          }
+        ],
+        "scenarios": [
+          {
+            "name": "基准：结构景气延续，盈利继续分化",
+            "outlook": "高端产品收入与单位价值量继续支撑增长，但Q3极高同比随基数抬升趋于正常化；板厂毛利受材料成本、良率与新厂折旧分化，材料厂亦需防价格/库存周期回归。",
+            "condition": "云厂商设备预算兑现；已认证的1.6T交换机、服务器及高阶材料稳步交付，关键材料供应未进一步失衡。",
+            "check": "连续两份经营披露体现高端收入增长、交付稳定，毛利和现金转换不恶化。 已认证项目延迟、客户下调排产，或收入增长同时应收与库存持续更快扩张。",
+            "sourceIds": [
+              "pcb-alphabet-call",
+              "pcb-msft-call",
+              "pcb-hudian-ir",
+              "pcb-hudian-q3",
+              "pcb-victory-q3"
+            ]
+          },
+          {
+            "name": "乐观：高端化与产能良率共同兑现",
+            "outlook": "有效产能和产品组合改善带来经营杠杆，现金回款跟上利润；高端板和高等级材料在各自客户体系中份额提高。此情景不意味着所有公司的股票都会上涨。",
+            "condition": "GPU/ASIC及高速交换平台放量快于当前排产，新产品认证及时；海外基地良率、产品提价和原料保供同步改善。",
+            "check": "量产而非送样的收入占比上升、毛利改善，经营现金增速追上扣非利润，海外基地盈利连续。 增长主要依赖一次性提价或堆积备货，新增产能迟迟不能形成合格交付。",
+            "sourceIds": [
+              "pcb-hudian-ir",
+              "pcb-ttm-expansion",
+              "pcb-emc-q3"
+            ]
+          },
+          {
+            "name": "谨慎：预算移期叠加供给增加与成本压力",
+            "outlook": "板厂可能出现收入增长但利润与现金跟不上，材料端价格与库存面临反转；高估值、高资本开支或新增股本较多的证券更需谨慎。",
+            "condition": "终端容量交付延迟或平台切换使订单后移；国际厂商扩产增加竞争，关键材料涨价/短缺或新厂低良率压缩利润。",
+            "check": "订单/排产连续下修，产品折价、良率/交付恶化，应收存货周转延长，融资增加而自由现金回报偏弱。 预算顺延后迅速转为真实交付，库存和回款恢复且毛利维持。",
+            "sourceIds": [
+              "pcb-msft-call",
+              "pcb-ttm-expansion",
+              "pcb-victory-q3",
+              "pcb-shennan-q3"
+            ]
+          }
+        ],
+        "monitoring": [
+          {
+            "parameter": "云厂商设备支出结构与交付",
+            "baseline": "最新年度/季度Capex口径、服务器网络占比、容量交付延迟与后续补交；区分现金与租赁。",
+            "upside": "设备预算按期交付，排产和实际验收同步。",
+            "downside": "只有总额增长，设备交付/验收持续后移。",
+            "frequency": "每季财报/重要修订",
+            "sourceIds": [
+              "pcb-alphabet-call",
+              "pcb-msft-call"
+            ]
+          },
+          {
+            "parameter": "已量产产品占比与认证转换",
+            "baseline": "1.6T交换机、224Gbps等已量产收入；新平台从研发→验证→小批量→大批量的真实进度。",
+            "upside": "高端量产占比提高、客户资格稳定。",
+            "downside": "新技术反复停在验证，原有产品价格下滑。",
+            "frequency": "月度经营公告/IR、季度",
+            "sourceIds": [
+              "pcb-hudian-ir"
+            ]
+          },
+          {
+            "parameter": "高端材料价格与成本传导",
+            "baseline": "同规格CCL、低损耗玻纤/铜箔等采购交期和价格，板厂提价与毛利；不拼接未经证实报价。",
+            "upside": "新产品溢价覆盖材料与加工成本。",
+            "downside": "成本先涨、报价滞后，或材料去库存价格下调。",
+            "frequency": "IR/季度财报；公开报价仅辅助",
+            "sourceIds": [
+              "pcb-shengyi-products",
+              "pcb-emc-products",
+              "pcb-kinwong-q3"
+            ]
+          },
+          {
+            "parameter": "有效良率与海外基地利润",
+            "baseline": "良率/报废、客户认证、泰国/马来西亚有效产能及基地盈利；无法取得良率时用毛利与爬坡费用交叉验证。",
+            "upside": "新增产能形成合格出货并持续盈利。",
+            "downside": "利用率高但交付延期、报废与折旧吞噬毛利。",
+            "frequency": "季度/产能投产公告",
+            "sourceIds": [
+              "pcb-hudian-q3",
+              "pcb-ttm-expansion"
+            ]
+          },
+          {
+            "parameter": "现金转换与营运资本",
+            "baseline": "CFO/归母净利、应收/存货周转、预付款；与自身历史及季节性比较。",
+            "upside": "回款跟上利润、营运资金周转稳定。",
+            "downside": "连续两次披露收入增长而现金转换下降，且应收/存货快于收入扩张。",
+            "frequency": "每季",
+            "sourceIds": [
+              "pcb-hudian-q3",
+              "pcb-shennan-q3",
+              "pcb-victory-q3"
+            ]
+          },
+          {
+            "parameter": "竞争厂商扩产与订单份额",
+            "baseline": "TTM、台光等同类产品扩产/收入及客户导入；比较同一细分，避免普通板与高端材料混比。",
+            "upside": "本组公司交付和份额保持，质量/成本优势延续。",
+            "downside": "竞争对手有效产能先释放、客户分单或价格竞争加剧。",
+            "frequency": "月度扩产公告/季度",
+            "sourceIds": [
+              "pcb-ttm-q3",
+              "pcb-ttm-expansion",
+              "pcb-emc-q3"
+            ]
+          },
+          {
+            "parameter": "每股价值、融资与内控",
+            "baseline": "A/H增发、转债/可交换债、实际回购用途与执行；项目转固折旧和募集资金合规整改。",
+            "upside": "资本投入按预算形成经营回报，内控问题不再重复。",
+            "downside": "融资持续增加但每股盈利/现金偏弱，或募集资金程序问题反复。",
+            "frequency": "重大公告/季度",
+            "sourceIds": [
+              "pcb-victory-q3",
+              "pcb-shennan-q3",
+              "pcb-sye-cash"
+            ]
+          },
+          {
+            "parameter": "相对价格强度与估值匹配",
+            "baseline": "同币种价格、股类对应TTM估值、126交易日基准超额及趋势；财报与行情日期分别标注。",
+            "upside": "盈利兑现和现金改善后，相对强度恢复而估值未预支全部增长。",
+            "downside": "叙事与估值升温但盈利/现金不跟，或持续跑输且存在经营反证。",
+            "frequency": "价格可日频，研究结论在重要事件后复核",
+            "sourceIds": [
+              "pcb-quant-inputs"
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "id": "pcb-hudian-q3",
+            "name": "沪电股份2026Q3正式报告",
+            "url": "https://static.cninfo.com.cn/finalpage/2026-10-28/1225627804.PDF",
+            "date": "2026-10-28",
+            "pages": "p1–2",
+            "kind": "issuer_filing"
+          },
+          {
+            "id": "pcb-hudian-ir",
+            "name": "沪电股份10月20日投资者活动记录",
+            "url": "https://static.cninfo.com.cn/finalpage/2026-10-20/1225612453.PDF",
+            "date": "2026-10-20",
+            "pages": "p1–2",
+            "kind": "issuer_ir"
+          },
+          {
+            "id": "pcb-shennan-q3",
+            "name": "深南电路2026Q3正式报告",
+            "url": "https://static.cninfo.com.cn/finalpage/2026-10-23/1225616402.PDF",
+            "date": "2026-10-23",
+            "pages": "p2–3",
+            "kind": "issuer_filing"
+          },
+          {
+            "id": "pcb-kinwong-q3",
+            "name": "景旺电子2026Q3正式报告",
+            "url": "https://static.cninfo.com.cn/finalpage/2026-10-27/1225625642.PDF",
+            "date": "2026-10-27",
+            "pages": "p1–3",
+            "kind": "issuer_filing"
+          },
+          {
+            "id": "pcb-victory-q3",
+            "name": "胜宏科技2026Q3正式报告",
+            "url": "https://static.cninfo.com.cn/finalpage/2026-10-30/1225644765.PDF",
+            "date": "2026-10-30",
+            "pages": "p2–4",
+            "kind": "issuer_filing"
+          },
+          {
+            "id": "pcb-shengyi-products",
+            "name": "生益科技高速材料产品目录",
+            "url": "https://www.syst.com.cn/cn/Product/list_255.aspx?parentid=238",
+            "date": "2026-11-01",
+            "pages": "产品参数，页面未列发布日期；日期为检索日",
+            "kind": "issuer_product"
+          },
+          {
+            "id": "pcb-emc-products",
+            "name": "台光EMC覆铜板产品参数目录",
+            "url": "https://www.emctw.com/en-global/product_name/index",
+            "date": "2026-11-01",
+            "pages": "By Name产品表；日期为检索日",
+            "kind": "issuer_product"
+          },
+          {
+            "id": "pcb-emc-q3",
+            "name": "台光EMC2026Q3合并财务报告",
+            "url": "https://www.emctw.com/upload/media/New_Investors/Financial_Information/Quarterly_Results/Consolidated/CH/115/115Q3_%E5%90%88%E4%BD%B5_%E5%AE%8C%E7%A8%BF%E8%B2%A1%E5%A0%B1_IMSv2-%E9%9B%BB%E5%AD%90%E6%9B%B8.pdf",
+            "date": "2026-10-28",
+            "pages": "p3核阅日期；p5单季损益；p7现金流",
+            "kind": "issuer_filing",
+            "calculation": "Q3营收同比=(60,884,539/25,145,642-1)*100=142.1276%；毛利率=22,950,787/60,884,539=37.6956%，上年=7,575,849/25,145,642=30.1279%；报表单位新台币千元。"
+          },
+          {
+            "id": "pcb-ttm-q3",
+            "name": "TTM2026Q3业绩公告SEC附件99.1",
+            "url": "https://www.sec.gov/Archives/edgar/data/1116942/000119312526428263/d282109dex991.htm",
+            "date": "2026-10-22",
+            "pages": "Q3 highlights及Supplemental Data",
+            "kind": "issuer_filing"
+          },
+          {
+            "id": "pcb-ttm-expansion",
+            "name": "TTM额外4亿美元AI互连扩产计划",
+            "url": "https://investors.ttm.com/news-events/press-releases/detail/417/ttm-technologies-announces-400-million-in-planned",
+            "date": "2026-10-12",
+            "pages": "公司新闻稿",
+            "kind": "issuer_announcement"
+          },
+          {
+            "id": "pcb-gce-profile",
+            "name": "台湾金像电子公司与主要商品",
+            "url": "https://www.gce.com.tw/",
+            "date": "2026-11-01",
+            "pages": "公司介绍，检索日；只验证PCB制造业务，不据此断言2026份额",
+            "kind": "issuer_profile"
+          },
+          {
+            "id": "pcb-alphabet-call",
+            "name": "Alphabet2026Q3官方说明会",
+            "url": "https://s206.q4cdn.com/479360582/files/doc_events/2026/Oct/28/2026_Q3_Earnings_Transcript.pdf",
+            "date": "2026-10-28",
+            "pages": "p10设备/机房支出结构；p12全年指引",
+            "kind": "issuer_transcript"
+          },
+          {
+            "id": "pcb-msft-call",
+            "name": "Microsoft FY27Q1官方说明会",
+            "url": "https://www.microsoft.com/en-us/Investor/events/fy-2027/earnings-fy-2027-q1",
+            "date": "2026-10-28",
+            "pages": "资本开支展望段落",
+            "kind": "issuer_transcript"
+          },
+          {
+            "id": "pcb-sye-cash",
+            "name": "生益电子募集资金现金管理补充确认与增额公告",
+            "url": "https://static.cninfo.com.cn/finalpage/2026-10-30/1225645452.PDF",
+            "date": "2026-10-30",
+            "pages": "p5、8；沿用本模块已核验的10月30日公告证据",
+            "kind": "issuer_announcement"
+          },
+          {
+            "id": "pcb-quant-inputs",
+            "name": "本模块同日财务及价格原始指标",
+            "url": "https://raw.githubusercontent.com/xuepenggao-bit/ai-dashboard/main/data/canslim_recommendations.json",
+            "date": "2026-10-30",
+            "pages": "财务截至9/30；行情10/30；6股样本，非官方行业指数",
+            "kind": "existing_auditable_calculation"
+          }
+        ],
+        "limitations": "生益科技并表生益电子；统计两者收入、利润或市值时存在母子公司重叠，不能相加后称作独立行业总量，也不构成独立分散配置。 本次不构造未经验证的2027行业增长率、订单金额、良率或CSP采购份额；三种情景为条件判断，没有人为赋予精确概率。 国际对照财年、会计与币种不同；TTM为数据中心与网络业务组合，台光为覆铜板材料平台，不能把其增长直接当作国内PCB行业增速。 生益电子已披露募集资金现金管理超授权并纠正；应跟踪程序和内控整改，不夸大为挪用或已经造成永久损失。 “相对上升”需分为盈利、产品位置与股价三层；本次没有足够证据断言各公司整体市占率普遍上升。"
+      },
+      "industryMetrics": {
+        "memberCodes": [
+          "002463",
+          "002916",
+          "600183",
+          "300476",
+          "603228"
+        ],
+        "revenueYoy": 52.34015538287837,
+        "profitYoy": 87.83660076618224,
+        "excess126": 4.164105899252853,
+        "quarters": [
+          {
+            "label": "2026Q1",
+            "revenue": 37.46490780294987,
+            "profit": 54.167067686044845
+          },
+          {
+            "label": "2026Q2",
+            "revenue": 47.627301260207425,
+            "profit": 55.9887227984023
+          },
+          {
+            "label": "2026Q3",
+            "revenue": 68.20924073209767,
+            "profit": 140.89219524967825
+          }
+        ],
+        "returns": [
+          {
+            "date": "2026-04-23",
+            "sample": 0,
+            "benchmark": 0
+          },
+          {
+            "date": "2026-04-24",
+            "sample": -2.838495299355654,
+            "benchmark": -0.5065761292062709
+          },
+          {
+            "date": "2026-04-27",
+            "sample": 2.1849213624274655,
+            "benchmark": -0.10550364106551857
+          },
+          {
+            "date": "2026-04-28",
+            "sample": 0.28708100107904144,
+            "benchmark": -0.8946391458171443
+          },
+          {
+            "date": "2026-04-29",
+            "sample": 1.7684971329728527,
+            "benchmark": 0.40075518395708
+          },
+          {
+            "date": "2026-04-30",
+            "sample": 0.247387340118026,
+            "benchmark": 0.6212815915977776
+          },
+          {
+            "date": "2026-05-06",
+            "sample": 2.088950274417068,
+            "benchmark": 2.578096492202242
+          },
+          {
+            "date": "2026-05-07",
+            "sample": 5.210734845133986,
+            "benchmark": 3.6526471101521407
+          },
+          {
+            "date": "2026-05-08",
+            "sample": 6.570864437648173,
+            "benchmark": 3.6369405530611854
+          },
+          {
+            "date": "2026-05-11",
+            "sample": 9.461309103006723,
+            "benchmark": 5.241547809807856
+          },
+          {
+            "date": "2026-05-12",
+            "sample": 9.663235450470728,
+            "benchmark": 4.8011296028938055
+          },
+          {
+            "date": "2026-05-13",
+            "sample": 15.241757604766098,
+            "benchmark": 6.088591328076642
+          },
+          {
+            "date": "2026-05-14",
+            "sample": 9.666244357833781,
+            "benchmark": 3.963922514318341
+          },
+          {
+            "date": "2026-05-15",
+            "sample": 5.834748274101583,
+            "benchmark": 2.8278148847392437
+          },
+          {
+            "date": "2026-05-18",
+            "sample": 10.475700871183628,
+            "benchmark": 2.762291570814357
+          },
+          {
+            "date": "2026-05-19",
+            "sample": 9.207886804014928,
+            "benchmark": 3.5368310831178196
+          },
+          {
+            "date": "2026-05-20",
+            "sample": 10.705595338801867,
+            "benchmark": 3.5214418302105255
+          },
+          {
+            "date": "2026-05-21",
+            "sample": 10.226535500915652,
+            "benchmark": 1.0366327680030318
+          },
+          {
+            "date": "2026-05-22",
+            "sample": 21.94756977651445,
+            "benchmark": 2.7965604226491747
+          },
+          {
+            "date": "2026-05-25",
+            "sample": 29.048079579401417,
+            "benchmark": 4.073233805587728
+          },
+          {
+            "date": "2026-05-26",
+            "sample": 36.27073335038095,
+            "benchmark": 3.6385270739794473
+          },
+          {
+            "date": "2026-05-27",
+            "sample": 32.43773546233073,
+            "benchmark": 2.2328695403848853
+          },
+          {
+            "date": "2026-05-28",
+            "sample": 33.9372470262272,
+            "benchmark": 2.8140121527502338
+          },
+          {
+            "date": "2026-05-29",
+            "sample": 35.131410285816855,
+            "benchmark": 1.0429788516761462
+          },
+          {
+            "date": "2026-06-01",
+            "sample": 26.243285616952033,
+            "benchmark": 0.2857324173819231
+          },
+          {
+            "date": "2026-06-02",
+            "sample": 32.00504310298116,
+            "benchmark": 1.0377433326458352
+          },
+          {
+            "date": "2026-06-03",
+            "sample": 30.54847684236544,
+            "benchmark": 1.471974107978613
+          },
+          {
+            "date": "2026-06-04",
+            "sample": 35.254793148320864,
+            "benchmark": 1.0350462470847699
+          },
+          {
+            "date": "2026-06-05",
+            "sample": 28.074964544100744,
+            "benchmark": -0.17308943218417028
+          },
+          {
+            "date": "2026-06-08",
+            "sample": 25.537922276305245,
+            "benchmark": -2.9169773603465066
+          },
+          {
+            "date": "2026-06-09",
+            "sample": 34.294728132227455,
+            "benchmark": -0.7672415160793977
+          },
+          {
+            "date": "2026-06-10",
+            "sample": 31.461708546164864,
+            "benchmark": -2.054068632894923
+          },
+          {
+            "date": "2026-06-11",
+            "sample": 30.912368368687094,
+            "benchmark": -2.575716710824838
+          },
+          {
+            "date": "2026-06-12",
+            "sample": 30.55834406142722,
+            "benchmark": -1.6950389490885454
+          },
+          {
+            "date": "2026-06-15",
+            "sample": 40.489859104898834,
+            "benchmark": 1.2225730196252504
+          },
+          {
+            "date": "2026-06-16",
+            "sample": 45.84175016857697,
+            "benchmark": 1.8743158128539772
+          },
+          {
+            "date": "2026-06-17",
+            "sample": 50.986827431810546,
+            "benchmark": 2.7600704415287503
+          },
+          {
+            "date": "2026-06-18",
+            "sample": 53.40851774980928,
+            "benchmark": 3.1132299979375055
+          },
+          {
+            "date": "2026-06-22",
+            "sample": 51.81360499527527,
+            "benchmark": 5.09130427884692
+          },
+          {
+            "date": "2026-06-23",
+            "sample": 41.27289342325138,
+            "benchmark": 2.8631943012168426
+          },
+          {
+            "date": "2026-06-24",
+            "sample": 45.4230558406258,
+            "benchmark": 3.619647475051946
+          },
+          {
+            "date": "2026-06-25",
+            "sample": 53.60034298385121,
+            "benchmark": 4.491916675921348
+          },
+          {
+            "date": "2026-06-26",
+            "sample": 45.07792955743991,
+            "benchmark": 1.553362631086297
+          },
+          {
+            "date": "2026-06-29",
+            "sample": 40.5547908449257,
+            "benchmark": 2.2243023274261864
+          },
+          {
+            "date": "2026-06-30",
+            "sample": 47.931490378992606,
+            "benchmark": 3.942821786105233
+          },
+          {
+            "date": "2026-07-01",
+            "sample": 41.0940315845077,
+            "benchmark": 4.125906300074567
+          },
+          {
+            "date": "2026-07-02",
+            "sample": 31.389015218246705,
+            "benchmark": 1.1622852247306747
+          },
+          {
+            "date": "2026-07-03",
+            "sample": 38.572109263521696,
+            "benchmark": 1.6071456902159165
+          },
+          {
+            "date": "2026-07-06",
+            "sample": 32.50345891444848,
+            "benchmark": 0.7581983468452069
+          },
+          {
+            "date": "2026-07-07",
+            "sample": 28.38333014247638,
+            "benchmark": -0.9054274880614388
+          },
+          {
+            "date": "2026-07-08",
+            "sample": 25.16410687851262,
+            "benchmark": -2.316796496961826
+          },
+          {
+            "date": "2026-07-09",
+            "sample": 35.47404380784546,
+            "benchmark": 0.021100728213108155
+          },
+          {
+            "date": "2026-07-10",
+            "sample": 29.7543361322826,
+            "benchmark": -1.395979755993093
+          },
+          {
+            "date": "2026-07-13",
+            "sample": 21.443175700235315,
+            "benchmark": -4.782567308149965
+          },
+          {
+            "date": "2026-07-14",
+            "sample": 30.49712955549948,
+            "benchmark": -2.9177706208056486
+          },
+          {
+            "date": "2026-07-15",
+            "sample": 27.779281836789817,
+            "benchmark": -3.6083831765321928
+          },
+          {
+            "date": "2026-07-16",
+            "sample": 26.479122062148356,
+            "benchmark": -5.498881502752617
+          },
+          {
+            "date": "2026-07-17",
+            "sample": 17.314610509307894,
+            "benchmark": -10.016499817550095
+          },
+          {
+            "date": "2026-07-20",
+            "sample": 10.828008599230902,
+            "benchmark": -10.54211419777571
+          },
+          {
+            "date": "2026-07-21",
+            "sample": 18.864768298778507,
+            "benchmark": -7.446653234122902
+          },
+          {
+            "date": "2026-07-22",
+            "sample": 14.550738938862343,
+            "benchmark": -8.128381272707086
+          },
+          {
+            "date": "2026-07-23",
+            "sample": 13.781613629590485,
+            "benchmark": -7.7266741761990225
+          },
+          {
+            "date": "2026-07-24",
+            "sample": 10.7787013599989,
+            "benchmark": -9.77043042312513
+          },
+          {
+            "date": "2026-07-27",
+            "sample": 17.7872543118524,
+            "benchmark": -7.858038108232456
+          },
+          {
+            "date": "2026-07-28",
+            "sample": 5.729381223583181,
+            "benchmark": -10.382034237121418
+          },
+          {
+            "date": "2026-07-29",
+            "sample": 3.9970258796647933,
+            "benchmark": -9.68983516047659
+          },
+          {
+            "date": "2026-07-30",
+            "sample": -5.384565243683603,
+            "benchmark": -11.450397423490033
+          },
+          {
+            "date": "2026-07-31",
+            "sample": 1.0633615054623904,
+            "benchmark": -9.865938982405487
+          },
+          {
+            "date": "2026-08-03",
+            "sample": -0.17030906021663608,
+            "benchmark": -10.320794529675881
+          },
+          {
+            "date": "2026-08-04",
+            "sample": 8.783439003032564,
+            "benchmark": -8.515968333042478
+          },
+          {
+            "date": "2026-08-05",
+            "sample": 15.107993772850875,
+            "benchmark": -6.683219368247373
+          },
+          {
+            "date": "2026-08-06",
+            "sample": 20.026422593616985,
+            "benchmark": -6.453015183005196
+          },
+          {
+            "date": "2026-08-07",
+            "sample": 31.306117218553187,
+            "benchmark": -5.1530199425679495
+          },
+          {
+            "date": "2026-08-10",
+            "sample": 30.295686331382182,
+            "benchmark": -4.657549459789633
+          },
+          {
+            "date": "2026-08-11",
+            "sample": 27.022394941545212,
+            "benchmark": -5.338801542098337
+          },
+          {
+            "date": "2026-08-12",
+            "sample": 32.745819702328575,
+            "benchmark": -4.427186622455615
+          },
+          {
+            "date": "2026-08-13",
+            "sample": 30.599505341739224,
+            "benchmark": -5.232821944757338
+          },
+          {
+            "date": "2026-08-14",
+            "sample": 31.226870132410774,
+            "benchmark": -4.951214481762944
+          },
+          {
+            "date": "2026-08-17",
+            "sample": 33.37989753794601,
+            "benchmark": -3.0207358284019104
+          },
+          {
+            "date": "2026-08-18",
+            "sample": 30.86931284302873,
+            "benchmark": -3.261887007980202
+          },
+          {
+            "date": "2026-08-19",
+            "sample": 18.38698024429499,
+            "benchmark": -7.245323729593379
+          },
+          {
+            "date": "2026-08-20",
+            "sample": 19.654428347102293,
+            "benchmark": -6.673541590645882
+          },
+          {
+            "date": "2026-08-21",
+            "sample": 25.234042929136603,
+            "benchmark": -6.361790230204201
+          },
+          {
+            "date": "2026-08-24",
+            "sample": 19.991527152160327,
+            "benchmark": -7.688121717884854
+          },
+          {
+            "date": "2026-08-25",
+            "sample": 20.126297320801175,
+            "benchmark": -7.45950405356095
+          },
+          {
+            "date": "2026-08-26",
+            "sample": 21.812939292158852,
+            "benchmark": -6.911837032571288
+          },
+          {
+            "date": "2026-08-27",
+            "sample": 29.15677291727069,
+            "benchmark": -5.46032904443845
+          },
+          {
+            "date": "2026-08-28",
+            "sample": 28.067889661157967,
+            "benchmark": -5.839507543906974
+          },
+          {
+            "date": "2026-08-31",
+            "sample": 32.048840164954,
+            "benchmark": -5.2953308689375085
+          },
+          {
+            "date": "2026-09-01",
+            "sample": 25.168072989816967,
+            "benchmark": -5.774301534165726
+          },
+          {
+            "date": "2026-09-02",
+            "sample": 23.870807181505352,
+            "benchmark": -7.016388761085812
+          },
+          {
+            "date": "2026-09-03",
+            "sample": 22.284595868666635,
+            "benchmark": -6.915961986958797
+          },
+          {
+            "date": "2026-09-04",
+            "sample": 21.27092123693895,
+            "benchmark": -7.503609335089079
+          },
+          {
+            "date": "2026-09-07",
+            "sample": 32.079320698439155,
+            "benchmark": -6.504894417032892
+          },
+          {
+            "date": "2026-09-08",
+            "sample": 33.19114866012937,
+            "benchmark": -6.478716821881303
+          },
+          {
+            "date": "2026-09-09",
+            "sample": 35.27681792326431,
+            "benchmark": -6.41065507448717
+          },
+          {
+            "date": "2026-09-10",
+            "sample": 35.532219468027975,
+            "benchmark": -7.159492947914526
+          },
+          {
+            "date": "2026-09-11",
+            "sample": 36.726552169268345,
+            "benchmark": -8.473290920340782
+          },
+          {
+            "date": "2026-09-14",
+            "sample": 33.825514193586926,
+            "benchmark": -8.586568513905856
+          },
+          {
+            "date": "2026-09-15",
+            "sample": 34.04956210208899,
+            "benchmark": -9.192460852596351
+          },
+          {
+            "date": "2026-09-16",
+            "sample": 36.53862326734996,
+            "benchmark": -8.020656502355983
+          },
+          {
+            "date": "2026-09-17",
+            "sample": 31.78650709224575,
+            "benchmark": -8.325268518665418
+          },
+          {
+            "date": "2026-09-18",
+            "sample": 31.583478117707397,
+            "benchmark": -6.997667814250141
+          },
+          {
+            "date": "2026-09-21",
+            "sample": 36.29629699864747,
+            "benchmark": -6.047500436293252
+          },
+          {
+            "date": "2026-09-22",
+            "sample": 34.187915636418325,
+            "benchmark": -6.022433405784455
+          },
+          {
+            "date": "2026-09-23",
+            "sample": 36.279294092827485,
+            "benchmark": -6.432390411067579
+          },
+          {
+            "date": "2026-09-24",
+            "sample": 30.65671008941344,
+            "benchmark": -8.16994812076597
+          },
+          {
+            "date": "2026-09-28",
+            "sample": 22.722434411083817,
+            "benchmark": -10.67569925909474
+          },
+          {
+            "date": "2026-09-29",
+            "sample": 25.45074207162734,
+            "benchmark": -10.357601814979933
+          },
+          {
+            "date": "2026-09-30",
+            "sample": 23.677701096592934,
+            "benchmark": -10.389332233345506
+          },
+          {
+            "date": "2026-10-08",
+            "sample": 22.645560415625443,
+            "benchmark": -11.789278291634275
+          },
+          {
+            "date": "2026-10-09",
+            "sample": 18.021595570251833,
+            "benchmark": -11.625707984959789
+          },
+          {
+            "date": "2026-10-12",
+            "sample": 14.486582154942075,
+            "benchmark": -12.883184464787167
+          },
+          {
+            "date": "2026-10-13",
+            "sample": 17.82491766061848,
+            "benchmark": -12.880487379226102
+          },
+          {
+            "date": "2026-10-14",
+            "sample": 15.508247545549875,
+            "benchmark": -14.251400104710388
+          },
+          {
+            "date": "2026-10-15",
+            "sample": 11.325438735465758,
+            "benchmark": -16.18870079802003
+          },
+          {
+            "date": "2026-10-16",
+            "sample": 10.048055368634067,
+            "benchmark": -16.08303850486269
+          },
+          {
+            "date": "2026-10-19",
+            "sample": 8.687861597576022,
+            "benchmark": -16.03798131078359
+          },
+          {
+            "date": "2026-10-20",
+            "sample": 9.260719953842178,
+            "benchmark": -15.810156906918827
+          },
+          {
+            "date": "2026-10-21",
+            "sample": 11.447737954688739,
+            "benchmark": -16.17616728276563
+          },
+          {
+            "date": "2026-10-22",
+            "sample": 3.3829579467928874,
+            "benchmark": -18.230235915660554
+          },
+          {
+            "date": "2026-10-23",
+            "sample": 3.4383896684525483,
+            "benchmark": -16.648474560137082
+          },
+          {
+            "date": "2026-10-26",
+            "sample": -3.558963251799445,
+            "benchmark": -17.279116625152714
+          },
+          {
+            "date": "2026-10-27",
+            "sample": -5.621066385024823,
+            "benchmark": -19.112500198315118
+          },
+          {
+            "date": "2026-10-28",
+            "sample": -0.8952455170979533,
+            "benchmark": -17.857720804048803
+          },
+          {
+            "date": "2026-10-29",
+            "sample": -10.295281924533707,
+            "benchmark": -19.555932794973906
+          },
+          {
+            "date": "2026-10-30",
+            "sample": -17.26344562301398,
+            "benchmark": -21.427551522266832
+          }
+        ],
+        "scopeNote": "固定5家经济样本：沪电、深南、生益科技、胜宏、景旺；剔除生益电子以避免与生益科技合并报表重复。营收/利润为合计同比，价格为5只A股等权，不含H股。",
+        "sources": [
+          {
+            "name": "沪电股份财务/季度序列",
+            "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22002463%22%29%29%28REPORT_DATE%3E%3D%272022-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-01%27%29%28NOTICE_DATE%3C%3D%272026-11-01%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
+            "date": "2026-11-01"
+          },
+          {
+            "name": "深南电路财务/季度序列",
+            "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22002916%22%29%29%28REPORT_DATE%3E%3D%272022-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-01%27%29%28NOTICE_DATE%3C%3D%272026-11-01%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
+            "date": "2026-11-01"
+          },
+          {
+            "name": "生益科技财务/季度序列",
+            "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22600183%22%29%29%28REPORT_DATE%3E%3D%272022-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-01%27%29%28NOTICE_DATE%3C%3D%272026-11-01%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
+            "date": "2026-11-01"
+          },
+          {
+            "name": "胜宏科技财务/季度序列",
+            "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22300476%22%29%29%28REPORT_DATE%3E%3D%272022-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-01%27%29%28NOTICE_DATE%3C%3D%272026-11-01%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
+            "date": "2026-11-01"
+          },
+          {
+            "name": "景旺电子财务/季度序列",
+            "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22603228%22%29%29%28REPORT_DATE%3E%3D%272022-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-01%27%29%28NOTICE_DATE%3C%3D%272026-11-01%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
+            "date": "2026-11-01"
+          },
+          {
+            "name": "同起止日中证全指行情",
+            "url": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh000985%2Cday%2C%2C%2C400%2Cqfq",
+            "date": "2026-10-30"
+          }
+        ]
+      }
     }
-  ]
+  ],
+  "hkMarket": {
+    "barCount": 400,
+    "startDate": "2025-03-18",
+    "endDate": "2026-10-30",
+    "close": 23294.42,
+    "ma50": 24575.917,
+    "ma200": 25346.6603,
+    "ma50Prior20": 25304.5846,
+    "return126": -10.789817952315895,
+    "excess126": 0,
+    "return126Start": "2026-04-29",
+    "benchmarkReturn126": -10.789817952315895,
+    "high252": 28056.1,
+    "highestClose252": 27968.09,
+    "distanceTo252HighPct": -16.971995394940855,
+    "distanceTo252HighestClosePct": -16.710722827336443,
+    "upVolume50": 4501353042471,
+    "downVolume50": 5656238109274,
+    "upDownVolumeRatio50": 0.7958209954228335,
+    "name": "恒生指数",
+    "code": "HSI",
+    "sourceUrl": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=hkHSI%2Cday%2C%2C%2C400%2Cqfq",
+    "chart": [
+      {
+        "date": "2026-08-06",
+        "close": 25530.28,
+        "ma50": 24611.926600000003,
+        "ma200": 25716.646099999998
+      },
+      {
+        "date": "2026-08-07",
+        "close": 25668.03,
+        "ma50": 24618.722599999997,
+        "ma200": 25715.538849999997
+      },
+      {
+        "date": "2026-08-10",
+        "close": 25937.49,
+        "ma50": 24637.3492,
+        "ma200": 25718.01955
+      },
+      {
+        "date": "2026-08-11",
+        "close": 25652.82,
+        "ma50": 24646.7578,
+        "ma200": 25716.730649999998
+      },
+      {
+        "date": "2026-08-12",
+        "close": 25440.17,
+        "ma50": 24647.597599999997,
+        "ma200": 25714.48895
+      },
+      {
+        "date": "2026-08-13",
+        "close": 25396.51,
+        "ma50": 24634.761400000003,
+        "ma200": 25715.236
+      },
+      {
+        "date": "2026-08-14",
+        "close": 25116.85,
+        "ma50": 24624.4342,
+        "ma200": 25711.5261
+      },
+      {
+        "date": "2026-08-17",
+        "close": 25453.23,
+        "ma50": 24628.430800000002,
+        "ma200": 25708.6545
+      },
+      {
+        "date": "2026-08-18",
+        "close": 25471.15,
+        "ma50": 24638.6148,
+        "ma200": 25707.1014
+      },
+      {
+        "date": "2026-08-19",
+        "close": 25495.07,
+        "ma50": 24655.375,
+        "ma200": 25704.73685
+      },
+      {
+        "date": "2026-08-20",
+        "close": 25698.49,
+        "ma50": 24678.026800000003,
+        "ma200": 25702.42855
+      },
+      {
+        "date": "2026-08-21",
+        "close": 26009.46,
+        "ma50": 24710.056800000002,
+        "ma200": 25700.30735
+      },
+      {
+        "date": "2026-08-24",
+        "close": 25517.33,
+        "ma50": 24735.417599999997,
+        "ma200": 25696.1633
+      },
+      {
+        "date": "2026-08-25",
+        "close": 25511.1,
+        "ma50": 24751.277599999998,
+        "ma200": 25692.305350000002
+      },
+      {
+        "date": "2026-08-26",
+        "close": 25652.97,
+        "ma50": 24767.4836,
+        "ma200": 25691.036949999998
+      },
+      {
+        "date": "2026-08-27",
+        "close": 25565.74,
+        "ma50": 24788.9194,
+        "ma200": 25688.073849999997
+      },
+      {
+        "date": "2026-08-28",
+        "close": 25584.79,
+        "ma50": 24814.372000000003,
+        "ma200": 25686.235800000002
+      },
+      {
+        "date": "2026-08-31",
+        "close": 25566.99,
+        "ma50": 24847.2156,
+        "ma200": 25684.3937
+      },
+      {
+        "date": "2026-09-01",
+        "close": 25329.73,
+        "ma50": 24878.4398,
+        "ma200": 25678.61285
+      },
+      {
+        "date": "2026-09-02",
+        "close": 25311.21,
+        "ma50": 24917.9384,
+        "ma200": 25673.95975
+      },
+      {
+        "date": "2026-09-03",
+        "close": 25213.31,
+        "ma50": 24953.961,
+        "ma200": 25666.781000000003
+      },
+      {
+        "date": "2026-09-04",
+        "close": 25650.87,
+        "ma50": 25005.4402,
+        "ma200": 25661.5533
+      },
+      {
+        "date": "2026-09-07",
+        "close": 25413.12,
+        "ma50": 25060.2654,
+        "ma200": 25654.00525
+      },
+      {
+        "date": "2026-09-08",
+        "close": 25317.18,
+        "ma50": 25106.0754,
+        "ma200": 25645.226000000002
+      },
+      {
+        "date": "2026-09-09",
+        "close": 25274.96,
+        "ma50": 25153.9542,
+        "ma200": 25638.7385
+      },
+      {
+        "date": "2026-09-10",
+        "close": 24954.47,
+        "ma50": 25191.943,
+        "ma200": 25631.58945
+      },
+      {
+        "date": "2026-09-11",
+        "close": 24805.63,
+        "ma50": 25221.055,
+        "ma200": 25625.96745
+      },
+      {
+        "date": "2026-09-14",
+        "close": 24917.6,
+        "ma50": 25247.0806,
+        "ma200": 25621.4022
+      },
+      {
+        "date": "2026-09-15",
+        "close": 24667.24,
+        "ma50": 25270.487599999997,
+        "ma200": 25615.560550000002
+      },
+      {
+        "date": "2026-09-16",
+        "close": 24713.78,
+        "ma50": 25280.773999999998,
+        "ma200": 25613.02935
+      },
+      {
+        "date": "2026-09-17",
+        "close": 24604.29,
+        "ma50": 25292.2562,
+        "ma200": 25607.4683
+      },
+      {
+        "date": "2026-09-18",
+        "close": 24750.78,
+        "ma50": 25303.7694,
+        "ma200": 25601.74945
+      },
+      {
+        "date": "2026-09-21",
+        "close": 25042.71,
+        "ma50": 25320.3492,
+        "ma200": 25597.3226
+      },
+      {
+        "date": "2026-09-22",
+        "close": 25087.75,
+        "ma50": 25335.2896,
+        "ma200": 25593.0317
+      },
+      {
+        "date": "2026-09-23",
+        "close": 24834.12,
+        "ma50": 25338.35,
+        "ma200": 25587.907850000003
+      },
+      {
+        "date": "2026-09-24",
+        "close": 24761.13,
+        "ma50": 25333.4006,
+        "ma200": 25581.5472
+      },
+      {
+        "date": "2026-09-25",
+        "close": 24510.09,
+        "ma50": 25332.3576,
+        "ma200": 25573.622400000004
+      },
+      {
+        "date": "2026-09-28",
+        "close": 24642.51,
+        "ma50": 25322.346800000003,
+        "ma200": 25568.0313
+      },
+      {
+        "date": "2026-09-29",
+        "close": 24523.57,
+        "ma50": 25310.172400000003,
+        "ma200": 25560.96965
+      },
+      {
+        "date": "2026-09-30",
+        "close": 24613.27,
+        "ma50": 25304.5846,
+        "ma200": 25553.6106
+      },
+      {
+        "date": "2026-10-02",
+        "close": 23972.29,
+        "ma50": 25279.8142,
+        "ma200": 25544.645249999998
+      },
+      {
+        "date": "2026-10-05",
+        "close": 24040.34,
+        "ma50": 25261.3564,
+        "ma200": 25537.6758
+      },
+      {
+        "date": "2026-10-06",
+        "close": 24280.56,
+        "ma50": 25242.824,
+        "ma200": 25531.3747
+      },
+      {
+        "date": "2026-10-07",
+        "close": 24130.5,
+        "ma50": 25219.217,
+        "ma200": 25524.374649999998
+      },
+      {
+        "date": "2026-10-08",
+        "close": 23785.79,
+        "ma50": 25178.7744,
+        "ma200": 25513.41965
+      },
+      {
+        "date": "2026-10-09",
+        "close": 24211.35,
+        "ma50": 25145.8238,
+        "ma200": 25506.332000000002
+      },
+      {
+        "date": "2026-10-12",
+        "close": 24271.2,
+        "ma50": 25113.5592,
+        "ma200": 25501.510950000004
+      },
+      {
+        "date": "2026-10-13",
+        "close": 24345.22,
+        "ma50": 25080.2756,
+        "ma200": 25495.89315
+      },
+      {
+        "date": "2026-10-14",
+        "close": 24314.17,
+        "ma50": 25049.5006,
+        "ma200": 25489.97335
+      },
+      {
+        "date": "2026-10-15",
+        "close": 24062.72,
+        "ma50": 25012.438599999998,
+        "ma200": 25481.834300000002
+      },
+      {
+        "date": "2026-10-16",
+        "close": 24186.83,
+        "ma50": 24985.5696,
+        "ma200": 25473.7596
+      },
+      {
+        "date": "2026-10-20",
+        "close": 23867.74,
+        "ma50": 24949.5638,
+        "ma200": 25464.2276
+      },
+      {
+        "date": "2026-10-21",
+        "close": 23651.87,
+        "ma50": 24903.8514,
+        "ma200": 25453.3923
+      },
+      {
+        "date": "2026-10-22",
+        "close": 22934.68,
+        "ma50": 24849.488599999997,
+        "ma200": 25439.88955
+      },
+      {
+        "date": "2026-10-23",
+        "close": 23093.37,
+        "ma50": 24802.5526,
+        "ma200": 25426.0834
+      },
+      {
+        "date": "2026-10-26",
+        "close": 23211.81,
+        "ma50": 24758.8586,
+        "ma200": 25413.98975
+      },
+      {
+        "date": "2026-10-27",
+        "close": 23041.32,
+        "ma50": 24717.347999999998,
+        "ma200": 25397.504
+      },
+      {
+        "date": "2026-10-28",
+        "close": 23094.83,
+        "ma50": 24670.18,
+        "ma200": 25381.24195
+      },
+      {
+        "date": "2026-10-29",
+        "close": 22958.65,
+        "ma50": 24619.93,
+        "ma200": 25362.482949999998
+      },
+      {
+        "date": "2026-10-30",
+        "close": 23294.42,
+        "ma50": 24575.917,
+        "ma200": 25346.6603
+      }
+    ]
+  },
+  "fx": {
+    "pair": "HKD/CNY",
+    "cnyPerHkd": 0.848,
+    "businessDate": "2026-10-30",
+    "quoteTimeBeijing": "2026-10-31T04:56:03+08:00",
+    "source": "腾讯外汇市场参考末报价",
+    "sourceUrl": "https://qt.gtimg.cn/q=whHKDCNY",
+    "basis": "取交易日2026-10-30的最后市场报价，时刻为北京时间次日04:56:03；不是人民币官方中间价、不是港股收盘同一时点的可执行换汇价。",
+    "crossCheckUrl": "https://cn.investing.com/currencies/hkd-cny-historical-data",
+    "crossCheck": "另一公开历史价为0.8482，来源/时点不同；本报告统一使用0.8480，不混用两个汇率。"
+  },
+  "researchRevision": "20261101b"
 }
