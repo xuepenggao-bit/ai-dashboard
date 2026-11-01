@@ -865,9 +865,12 @@ def _arr_candidate(key, cfg, results):
             )
         )
         for term in terms:
-            window_start = max(0, term.start() - 190)
-            window = text[window_start:term.end() + 190]
+            statement_start, statement_end = _arr_statement(text, term.start())
+            window_start = max(statement_start, term.start() - 190)
+            window = text[window_start:min(statement_end, term.end() + 190)]
             window_lower = window.lower()
+            if _arr_is_forecast(window):
+                continue
             target = cfg["name"].lower()
             entities = []
             for entity in ("openai", "anthropic", "aws", "amazon", "microsoft", "google", "meta"):
@@ -886,12 +889,18 @@ def _arr_candidate(key, cfg, results):
             # the same article snippet.
             if not entities or min(entities)[1] != target:
                 continue
-            money = list(_MONEY_RE.finditer(window))
+            money = [item for item in _MONEY_RE.finditer(window)
+                     if not re.search(r"\bnot\s*\$?\s*$|\b(?:previously|earlier)\s+(?:reported|indicated|signaled|estimated)(?:\s+(?:at|as))?\s*\$?\s*$", window[max(0, item.start()-60):item.start()], re.I)]
             if not money:
                 continue
             relative = term.start() - window_start
+            # In a correction, the old amount may be closer to the ARR phrase
+            # than the corrected one. Prefer an explicit "corrected to" anchor.
+            corrected = [item for item in money if re.search(
+                r"\b(?:corrected|revised|restated)\s+(?:down\s+|up\s+)?to\s*\$?\s*$",
+                window[max(0, item.start()-55):item.start()], re.I)]
             nearest = min(
-                money,
+                corrected or money,
                 key=lambda item: min(
                     abs(item.start() - relative), abs(item.end() - relative)
                 ),
@@ -900,6 +909,9 @@ def _arr_candidate(key, cfg, results):
             minimum, maximum = cfg["bounds"]
             if not (minimum <= value <= maximum):
                 continue
+            metric_period = _arr_effective_period(window, source_date)
+            if not metric_period:
+                continue
             host = (urlparse(url).hostname or "").lower().removeprefix("www.")
             candidates.append(
                 {
@@ -907,6 +919,9 @@ def _arr_candidate(key, cfg, results):
                     "summary": f"最新公开披露的年化收入运行率约为${value / 10:g}B。",
                     "numeric": True,
                     "arr_yi": round(value, 1),
+                    "metric_period": _arr_effective_period(window, source_date),
+                    "basis": _arr_basis(window),
+                    "correction": bool(re.search(r"correct(?:ed|ion|s).{0,100}(?:revenue|run[- ]rate|arr)|(?:revenue|run[- ]rate|arr).{0,100}correct(?:ed|ion|s)", window, re.I)),
                     "source_label": host,
                     "source_date": source_date,
                     "source_url": url,
@@ -973,7 +988,90 @@ def _last_numeric(values):
     return None
 
 
-def _upsert_arr_value(base, key, source_date, value):
+def _arr_is_forecast(text):
+    return bool(re.search(
+        r"\bexpect(?:s|ed|ing)?\b|\bforecast(?:s|ed)?\b|\bproject(?:s|ed|ing)?\b|"
+        r"\btarget(?:s|ed|ing)?\b|\baim(?:s|ed|ing)?\b|\bcould\b|\bwould\b|"
+        r"\bwill\s+(?:reach|hit|exceed|rise|grow|be)\b|\bon track\b",
+        text, re.I))
+
+
+def _arr_statement(text, anchor):
+    """Sentence isolation including sentences ending in a year/amount.
+    Only an actual decimal point (digits on both sides) is exempt."""
+    boundaries = [0, len(text)]
+    for match in re.finditer(r"(?:[!?;]|\.(?!\d)|(?<!\d)\.)\s*", text):
+        boundaries.extend((match.start(), match.end()))
+    return max(v for v in boundaries if v <= anchor), min(v for v in boundaries if v > anchor)
+
+
+def _arr_effective_period(text, source_date):
+    """Use an explicitly reported month; otherwise label the disclosure month.
+    Month-only wording is not promoted into an exact measurement date."""
+    try:
+        source_year, source_month = map(int, source_date[:7].split("-"))
+    except (ValueError, TypeError):
+        return ""
+    months = {name.lower(): index for index, name in enumerate([
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"], 1)}
+    names = "|".join(months)
+    explicit = re.search(r"\b("+names+r")\s+(20\d{2})\b", text, re.I)
+    if explicit:
+        month, year = months[explicit.group(1).lower()], int(explicit.group(2))
+        return f"{year:04d}-{month:02d}" if (year, month) <= (source_year, source_month) else ""
+    implicit = re.search(r"\b(?:as of|at the end of|by the end of|by end of|end of|in|during|through|for)\s+("+names+r")\b", text, re.I)
+    if implicit:
+        month = months[implicit.group(1).lower()]
+        year = source_year - (month > source_month)
+        return f"{year:04d}-{month:02d}"
+    return source_date[:7]
+
+
+def _arr_basis(text):
+    if re.search(r"\bgross\b", text, re.I):
+        return "gross_annualized_revenue_run_rate"
+    if re.search(r"\bnet\s+(?:annualized|revenue)\b", text, re.I):
+        return "net_annualized_revenue_run_rate"
+    return "annualized_revenue_run_rate"
+
+
+def _arr_numeric_rejection(base, key, candidate):
+    """Date and metric consistency, never a higher-amount-only acceptance rule."""
+    value, date = _number(candidate.get("arr_yi")), _valid_date(candidate.get("source_date"))
+    if value is None:
+        return ""
+    if not math.isfinite(value) or value <= 0 or not date or not _specific_article_url(candidate.get("source_url") or ""):
+        return "numeric milestone requires a dated direct source"
+    if candidate.get("disclosure_type") == "forecast":
+        return "forecast is not a realized numeric milestone"
+    previous_event = (base.get("arr_latest_events") or {}).get(key) or {}
+    previous_source = (base.get("arr_sources") or {}).get(key) or {}
+    known = [x for x in [previous_event, previous_source] if _number(x.get("arr_yi")) is not None]
+    latest = max(known, key=lambda x: _valid_date(x.get("source_date")), default={})
+    previous_date = _valid_date(latest.get("source_date"))
+    if previous_date and date < previous_date:
+        return "older numeric milestone source"
+    period = str(candidate.get("metric_period") or date[:7])
+    previous_period = str(latest.get("metric_period") or previous_date[:7])
+    if not re.fullmatch(r"20\d{2}-(?:0[1-9]|1[0-2])", period) or period > date[:7]:
+        return "invalid or future numeric measurement period"
+    if previous_period and period < previous_period:
+        return "older numeric measurement period requires historical review"
+    previous_basis, basis = latest.get("basis"), candidate.get("basis")
+    explicit_bases = {"gross_annualized_revenue_run_rate", "net_annualized_revenue_run_rate"}
+    # Legacy JSON used free-form explanatory prose in this field. It cannot
+    # lock out all future updates, nor does generic ARR wording establish a
+    # gross-to-net accounting change. Reject explicit contradictory concepts.
+    if previous_basis in explicit_bases and basis in explicit_bases and previous_basis != basis and not candidate.get("correction"):
+        return "run-rate accounting basis changed without a reviewed correction"
+    previous_value = _number(latest.get("arr_yi"))
+    if previous_date == date and previous_value is not None and value != previous_value and not candidate.get("correction"):
+        return "same-date conflicting numeric milestone requires correction evidence"
+    return ""
+
+
+def _upsert_arr_value(base, key, source_date, value, metric_period="", correction=False):
     labels = base.setdefault("arr_labels", [])
     openai = base.setdefault("arr_openai", [])
     anthropic = base.setdefault("arr_anthropic", [])
@@ -981,18 +1079,31 @@ def _upsert_arr_value(base, key, source_date, value):
         openai.append(None)
     while len(anthropic) < len(labels):
         anthropic.append(None)
-    label = source_date[:7]
+    label = metric_period if re.fullmatch(r"20\d{2}-\d{2}", str(metric_period)) else source_date[:7]
+    if not re.fullmatch(r"20\d{2}-\d{2}", label) or _number(value) is None or value <= 0:
+        return False
+    saved = (base.get("arr_sources") or {}).get(key) or {}
+    if _valid_date(saved.get("source_date")) > source_date:
+        return False
     if label not in labels:
-        labels.append(label)
-        openai.append(None)
-        anthropic.append(None)
+        labels.append(label); openai.append(None); anthropic.append(None)
     index = labels.index(label)
     series = openai if key == "openai" else anthropic
     current = _number(series[index])
-    if current is None or value > current:
-        series[index] = round(value, 1)
-        return True
-    return False
+    if current == round(value, 1):
+        return False
+    # Main validation establishes a dated, same-basis disclosure. A lower real
+    # amount or same-period correction is valid and must not be hidden.
+    series[index] = round(value, 1)
+    def chronological(label):
+        match = re.match(r"(20\d{2})(?:-(\d{2})|末)", str(label))
+        return (int(match.group(1)), int(match.group(2) or 12)) if match else (0, 0)
+    order = sorted(range(len(labels)), key=lambda i: chronological(labels[i]))
+    base["arr_labels"] = [labels[i] for i in order]
+    base["arr_openai"] = [openai[i] for i in order]
+    base["arr_anthropic"] = [anthropic[i] for i in order]
+    return True
+
 
 
 def main():
@@ -1309,14 +1420,9 @@ def main():
                 )
                 continue
 
-            last_value = _last_numeric(
-                base.get("arr_openai") if key == "openai" else base.get("arr_anthropic")
-            )
-            if value is not None and last_value is not None and value < last_value:
-                print(
-                    f"  [ARR:{key}] numeric value {value} is below saved "
-                    f"milestone {last_value}; rejecting"
-                )
+            numeric_rejection = _arr_numeric_rejection(base, key, candidate)
+            if numeric_rejection:
+                print(f"  [ARR:{key}] rejected: {numeric_rejection}")
                 continue
 
             source_label = (
@@ -1333,6 +1439,9 @@ def main():
             }
             if value is not None:
                 event["arr_yi"] = round(value, 1)
+                for field in ("metric_period", "basis", "correction"):
+                    if candidate.get(field) is not None:
+                        event[field] = candidate[field]
             if event != previous_event:
                 events[key] = event
                 changed = True
@@ -1340,11 +1449,17 @@ def main():
             else:
                 print(f"  [ARR:{key}] latest event verified unchanged")
 
-            if value is not None and _upsert_arr_value(base, key, source_date, value):
+            if value is not None and _upsert_arr_value(base, key, source_date, value,
+                                                     candidate.get("metric_period", ""),
+                                                     candidate.get("correction", False)):
                 sources[key] = {
                     "source_label": source_label,
                     "source_date": source_date,
                     "source_url": url,
+                    "arr_yi": round(value, 1),
+                    "metric_period": candidate.get("metric_period") or source_date[:7],
+                    "basis": candidate.get("basis") or "annualized_revenue_run_rate",
+                    "correction": bool(candidate.get("correction")),
                 }
                 changed = True
             valid_event_dates = [

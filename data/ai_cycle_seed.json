@@ -1,0 +1,1509 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-11-01",
+  "series": [
+    {
+      "id": "capex-alphabet",
+      "companyId": "alphabet",
+      "group": "hyperscaler",
+      "name": "Alphabet / Google",
+      "metric": "annual_capital_expenditures",
+      "basis": "现金购置固定资产；公司整体Capex，非纯AI支出",
+      "basisKey": "cash_ppe",
+      "comparable": true,
+      "observations": [
+        {
+          "period": "CY2024",
+          "effectiveDate": "2024-12-31",
+          "disclosedAt": "2026-02-05",
+          "valueUsdB": 52.5,
+          "type": "actual",
+          "basis": "现金购置固定资产；公司整体Capex，非纯AI支出",
+          "basisKey": "cash_ppe",
+          "sourceId": "alphabet-annual-history"
+        },
+        {
+          "period": "CY2025",
+          "effectiveDate": "2025-12-31",
+          "disclosedAt": "2026-02-05",
+          "valueUsdB": 91.4,
+          "type": "actual",
+          "basis": "现金购置固定资产；公司整体Capex，非纯AI支出",
+          "basisKey": "cash_ppe",
+          "sourceId": "alphabet-annual-history"
+        },
+        {
+          "period": "CY2026",
+          "effectiveDate": "2026-12-31",
+          "disclosedAt": "2026-10-28",
+          "valueUsdB": 200,
+          "lowUsdB": 195,
+          "highUsdB": 205,
+          "type": "guidance",
+          "basis": "CY2026 · 公司整体Capex，主要为技术基础设施；Q3实际$51.355B不能替代全年指引",
+          "basisKey": "cash_ppe",
+          "sourceId": "alphabet-2026-guide",
+          "comparable": true
+        }
+      ]
+    },
+    {
+      "id": "capex-microsoft",
+      "companyId": "microsoft",
+      "group": "hyperscaler",
+      "name": "Microsoft",
+      "metric": "annual_capital_expenditures",
+      "basis": "自然年报告Capex，含融资租赁开始时确认额；2025为四季官方数值相加，2026租赁分类变化，不直接同比",
+      "basisKey": "reported_capex_including_lease_commencement",
+      "comparable": false,
+      "comparisonNote": "FY27起数据中心及办公楼预计使用寿命由15年延长至25年，使更多未来租赁归为经营租赁、不计入报告Capex；不代表同幅度削减投资。",
+      "observations": [
+        {
+          "period": "CY2025",
+          "effectiveDate": "2025-12-31",
+          "disclosedAt": "2026-01-28",
+          "valueUsdB": 118,
+          "type": "actual",
+          "basis": "自然年报告Capex，含融资租赁开始时确认额；2025为四季官方数值相加，2026租赁分类变化，不直接同比",
+          "basisKey": "reported_capex_including_lease_commencement",
+          "sourceId": "microsoft-annual-history",
+          "sourceUrls": [
+            "https://www.microsoft.com/en-us/investor/events/fy-2025/earnings-fy-2025-q3",
+            "https://www.microsoft.com/en-us/investor/events/fy-2025/earnings-fy-2025-q4",
+            "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q1",
+            "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q2"
+          ],
+          "calculation": "21.4 + 24.2 + 34.9 + 37.5 = 118.0 USD billion"
+        },
+        {
+          "period": "CY2026",
+          "effectiveDate": "2026-12-31",
+          "disclosedAt": "2026-10-28",
+          "valueUsdB": 170,
+          "lowUsdB": 170,
+          "highUsdB": 170,
+          "type": "guidance",
+          "basis": "CY2026 · 报告Capex，含租赁开始时确认的融资租赁；不是纯现金PP&E，且FY27起租赁分类变化影响可比性",
+          "basisKey": "reported_capex_including_lease_commencement",
+          "sourceId": "microsoft-2026-guide",
+          "comparable": false,
+          "comparisonNote": "FY27起数据中心及办公楼预计使用寿命由15年延长至25年，使更多未来租赁归为经营租赁、不计入报告Capex；不代表同幅度削减投资。"
+        }
+      ]
+    },
+    {
+      "id": "capex-amazon",
+      "companyId": "amazon",
+      "group": "hyperscaler",
+      "name": "Amazon",
+      "metric": "annual_capital_expenditures",
+      "basis": "现金Capex：现金购置PP&E扣除处置及激励；包括AWS技术设施和履约网络，非纯AI",
+      "basisKey": "cash_capex_net",
+      "comparable": true,
+      "observations": [
+        {
+          "period": "CY2024",
+          "effectiveDate": "2024-12-31",
+          "disclosedAt": "2026-02-05",
+          "valueUsdB": 77.658,
+          "type": "actual",
+          "basis": "现金Capex：现金购置PP&E扣除处置及激励；包括AWS技术设施和履约网络，非纯AI",
+          "basisKey": "cash_capex_net",
+          "sourceId": "amazon-annual-history"
+        },
+        {
+          "period": "CY2025",
+          "effectiveDate": "2025-12-31",
+          "disclosedAt": "2026-02-05",
+          "valueUsdB": 128.32,
+          "type": "actual",
+          "basis": "现金Capex：现金购置PP&E扣除处置及激励；包括AWS技术设施和履约网络，非纯AI",
+          "basisKey": "cash_capex_net",
+          "sourceId": "amazon-annual-history"
+        },
+        {
+          "period": "CY2026",
+          "effectiveDate": "2026-12-31",
+          "disclosedAt": "2026-10-29",
+          "valueUsdB": 220,
+          "lowUsdB": 220,
+          "highUsdB": 220,
+          "type": "guidance",
+          "basis": "CY2026 · 现金Capex约$220B；技术基础设施主要支持AWS，但也包含履约网络，不是纯AI支出",
+          "basisKey": "cash_capex_net",
+          "sourceId": "amazon-2026-guide",
+          "comparable": true
+        }
+      ]
+    },
+    {
+      "id": "capex-meta",
+      "companyId": "meta",
+      "group": "hyperscaler",
+      "name": "Meta",
+      "metric": "annual_capital_expenditures",
+      "basis": "现金购置PP&E加融资租赁本金支付，与微软新增租赁确认额不同",
+      "basisKey": "cash_ppe_plus_lease_principal",
+      "comparable": true,
+      "observations": [
+        {
+          "period": "CY2024",
+          "effectiveDate": "2024-12-31",
+          "disclosedAt": "2026-01-28",
+          "valueUsdB": 39.23,
+          "type": "actual",
+          "basis": "现金购置PP&E加融资租赁本金支付，与微软新增租赁确认额不同",
+          "basisKey": "cash_ppe_plus_lease_principal",
+          "sourceId": "meta-annual-history"
+        },
+        {
+          "period": "CY2025",
+          "effectiveDate": "2025-12-31",
+          "disclosedAt": "2026-01-28",
+          "valueUsdB": 72.22,
+          "type": "actual",
+          "basis": "现金购置PP&E加融资租赁本金支付，与微软新增租赁确认额不同",
+          "basisKey": "cash_ppe_plus_lease_principal",
+          "sourceId": "meta-annual-history"
+        },
+        {
+          "period": "CY2026",
+          "effectiveDate": "2026-12-31",
+          "disclosedAt": "2026-10-21",
+          "valueUsdB": 140,
+          "lowUsdB": 135,
+          "highUsdB": 145,
+          "type": "guidance",
+          "basis": "CY2026 · Capex包含融资租赁本金支付；与微软新增租赁开始时全额确认的口径不同",
+          "basisKey": "cash_ppe_plus_lease_principal",
+          "sourceId": "meta-2026-guide",
+          "comparable": true
+        }
+      ]
+    },
+    {
+      "id": "capex-coreweave",
+      "companyId": "coreweave",
+      "group": "neocloud",
+      "name": "CoreWeave",
+      "metric": "annual_capital_expenditures",
+      "basis": "公司Capex包含融资租赁并扣在建工程变化，非纯现金购置资产",
+      "basisKey": "capex_incurred",
+      "comparable": true,
+      "comparisonNote": "公司口径，不能与其它公司直接相加",
+      "officialUrls": [
+        "https://s205.q4cdn.com/133937190/files/doc_financials/2026/q2/CoreWeave-Q2-26-Earnings-Presentation.pdf",
+        "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000429/crwv2026convertpresentat.htm",
+        "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000362/coreweave2q26earningspress.htm",
+        "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000366/crwv-20260630.htm"
+      ],
+      "guidanceRevisions": [
+        {
+          "date": "2026-02-26",
+          "fiscalYear": 2026,
+          "event": "initial_guidance",
+          "metric": "company_defined_capex",
+          "low": 30,
+          "high": 35,
+          "midpoint": 32.5,
+          "sourceIds": [
+            "crwv_q4_2025_outlook"
+          ]
+        },
+        {
+          "date": "2026-05-07",
+          "fiscalYear": 2026,
+          "event": "raised_lower_bound",
+          "metric": "company_defined_capex",
+          "low": 31,
+          "high": 35,
+          "midpoint": 33,
+          "sourceIds": [
+            "crwv_q1_2026_outlook"
+          ],
+          "sourceLocation": "PDF p3"
+        },
+        {
+          "date": "2026-08-11",
+          "fiscalYear": 2026,
+          "event": "raised_range",
+          "metric": "company_defined_capex",
+          "low": 35,
+          "high": 39,
+          "midpoint": 37,
+          "sourceIds": [
+            "crwv_q2_2026_outlook"
+          ],
+          "sourceLocation": "PDF p3"
+        }
+      ],
+      "observations": [
+        {
+          "period": "CY2024",
+          "effectiveDate": "2024-12-31",
+          "disclosedAt": "2026-02-26",
+          "valueUsdB": 8.335,
+          "type": "actual",
+          "basis": "公司定义Capex，包含融资租赁并扣在建工程变化",
+          "basisKey": "capex_incurred",
+          "basisChange": false,
+          "sourceId": "crwv_q4_2025_deck",
+          "sourceIds": [
+            "crwv_q4_2025_deck"
+          ],
+          "comparable": true
+        },
+        {
+          "period": "CY2025",
+          "effectiveDate": "2025-12-31",
+          "disclosedAt": "2026-02-26",
+          "valueUsdB": 14.886,
+          "type": "actual",
+          "basis": "公司定义Capex，包含融资租赁并扣在建工程变化",
+          "basisKey": "capex_incurred",
+          "basisChange": false,
+          "sourceId": "crwv_q4_2025_deck",
+          "sourceIds": [
+            "crwv_q4_2025_deck"
+          ],
+          "comparable": true
+        },
+        {
+          "period": "CY2026",
+          "effectiveDate": "2026-12-31",
+          "disclosedAt": "2026-08-11",
+          "valueUsdB": 37,
+          "lowUsdB": 35,
+          "highUsdB": 39,
+          "type": "guidance",
+          "basis": "公司定义Capex，包含融资租赁并扣在建工程变化",
+          "basisKey": "capex_incurred",
+          "basisChange": false,
+          "sourceId": "crwv_q2_2026_outlook",
+          "sourceIds": [
+            "crwv_q2_2026_outlook"
+          ],
+          "comparable": true,
+          "comparisonNote": "截至 2026-11-01 可核验的最新全年指引。不要标记为 FY2026 实际。"
+        }
+      ]
+    },
+    {
+      "id": "capex-nebius",
+      "companyId": "nebius",
+      "group": "neocloud",
+      "name": "Nebius",
+      "metric": "annual_capital_expenditures",
+      "basis": "历史为现金购置固定资产及无形资产；2026为管理层业绩会口述Capex指引，未取得完整口径桥接",
+      "basisKey": "company_reported_capex",
+      "comparable": false,
+      "comparisonNote": "2026指引金额为业绩会口述，SEC信函未列具体金额；实际现金与指引未取得完整调节，不计算同比",
+      "officialUrls": [
+        "https://assets.nebius.com/assets/dca799f8-35e6-4d27-b267-574d56c60974/Transcript_MS%20Conference.pdf",
+        "https://www.sec.gov/Archives/edgar/data/1513845/000110465926094568/tm2622968d1_ex99-1.htm",
+        "https://www.sec.gov/Archives/edgar/data/1513845/000110465926094568/tm2622968d1_ex99-2.htm",
+        "https://nebius.com/investor-hub"
+      ],
+      "guidanceRevisions": [
+        {
+          "date": "2026-03-04",
+          "fiscalYear": 2026,
+          "event": "prior_range_confirmed_in_company_hosted_conference_transcript",
+          "metric": "management_capex_guidance",
+          "low": 16,
+          "high": 20,
+          "midpoint": 18,
+          "sourceIds": [
+            "nbis_march_2026_conference"
+          ],
+          "sourceLocation": "PDF p7",
+          "note": "该区间最早在 2/12 业绩会提出；本记录使用已直接核验的 3/4 官方会议文字作为可追溯日期，不伪装成 3/4 新上调。"
+        },
+        {
+          "date": "2026-05-13",
+          "fiscalYear": 2026,
+          "event": "raised_range",
+          "metric": "management_capex_guidance",
+          "low": 20,
+          "high": 25,
+          "midpoint": 22.5,
+          "sourceIds": [
+            "nbis_q1_2026_webcast",
+            "nbis_q1_2026_call_reproduction"
+          ],
+          "sourceQualification": "管理层官方业绩会口述；具体金额文字来自第三方逐字转录，官方书面信函没有金额。"
+        },
+        {
+          "date": "2026-08-12",
+          "fiscalYear": 2026,
+          "event": "reaffirmed",
+          "metric": "management_capex_guidance",
+          "low": 20,
+          "high": 25,
+          "midpoint": 22.5,
+          "sourceIds": [
+            "nbis_q2_2026_letter",
+            "nbis_q2_2026_webcast",
+            "nbis_q2_2026_call_reproduction"
+          ],
+          "sourceQualification": "官方信函确认重申全年指引，20–25 金额来自管理层业绩会。"
+        }
+      ],
+      "observations": [
+        {
+          "period": "CY2024",
+          "effectiveDate": "2024-12-31",
+          "disclosedAt": "2026-04-30",
+          "valueUsdB": 0.8075,
+          "type": "actual",
+          "basis": "现金购置固定资产及无形资产",
+          "basisKey": "cash_purchases_ppe_and_intangibles",
+          "basisChange": false,
+          "sourceId": "nbis_2025_20f",
+          "sourceIds": [
+            "nbis_2025_20f"
+          ],
+          "comparable": false,
+          "comparisonNote": "采用 2025 年报最新列示的 2024 可比数字；不要与原始 2024 公告约 0.8081 的旧值混用。"
+        },
+        {
+          "period": "CY2025",
+          "effectiveDate": "2025-12-31",
+          "disclosedAt": "2026-04-30",
+          "valueUsdB": 4.066,
+          "type": "actual",
+          "basis": "现金购置固定资产及无形资产",
+          "basisKey": "cash_purchases_ppe_and_intangibles",
+          "basisChange": false,
+          "sourceId": "nbis_2025_20f",
+          "sourceIds": [
+            "nbis_2025_20f"
+          ],
+          "comparable": false
+        },
+        {
+          "period": "CY2026",
+          "effectiveDate": "2026-12-31",
+          "disclosedAt": "2026-08-12",
+          "valueUsdB": 22.5,
+          "lowUsdB": 20,
+          "highUsdB": 25,
+          "type": "guidance",
+          "basis": "管理层口述全年Capex指引，金额以官方录音及管理层转录交叉核验",
+          "basisKey": "company_reported_capex",
+          "basisChange": true,
+          "sourceId": "nbis_q2_2026_call_reproduction",
+          "sourceIds": [
+            "nbis_q2_2026_letter",
+            "nbis_q2_2026_webcast",
+            "nbis_q2_2026_call_reproduction"
+          ],
+          "comparable": false,
+          "comparisonNote": "官方信函写明全年指引重申，但不列 20–25 金额；具体金额可从官方业绩会录音核对，本次文字复核使用该管理层原话的第三方转录，不能标成 SEC 财报表格内数字。"
+        }
+      ]
+    },
+    {
+      "id": "arr-openai",
+      "companyId": "openai",
+      "group": "arr",
+      "name": "OpenAI",
+      "metric": "annualized_revenue_run_rate",
+      "basis": "公司/媒体报告的annualized revenue run-rate；公司2026年1月CFO文章亦称ARR。公开披露含订阅、API及其它业务，不能简单当合同续费ARR。部分云渠道按净额记录，未取得完整审计口径桥接。",
+      "basisKey": "annualized_revenue_run_rate",
+      "observations": [
+        {
+          "period": "2024-12",
+          "effectiveDate": "2024-12-31",
+          "effectiveDatePrecision": "year_end_proxy",
+          "disclosedAt": "2026-01-18",
+          "valueUsdB": 6,
+          "type": "run_rate",
+          "basis": "公司/媒体报告的annualized revenue run-rate；公司2026年1月CFO文章亦称ARR。公开披露含订阅、API及其它业务，不能简单当合同续费ARR。部分云渠道按净额记录，未取得完整审计口径桥接。",
+          "basisKey": "annualized_revenue_run_rate",
+          "sourceId": "oa-cfo-20260118",
+          "comparison": "~",
+          "note": "CFO回顾2024年ARR为60亿美元；日期为年度图形端点，不声称公司在12月31日单独公布。"
+        },
+        {
+          "period": "2025-12",
+          "effectiveDate": "2025-12-31",
+          "effectiveDatePrecision": "year_end",
+          "disclosedAt": "2026-03-05",
+          "valueUsdB": 21.4,
+          "type": "run_rate",
+          "basis": "公司/媒体报告的annualized revenue run-rate；公司2026年1月CFO文章亦称ARR。公开披露含订阅、API及其它业务，不能简单当合同续费ARR。部分云渠道按净额记录，未取得完整审计口径桥接。",
+          "basisKey": "annualized_revenue_run_rate",
+          "sourceId": "oa-reuters-25-20260305",
+          "comparison": "~",
+          "note": "Reuters转引The Information给出214亿美元，Reuters称无法独立核验。公司CFO1月18日仅公开确认2025年超过200亿美元，故214亿是媒体精度，不冒称公司正式审计数。"
+        },
+        {
+          "period": "2026-02",
+          "effectiveDate": "2026-02-28",
+          "effectiveDatePrecision": "month_end",
+          "disclosedAt": "2026-03-05",
+          "valueUsdB": 25,
+          "type": "run_rate",
+          "basis": "公司/媒体报告的annualized revenue run-rate；公司2026年1月CFO文章亦称ARR。公开披露含订阅、API及其它业务，不能简单当合同续费ARR。部分云渠道按净额记录，未取得完整审计口径桥接。",
+          "basisKey": "annualized_revenue_run_rate",
+          "sourceId": "oa-reuters-25-20260305",
+          "comparison": ">",
+          "note": "Reuters转引The Information称2月末已超过250亿美元；不是2026全年收入。"
+        },
+        {
+          "period": "2026-08",
+          "effectiveDate": "2026-08-13",
+          "effectiveDatePrecision": "reported_current_date",
+          "disclosedAt": "2026-08-13",
+          "valueUsdB": 40,
+          "type": "run_rate",
+          "basis": "公司/媒体报告的annualized revenue run-rate；公司2026年1月CFO文章亦称ARR。公开披露含订阅、API及其它业务，不能简单当合同续费ARR。部分云渠道按净额记录，未取得完整审计口径桥接。",
+          "basisKey": "annualized_revenue_run_rate",
+          "sourceId": "oa-bloomberg-40-20260813",
+          "comparison": ">",
+          "note": "Bloomberg引用知情人士的当时业绩运行率；不把新闻表述on track误读为全年确认收入，也不虚构8月31日精确观察。"
+        },
+        {
+          "period": "2026-09",
+          "effectiveDate": "2026-09-30",
+          "effectiveDatePrecision": "month_end",
+          "disclosedAt": "2026-10-08",
+          "valueUsdB": 50,
+          "type": "run_rate",
+          "basis": "公司/媒体报告的annualized revenue run-rate；公司2026年1月CFO文章亦称ARR。公开披露含订阅、API及其它业务，不能简单当合同续费ARR。部分云渠道按净额记录，未取得完整审计口径桥接。",
+          "basisKey": "annualized_revenue_run_rate",
+          "sourceId": "oa-reuters-correction-20261008",
+          "comparison": "~",
+          "note": "10月8日Reuters称9月运行率接近500亿美元；此前约700亿美元主要涉及为对比Anthropic而做的口径模拟/投资人推算。将同一9月末观察修正为约500亿，不在曲线画700亿→500亿的经营下降。",
+          "correction": true,
+          "correctionNote": "10月8日Reuters称9月运行率接近500亿美元；此前约700亿美元主要涉及为对比Anthropic而做的口径模拟/投资人推算。将同一9月末观察修正为约500亿，不在曲线画700亿→500亿的经营下降。",
+          "previousReportedValueUsdB": 70
+        }
+      ],
+      "corrections": [
+        {
+          "effectiveDate": "2026-09-30",
+          "originalDisclosedAt": "2026-09-29",
+          "correctedDisclosedAt": "2026-10-08",
+          "previousReportedValueUsdB": 70,
+          "correctedValueUsdB": 50,
+          "previousValuePlotEligible": false,
+          "reason": "同一测量期的会计/比较口径修正，不是一个新的后续月份经营读数；不能据此计算负增长或触发行业阶段退档。",
+          "sourceId": "oa-reuters-correction-20261008"
+        }
+      ],
+      "forecastsNotInCurve": [
+        {
+          "targetPeriod": "2026-12-31",
+          "valueUsdB": 70,
+          "comparison": ">=",
+          "isRealized": false,
+          "note": "10月媒体亦报道年底约700亿美元目标，与被修正的9月700亿不是同一个数据点；本次未取得足够官方核验，暂不作为曲线或阶段实际信号。"
+        }
+      ]
+    },
+    {
+      "id": "arr-anthropic",
+      "companyId": "anthropic",
+      "group": "arr",
+      "name": "Anthropic",
+      "metric": "annualized_revenue_run_rate",
+      "basis": "S-1定义：测量日前28天consumption-based fees×13，加测量日当月subscription fees×12。是短期用量/订阅年化指标，不是合同ARR，也非GAAP营收。云渠道gross呈现与OpenAI部分net呈现不同。",
+      "basisKey": "annualized_revenue_run_rate",
+      "observations": [
+        {
+          "period": "2025-01",
+          "effectiveDate": "2025-01-01",
+          "effectiveDatePrecision": "beginning_of_year_approximation",
+          "disclosedAt": "2025-09-02",
+          "valueUsdB": 1,
+          "type": "run_rate",
+          "basis": "S-1定义：测量日前28天consumption-based fees×13，加测量日当月subscription fees×12。是短期用量/订阅年化指标，不是合同ARR，也非GAAP营收。云渠道gross呈现与OpenAI部分net呈现不同。",
+          "basisKey": "annualized_revenue_run_rate",
+          "sourceId": "anth-series-f-20250902",
+          "comparison": "~",
+          "note": "公司原文为2025年初约10亿美元，图形可作2024末基准附近观察，不虚构2024-12-31精确数。"
+        },
+        {
+          "period": "2025-08",
+          "effectiveDate": "2025-08-31",
+          "effectiveDatePrecision": "month",
+          "disclosedAt": "2025-09-02",
+          "valueUsdB": 5,
+          "type": "run_rate",
+          "basis": "S-1定义：测量日前28天consumption-based fees×13，加测量日当月subscription fees×12。是短期用量/订阅年化指标，不是合同ARR，也非GAAP营收。云渠道gross呈现与OpenAI部分net呈现不同。",
+          "basisKey": "annualized_revenue_run_rate",
+          "sourceId": "anth-series-f-20250902",
+          "comparison": ">"
+        },
+        {
+          "period": "2025-12",
+          "effectiveDate": "2025-12-31",
+          "effectiveDatePrecision": "year_end",
+          "disclosedAt": "2026-04-20",
+          "valueUsdB": 9,
+          "type": "run_rate",
+          "basis": "S-1定义：测量日前28天consumption-based fees×13，加测量日当月subscription fees×12。是短期用量/订阅年化指标，不是合同ARR，也非GAAP营收。云渠道gross呈现与OpenAI部分net呈现不同。",
+          "basisKey": "annualized_revenue_run_rate",
+          "sourceId": "anth-amazon-20260420",
+          "comparison": "~"
+        },
+        {
+          "period": "2026-02",
+          "effectiveDate": "2026-02-12",
+          "effectiveDatePrecision": "company_announcement_date",
+          "disclosedAt": "2026-02-12",
+          "valueUsdB": 14,
+          "type": "run_rate",
+          "basis": "S-1定义：测量日前28天consumption-based fees×13，加测量日当月subscription fees×12。是短期用量/订阅年化指标，不是合同ARR，也非GAAP营收。云渠道gross呈现与OpenAI部分net呈现不同。",
+          "basisKey": "annualized_revenue_run_rate",
+          "sourceId": "anth-series-g-20260212",
+          "comparison": "~"
+        },
+        {
+          "period": "2026-04",
+          "effectiveDate": "2026-04-20",
+          "effectiveDatePrecision": "company_announcement_date",
+          "disclosedAt": "2026-04-20",
+          "valueUsdB": 30,
+          "type": "run_rate",
+          "basis": "S-1定义：测量日前28天consumption-based fees×13，加测量日当月subscription fees×12。是短期用量/订阅年化指标，不是合同ARR，也非GAAP营收。云渠道gross呈现与OpenAI部分net呈现不同。",
+          "basisKey": "annualized_revenue_run_rate",
+          "sourceId": "anth-amazon-20260420",
+          "comparison": ">"
+        },
+        {
+          "period": "2026-05",
+          "effectiveDate": "2026-05-28",
+          "effectiveDatePrecision": "announcement_month_upper_date",
+          "disclosedAt": "2026-05-28",
+          "valueUsdB": 47,
+          "type": "run_rate",
+          "basis": "S-1定义：测量日前28天consumption-based fees×13，加测量日当月subscription fees×12。是短期用量/订阅年化指标，不是合同ARR，也非GAAP营收。云渠道gross呈现与OpenAI部分net呈现不同。",
+          "basisKey": "annualized_revenue_run_rate",
+          "sourceId": "anth-series-h-20260528",
+          "comparison": ">"
+        },
+        {
+          "period": "2026-07",
+          "effectiveDate": "2026-07-31",
+          "effectiveDatePrecision": "month_end",
+          "disclosedAt": "2026-08-17",
+          "valueUsdB": 65,
+          "type": "run_rate",
+          "basis": "S-1定义：测量日前28天consumption-based fees×13，加测量日当月subscription fees×12。是短期用量/订阅年化指标，不是合同ARR，也非GAAP营收。云渠道gross呈现与OpenAI部分net呈现不同。",
+          "basisKey": "annualized_revenue_run_rate",
+          "sourceId": "anth-july-65-20260817",
+          "comparison": ">",
+          "note": "媒体引述向投资人披露的7月末运行率，10月8日Reuters再次援引。不是2026年全部已实现收入，也不是当前11月的实时估算。"
+        }
+      ],
+      "corrections": [],
+      "forecastsNotInCurve": [
+        {
+          "targetPeriod": "2026-12-31",
+          "valueUsdB": 100,
+          "comparison": ">",
+          "isRealized": false,
+          "note": "早前媒体报道的年底超过1000亿美元预期仍是目标；不进入已实现运行率曲线，也不凭此自动推进技术革命阶段。"
+        }
+      ]
+    }
+  ],
+  "commercialEvidence": {
+    "matureEvidenceYears": 0,
+    "modelCompanyEvidence": [
+      {
+        "effectiveDate": "2026-08-31",
+        "disclosedAt": "2026-08-31",
+        "metric": "advertising_annualized_revenue_run_rate",
+        "valueUsdB": 1,
+        "status": "issuer_reported_actual_unaudited",
+        "fact": "公司公开宣布广告业务年化运行率达到10亿美元，属于总业务的子集，不在公司运行率上额外相加。",
+        "sourceId": "oa-ads-20260831",
+        "companyId": "openai"
+      },
+      {
+        "effectiveDate": "2026-08-31",
+        "metric": "weekly_active_users",
+        "value": 1000000000,
+        "comparison": ">",
+        "status": "issuer_reported_operating_metric",
+        "fact": "同一公司公告称周活用户超过10亿；活跃使用不等于付费用户数或盈利。",
+        "sourceId": "oa-ads-20260831",
+        "companyId": "openai"
+      },
+      {
+        "effectiveDate": "2026-06-30",
+        "disclosedAt": "2026-10-26",
+        "metric": "recognized_revenue_half_year",
+        "valueUsdB": 16.286,
+        "priorComparableUsdB": 1.163,
+        "status": "issuer_filing_interim_unaudited",
+        "fact": "S-1正式列示2026H1营收162.86亿美元；同比基期11.63亿美元。实际半年营收独立呈现，不乘2造ARR。",
+        "sourceId": "anth-s1-20261026",
+        "companyId": "anthropic"
+      },
+      {
+        "effectiveDate": "2026-06-30",
+        "disclosedAt": "2026-10-26",
+        "metric": "operating_cash_flow_half_year",
+        "valueUsdB": 3.929,
+        "status": "issuer_filing_interim_unaudited",
+        "fact": "半年经营现金净流入39.29亿美元；GAAP经营利润率仍为负4%，调整后经营利润率10%。调整项及营运资金影响意味着不能由单期现金或调整后利润宣布全行业进入成熟盈利期。",
+        "sourceId": "anth-s1-20261026",
+        "companyId": "anthropic"
+      },
+      {
+        "effectiveDate": "2026-09-30",
+        "disclosedAt": "2026-10-26",
+        "metric": "customers_with_ttm_revenue_at_least_100k",
+        "value": 11900,
+        "comparison": ">",
+        "priorComparable": 950,
+        "status": "issuer_filing_operating_metric",
+        "fact": "S-1披露TTM收入至少10万美元的客户超过11,900家，上年同期超过950家；不是全部客户或所有企业付费用户。",
+        "sourceId": "anth-s1-20261026",
+        "companyId": "anthropic"
+      },
+      {
+        "effectiveDate": "2026-09-30",
+        "disclosedAt": "2026-10-14",
+        "metric": "recognized_revenue_quarter_media_report",
+        "valueUsdB": 16.8,
+        "status": "media_reported_actual_unaudited",
+        "fact": "Reuters Breakingviews引述投资者交流称Q3收入约168亿美元；单独作为未审计商业化证据，不以×4生成所谓672亿美元ARR。",
+        "sourceId": "anth-q3-bv-20261015",
+        "companyId": "anthropic"
+      }
+    ],
+    "comparisonCaveat": "OpenAI与Anthropic对部分云渠道收入采用不同的gross/net呈现，不能将两条运行率金额直接视作同口径市场份额。Anthropic在S-1中定义的运行率为近28天用量费×13，加当月订阅费×12；既非已签约经常收入，也非未来一年业绩承诺。"
+  },
+  "riskMetrics": [
+    {
+      "metric": "gaap_revenue",
+      "period": "2026-Q2",
+      "value": 2.575,
+      "sourceIds": [
+        "crwv_q2_2026_release"
+      ],
+      "companyId": "coreweave",
+      "company": "CoreWeave",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-11",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "gaap_net_loss",
+      "period": "2026-Q2",
+      "value": -0.626,
+      "sourceIds": [
+        "crwv_q2_2026_release"
+      ],
+      "companyId": "coreweave",
+      "company": "CoreWeave",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-11",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "net_interest_expense",
+      "period": "2026-Q2",
+      "value": 0.64,
+      "sourceIds": [
+        "crwv_q2_2026_release"
+      ],
+      "note": "正数表示费用，不是利息收入。",
+      "companyId": "coreweave",
+      "company": "CoreWeave",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-11",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "operating_cash_flow",
+      "period": "2026-H1",
+      "value": 3.663,
+      "sourceIds": [
+        "crwv_q2_2026_10q"
+      ],
+      "sourceLocation": "cash flow statement, printed p11",
+      "companyId": "coreweave",
+      "company": "CoreWeave",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "cash_purchases_ppe",
+      "period": "2026-H1",
+      "value": 14.117,
+      "sourceIds": [
+        "crwv_q2_2026_10q"
+      ],
+      "companyId": "coreweave",
+      "company": "CoreWeave",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "simple_operating_cash_flow_less_cash_capex",
+      "period": "2026-H1",
+      "value": -10.454,
+      "calculation": "3.663 - 14.117",
+      "status": "analyst_calculation",
+      "sourceIds": [
+        "crwv_q2_2026_10q"
+      ],
+      "note": "简化现金差额，不是公司自定义自由现金流，也未将融资租赁等视为现金资本开支。",
+      "companyId": "coreweave",
+      "company": "CoreWeave",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "net_financing_cash_inflow",
+      "period": "2026-H1",
+      "value": 13.985,
+      "sourceIds": [
+        "crwv_q2_2026_10q"
+      ],
+      "note": "融资现金流很大，不能只看调整后 EBITDA 判断资本纪律。",
+      "companyId": "coreweave",
+      "company": "CoreWeave",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "cash_and_equivalents",
+      "date": "2026-06-30",
+      "value": 5.524,
+      "sourceIds": [
+        "crwv_q2_2026_10q"
+      ],
+      "note": "不含受限现金；与媒体使用的现金加受限现金 6.904 不同。",
+      "companyId": "coreweave",
+      "company": "CoreWeave",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "increase_in_deferred_revenue_in_cash_flow",
+      "period": "2026-H1",
+      "value": 1.365,
+      "sourceIds": [
+        "crwv_q2_2026_10q"
+      ],
+      "note": "经营现金流包含合同收款时点因素，不能全部理解为已经赚取的自由现金。",
+      "companyId": "coreweave",
+      "company": "CoreWeave",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "revenue_backlog",
+      "date": "2026-06-30",
+      "value": 104.2,
+      "sourceIds": [
+        "crwv_q2_2026_deck",
+        "crwv_q2_2026_release"
+      ],
+      "note": "未来合同收入储备，不是现金、不等于当期收入，不得放入 Capex 序列。",
+      "companyId": "coreweave",
+      "company": "CoreWeave",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-11",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "gaap_revenue_guidance",
+      "period": "2026-FY",
+      "low": 12.4,
+      "high": 13.2,
+      "status": "company_guidance",
+      "sourceIds": [
+        "crwv_q2_2026_outlook"
+      ],
+      "companyId": "coreweave",
+      "company": "CoreWeave",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-11",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "exit_arr_guidance",
+      "period": "2026-year-end",
+      "low": 18.5,
+      "high": 19.5,
+      "status": "company_guidance",
+      "sourceIds": [
+        "crwv_q2_2026_outlook"
+      ],
+      "note": "年末月收入年化运行率，不是 2026 全年 GAAP 收入。",
+      "companyId": "coreweave",
+      "company": "CoreWeave",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-11",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "gaap_revenue",
+      "period": "2026-Q2",
+      "value": 0.5823,
+      "sourceIds": [
+        "nbis_q2_2026_release"
+      ],
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "gaap_revenue",
+      "period": "2026-H1",
+      "value": 0.9813,
+      "sourceIds": [
+        "nbis_q2_2026_release"
+      ],
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "net_loss_continuing_operations",
+      "period": "2026-Q2",
+      "value": -0.1904,
+      "sourceIds": [
+        "nbis_q2_2026_release"
+      ],
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "operating_cash_flow_continuing_operations",
+      "period": "2026-H1",
+      "value": 4.5041,
+      "sourceIds": [
+        "nbis_q2_2026_release"
+      ],
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "increase_in_deferred_revenue_in_cash_flow",
+      "period": "2026-H1",
+      "value": 4.395,
+      "sourceIds": [
+        "nbis_q2_2026_release"
+      ],
+      "note": "经营现金流明显受客户预收款影响，不能等同已经变现的净利润。",
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "simple_operating_cash_flow_less_cash_capex",
+      "period": "2026-H1",
+      "value": -3.6262,
+      "calculation": "4.5041 - 8.1303",
+      "status": "analyst_calculation",
+      "sourceIds": [
+        "nbis_q2_2026_release"
+      ],
+      "note": "简化经营现金减购置资产差额，不是公司自定义自由现金流。",
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "convertible_note_issuance_gross_cash_proceeds",
+      "period": "2026-H1",
+      "value": 4.3375,
+      "sourceIds": [
+        "nbis_q2_2026_release"
+      ],
+      "note": "发行收到现金，不等于期末债务账面值或到期面值。",
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "treasury_share_sale_gross_cash_proceeds",
+      "period": "2026-Q2",
+      "value": 2.8467,
+      "sourceIds": [
+        "nbis_q2_2026_release"
+      ],
+      "note": "未扣发行费用，代表股权融资。",
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "cash_and_equivalents_approx",
+      "date": "2026-06-30",
+      "value": 8,
+      "sourceIds": [
+        "nbis_q2_2026_letter"
+      ],
+      "sourceLocation": "shareholder letter p2",
+      "note": "公司概述使用约 8B；非精确余额。",
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "asset_backed_financing",
+      "date": "2026-07",
+      "value": 0.775,
+      "interest": "SOFR + 2.50%",
+      "sourceIds": [
+        "nbis_q2_2026_letter"
+      ],
+      "sourceLocation": "shareholder letter financing discussion",
+      "note": "融资能力改善，但不是收入或资本开支。",
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "arr",
+      "date": "2026-06-30",
+      "value": 3,
+      "sourceIds": [
+        "nbis_q2_2026_letter"
+      ],
+      "note": "月末收入运行率年化，不是累计全年收入。",
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "year_end_arr_guidance",
+      "period": "2026-year-end",
+      "low": 7,
+      "high": 9,
+      "status": "company_guidance",
+      "sourceIds": [
+        "nbis_q2_2026_letter",
+        "nbis_q2_2026_webcast"
+      ],
+      "note": "与全年 3.0–3.4B 收入指引不是同一指标。",
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "gaap_revenue_guidance",
+      "period": "2026-FY",
+      "low": 3,
+      "high": 3.4,
+      "status": "company_guidance",
+      "sourceIds": [
+        "nbis_q2_2026_letter",
+        "nbis_q2_2026_webcast"
+      ],
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12",
+      "unit": "USD billion"
+    },
+    {
+      "metric": "contracted_power_guidance_gw",
+      "period": "2026-year-end",
+      "value": 5,
+      "unit": "GW",
+      "status": "company_guidance",
+      "sourceIds": [
+        "nbis_q2_2026_letter"
+      ],
+      "note": "签约电力不是已经上线的付费算力，更不是支出。",
+      "companyId": "nebius",
+      "company": "Nebius",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-08-12"
+    },
+    {
+      "companyId": "anthropic",
+      "company": "Anthropic",
+      "metric": "gaap_operating_margin_pct",
+      "period": "2026-H1",
+      "value": -4,
+      "unit": "%",
+      "effectiveDate": "2026-06-30",
+      "disclosedAt": "2026-10-26",
+      "sourceIds": [
+        "anth-s1-20261026"
+      ],
+      "note": "GAAP经营利润率；调整后10%不替代GAAP"
+    }
+  ],
+  "sources": [
+    {
+      "id": "oa-cfo-20260118",
+      "name": "OpenAI CFO官方业务文章",
+      "url": "https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/",
+      "date": "2026-01-18",
+      "kind": "issuer",
+      "locator": "Looking back on the past three years段：2023 $2B、2024 $6B、2025 $20B+ ARR",
+      "verified": true,
+      "rank": "official"
+    },
+    {
+      "id": "oa-reuters-25-20260305",
+      "name": "Reuters：OpenAI2月运行率超过250亿美元（The Information消息）",
+      "url": "https://finance.yahoo.com/news/openai-tops-25-billion-annualized-033836274.html",
+      "originalUrl": "https://www.reuters.com/technology/openai-tops-25-billion-annualized-revenue-last-month-information-reports-2026-03-05/",
+      "date": "2026-03-05",
+      "kind": "reuters_syndicated",
+      "verified": true,
+      "sourceCaveat": "核验了公开Reuters同稿转载，Reuters原稿转引The Information且声明未独立验证。",
+      "rank": "reliable_media"
+    },
+    {
+      "id": "oa-bloomberg-40-20260813",
+      "name": "Bloomberg：OpenAI运行率超过400亿美元",
+      "url": "https://news.bloomberglaw.com/artificial-intelligence/openais-revenue-run-rate-tops-40-billion-ahead-of-ipo",
+      "date": "2026-08-13",
+      "kind": "media_reported",
+      "verified": true,
+      "sourceCaveat": "已读可见报道开头；数字来自未具名知情人士，不当作公司公告。",
+      "rank": "reliable_media"
+    },
+    {
+      "id": "oa-reuters-correction-20261008",
+      "name": "Reuters：OpenAI9月运行率接近500亿美元，低于先前口径",
+      "url": "https://www.streetinsider.com/Reuters/OpenAIs%2BSeptember%2Bannualized%2Brevenue%2Bnears%2B%2450%2Bbillion%2C%2Bless%2Bthan%2Bpreviously%2Bindicated%2C%2Bsource%2Bsays/27167688.html?classic=1",
+      "originalUrl": "https://www.reuters.com/business/openais-annualized-revenue-20-billion-less-than-previously-signaled-ft-reports-2026-10-08/",
+      "corroboratingUrl": "https://www.marketscreener.com/news/openai-s-september-annualized-revenue-nears-50-billion-less-than-previously-indicated-source-says-ce785ddfdf8bff23",
+      "date": "2026-10-08",
+      "kind": "reuters_syndicated",
+      "verified": true,
+      "sourceCaveat": "已读StreetInsider及MarketScreener上署名Reuters的原稿转载。Reuters域名直链在本次工具不可访问，故主要可读引用使用同稿转载，不声称读到不可访问原网页。",
+      "rank": "reliable_media"
+    },
+    {
+      "id": "oa-ads-20260831",
+      "name": "OpenAI官方：ChatGPT Ads10亿美元运行率里程碑",
+      "url": "https://openai.com/index/expanding-access-to-ai-with-chatgpt-ads/",
+      "date": "2026-08-31",
+      "kind": "issuer",
+      "locator": "新闻标题与From an early pilot to a global platform",
+      "verified": true,
+      "rank": "official"
+    },
+    {
+      "id": "anth-series-f-20250902",
+      "name": "Anthropic官方Series F融资公告",
+      "url": "https://www.anthropic.com/news/anthropic-raises-series-f-at-usd183b-post-money-valuation",
+      "date": "2025-09-02",
+      "kind": "issuer",
+      "locator": "2025年初约$1B、8月超过$5B运行率",
+      "verified": true,
+      "rank": "official"
+    },
+    {
+      "id": "anth-series-g-20260212",
+      "name": "Anthropic官方Series G融资公告",
+      "url": "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation",
+      "date": "2026-02-12",
+      "kind": "issuer",
+      "locator": "run-rate revenue $14B段",
+      "verified": true,
+      "rank": "official"
+    },
+    {
+      "id": "anth-amazon-20260420",
+      "name": "Anthropic官方：与Amazon扩大算力合作",
+      "url": "https://www.anthropic.com/news/anthropic-amazon-compute",
+      "date": "2026-04-20",
+      "kind": "issuer",
+      "locator": "Meeting record demand：超过$30B、2025末约$9B",
+      "verified": true,
+      "rank": "official"
+    },
+    {
+      "id": "anth-series-h-20260528",
+      "name": "Anthropic官方Series H融资公告",
+      "url": "https://www.anthropic.com/news/series-h",
+      "date": "2026-05-28",
+      "kind": "issuer",
+      "locator": "run-rate crossed $47B earlier this month",
+      "verified": true,
+      "rank": "official"
+    },
+    {
+      "id": "anth-july-65-20260817",
+      "name": "Axios：Anthropic7月末运行率超过650亿美元（Bloomberg报道）",
+      "url": "https://www.axios.com/2026/08/17/anthropic-revenue-run-rate-ipo-openai",
+      "corroboratingUrl": "https://www.youtube.com/watch?v=3U_0AKZhi_I",
+      "date": "2026-08-17",
+      "kind": "media_reported",
+      "verified": true,
+      "sourceCaveat": "已读Axios公开报道及CNBC视频简介；公司未在本次取得的官网公告中披露7月具体数值，不能标成issuer verified。",
+      "rank": "reliable_media"
+    },
+    {
+      "id": "anth-s1-20261026",
+      "name": "Anthropic SEC S-1正式申报",
+      "url": "https://www.sec.gov/Archives/edgar/data/2130357/000162828026067168/anthropicpbc-sx1.htm",
+      "date": "2026-10-26",
+      "kind": "issuer_filing",
+      "locator": "定义p1；H1报表与非GAAP调节p132以后、现金流p169/F-12；企业客户p9/195；10/31运行率数值空白p195",
+      "verified": true,
+      "rank": "official"
+    },
+    {
+      "id": "anth-q3-bv-20261015",
+      "name": "Reuters Breakingviews：Anthropic投资者交流中的Q3收入",
+      "url": "https://www.breakingviews.com/ddb76cfb4026/columns/breaking-view/anthropics-2-trln-dream-faces-deflation-trap-2026-10-15/",
+      "date": "2026-10-15",
+      "kind": "reuters_analysis_reported",
+      "sourceCaveat": "属于专栏中的知情人士消息，不是SEC已列示的Q3正式报表；与H1正式数据分层呈现。",
+      "verified": true,
+      "rank": "reliable_media"
+    },
+    {
+      "id": "crwv_q4_2025_deck",
+      "date": "2026-02-26",
+      "type": "official_earnings_presentation",
+      "url": "https://s205.q4cdn.com/133937190/files/doc_financials/2025/q4/CoreWeave-4Q25-Earnings-Presentation-vF.pdf",
+      "pages": [
+        17
+      ],
+      "supports": "FY2024/FY2025 公司口径 Capex、计算桥接",
+      "name": "FY2024/FY2025 公司口径 Capex、计算桥接",
+      "rank": "official"
+    },
+    {
+      "id": "crwv_q4_2025_outlook",
+      "date": "2026-02-26",
+      "type": "official_outlook_presentation",
+      "url": "https://s205.q4cdn.com/133937190/files/doc_financials/2025/q4/CoreWeave-4Q25-Outlook-Presentation-vF.pdf",
+      "supports": "初始 2026 Capex 指引 30–35",
+      "name": "初始 2026 Capex 指引 30–35",
+      "rank": "official"
+    },
+    {
+      "id": "crwv_q1_2026_outlook",
+      "date": "2026-05-07",
+      "type": "official_outlook_presentation",
+      "url": "https://s205.q4cdn.com/133937190/files/doc_financials/2026/q1/CoreWeave-1Q26-Outlook-Presentation.pdf",
+      "pages": [
+        3
+      ],
+      "supports": "2026 Capex 指引 31–35",
+      "name": "2026 Capex 指引 31–35",
+      "rank": "official"
+    },
+    {
+      "id": "crwv_q2_2026_outlook",
+      "date": "2026-08-11",
+      "type": "official_outlook_presentation",
+      "url": "https://s205.q4cdn.com/133937190/files/doc_financials/2026/q2/CoreWeave-Q2-26-Earnings-Outlook-Presentation.pdf",
+      "pages": [
+        3
+      ],
+      "supports": "2026 Capex 35–39、收入与年末 ARR 指引",
+      "name": "2026 Capex 35–39、收入与年末 ARR 指引",
+      "rank": "official"
+    },
+    {
+      "id": "crwv_q2_2026_deck",
+      "date": "2026-08-11",
+      "type": "official_earnings_presentation",
+      "url": "https://s205.q4cdn.com/133937190/files/doc_financials/2026/q2/CoreWeave-Q2-26-Earnings-Presentation.pdf",
+      "pages": [
+        14
+      ],
+      "supports": "最新公司口径 Capex 与 backlog",
+      "name": "最新公司口径 Capex 与 backlog",
+      "rank": "official"
+    },
+    {
+      "id": "crwv_sep_2026_sec_deck",
+      "date": "2026-09-17",
+      "type": "sec_filed_company_presentation",
+      "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000429/crwv2026convertpresentat.htm",
+      "location": "slide 36",
+      "supports": "Q2/H1 Capex 计算表，未新增 Q3 实际",
+      "name": "Q2/H1 Capex 计算表，未新增 Q3 实际",
+      "rank": "official"
+    },
+    {
+      "id": "crwv_q2_2026_release",
+      "date": "2026-08-11",
+      "type": "sec_furnished_official_earnings_release",
+      "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000362/coreweave2q26earningspress.htm",
+      "supports": "Q2 收入、损失、利息费用及 backlog",
+      "name": "Q2 收入、损失、利息费用及 backlog",
+      "rank": "official"
+    },
+    {
+      "id": "crwv_q2_2026_10q",
+      "date": "2026-08-12",
+      "type": "sec_10q",
+      "url": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000366/crwv-20260630.htm",
+      "location": "printed pp11, 46–47",
+      "supports": "H1 经营现金流、现金购置 PP&E、融资现金流、现金及受限现金；现金流量表单位 million 已除以 1000",
+      "name": "H1 经营现金流、现金购置 PP&E、融资现金流、现金及受限现金；现金流量表单位 million 已除以 1000",
+      "rank": "official"
+    },
+    {
+      "id": "crwv_q3_2026_schedule",
+      "date": "2026-10-27",
+      "type": "official_ir_announcement",
+      "url": "https://investors.coreweave.com/news/news-details/2026/CoreWeave-Announces-Date-of-Third-Quarter-2026-Financial-Results-and-Conference-Call/default.aspx",
+      "supports": "Q3 定于 11/10 披露，不将其作为已知实际值",
+      "name": "Q3 定于 11/10 披露，不将其作为已知实际值",
+      "rank": "official"
+    },
+    {
+      "id": "nbis_2025_20f",
+      "date": "2026-04-30",
+      "type": "sec_20f",
+      "url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926052948/nbis-20251231x20f.htm",
+      "location": "printed p54, capital expenditures; cash flow statements",
+      "supports": "2024/2025 现金购置 PP&E 和无形资产",
+      "name": "2024/2025 现金购置 PP&E 和无形资产",
+      "rank": "official"
+    },
+    {
+      "id": "nbis_march_2026_conference",
+      "date": "2026-03-04",
+      "type": "official_company_hosted_management_conference_transcript",
+      "url": "https://assets.nebius.com/assets/dca799f8-35e6-4d27-b267-574d56c60974/Transcript_MS%20Conference.pdf",
+      "pages": [
+        7
+      ],
+      "supports": "16–20B 原 2026 Capex 指引",
+      "name": "16–20B 原 2026 Capex 指引",
+      "rank": "official"
+    },
+    {
+      "id": "nbis_q1_2026_webcast",
+      "date": "2026-05-13",
+      "type": "official_management_earnings_webcast",
+      "url": "https://www.youtube.com/watch?v=watl8S9EG08",
+      "officialIndex": "https://nebius.com/financials",
+      "supports": "管理层上调 2026 Capex 至 20–25B 的原始声音来源",
+      "name": "管理层上调 2026 Capex 至 20–25B 的原始声音来源",
+      "rank": "official"
+    },
+    {
+      "id": "nbis_q1_2026_call_reproduction",
+      "date": "2026-05-13",
+      "type": "third_party_reproduction_of_primary_management_call",
+      "url": "https://www.roic.ai/quote/NBIS/transcripts/2026-year/1-quarter",
+      "qualification": "不是官方托管的书面转录；精确范围应保留业绩会口述标签，并可与官方录音核对。",
+      "name": "nbis_q1_2026_call_reproduction",
+      "rank": "reviewed"
+    },
+    {
+      "id": "nbis_q2_2026_release",
+      "date": "2026-08-12",
+      "type": "sec_furnished_official_earnings_release",
+      "url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926094568/tm2622968d1_ex99-1.htm",
+      "location": "printed pp1–2 and consolidated cash flow table",
+      "supports": "Q2/H1 财务实际；原表 million 转为 billion",
+      "name": "Q2/H1 财务实际；原表 million 转为 billion",
+      "rank": "official"
+    },
+    {
+      "id": "nbis_q2_2026_letter",
+      "date": "2026-08-12",
+      "type": "sec_furnished_official_shareholder_letter",
+      "url": "https://www.sec.gov/Archives/edgar/data/1513845/000110465926094568/tm2622968d1_ex99-2.htm",
+      "officialPdf": "https://assets.nebius.com/assets/a6ecfd85-a6cb-4967-8ef7-9a25bd261f9c/SHLQ226.pdf",
+      "location": "financial highlights, outlook, financing discussion",
+      "supports": "重申全年指引、ARR/收入、电力、现金与融资信息；该信函不包含 20–25 Capex 金额",
+      "name": "重申全年指引、ARR/收入、电力、现金与融资信息；该信函不包含 20–25 Capex 金额",
+      "rank": "official"
+    },
+    {
+      "id": "nbis_q2_2026_webcast",
+      "date": "2026-08-12",
+      "type": "official_management_earnings_webcast",
+      "url": "https://www.youtube.com/watch?v=ovOubwIzHrw",
+      "officialIndex": "https://nebius.com/financials",
+      "supports": "管理层重申 20–25B Capex 指引的原始声音来源",
+      "name": "管理层重申 20–25B Capex 指引的原始声音来源",
+      "rank": "official"
+    },
+    {
+      "id": "nbis_q2_2026_call_reproduction",
+      "date": "2026-08-12",
+      "type": "third_party_reproduction_of_primary_management_call",
+      "url": "https://www.roic.ai/quote/NBIS/transcripts/2026-year/2-quarter",
+      "qualification": "不是官方书面财报；只作官方业绩会管理层表述的文字复核，不应包装成 SEC 数值表。",
+      "name": "nbis_q2_2026_call_reproduction",
+      "rank": "reviewed"
+    },
+    {
+      "id": "nbis_investor_hub",
+      "checkedAt": "2026-11-01",
+      "type": "official_ir_calendar",
+      "url": "https://nebius.com/investor-hub",
+      "supports": "Q3 2026 11/12 发布日程",
+      "name": "Q3 2026 11/12 发布日程",
+      "date": "2026-11-01",
+      "rank": "official"
+    },
+    {
+      "id": "perez-book",
+      "name": "Carlota Perez：2002年原著与章节结构",
+      "date": "2002-01-01",
+      "datePrecision": "year",
+      "url": "https://carlotaperez.org/books/",
+      "rank": "official"
+    },
+    {
+      "id": "perez-preface",
+      "name": "Carlota Perez原著前言：安装期与部署期、四阶段",
+      "date": "2002-01-01",
+      "datePrecision": "year",
+      "url": "https://carlotaperez.org/wp-content/downloads/books/btr-en/PrefaceCF.pdf",
+      "rank": "official"
+    },
+    {
+      "id": "alphabet-annual-history",
+      "name": "Alphabet / Google：2024/2025历史实际",
+      "url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/goog-20251231.htm",
+      "date": "2026-02-05",
+      "rank": "official"
+    },
+    {
+      "id": "alphabet-2026-guide",
+      "name": "Alphabet 2026 Q3官方业绩会 · CFO Anat Ashkenazi",
+      "url": "https://s206.q4cdn.com/479360582/files/doc_events/2026/Oct/28/2026_Q3_Earnings_Transcript.pdf",
+      "date": "2026-10-28",
+      "rank": "official"
+    },
+    {
+      "id": "microsoft-annual-history",
+      "name": "Microsoft：2024/2025历史实际",
+      "url": "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q2",
+      "date": "2026-01-28",
+      "rank": "official"
+    },
+    {
+      "id": "microsoft-2026-guide",
+      "name": "Microsoft FY27 Q1官方业绩会 · CFO Amy Hood",
+      "url": "https://www.microsoft.com/en-us/Investor/events/fy-2027/earnings-fy-2027-q1",
+      "date": "2026-10-28",
+      "rank": "official"
+    },
+    {
+      "id": "amazon-annual-history",
+      "name": "Amazon：2024/2025历史实际",
+      "url": "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Fourth-Quarter-Results/default.aspx",
+      "date": "2026-02-05",
+      "rank": "official"
+    },
+    {
+      "id": "amazon-2026-guide",
+      "name": "Amazon 2026 Q3财报及10-Q",
+      "url": "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Third-Quarter-Results/default.aspx",
+      "date": "2026-10-29",
+      "rank": "official"
+    },
+    {
+      "id": "meta-annual-history",
+      "name": "Meta：2024/2025历史实际",
+      "url": "https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Fourth-Quarter-and-Full-Year-2025-Results/",
+      "date": "2026-01-28",
+      "rank": "official"
+    },
+    {
+      "id": "meta-2026-guide",
+      "name": "Meta 2026 Q3官方财报 · CFO展望",
+      "url": "https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Third-Quarter-2026-Results/",
+      "date": "2026-10-21",
+      "rank": "official"
+    }
+  ],
+  "notes": [
+    {
+      "title": "OpenAI：同一期口径修正，不是经营骤降",
+      "text": "9月末运行率按10月8日Reuters更正为约500亿美元。早前约700亿美元涉及比较口径模拟/推算，同一观察期替换，不画成700→500的后续经营下滑；年底700亿目标不计入实际曲线。",
+      "sourceIds": [
+        "oa-reuters-correction-20261008"
+      ]
+    },
+    {
+      "title": "Anthropic：运行率与已实现收入分开",
+      "text": "最新可核验运行率仍为7月末超过650亿美元，披露于8月17日；10月26日S-1的新运行率字段留空，不用单季度收入乘4补造。S-1列示H1营收162.86亿美元、GAAP经营利润率-4%。",
+      "sourceIds": [
+        "anth-july-65-20260817",
+        "anth-s1-20261026"
+      ]
+    },
+    {
+      "title": "Neocloud：建设加速，现金回报尚待验证",
+      "text": "CoreWeave H1经营现金36.63亿对现金购置资产141.17亿美元；Nebius为45.041亿对81.303亿美元。客户预付款显著影响现金，订单储备不是收入。两家公司Q3分别定于11月10日、12日披露，当前不填尚未发布的三季报。",
+      "sourceIds": [
+        "crwv_q2_2026_10q",
+        "nbis_q2_2026_release",
+        "crwv_q3_2026_schedule",
+        "nbis_investor_hub"
+      ]
+    },
+    {
+      "title": "微软：会计口径与交付节奏不等于需求崩塌",
+      "text": "CY2026报告Capex约1700亿美元。FY27租赁分类变化及第三方交付延迟影响报告数字，因此不与CY2025含租赁Capex直接计算同比，也不把FY27下一财季超过500亿美元当作2027全年预算。",
+      "sourceIds": [
+        "microsoft-2026-guide"
+      ]
+    },
+    {
+      "title": "Nebius：指引来源层级与可比性",
+      "text": "2026年200–250亿美元Capex指引为管理层业绩会口述；SEC信函仅写重申指引，没有该金额。附官方录音及转录，未取得与历史现金购置资产的完整桥接，故不连线同比、不进入热度增长项。",
+      "sourceIds": [
+        "nbis_q2_2026_letter",
+        "nbis_q2_2026_webcast",
+        "nbis_q2_2026_call_reproduction"
+      ]
+    },
+    {
+      "title": "国内受益路径：总预算不是上市公司订单",
+      "text": "关注800G/1.6T代际、光电互连架构、PCB层数与材料升级、客户认证和供给份额，再核实毛利、回款和估值。出口限制、国产替代及汇率是独立变量；不设置未经验证的固定需求占比。",
+      "sourceIds": [
+        "alphabet-2026-guide",
+        "amazon-2026-guide",
+        "meta-2026-guide"
+      ]
+    }
+  ]
+}

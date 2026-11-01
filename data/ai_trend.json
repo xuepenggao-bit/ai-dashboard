@@ -142,8 +142,8 @@
       "display_name": "Meta",
       "actual_2024_yi": 392.3,
       "actual_2025_yi": 722.2,
-      "guidance_low_yi": 1350.0,
-      "guidance_high_yi": 1450.0,
+      "guidance_low_yi": 1350,
+      "guidance_high_yi": 1450,
       "guidance_type": "range",
       "period": "CY2026",
       "basis_note": "CY2026 · Capex包含融资租赁本金支付；与微软新增租赁开始时全额确认的口径不同",
@@ -179,12 +179,15 @@
   "mag7_pe_avg": 41,
   "amazon_capex_2025a_yi": 1283.2,
   "amazon_capex_2026e_yi": 2200,
-  "meta_capex_low_yi": 1350.0,
-  "meta_capex_high_yi": 1450.0,
+  "meta_capex_low_yi": 1350,
+  "meta_capex_high_yi": 1450,
   "arr_labels": [
-    "2024末",
-    "2025末",
+    "2024-12",
+    "2025-01",
+    "2025-08",
+    "2025-12",
     "2026-02",
+    "2026-04",
     "2026-05",
     "2026-07",
     "2026-08",
@@ -192,60 +195,102 @@
   ],
   "arr_openai": [
     60,
+    null,
+    null,
     214,
     250,
     null,
     null,
+    null,
     400,
-    700.0
+    500
   ],
   "arr_anthropic": [
-    10,
-    90,
     null,
+    10,
+    50,
+    90,
+    140,
+    300,
     470,
     650,
     null,
     null
   ],
-  "arr_as_of": "2026-09-29",
-  "arr_note": "年化收入运行率公开里程碑（非传统合同ARR） · 仅提取来源明确给出的金额，不从增速或定性表述反推数值",
+  "arr_as_of": "2026-10-08",
+  "arr_note": "已披露年化运行率里程碑，非GAAP全年收入或合同ARR；不同公司gross/net口径不同。OpenAI9月同一期更正为约500亿美元，预测不进入实际曲线；Anthropic最新观察为7月末，不按扫描时间补造。",
   "arr_latest_events": {
     "openai": {
       "company": "OpenAI",
-      "summary": "最新公开披露的年化收入运行率约为$70B。",
+      "summary": "9月末约500亿美元运行率；10/8更正口径",
       "numeric": true,
-      "source_label": "reuters.com",
-      "source_date": "2026-09-29",
-      "source_url": "https://www.reuters.com/technology/openais-annual-recurring-revenue-nears-70-billion-axios-reports-2026-09-29/",
-      "arr_yi": 700.0
+      "arr_yi": 500,
+      "comparison": "~",
+      "source_date": "2026-10-08",
+      "metric_period": "2026-09",
+      "effective_date": "2026-09-30",
+      "source_label": "Reuters：OpenAI9月运行率接近500亿美元，低于先前口径",
+      "source_url": "https://www.reuters.com/business/openais-annualized-revenue-20-billion-less-than-previously-signaled-ft-reports-2026-10-08/",
+      "readable_source_url": "https://www.streetinsider.com/Reuters/OpenAIs%2BSeptember%2Bannualized%2Brevenue%2Bnears%2B%2450%2Bbillion%2C%2Bless%2Bthan%2Bpreviously%2Bindicated%2C%2Bsource%2Bsays/27167688.html?classic=1",
+      "checked_at": "2026-11-01",
+      "basis": "annualized_revenue_run_rate",
+      "basis_note": "公司/媒体报告的annualized revenue run-rate；公司2026年1月CFO文章亦称ARR。公开披露含订阅、API及其它业务，不能简单当合同续费ARR。部分云渠道按净额记录，未取得完整审计口径桥接。",
+      "correction": true,
+      "correction_note": "同一测量期的会计/比较口径修正，不是一个新的后续月份经营读数；不能据此计算负增长或触发行业阶段退档。",
+      "previous_reported_arr_yi": 700
     },
     "anthropic": {
       "company": "Anthropic",
-      "summary": "已报道7月末年化收入约650亿美元；9月18日报道预计年底超过1,000亿美元，属于预期，未计入曲线。",
-      "numeric": false,
-      "disclosure_type": "forecast",
-      "source_label": "NYT · 年底预期（非已实现）",
-      "source_date": "2026-09-18",
-      "source_url": "https://www.nytimes.com/2026/09/18/technology/anthropic-ipo-ai-safety.html",
-      "checked_at": "2026-09-29"
+      "summary": "最新核验数值仍为7月末超过650亿美元；10/26 S-1新运行率留空，未补造",
+      "numeric": true,
+      "arr_yi": 650,
+      "comparison": ">",
+      "source_date": "2026-08-17",
+      "metric_period": "2026-07",
+      "effective_date": "2026-07-31",
+      "source_label": "Axios：Anthropic7月末运行率超过650亿美元（Bloomberg报道）",
+      "source_url": "https://www.axios.com/2026/08/17/anthropic-revenue-run-rate-ipo-openai",
+      "readable_source_url": "https://www.axios.com/2026/08/17/anthropic-revenue-run-rate-ipo-openai",
+      "checked_at": "2026-11-01",
+      "basis": "annualized_revenue_run_rate",
+      "basis_note": "S-1定义：测量日前28天consumption-based fees×13，加测量日当月subscription fees×12。是短期用量/订阅年化指标，不是合同ARR，也非GAAP营收。云渠道gross呈现与OpenAI部分net呈现不同。"
     }
   },
   "arr_sources": {
     "openai": {
-      "source_label": "reuters.com",
-      "source_date": "2026-09-29",
-      "source_url": "https://www.reuters.com/technology/openais-annual-recurring-revenue-nears-70-billion-axios-reports-2026-09-29/"
+      "company": "OpenAI",
+      "summary": "9月末约500亿美元运行率；10/8更正口径",
+      "numeric": true,
+      "arr_yi": 500,
+      "comparison": "~",
+      "source_date": "2026-10-08",
+      "metric_period": "2026-09",
+      "effective_date": "2026-09-30",
+      "source_label": "Reuters：OpenAI9月运行率接近500亿美元，低于先前口径",
+      "source_url": "https://www.reuters.com/business/openais-annualized-revenue-20-billion-less-than-previously-signaled-ft-reports-2026-10-08/",
+      "readable_source_url": "https://www.streetinsider.com/Reuters/OpenAIs%2BSeptember%2Bannualized%2Brevenue%2Bnears%2B%2450%2Bbillion%2C%2Bless%2Bthan%2Bpreviously%2Bindicated%2C%2Bsource%2Bsays/27167688.html?classic=1",
+      "checked_at": "2026-11-01",
+      "basis": "annualized_revenue_run_rate",
+      "basis_note": "公司/媒体报告的annualized revenue run-rate；公司2026年1月CFO文章亦称ARR。公开披露含订阅、API及其它业务，不能简单当合同续费ARR。部分云渠道按净额记录，未取得完整审计口径桥接。",
+      "correction": true,
+      "correction_note": "同一测量期的会计/比较口径修正，不是一个新的后续月份经营读数；不能据此计算负增长或触发行业阶段退档。",
+      "previous_reported_arr_yi": 700
     },
     "anthropic": {
-      "source_label": "CNBC",
-      "source_date": "2026-08-17",
-      "source_url": "https://www.cnbc.com/2026/08/17/anthropic-says-annualized-revenue-climbed-to-65-billion-in-july.html",
-      "metric_period": "2026-07",
+      "company": "Anthropic",
+      "summary": "最新核验数值仍为7月末超过650亿美元；10/26 S-1新运行率留空，未补造",
+      "numeric": true,
       "arr_yi": 650,
-      "comparison": "~",
-      "checked_at": "2026-09-29",
-      "corroborating_url": "https://www.youtube.com/watch?v=Mv075uu1io0"
+      "comparison": ">",
+      "source_date": "2026-08-17",
+      "metric_period": "2026-07",
+      "effective_date": "2026-07-31",
+      "source_label": "Axios：Anthropic7月末运行率超过650亿美元（Bloomberg报道）",
+      "source_url": "https://www.axios.com/2026/08/17/anthropic-revenue-run-rate-ipo-openai",
+      "readable_source_url": "https://www.axios.com/2026/08/17/anthropic-revenue-run-rate-ipo-openai",
+      "checked_at": "2026-11-01",
+      "basis": "annualized_revenue_run_rate",
+      "basis_note": "S-1定义：测量日前28天consumption-based fees×13，加测量日当月subscription fees×12。是短期用量/订阅年化指标，不是合同ARR，也非GAAP营收。云渠道gross呈现与OpenAI部分net呈现不同。"
     }
   },
   "cloud_revenue": {
@@ -490,7 +535,7 @@
     },
     "checked_at": "2026-09-29"
   },
-  "arr_checked_at": "2026-09-29",
+  "arr_checked_at": "2026-11-01",
   "arr_forecasts": [
     {
       "company": "Anthropic",
@@ -501,6 +546,19 @@
       "source_date": "2026-09-18",
       "source_label": "NYT · 知情人士预期",
       "source_url": "https://www.nytimes.com/2026/09/18/technology/anthropic-ipo-ai-safety.html"
+    }
+  ],
+  "arr_corrections": [
+    {
+      "effectiveDate": "2026-09-30",
+      "originalDisclosedAt": "2026-09-29",
+      "correctedDisclosedAt": "2026-10-08",
+      "previousReportedValueUsdB": 70,
+      "correctedValueUsdB": 50,
+      "previousValuePlotEligible": false,
+      "reason": "同一测量期的会计/比较口径修正，不是一个新的后续月份经营读数；不能据此计算负增长或触发行业阶段退档。",
+      "sourceId": "oa-reuters-correction-20261008",
+      "company": "OpenAI"
     }
   ]
 }

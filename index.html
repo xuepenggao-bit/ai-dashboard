@@ -20,8 +20,10 @@
 <script src="assets/market-environment.js?v=20261015a" defer></script>
 <link rel="stylesheet" href="assets/chain-monitor.css?v=20261026c">
 <script defer src="assets/chain-monitor.js?v=20261026c"></script>
-<link rel="stylesheet" href="assets/canslim-recommendations.css?v=20261101b">
-<script defer src="assets/canslim-recommendations.js?v=20261101b"></script>
+<link rel="stylesheet" href="assets/canslim-recommendations.css?v=20261101c">
+<script defer src="assets/canslim-recommendations.js?v=20261101c"></script>
+<link rel="stylesheet" href="assets/ai-cycle-monitor.css?v=20261101a">
+<script defer src="assets/ai-cycle-monitor.js?v=20261101a"></script>
 <link rel="stylesheet" href="assets/account-openings.css?v=20261010a">
 <script defer src="assets/account-openings.js?v=20261019a"></script>
 <link rel="stylesheet" href="assets/ma-breadth.css?v=20261014a">
@@ -2289,6 +2291,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 
 <!-- ─── tStage: earnings and valuation monitor ─── -->
 <div class="tab-content" id="tStage">
+  <div id="aiCycleMonitorRoot" aria-label="AI行业趋势综述"><div class="aic-load">正在准备AI行业建设、变现与资本纪律监测…</div></div>
   <div id="chainMonitorRoot"><div class="cm-loading">正在加载产业链业绩与估值…</div></div>
   <div id="canslimRecommendationsRoot" aria-label="最新标的推荐"><div class="cm-loading">进入产业链监控后加载最新标的研究…</div></div>
   <!-- AI_INDUSTRY_CONTEXT_START -->
@@ -2761,9 +2764,9 @@ const BASE = {
   },
 
   aiArr:{
-    labels:['2024末','2025末','2026-02','2026-05'],
-    openai:   [60,214,250,null],
-    anthropic:[10,90,null,470],
+    labels:['2024-12','2025-01','2025-08','2025-12','2026-02','2026-04','2026-05','2026-07','2026-08','2026-09'],
+    openai:   [60,null,null,214,250,null,null,null,400,500],
+    anthropic:[null,10,50,90,140,300,470,650,null,null],
     // 只保留可追溯的公开里程碑；null 表示该月没有新披露，不用旧值伪造下降。
   },
 
@@ -5651,15 +5654,15 @@ function _renderAiTrend(d){
   _renderCreditRatings(d);
   const sourceSummary=document.getElementById('capexSourceSummary');
   if(sourceSummary) sourceSummary.textContent='口径：亿美元；2026E 为自然年指引；各公司现金支出、融资租赁及历史会计口径不同，合计仅作规模观察，非纯AI开支。'+(d.comparison_note||'')+(d.capex_as_of?' · 最新披露截至 '+d.capex_as_of:'');
-  // OpenAI / Anthropic 年化收入：仅接受等长、逐家公司不倒退的公开里程碑。
+  // 允许有证据的经营下降或同一期修正；不可用“只升不降”掩盖真实变化。
   const _validArr=(series,labels)=>{
     if(!Array.isArray(series)||series.length!==labels.length) return false;
-    let previous=-Infinity, hasValue=false;
+    let hasValue=false;
     for(const value of series){
       if(value===null||value===undefined||value==='') continue;
       const n=Number(value);
-      if(!Number.isFinite(n)||n<previous) return false;
-      previous=n; hasValue=true;
+      if(!Number.isFinite(n)||n<=0) return false;
+      hasValue=true;
     }
     return hasValue;
   };
@@ -5679,6 +5682,7 @@ function _renderAiTrend(d){
     arrSummary.textContent=(d.arr_note||'年化收入运行率公开里程碑（非传统合同 ARR）')+(d.arr_as_of?' · 最新披露截至 '+d.arr_as_of:'');
   }
   _renderArrLatestEvent(d);
+  if(typeof window!=='undefined' && window.AICycleMonitor) window.AICycleMonitor.refresh(true);
   const tsEl=document.getElementById('capexTs');
   if(tsEl){
     const checked=d.last_checked||d.updated;

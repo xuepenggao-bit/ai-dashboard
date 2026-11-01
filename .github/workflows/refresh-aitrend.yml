@@ -18,7 +18,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     permissions:
@@ -35,15 +35,21 @@ jobs:
         run: pip install requests duckduckgo_search
       - name: Verify annual guidance periods, quarterly exclusions and comparable bases
         run: python -m unittest discover -s tests -p test_refresh_ai_trend_capex.py -v
+      - name: Verify ARR corrections and AI cycle observation guards
+        run: |
+          python -m unittest discover -s tests -p test_refresh_ai_trend_arr_guards.py -v
+          python -m unittest discover -s tests -p test_refresh_ai_cycle.py -v
       - name: Scan Capex disclosures and ARR milestones
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python .github/scripts/refresh_ai_trend.py
+      - name: Rebuild AI industry cycle evidence and scan NeoCloud official guidance
+        run: python .github/scripts/refresh_ai_cycle.py --scan-official
       - name: Commit and push
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/ai_trend.json
+          git add data/ai_trend.json data/ai_cycle.json
           git diff --staged --quiet && echo "No changes." && exit 0
           git commit -m "chore: refresh AI trend data $(date -u '+%Y-%m-%d %H:%M UTC')"
           git pull --rebase origin main
