@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "asOf": "2026-11-01",
-  "updatedAt": "2026-11-01T20:37:05+08:00",
-  "lastChecked": "2026-11-01T20:52:19+08:00",
-  "evidenceVersion": "d3eadd29729558d4b40bb2822cf7007c9059c0c7dd3468e84029caf22729db07",
+  "updatedAt": "2026-11-01T20:55:26+08:00",
+  "lastChecked": "2026-11-01T20:55:26+08:00",
+  "evidenceVersion": "415ed36dac213da099889b252647ecc5b7f618bd150b87f973496ad8a7f9abfb",
   "series": [
     {
       "id": "capex-alphabet",
@@ -746,15 +746,14 @@
         {
           "period": "2026-07",
           "effectiveDate": "2026-07-31",
-          "effectiveDatePrecision": "month_end",
-          "disclosedAt": "2026-08-17",
+          "disclosedAt": "2026-08-18",
           "valueUsdB": 65.0,
           "type": "run_rate",
-          "basis": "S-1定义：测量日前28天consumption-based fees×13，加测量日当月subscription fees×12。是短期用量/订阅年化指标，不是合同ARR，也非GAAP营收。云渠道gross呈现与OpenAI部分net呈现不同。",
+          "basis": "annualized_revenue_run_rate",
           "basisKey": "annualized_revenue_run_rate",
-          "sourceId": "anth-july-65-20260817",
-          "comparison": ">",
-          "note": "媒体引述向投资人披露的7月末运行率，10月8日Reuters再次援引。不是2026年全部已实现收入，也不是当前11月的实时估算。",
+          "sourceId": "arr-e084844b6f11",
+          "effectiveDatePrecision": "month",
+          "dateNote": "Month-end plotting anchor; source only identified the month.",
           "lowUsdB": null,
           "highUsdB": null
         }
@@ -773,15 +772,14 @@
       "latest": {
         "period": "2026-07",
         "effectiveDate": "2026-07-31",
-        "effectiveDatePrecision": "month_end",
-        "disclosedAt": "2026-08-17",
+        "disclosedAt": "2026-08-18",
         "valueUsdB": 65.0,
         "type": "run_rate",
-        "basis": "S-1定义：测量日前28天consumption-based fees×13，加测量日当月subscription fees×12。是短期用量/订阅年化指标，不是合同ARR，也非GAAP营收。云渠道gross呈现与OpenAI部分net呈现不同。",
+        "basis": "annualized_revenue_run_rate",
         "basisKey": "annualized_revenue_run_rate",
-        "sourceId": "anth-july-65-20260817",
-        "comparison": ">",
-        "note": "媒体引述向投资人披露的7月末运行率，10月8日Reuters再次援引。不是2026年全部已实现收入，也不是当前11月的实时估算。",
+        "sourceId": "arr-e084844b6f11",
+        "effectiveDatePrecision": "month",
+        "dateNote": "Month-end plotting anchor; source only identified the month.",
         "lowUsdB": null,
         "highUsdB": null
       }
@@ -1742,6 +1740,13 @@
       "name": "Axios：Anthropic7月末运行率超过650亿美元（Bloomberg报道）",
       "url": "https://www.axios.com/2026/08/17/anthropic-revenue-run-rate-ipo-openai",
       "date": "2026-08-17",
+      "rank": "reliable_media"
+    },
+    {
+      "id": "arr-e084844b6f11",
+      "name": "cnbc.com",
+      "url": "https://www.cnbc.com/2026/08/17/anthropic-says-annualized-revenue-climbed-to-65-billion-in-july.html",
+      "date": "2026-08-18",
       "rank": "reliable_media"
     }
   ],
