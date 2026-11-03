@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "asOf": "2026-11-03",
-  "generatedAt": "2026-11-03T02:22:33.730619+08:00",
-  "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+  "generatedAt": "2026-11-03T14:47:58.829089+08:00",
+  "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
   "status": "ok",
   "errors": [],
   "groups": [
@@ -245,25 +245,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "server",
       "quote": {
-        "price": 54.26,
-        "capYi": 796.8,
-        "pb": 3.13,
-        "changePct": 0.15,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:15:00+08:00",
+        "price": 52.27,
+        "capYi": 767.57,
+        "pb": 3.01,
+        "changePct": -3.67,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 16.38505607,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 16.39,
-        "providerPe53": 33.02,
+        "providerPe39": 15.78,
+        "providerPe53": 31.81,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 16.38514998270693,
+        "peTtmCalculated": 15.784073258316212,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -276,23 +276,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22000977%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/000977.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22000977%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz000977",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -444,48 +444,48 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "server",
       "quote": {
-        "price": 73.18,
-        "capYi": 1070.71,
-        "pb": 4.5,
-        "changePct": 2.65,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:58+08:00",
+        "price": 73.85,
+        "capYi": 1080.51,
+        "pb": 4.54,
+        "changePct": 0.92,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 36.48386562,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 36.48,
-        "providerPe53": 49.2,
+        "providerPe39": 36.82,
+        "providerPe53": 49.65,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 36.483929312132396,
+        "peTtmCalculated": 36.81785960815924,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22603019%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/603019.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22603019%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh603019",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -637,48 +637,48 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "server",
       "quote": {
-        "price": 27.66,
-        "capYi": 1323.13,
+        "price": 27.64,
+        "capYi": 1322.17,
         "pb": 1.73,
-        "changePct": 1.1,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:45+08:00",
+        "changePct": -0.07,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 30.3747737,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 30.37,
-        "providerPe53": 23.55,
+        "providerPe39": 30.35,
+        "providerPe53": 23.54,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 30.374871269572424,
+        "peTtmCalculated": 30.35283271219802,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22000063%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/000063.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22000063%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz000063",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -830,25 +830,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "pcb",
       "quote": {
-        "price": 86.05,
-        "capYi": 1659.52,
-        "pb": 8.08,
-        "changePct": -1.48,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:45+08:00",
+        "price": 78.69,
+        "capYi": 1517.58,
+        "pb": 7.39,
+        "changePct": -8.55,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 24.67091671,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 24.67,
-        "providerPe53": 43.42,
+        "providerPe39": 22.56,
+        "providerPe53": 39.7,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 24.67088914284225,
+        "peTtmCalculated": 22.5607693461932,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -868,23 +868,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22002463%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/002463.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22002463%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz002463",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -1036,25 +1036,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "pcb",
       "quote": {
-        "price": 227.88,
-        "capYi": 1552.17,
-        "pb": 7.74,
-        "changePct": -2.2,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:45+08:00",
+        "price": 205.7,
+        "capYi": 1401.09,
+        "pb": 6.99,
+        "changePct": -9.73,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 30.559963,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 30.56,
-        "providerPe53": 47.38,
+        "providerPe39": 27.59,
+        "providerPe53": 42.77,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 30.55999946219284,
+        "peTtmCalculated": 27.585451108115585,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -1068,23 +1068,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22002916%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/002916.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22002916%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz002916",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -1236,48 +1236,48 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "pcb",
       "quote": {
-        "price": 82.08,
-        "capYi": 1993.73,
-        "pb": 8.29,
-        "changePct": -5.66,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:55+08:00",
+        "price": 73.87,
+        "capYi": 1794.31,
+        "pb": 7.46,
+        "changePct": -10.0,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:04+08:00",
         "source": "Tencent",
         "peTtm": 26.17063953,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 26.17,
-        "providerPe53": 59.8,
+        "providerPe39": 23.55,
+        "providerPe53": 53.82,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 26.170689249462036,
+        "peTtmCalculated": 23.553003379194887,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22600183%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/600183.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22600183%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh600183",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -1429,25 +1429,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "chip",
       "quote": {
-        "price": 177.0,
-        "capYi": 4114.08,
-        "pb": 15.57,
-        "changePct": 4.0,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:59+08:00",
+        "price": 169.6,
+        "capYi": 3942.08,
+        "pb": 14.92,
+        "changePct": -4.18,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 119.94561111,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 119.95,
-        "providerPe53": 161.66,
+        "providerPe39": 114.93,
+        "providerPe53": 154.9,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 119.94565714572434,
+        "peTtmCalculated": 114.93101157999286,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -1461,23 +1461,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22688041%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/688041.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22688041%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh688041",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -1629,25 +1629,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "chip",
       "quote": {
-        "price": 861.0,
-        "capYi": 5414.43,
-        "pb": 35.8,
-        "changePct": -2.16,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:42+08:00",
+        "price": 772.0,
+        "capYi": 4854.75,
+        "pb": 32.1,
+        "changePct": -10.34,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:02+08:00",
         "source": "Tencent",
         "peTtm": 129.87037479,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 129.87,
-        "providerPe53": 262.94,
+        "providerPe39": 116.45,
+        "providerPe53": 235.76,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 129.87030262013045,
+        "peTtmCalculated": 116.44584040149716,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -1661,23 +1661,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22688256%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/688256.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22688256%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh688256",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -1829,48 +1829,48 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "chip",
       "quote": {
-        "price": 164.58,
-        "capYi": 2008.76,
-        "pb": 9.07,
-        "changePct": 3.97,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:59+08:00",
+        "price": 152.67,
+        "capYi": 1863.4,
+        "pb": 8.41,
+        "changePct": -7.24,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:01+08:00",
         "source": "Tencent",
         "peTtm": 52.30599922,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 52.31,
-        "providerPe53": 89.85,
+        "providerPe39": 48.52,
+        "providerPe53": 83.35,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 52.30596081244233,
+        "peTtmCalculated": 48.5209419631539,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22688008%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/688008.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22688008%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh688008",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -2022,48 +2022,48 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "memory",
       "quote": {
-        "price": 265.67,
-        "capYi": 1870.24,
-        "pb": 2.43,
-        "changePct": 3.05,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:55+08:00",
+        "price": 251.82,
+        "capYi": 1772.74,
+        "pb": 2.31,
+        "changePct": -5.21,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:02+08:00",
         "source": "Tencent",
         "peTtm": 16.08051037,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 16.08,
-        "providerPe53": 113.48,
+        "providerPe39": 15.24,
+        "providerPe53": 107.57,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 16.080502714239028,
+        "peTtmCalculated": 15.242188372422842,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22603986%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/603986.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22603986%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh603986",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -2215,25 +2215,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "memory",
       "quote": {
-        "price": 131.86,
-        "capYi": 627.14,
-        "pb": 4.55,
-        "changePct": 0.83,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:51+08:00",
+        "price": 124.26,
+        "capYi": 591.0,
+        "pb": 4.29,
+        "changePct": -5.76,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 6.53927512,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 6.54,
-        "providerPe53": 73.52,
+        "providerPe39": 6.16,
+        "providerPe53": 69.28,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 6.539254429573652,
+        "peTtmCalculated": 6.16241886640627,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -2247,23 +2247,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22688525%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/688525.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22688525%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh688525",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -2415,25 +2415,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "memory",
       "quote": {
-        "price": 214.63,
-        "capYi": 986.56,
-        "pb": 3.16,
-        "changePct": 1.16,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:45+08:00",
+        "price": 203.39,
+        "capYi": 934.9,
+        "pb": 3.0,
+        "changePct": -5.24,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 6.5629447,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 6.56,
-        "providerPe53": 69.32,
+        "providerPe39": 6.22,
+        "providerPe53": 65.69,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 6.562924048443485,
+        "peTtmCalculated": 6.219264609237973,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -2453,23 +2453,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22301308%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/301308.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22301308%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz301308",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -2621,25 +2621,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "cooling",
       "quote": {
-        "price": 38.39,
-        "capYi": 491.13,
-        "pb": 12.91,
-        "changePct": 1.56,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:45+08:00",
+        "price": 35.84,
+        "capYi": 458.51,
+        "pb": 12.06,
+        "changePct": -6.64,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 99.92372735,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 99.92,
-        "providerPe53": 94.1,
+        "providerPe39": 93.29,
+        "providerPe53": 87.85,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 99.92381878492637,
+        "peTtmCalculated": 93.2870526155531,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -2653,23 +2653,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22002837%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/002837.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22002837%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz002837",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -2821,25 +2821,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "cooling",
       "quote": {
-        "price": 24.19,
-        "capYi": 73.84,
-        "pb": 5.21,
-        "changePct": 2.89,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:30+08:00",
+        "price": 22.53,
+        "capYi": 68.77,
+        "pb": 4.85,
+        "changePct": -6.86,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 135.03246152,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 135.03,
-        "providerPe53": 260.15,
+        "providerPe39": 125.77,
+        "providerPe53": 242.3,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 135.0331424785309,
+        "peTtmCalculated": 125.7615006534205,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -2852,23 +2852,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22300499%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/300499.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22300499%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz300499",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -3020,48 +3020,48 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "cooling",
       "quote": {
-        "price": 23.56,
-        "capYi": 178.08,
-        "pb": 2.67,
-        "changePct": 3.33,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:57+08:00",
+        "price": 23.26,
+        "capYi": 175.81,
+        "pb": 2.64,
+        "changePct": -1.27,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 32.00099308,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 32.0,
-        "providerPe53": 42.6,
+        "providerPe39": 31.59,
+        "providerPe53": 42.06,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 32.000865068775944,
+        "peTtmCalculated": 31.592947482825128,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22002335%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/002335.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22002335%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz002335",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -3213,25 +3213,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "application",
       "quote": {
-        "price": 37.45,
-        "capYi": 899.58,
-        "pb": 3.94,
-        "changePct": 3.34,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:30+08:00",
+        "price": 37.48,
+        "capYi": 900.3,
+        "pb": 3.95,
+        "changePct": 0.08,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 96.94223917,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 96.94,
-        "providerPe53": 107.17,
+        "providerPe39": 97.02,
+        "providerPe53": 107.26,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 96.94235765931973,
+        "peTtmCalculated": 97.0199477541581,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -3245,23 +3245,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22002230%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/002230.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22002230%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz002230",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -3413,23 +3413,23 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "application",
       "quote": {
-        "price": 9.59,
-        "capYi": 99.73,
-        "pb": 14.14,
-        "changePct": 6.44,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:52+08:00",
+        "price": 9.27,
+        "capYi": 96.41,
+        "pb": 13.67,
+        "changePct": -3.34,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:01+08:00",
         "source": "Tencent",
         "peTtm": null,
         "peTtmDate": null,
         "peTtmSource": null,
-        "providerPe39": -28.64,
-        "providerPe53": -17.95,
+        "providerPe39": -27.69,
+        "providerPe53": -17.35,
         "marketCapBasis": "total_shares_at_A_price",
         "peTtmCalculated": null,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
@@ -3438,23 +3438,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22688327%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/688327.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22688327%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh688327",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -3606,48 +3606,48 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "application",
       "quote": {
-        "price": 135.4,
-        "capYi": 81.68,
-        "pb": 11.16,
-        "changePct": 10.22,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:58+08:00",
+        "price": 121.61,
+        "capYi": 73.36,
+        "pb": 10.03,
+        "changePct": -10.18,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:02+08:00",
         "source": "Tencent",
         "peTtm": 400.41253657,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 400.41,
-        "providerPe53": 578.54,
+        "providerPe39": 359.63,
+        "providerPe53": 519.61,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 400.4110967001789,
+        "peTtmCalculated": 359.6248537454104,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22688787%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/688787.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22688787%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh688787",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -3799,25 +3799,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "optical",
       "quote": {
-        "price": 550.0,
-        "capYi": 6478.5,
-        "pb": 6.87,
-        "changePct": -0.54,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:45+08:00",
+        "price": 484.6,
+        "capYi": 5708.15,
+        "pb": 6.05,
+        "changePct": -11.89,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 25.01037633,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 25.01,
-        "providerPe53": 60.0,
+        "providerPe39": 22.04,
+        "providerPe53": 52.87,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 25.01036465018216,
+        "peTtmCalculated": 22.03641475309675,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -3831,23 +3831,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22300308%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/300308.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22300308%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz300308",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -3999,25 +3999,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "optical",
       "quote": {
-        "price": 191.48,
-        "capYi": 2670.64,
-        "pb": 9.55,
-        "changePct": -2.31,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:21+08:00",
+        "price": 173.4,
+        "capYi": 2418.47,
+        "pb": 8.65,
+        "changePct": -9.44,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 18.32073461,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 18.32,
-        "providerPe53": 28.02,
+        "providerPe39": 16.59,
+        "providerPe53": 25.37,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 18.32071446908176,
+        "peTtmCalculated": 16.59081655409945,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -4031,23 +4031,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22300502%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/300502.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22300502%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz300502",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -4199,25 +4199,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "optical",
       "quote": {
-        "price": 141.75,
-        "capYi": 1546.24,
-        "pb": 23.5,
-        "changePct": -4.22,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:45+08:00",
+        "price": 124.86,
+        "capYi": 1362.0,
+        "pb": 20.7,
+        "changePct": -11.92,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 58.67277477,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 58.67,
-        "providerPe53": 76.65,
+        "providerPe39": 51.68,
+        "providerPe53": 67.52,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 58.672601384896,
+        "peTtmCalculated": 51.68155207873833,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -4231,23 +4231,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22300394%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/300394.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22300394%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz300394",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -4399,25 +4399,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "aidc",
       "quote": {
-        "price": 52.75,
-        "capYi": 865.65,
-        "pb": 6.0,
-        "changePct": 3.51,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:30+08:00",
+        "price": 50.46,
+        "capYi": 828.07,
+        "pb": 5.74,
+        "changePct": -4.34,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 40.28714245,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 40.29,
-        "providerPe53": 17.14,
+        "providerPe39": 38.54,
+        "providerPe53": 16.4,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 40.287159165405285,
+        "peTtmCalculated": 38.538194293417845,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -4430,23 +4430,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22300442%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/300442.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22300442%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz300442",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -4598,48 +4598,48 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "aidc",
       "quote": {
-        "price": 16.1,
-        "capYi": 158.62,
-        "pb": 3.7,
-        "changePct": 2.94,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:45+08:00",
+        "price": 15.93,
+        "capYi": 156.94,
+        "pb": 3.66,
+        "changePct": -1.06,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 74.98055173,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 74.98,
-        "providerPe53": 119.86,
+        "providerPe39": 74.19,
+        "providerPe53": 118.59,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 74.98149228025446,
+        "peTtmCalculated": 74.18733702221117,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22300738%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/300738.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22300738%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz300738",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -4791,25 +4791,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "aidc",
       "quote": {
-        "price": 20.26,
-        "capYi": 174.65,
-        "pb": 5.14,
-        "changePct": 6.91,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:55+08:00",
+        "price": 19.78,
+        "capYi": 170.51,
+        "pb": 5.02,
+        "changePct": -2.37,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:02+08:00",
         "source": "Tencent",
         "peTtm": 125.0976158,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 125.1,
-        "providerPe53": 125.89,
+        "providerPe39": 122.13,
+        "providerPe53": 122.9,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 125.09631503014826,
+        "peTtmCalculated": 122.13096293037836,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -4822,23 +4822,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22603881%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/603881.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22603881%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh603881",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -4990,23 +4990,23 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "idc",
       "quote": {
-        "price": 9.62,
-        "capYi": 172.93,
-        "pb": 1.46,
-        "changePct": 5.6,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:42+08:00",
+        "price": 9.59,
+        "capYi": 172.39,
+        "pb": 1.45,
+        "changePct": -0.31,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": null,
         "peTtmDate": null,
         "peTtmSource": null,
-        "providerPe39": -20.54,
-        "providerPe53": -22.78,
+        "providerPe39": -20.48,
+        "providerPe53": -22.71,
         "marketCapBasis": "total_shares_at_A_price",
         "peTtmCalculated": null,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
@@ -5015,23 +5015,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22300383%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/300383.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22300383%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sz300383",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -5183,25 +5183,25 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "idc",
       "quote": {
-        "price": 16.96,
-        "capYi": 484.7,
-        "pb": 4.26,
-        "changePct": 5.93,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:41+08:00",
+        "price": 17.04,
+        "capYi": 486.99,
+        "pb": 4.28,
+        "changePct": 0.47,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 40.61540652,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 40.62,
-        "providerPe53": 37.14,
+        "providerPe39": 40.81,
+        "providerPe53": 37.32,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 40.61536113339807,
+        "peTtmCalculated": 40.80725132732314,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
@@ -5214,23 +5214,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22600845%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/600845.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22600845%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh600845",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -5382,48 +5382,48 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "software",
       "quote": {
-        "price": 219.61,
-        "capYi": 1019.02,
-        "pb": 6.73,
-        "changePct": 5.0,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:15:00+08:00",
+        "price": 224.47,
+        "capYi": 1041.57,
+        "pb": 6.88,
+        "changePct": 2.21,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 30.92557514,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 30.93,
-        "providerPe53": 55.49,
+        "providerPe39": 31.61,
+        "providerPe53": 56.72,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 30.925578035507165,
+        "peTtmCalculated": 31.609933381526563,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22688111%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/688111.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22688111%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh688111",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -5575,23 +5575,23 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "software",
       "quote": {
-        "price": 9.23,
-        "capYi": 315.39,
-        "pb": 4.93,
-        "changePct": 4.29,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:49+08:00",
+        "price": 9.01,
+        "capYi": 307.87,
+        "pb": 4.81,
+        "changePct": -2.38,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:02+08:00",
         "source": "Tencent",
         "peTtm": null,
         "peTtmDate": null,
         "peTtmSource": null,
-        "providerPe39": -25.47,
-        "providerPe53": -22.7,
+        "providerPe39": -24.87,
+        "providerPe53": -22.16,
         "marketCapBasis": "total_shares_at_A_price",
         "peTtmCalculated": null,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
@@ -5600,23 +5600,23 @@
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22600588%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/600588.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22600588%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh600588",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     },
@@ -5768,48 +5768,48 @@
         "method": "reported_YTD; Q2=H1-Q1; TTM=prior_FY+current_YTD-prior_YTD",
         "growthMethod": "(current-previous)/abs(previous)*100; zero_or_missing=null"
       },
-      "lastSuccessAt": "2026-11-03T02:22:33.730619+08:00",
+      "lastSuccessAt": "2026-11-03T14:47:58.829089+08:00",
       "status": "ok",
       "errors": [],
       "group": "software",
       "quote": {
-        "price": 20.76,
-        "capYi": 393.74,
-        "pb": 3.9,
-        "changePct": 10.02,
-        "date": "2026-11-02",
-        "dateTime": "2026-11-02T16:14:57+08:00",
+        "price": 21.27,
+        "capYi": 403.41,
+        "pb": 3.99,
+        "changePct": 2.46,
+        "date": "2026-11-03",
+        "dateTime": "2026-11-03T14:48:03+08:00",
         "source": "Tencent",
         "peTtm": 29.12827282,
         "peTtmDate": "2026-11-02",
         "peTtmSource": "Eastmoney RPT_VALUEANALYSIS_DET.PE_TTM",
-        "providerPe39": 29.13,
-        "providerPe53": 31.98,
+        "providerPe39": 29.84,
+        "providerPe53": 32.77,
         "marketCapBasis": "total_shares_at_A_price",
-        "peTtmCalculated": 29.128145735943555,
+        "peTtmCalculated": 29.843514175184108,
         "peTtmCalculatedSource": "market_cap / reported_TTM_parent_net_profit"
       },
       "sources": [
         {
           "name": "Eastmoney reported financial metrics",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_F10_FINANCE_MAINFINADATA&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CREPORT_DATE%2CNOTICE_DATE%2CUPDATE_DATE%2CCURRENCY%2CTOTALOPERATEREVE%2CPARENTNETPROFIT%2CKCFJCXSYJLR%2CNETCASH_OPERATE_PK&filter=%28SECURITY_CODE+in+%28%22600570%22%29%29%28REPORT_DATE%3E%3D%272023-01-01%27%29%28REPORT_DATE%3C%3D%272026-11-03%27%29%28NOTICE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CREPORT_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00",
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00",
           "evidence": "provider_standardized"
         },
         {
           "name": "Financial reports",
           "url": "https://data.eastmoney.com/bbsj/600570.html",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Eastmoney explicit TTM valuation",
           "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_VALUEANALYSIS_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CCLOSE_PRICE%2CCHANGE_RATE%2CTOTAL_MARKET_CAP%2CPE_TTM%2CPE_LAR%2CPB_MRQ&filter=%28SECURITY_CODE+in+%28%22600570%22%29%29%28TRADE_DATE%3E%3D%272026-10-13%27%29%28TRADE_DATE%3C%3D%272026-11-03%27%29&pageSize=500&pageNumber=1&sortColumns=SECURITY_CODE%2CTRADE_DATE&sortTypes=1%2C-1&source=WEB&client=WEB",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         },
         {
           "name": "Tencent live A-share quote",
           "url": "https://qt.gtimg.cn/q=sh600570",
-          "retrievedAt": "2026-11-03T02:22:33.730619+08:00"
+          "retrievedAt": "2026-11-03T14:47:58.829089+08:00"
         }
       ]
     }
