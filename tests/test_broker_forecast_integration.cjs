@@ -9,6 +9,7 @@ test('broker estimate is inserted immediately after the mechanical annual profit
 });
 test('daily refresh is scheduled once after close and does not require a browser token',()=>{
  const w=fs.readFileSync(path.join(root,'.github/workflows/refresh-broker-forecasts.yml'),'utf8');assert.match(w,/35 14 \* \* \*/);assert.match(w,/python \.github\/scripts\/refresh_broker_forecasts.py/);assert.match(w,/git add data\/broker_profit_forecasts.json/);assert.doesNotMatch(w,/PAT|secrets\./);
+ assert.match(w,/pages: write/);assert.match(w,/gh api --method POST .*pages\/builds/);
 });
 test('all inline scripts still parse with the added estimate column',()=>{
  for(const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))if(m[1].trim())new vm.Script(m[1]);
