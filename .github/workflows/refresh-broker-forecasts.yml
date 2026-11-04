@@ -1,0 +1,55 @@
+name: Refresh Broker Profit Forecasts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/refresh_broker_forecasts.py'
+      - '.github/scripts/broker_hk_source.py'
+      - '.github/workflows/refresh-broker-forecasts.yml'
+      - 'tests/test_refresh_broker_forecasts.py'
+      - 'tests/test_broker_hk_source.py'
+  schedule:
+    # Beijing 22:35: collect the day's broker forecast updates after market close.
+    - cron: '35 14 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-broker-profit-forecasts
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify target years, broker samples, units and stale-data protection
+        run: |
+          python -m unittest discover -s tests -p test_refresh_broker_forecasts.py -v
+          python -m unittest discover -s tests -p test_broker_hk_source.py -v
+      - name: Refresh portfolio broker estimates
+        run: python .github/scripts/refresh_broker_forecasts.py
+      - name: Persist broker forecast snapshot
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/broker_profit_forecasts.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: refresh current-year broker profit forecasts"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
