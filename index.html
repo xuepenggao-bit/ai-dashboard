@@ -2143,8 +2143,9 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap">
     <div style="font-size:12px;color:var(--text2);line-height:1.6">
       数据来源：东方财富 · 覆盖A股及港股（利润、市值均按上市地本币计算）&nbsp;|&nbsp;
-      <span style="color:#d97706;font-weight:600">年度利润增速预测</span> = (上年同比 + 上季同比 + 上季环比) / 3 &nbsp;|&nbsp;
-      <span style="color:#059669;font-weight:600">年度利润预测</span> = 上年利润 × (1 + 预测增速)
+      <span style="color:#d97706;font-weight:600">年度利润增速预测</span> = (上年扣非同比 + 上季扣非同比 + 上季扣非环比) / 3 &nbsp;|&nbsp;
+      <span style="color:#059669;font-weight:600">年度扣非利润预测</span> = 上年扣非利润 × (1 + 预测增速)
+      <br>单季扣非利润由累计值相减取得；三项齐全且比较基数为正才计算预测。缺少可比扣非披露时留空，不以归母净利润或港股经调整利润代替。
     </div>
     <div style="display:flex;align-items:center;gap:8px;white-space:nowrap">
       <span style="font-size:12px;color:var(--text2)" id="val-update-ts">—</span>
@@ -6099,7 +6100,7 @@ function mkStageMatrix(){
 }
 
 // ── 估值分析 ───────────────────────────────────────────────────
-let _VAL_DATA = {};   // { code: { annualProfit, annualYoY, annualPeriod, qtrProfit, qtrYoY, qtrQoQ, qtrPeriod } }
+let _VAL_DATA = {};   // 所有利润/增速均为扣非归母口径；缺少可比披露时不回退普通净利润。
 let _VAL_TS   = 0;
 let _VAL_SORT = {col:null, dir:-1}; // col: null/'mktCap'/'pe'/'predProfit', dir: -1=降序 1=升序
 let _VAL_SEC_SORT = {};             // { secIdx: {col, dir} } 按分类视图排序
@@ -6153,7 +6154,7 @@ function valSecSort(secIdx, col){
 }
 
 function _valFinite(v){
-  if(v===null||v===undefined||v==='') return null;
+  if(v===null||v===undefined||v===''||typeof v==='boolean') return null;
   const n=Number(v);
   return Number.isFinite(n)?n:null;
 }
@@ -6163,21 +6164,55 @@ function _valByDateDesc(rows, field){
 }
 
 function _valFromA(rows){
-  const recs=_valByDateDesc(rows,'REPORTDATE');
-  const ann=recs.find(r=>r.DATEMMDD==='年报');
-  const qtr=recs.find(r=>r.DATEMMDD!=='年报');
-  if(!ann&&!qtr) return null;
-  return {
-    annualProfit : ann&&_valFinite(ann.PARENT_NETPROFIT)!=null ? _valFinite(ann.PARENT_NETPROFIT)/100000000 : null,
-    annualYoY    : ann ? _valFinite(ann.SJLTZ) : null,
-    annualPeriod : ann ? String(ann.DATAYEAR||String(ann.REPORTDATE||'').slice(0,4))+'年报' : null,
-    qtrProfit    : qtr&&_valFinite(qtr.PARENT_NETPROFIT)!=null ? _valFinite(qtr.PARENT_NETPROFIT)/100000000 : null,
-    qtrYoY       : qtr ? _valFinite(qtr.SJLTZ) : null,
-    qtrQoQ       : qtr ? _valFinite(qtr.SJLHZ) : null,
-    qtrPeriod    : qtr ? (qtr.QDATE||qtr.DATEMMDD||String(qtr.REPORTDATE||'').slice(0,10)) : null,
-    currency     : 'CNY',
-    source       : 'A'
+  // KCFJCXSYJLR 是累计扣非归母净利润。不得回退 PARENT_NETPROFIT/SJLTZ/SJLHZ。
+  const asOf=new Date(Date.now()+8*3600000).toISOString().slice(0,10),byDate={};
+  for(const r of rows||[]){
+    const date=String(r.REPORT_DATE||'').slice(0,10),notice=String(r.NOTICE_DATE||'').slice(0,10);
+    if(!/^\d{4}-(03-31|06-30|09-30|12-31)$/.test(date)||date>asOf||!notice||notice>asOf||notice<date) continue;
+    if(r.CURRENCY&&r.CURRENCY!=='CNY'&&r.CURRENCY!=='人民币') continue;
+    if(!byDate[date]||String(r.UPDATE_DATE||'')>String(byDate[date].UPDATE_DATE||'')) byDate[date]=r;
+  }
+  const dates=Object.keys(byDate).sort().reverse(),latest=dates[0];
+  if(!latest) return null;
+  const annualDate=dates.find(d=>d.endsWith('12-31'));
+  const end={1:'03-31',2:'06-30',3:'09-30',4:'12-31'};
+  const cumulative=(year,q)=>_valFinite(byDate[year+'-'+end[q]]?.KCFJCXSYJLR);
+  const single=(year,q)=>{
+    const current=cumulative(year,q);if(current===null) return null;
+    if(q===1) return current;
+    const previous=cumulative(year,q-1);return previous===null?null:current-previous;
   };
+  const year=Number(latest.slice(0,4)),q=Number(latest.slice(5,7))/3;
+  const annualYear=annualDate?Number(annualDate.slice(0,4)):null;
+  const annual=annualDate?cumulative(annualYear,4):null;
+  const quarter=single(year,q),previousQuarter=q===1?single(year-1,4):single(year,q-1);
+  return {
+    annualProfit : annual===null?null:annual/100000000,
+    annualYoY    : annualDate?_valProfitGrowth(annual,cumulative(annualYear-1,4)):null,
+    annualPeriod : annualDate?annualYear+'年报':null,
+    qtrProfit    : quarter===null?null:quarter/100000000,
+    qtrYoY       : _valProfitGrowth(quarter,single(year-1,q)),
+    qtrQoQ       : _valProfitGrowth(quarter,previousQuarter),
+    qtrPeriod    : year+'Q'+q,
+    currency     : 'CNY',
+    source       : 'A',
+    profitBasis  : 'recurring_parent_net_profit',
+    basisNote    : '扣除非经常性损益后归母净利润；单季由累计差分，增速比较基数须为正',
+    reportDate   : latest
+  };
+}
+
+function _valProfitGrowth(current,previous){
+  const a=_valFinite(current),b=_valFinite(previous);
+  return a!==null&&b!==null&&b>0?(a/b-1)*100:null;
+}
+
+function _valPrediction(d){
+  const values=[d.annualYoY,d.qtrYoY,d.qtrQoQ].map(_valFinite);
+  const complete=d.profitBasis==='recurring_parent_net_profit'&&values.every(v=>v!==null);
+  const predRate=complete?values.reduce((a,b)=>a+b,0)/3:null;
+  const annual=_valFinite(d.annualProfit);
+  return {predRate,predProfit:predRate!==null&&annual!==null&&annual>0?annual*(1+predRate/100):null};
 }
 
 function _valHkPeriod(row){
@@ -6193,16 +6228,19 @@ function _valFromHK(rows){
   const ann=recs.find(r=>String(r.DATE_TYPE_CODE)==='001');
   const qtr=recs.find(r=>String(r.DATE_TYPE_CODE)!=='001');
   if(!ann&&!qtr) return null;
+  // HOLDER_PROFIT* 为普通归母利润；经调整利润也不自动等同于A股扣非口径。
   return {
-    annualProfit : ann&&_valFinite(ann.HOLDER_PROFIT)!=null ? _valFinite(ann.HOLDER_PROFIT)/100000000 : null,
-    annualYoY    : ann ? _valFinite(ann.HOLDER_PROFIT_YOY) : null,
+    annualProfit : null,
+    annualYoY    : null,
     annualPeriod : ann ? String(ann.REPORT_DATE||'').slice(0,4)+'年报' : null,
-    qtrProfit    : qtr&&_valFinite(qtr.HOLDER_PROFIT)!=null ? _valFinite(qtr.HOLDER_PROFIT)/100000000 : null,
-    qtrYoY       : qtr ? _valFinite(qtr.HOLDER_PROFIT_YOY) : null,
-    qtrQoQ       : qtr ? _valFinite(qtr.HOLDER_PROFIT_QOQ) : null,
+    qtrProfit    : null,
+    qtrYoY       : null,
+    qtrQoQ       : null,
     qtrPeriod    : qtr ? _valHkPeriod(qtr) : null,
     currency     : (qtr||ann)?.CURRENCY||'HKD',
-    source       : 'HK'
+    source       : 'HK',
+    profitBasis  : 'unavailable',
+    basisNote    : '港股源未提供可比扣非口径，不以普通归母或经调整净利润代替'
   };
 }
 
@@ -6222,11 +6260,11 @@ async function _valFetchJson(url){
 
 function _valAUrl(codes,pageNumber=1){
   const p=new URLSearchParams({
-    reportName:'RPT_LICO_FN_CPD',
-    columns:'SECURITY_CODE,REPORTDATE,PARENT_NETPROFIT,SJLTZ,SJLHZ,DATEMMDD,DATAYEAR,QDATE',
-    filter:`(SECURITY_CODE in (${codes.map(c=>`"${c}"`).join(',')}))`,
+    reportName:'RPT_F10_FINANCE_MAINFINADATA',
+    columns:'SECURITY_CODE,REPORT_DATE,KCFJCXSYJLR,NOTICE_DATE,UPDATE_DATE,CURRENCY',
+    filter:`(SECURITY_CODE in (${codes.map(c=>`"${c}"`).join(',')}))(REPORT_DATE>='${new Date(Date.now()+8*3600000).getUTCFullYear()-3}-01-01')`,
     pageSize:'500',pageNumber:String(pageNumber),
-    sortColumns:'REPORTDATE',sortTypes:'-1',source:'WEB'
+    sortColumns:'REPORT_DATE',sortTypes:'-1',source:'WEB'
   });
   return 'https://datacenter-web.eastmoney.com/api/data/v1/get?'+p;
 }
@@ -6310,8 +6348,9 @@ async function fetchValData(force=false){
     await Promise.allSettled(jobs);
     _VAL_DATA=next;
     const loaded=stocks.filter(sk=>next[sk.code]&&!next[sk.code].stale&&(next[sk.code].annualProfit!=null||next[sk.code].qtrProfit!=null)).length;
-    _VAL_STATUS={loading:false,total:stocks.length,loaded,failed:stocks.length-loaded};
-    if(loaded>0) _VAL_TS=Date.now();
+    const unsupported=stocks.filter(sk=>next[sk.code]&&!next[sk.code].stale&&next[sk.code].profitBasis==='unavailable').length;
+    _VAL_STATUS={loading:false,total:stocks.length,loaded,unsupported,failed:stocks.length-loaded-unsupported};
+    if(loaded>0||unsupported>0) _VAL_TS=Date.now();
     renderValTable();
   })().finally(()=>{
     _VAL_INFLIGHT=null;
@@ -6348,7 +6387,7 @@ function renderValTable(){
   const tsEl=document.getElementById('val-update-ts');
   if(tsEl){
     if(_VAL_STATUS.loading) tsEl.textContent='正在读取 A股及港股财报…';
-    else if(_VAL_TS) tsEl.textContent='财务数据 '+_VAL_STATUS.loaded+'/'+_VAL_STATUS.total+' 只 · '+new Date(_VAL_TS).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    else if(_VAL_TS) tsEl.textContent='扣非数据 '+_VAL_STATUS.loaded+'/'+_VAL_STATUS.total+' 只'+(_VAL_STATUS.unsupported?' · '+_VAL_STATUS.unsupported+'只无可比披露':'')+' · '+new Date(_VAL_TS).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
     else tsEl.textContent='尚未取得财务数据';
   }
   if(_VAL_STATUS.loading&&!Object.keys(_VAL_DATA).length){
@@ -6379,7 +6418,7 @@ function renderValTable(){
     const pctStr=pi.pct!=null?_valPct(pi.pct):'';
     const currencyBadge=(d.currency&&d.annualProfit!=null)
       ?`<span style="font-size:9px;background:#f1f5f9;color:#64748b;border-radius:3px;padding:0 3px;font-weight:700;margin-left:3px;vertical-align:middle">${d.currency}</span>`:'';
-    const annProfitStr=noData?'<span style="color:#94a3b8;font-size:11px">暂未取得财报</span>'
+    const annProfitStr=noData?'<span style="color:#94a3b8;font-size:11px" title="'+(d.basisNote||'未取得扣非净利润')+'">'+(d.profitBasis==='unavailable'?'无可比扣非披露':'暂未取得扣非数据')+'</span>'
       :(d.annualProfit!=null?_valFmt(d.annualProfit,2)+currencyBadge:'<span style="color:#94a3b8">—</span>');
     const annPeriodStr=d.annualPeriod?`<br><span style="font-size:10px;color:var(--text2)">${d.annualPeriod}</span>`:'';
     const annYoY=noData?'<span style="color:#94a3b8">—</span>':_valPct(d.annualYoY);
@@ -6391,7 +6430,7 @@ function renderValTable(){
     const nVals=[d.annualYoY,d.qtrYoY,d.qtrQoQ].filter(v=>v!=null).length;
     const predStr=predRate!=null
       ?(_valPct(predRate)+(nVals<3?`<span style="font-size:10px;color:var(--text2)"> (${nVals}/3)</span>`:''))
-      :'<span style="color:#94a3b8">—</span>';
+      :'<span style="color:#94a3b8" title="三项扣非增速齐全且比较基数为正才计算">—</span>'+(nVals>0&&nVals<3?'<span style="font-size:10px;color:var(--text2)"> ('+nVals+'/3)</span>':'');
     const predProfitStr=predProfit!=null
       ?`<span style="color:#065f46;font-weight:600">${_valFmt(predProfit,2)}</span>`
       :'<span style="color:#94a3b8">—</span>';
@@ -6426,12 +6465,7 @@ function renderValTable(){
     const d=_VAL_DATA[sk.code]||{};
     const isHK=sk.mkt==='HK';
     const noData=d.annualProfit==null&&d.qtrProfit==null;
-    let predRate=null,predProfit=null;
-    if(!noData){
-      const vals=[d.annualYoY,d.qtrYoY,d.qtrQoQ].filter(v=>v!=null);
-      if(vals.length) predRate=vals.reduce((a,b)=>a+b,0)/vals.length;
-      if(predRate!=null&&d.annualProfit!=null) predProfit=d.annualProfit*(1+predRate/100);
-    }
+    const {predRate,predProfit}=_valPrediction(d);
     const mktCap=pi.mktCap??null;
     const pe=(mktCap>0&&predProfit>0)?Math.round(mktCap/predProfit):null;
     return {sk,sec,pi,d,isHK,noData,predRate,predProfit,mktCap,pe};
@@ -6468,15 +6502,15 @@ function renderValTable(){
             <th style="padding:9px 14px;text-align:left;font-weight:700;color:var(--text);white-space:nowrap">股票名称</th>
             <th style="padding:9px 10px;text-align:center;font-weight:700;color:var(--text);white-space:nowrap">市场</th>
             <th style="padding:9px 12px;text-align:right;font-weight:700;color:var(--text);white-space:nowrap">当前股价</th>
-            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap;border-left:2px solid #fde68a">上年利润<br><span style="font-size:9px;font-weight:500">亿元·本币</span></th>
-            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap">上年同比</th>
-            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap;border-left:2px solid #bfdbfe">上季利润<br><span style="font-size:9px;font-weight:500">亿元·本币</span></th>
-            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季同比</th>
-            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季环比</th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap;border-left:2px solid #fde68a">上年扣非利润<br><span style="font-size:9px;font-weight:500">亿元·本币</span></th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#92400e;white-space:nowrap">上年扣非同比</th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap;border-left:2px solid #bfdbfe">上季扣非利润<br><span style="font-size:9px;font-weight:500">亿元·本币</span></th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季扣非同比</th>
+            <th style="padding:9px 12px;text-align:right;font-weight:700;color:#1e40af;white-space:nowrap">上季扣非环比</th>
             <th style="padding:9px 12px;text-align:right;font-weight:700;color:#7c3aed;white-space:nowrap;border-left:2px solid #ddd6fe">年度增速预测</th>
-            <th onclick="${sortFn}(${blockKeyLit},'predProfit')" style="padding:9px 12px;text-align:right;font-weight:700;color:#065f46;white-space:nowrap;cursor:pointer;user-select:none" title="点击排序">年度利润预测${si('predProfit')}</th>
+            <th onclick="${sortFn}(${blockKeyLit},'predProfit')" style="padding:9px 12px;text-align:right;font-weight:700;color:#065f46;white-space:nowrap;cursor:pointer;user-select:none" title="点击排序">年度扣非利润预测${si('predProfit')}</th>
             <th onclick="${sortFn}(${blockKeyLit},'mktCap')"    style="padding:9px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap;border-left:2px solid #e2e8f0;cursor:pointer;user-select:none" title="点击排序">总市值${si('mktCap')}</th>
-            <th onclick="${sortFn}(${blockKeyLit},'pe')"        style="padding:9px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap;cursor:pointer;user-select:none" title="点击排序">预测PE${si('pe')}</th>
+            <th onclick="${sortFn}(${blockKeyLit},'pe')"        style="padding:9px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap;cursor:pointer;user-select:none" title="总市值 / 年度扣非利润预测；点击排序">预测扣非PE${si('pe')}</th>
           </tr>
         </thead>
         <tbody>`;

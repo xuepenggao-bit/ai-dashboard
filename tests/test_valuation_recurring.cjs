@@ -1,0 +1,51 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+function context(day='2026-11-04'){
+ class Clock extends Date {static now(){return Date.parse(day+'T12:00:00+08:00');}}
+ const c=vm.createContext({Date:Clock,URLSearchParams});
+ vm.runInContext(html.slice(html.indexOf('function _valFinite('),html.indexOf('async function _valFetchJson(')),c);
+ vm.runInContext(html.slice(html.indexOf('function _valAUrl('),html.indexOf('async function _valFetchA(')),c);
+ return c;
+}
+function row(date,value,extra={}){return {SECURITY_CODE:'000001',REPORT_DATE:date+' 00:00:00',NOTICE_DATE:date,UPDATE_DATE:date,CURRENCY:'CNY',KCFJCXSYJLR:value===null?null:value*1e8,PARENT_NETPROFIT:9999e8,SJLTZ:9999,SJLHZ:9999,...extra};}
+function fixture(){return [row('2024-12-31',100),row('2025-03-31',20),row('2025-06-30',70),row('2025-09-30',110),row('2025-12-31',120),row('2026-03-31',40),row('2026-06-30',100),row('2026-09-30',180)];}
+const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,a+' != '+b);
+test('all three forecast inputs come from recurring profit, not ordinary parent profit fields',()=>{
+ const c=context(),d=c._valFromA(fixture());assert.equal(d.annualProfit,120);near(d.annualYoY,20);assert.equal(d.qtrProfit,80);near(d.qtrYoY,100);near(d.qtrQoQ,100/3);assert.equal(d.qtrPeriod,'2026Q3');assert.equal(d.profitBasis,'recurring_parent_net_profit');
+ const p=c._valPrediction(d);near(p.predRate,(20+100+100/3)/3);near(p.predProfit,120*(1+p.predRate/100));
+});
+test('single-quarter Q3 is cumulative 9M minus H1, not cumulative profit or cumulative YoY',()=>{
+ const d=context()._valFromA(fixture());assert.notEqual(d.qtrProfit,180);assert.notEqual(d.qtrYoY,(180/110-1)*100);near(d.qtrProfit,180-100);
+});
+test('Q1 sequential growth uses prior year Q4 derived from FY minus 9M',()=>{
+ const d=context()._valFromA(fixture().filter(r=>r.REPORT_DATE.slice(0,10)<='2026-03-31'));assert.equal(d.qtrPeriod,'2026Q1');assert.equal(d.qtrProfit,40);near(d.qtrQoQ,300);near(d.qtrYoY,100);
+});
+test('latest annual report yields actual Q4, not a silently retained Q3',()=>{
+ const d=context('2027-04-01')._valFromA([...fixture(),row('2026-12-31',250,{NOTICE_DATE:'2027-03-31'})]);assert.equal(d.qtrPeriod,'2026Q4');near(d.qtrProfit,70);near(d.qtrQoQ,-12.5);near(d.qtrYoY,600);near(d.annualYoY,(250/120-1)*100);
+});
+test('missing cumulative operand stays missing and never falls back to ordinary profit',()=>{
+ const f=fixture();f.find(r=>r.REPORT_DATE.startsWith('2026-06')).KCFJCXSYJLR=null;
+ const c=context(),d=c._valFromA(f);assert.equal(d.qtrProfit,null);assert.equal(d.qtrYoY,null);assert.equal(d.qtrQoQ,null);assert.equal(c._valPrediction(d).predRate,null);
+});
+test('latest missing recurring amount does not masquerade as older quarter or reported profit',()=>{
+ const c=context(),d=c._valFromA([...fixture(),row('2026-09-30',null,{UPDATE_DATE:'2026-10-30'})]);assert.equal(d.qtrPeriod,'2026Q3');assert.equal(d.qtrProfit,null);assert.equal(c._valPrediction(d).predProfit,null);
+});
+test('three finite growth items are required; no two-term mean or zero padding',()=>{
+ const c=context();assert.equal(c._valPrediction({profitBasis:'recurring_parent_net_profit',annualProfit:10,annualYoY:10,qtrYoY:20,qtrQoQ:null}).predRate,null);assert.equal(c._valPrediction({annualProfit:10,annualYoY:10,qtrYoY:20,qtrQoQ:30}).predRate,null);
+});
+test('zero/negative comparison bases are not extrapolated into normal growth forecasts',()=>{
+ const c=context();for(const b of [0,-10,null,undefined,'',false])assert.equal(c._valProfitGrowth(20,b),null);near(c._valProfitGrowth(-5,10),-150);assert.equal(c._valPrediction({profitBasis:'recurring_parent_net_profit',annualProfit:-10,annualYoY:10,qtrYoY:20,qtrQoQ:30}).predProfit,null);
+});
+test('restated comparative row wins by update date, future and wrong-currency disclosures are excluded',()=>{
+ const c=context(),f=[...fixture(),row('2025-09-30',115,{UPDATE_DATE:'2026-10-30'}),row('2026-12-31',500,{NOTICE_DATE:'2027-03-31'}),row('2026-09-30',500,{UPDATE_DATE:'2026-11-01',CURRENCY:'USD'})];const d=c._valFromA(f);assert.equal(d.reportDate,'2026-09-30');near(d.qtrYoY,(80/(115-70)-1)*100);
+});
+test('HK ordinary and management-adjusted earnings cannot populate recurring-profit predictions',()=>{
+ const c=context(),d=c._valFromHK([{REPORT_DATE:'2025-12-31',DATE_TYPE_CODE:'001',HOLDER_PROFIT:1e10,HOLDER_PROFIT_YOY:80,HOLDER_PROFIT_QOQ:20,ADJUSTED_PROFIT:2e10,CURRENCY:'HKD'}]);for(const k of ['annualProfit','annualYoY','qtrProfit','qtrYoY','qtrQoQ'])assert.equal(d[k],null);assert.equal(d.profitBasis,'unavailable');assert.match(d.basisNote,/不以普通/);assert.equal(c._valPrediction(d).predRate,null);
+});
+test('A API requests the verified cumulative recurring field with finite recent history',()=>{
+ const u=new URL(context()._valAUrl(['300308','002463']));assert.equal(u.searchParams.get('reportName'),'RPT_F10_FINANCE_MAINFINADATA');assert.match(u.searchParams.get('columns'),/KCFJCXSYJLR/);assert.doesNotMatch(u.searchParams.get('columns'),/PARENT_NETPROFIT|SJLTZ|SJLHZ/);assert.match(u.searchParams.get('filter'),/2023-01-01/);assert.equal(u.searchParams.get('sortColumns'),'REPORT_DATE');
+});
+test('table and formula disclose recurring-profit scope in both views and scripts parse',()=>{
+ assert.match(html,/上年扣非同比 \+ 上季扣非同比 \+ 上季扣非环比/);assert.match(html,/上年扣非利润 ×/);assert.match(html,/年度扣非利润预测/);assert.match(html,/预测扣非PE/);assert.match(html,/无可比扣非披露/);
+ for(const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))if(match[1].trim())new vm.Script(match[1]);
+});
