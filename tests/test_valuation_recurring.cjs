@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 function context(day='2026-11-04'){
  class Clock extends Date {static now(){return Date.parse(day+'T12:00:00+08:00');}}
- const c=vm.createContext({Date:Clock,URLSearchParams});
+ const c=vm.createContext({Date:Clock,URLSearchParams,ValuationHK:require('../assets/valuation-hk.js')});
  vm.runInContext(html.slice(html.indexOf('function _valFinite('),html.indexOf('async function _valFetchJson(')),c);
  vm.runInContext(html.slice(html.indexOf('function _valAUrl('),html.indexOf('async function _valFetchA(')),c);
  return c;
@@ -39,13 +39,30 @@ test('zero/negative comparison bases are not extrapolated into normal growth for
 test('restated comparative row wins by update date, future and wrong-currency disclosures are excluded',()=>{
  const c=context(),f=[...fixture(),row('2025-09-30',115,{UPDATE_DATE:'2026-10-30'}),row('2026-12-31',500,{NOTICE_DATE:'2027-03-31'}),row('2026-09-30',500,{UPDATE_DATE:'2026-11-01',CURRENCY:'USD'})];const d=c._valFromA(f);assert.equal(d.reportDate,'2026-09-30');near(d.qtrYoY,(80/(115-70)-1)*100);
 });
-test('HK ordinary and management-adjusted earnings cannot populate recurring-profit predictions',()=>{
- const c=context(),d=c._valFromHK([{REPORT_DATE:'2025-12-31',DATE_TYPE_CODE:'001',HOLDER_PROFIT:1e10,HOLDER_PROFIT_YOY:80,HOLDER_PROFIT_QOQ:20,ADJUSTED_PROFIT:2e10,CURRENCY:'HKD'}]);for(const k of ['annualProfit','annualYoY','qtrProfit','qtrYoY','qtrQoQ'])assert.equal(d[k],null);assert.equal(d.profitBasis,'unavailable');assert.match(d.basisNote,/不以普通/);assert.equal(c._valPrediction(d).predRate,null);
+test('pure HK ordinary profit is accepted as a distinct, explicitly labelled forecast basis',()=>{
+ const c=context();const hk=(date,start,amount,type)=>({REPORT_DATE:date,START_DATE:start,AMOUNT:amount*1e8,DATE_TYPE_CODE:type,STD_ITEM_CODE:'004025002',CURRENCY_CODE:'CNY'});
+ const d=c._valFromHK([hk('2024-12-31','2024-01-01',80,'001'),hk('2025-12-31','2025-01-01',100,'001'),hk('2025-03-31','2025-01-01',20,'003'),hk('2025-06-30','2025-01-01',50,'002'),hk('2026-03-31','2026-01-01',20,'003'),hk('2026-06-30','2026-01-01',60,'002')]);
+ assert.equal(d.profitBasis,'parent_net_profit');assert.equal(d.annualProfit,100);assert.equal(d.qtrProfit,40);near(c._valPrediction(d).predRate,(25+100/3+100)/3);assert.match(d.basisLabel,/归母/);
 });
 test('A API requests the verified cumulative recurring field with finite recent history',()=>{
  const u=new URL(context()._valAUrl(['300308','002463']));assert.equal(u.searchParams.get('reportName'),'RPT_F10_FINANCE_MAINFINADATA');assert.match(u.searchParams.get('columns'),/KCFJCXSYJLR/);assert.doesNotMatch(u.searchParams.get('columns'),/PARENT_NETPROFIT|SJLTZ|SJLHZ/);assert.match(u.searchParams.get('filter'),/2023-01-01/);assert.equal(u.searchParams.get('sortColumns'),'REPORT_DATE');
 });
-test('table and formula disclose recurring-profit scope in both views and scripts parse',()=>{
- assert.match(html,/上年扣非同比 \+ 上季扣非同比 \+ 上季扣非环比/);assert.match(html,/上年扣非利润 ×/);assert.match(html,/年度扣非利润预测/);assert.match(html,/预测扣非PE/);assert.match(html,/无可比扣非披露/);
+test('table and formula disclose mixed user-selected profit bases and scripts parse',()=>{
+ assert.match(html,/A股及A\/H采用A股扣非归母净利润/);assert.match(html,/纯港股采用常规股东应占净利润/);assert.match(html,/上年同口径利润 ×/);assert.match(html,/最近期同比/);assert.match(html,/ValuationHK\.pe/);assert.match(html,/basisBadge/);
  for(const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))if(match[1].trim())new vm.Script(match[1]);
+});
+
+function fetchContext(){
+ const c=vm.createContext({Date,URLSearchParams,AbortController,setTimeout,clearTimeout,console,ValuationHK:require('../assets/valuation-hk.js'),document:{getElementById:()=>null},PORT:{sectors:[{stocks:[{mkt:'HK',code:'02476'},{mkt:'HK',code:'00700'}]}]}});
+ vm.runInContext(html.slice(html.indexOf('let _VAL_DATA'),html.indexOf('function _valFmt(')),c);
+ vm.runInContext('renderValTable=()=>{};_valFetchFX=async()=>({rates:{HKD:1,CNY:.85}});',c);return c;
+}
+test('A/H-only holdings fetch their unheld A peer, pure HK uses income source, never ordinary fallback for AH',async()=>{
+ const c=fetchContext();c.rows=fixture().map(r=>({...r,SECURITY_CODE:'300476'}));
+ vm.runInContext("_valLoadAHMap=async()=>({'02476':{aCode:'300476'}});_valFetchA=async codes=>{globalThis.requestedA=codes;return rows};_valFetchHK=async code=>{globalThis.requestedHK=code;return []};",c);
+ await vm.runInContext('fetchValData(true)',c);const d=vm.runInContext('_VAL_DATA',c);assert.deepEqual(Array.from(c.requestedA),['300476']);assert.equal(c.requestedHK,'00700');assert.equal(d['02476'].source,'AH');assert.equal(d['02476'].aShareCode,'300476');assert.equal(d['02476'].annualProfit,120);
+});
+test('failed A/H mapping cannot misclassify every HK as pure HK',async()=>{
+ const c=fetchContext();vm.runInContext("_valLoadAHMap=async()=>{throw Error('mapping failed')};_valFetchHK=async()=>{throw Error('must not call ordinary fallback')};",c);
+ await vm.runInContext('fetchValData(true)',c);const d=vm.runInContext('_VAL_DATA',c);assert.equal(d['02476'].profitBasis,'unavailable');assert.equal(d['00700'].profitBasis,'unavailable');
 });
