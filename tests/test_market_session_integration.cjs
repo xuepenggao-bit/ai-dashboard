@@ -67,7 +67,7 @@ function rowFor(h,name){
 }
 function assertEmptyMarketFields(row,label){
   assert.ok(row,'Holding row exists');assert.match(row,new RegExp('data-quote-status="[^"]+">'+label));
-  for(const className of ['col-pct','col-range5','col-turnover','col-vr','col-sp']){
+  for(const className of ['col-pct','col-range5','col-turnover','col-vr','col-spark']){
     const cells=[...row.matchAll(new RegExp('<td class="'+className+'[^>]*>([\\s\\S]*?)<\\/td>','g'))];
     assert.ok(cells.length,'Cell '+className+' exists');
     cells.forEach(cell=>assert.doesNotMatch(cell[1],/port-change-pill|port-range-pill|port-metric-number/,'No stale '+className));
@@ -105,6 +105,15 @@ test('closed table replaces price with 休市 and removes all derived stale mark
   h.ctx.renderPortfolio();const row=rowFor(h,HK.name);assertEmptyMarketFields(row,'休市');
   assert.doesNotMatch(row,/370\.123|19\.87|4\.56|2\.34|1\.23/);
   assert.match(rowFor(h,A.name),/73\.45/);
+});
+test('quote rerender preserves each category horizontal scroll for the right-hand minute charts',()=>{
+  const h=harness('2026-11-05'),root=h.element('portSectors');let reads=0;
+  const oldScroll={scrollLeft:375},newScroll={scrollLeft:0};
+  const card=scroller=>({getAttribute:()=> 'stable-sector',querySelector:()=>scroller});
+  root.querySelectorAll=()=>++reads===1?[card(oldScroll)]:[card(newScroll)];
+  h.ctx.renderPortfolio();
+  assert.equal(newScroll.scrollLeft,375);
+  assert.match(root.innerHTML,/data-port-sector-key=/);
 });
 test('all Top7 ranks and weighted summaries exclude closed returns while heavy list keeps positions',()=>{
   const h=harness();h.ctx._PORT_PRICES={

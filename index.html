@@ -15,6 +15,9 @@
 <!-- defer：不阻塞 HTML 解析与首屏渲染；所有图表都在 DOMContentLoaded 后创建,defer 安全 -->
 <script defer src="assets/market-session.js?v=20261019b"></script>
 <script defer src="assets/intraday-indices.js?v=20261023a"></script>
+<link rel="stylesheet" href="assets/portfolio-sparklines.css?v=20261105a">
+<script defer src="assets/portfolio-sparkline-view.js?v=20261105a"></script>
+<script defer src="assets/portfolio-sparklines.js?v=20261105a"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- 市场图表样式须先注册，部分模块会在恢复缓存时立即绘图。 -->
 <script src="assets/market-environment.js?v=20261015a" defer></script>
@@ -815,7 +818,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-metric-number{display:inline-flex;align-items:center;justify-content:flex-end;min-width:48px;padding:4px 7px;border:1px solid #d7dee6;border-radius:8px;background:#eceff3;font-size:13px;font-weight:850;color:#3f4e61}
 .port-metric-number.is-elevated{color:#855515;background:#fff1d4;border-color:#f2d59b}
 .port-metric-number.is-hot{color:#922c47;background:#ffe8ee;border-color:#f6c8d3;font-weight:920}
-.port-speed-value.is-up{color:#9f1239;background:#ffe8ed;border-color:#fecdd6}.port-speed-value.is-down{color:#046c4e;background:#e5f7ed;border-color:#b7e4cd}.port-speed-value.is-flat{color:#526174;background:#ebeff3;border-color:#d8dfe7}
 .port-row-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px}
 .port-row-action{min-width:44px;padding:6px 9px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:800;transition:transform .14s,box-shadow .14s,border-color .14s,background .14s}
 .port-row-action:hover{transform:translateY(-1px)}
@@ -858,7 +860,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 }
 @media(max-width:600px){
   /* 再隐藏：当前股价 */
-  #tPort .col-price,#tPort .th-price,#tPort .col-vr,#tPort .th-vr,#tPort .col-sp,#tPort .th-sp{display:none}
+  #tPort .col-price,#tPort .th-price,#tPort .col-vr,#tPort .th-vr{display:none}
   #tPort .port-holdings-table{min-width:760px}
 }
 @media(max-width:480px){
@@ -5075,11 +5077,9 @@ function renderPortfolio(){
   const wArrow    = _portSort.col==='w'   ? (_portSort.dir>0?'↓':'↑') : '↕';
   const turnoverArrow=_portSort.col==='turnover'?(_portSort.dir>0?'↓':'↑'):'↕';
   const vrArrow   = _portSort.col==='vr'    ? (_portSort.dir>0?'↓':'↑') : '↕';
-  const spArrow   = _portSort.col==='speed' ? (_portSort.dir>0?'↓':'↑') : '↕';
   const pctThCls  = 'th-sort'+(_portSort.col==='pct'  ?(_portSort.dir>0?' th-desc':' th-asc'):'');
   const wThCls    = 'th-sort'+(_portSort.col==='w'    ?(_portSort.dir>0?' th-desc':' th-asc'):'');
   const vrThCls   = 'th-sort'+(_portSort.col==='vr'   ?(_portSort.dir>0?' th-desc':' th-asc'):'');
-  const spThCls   = 'th-sort'+(_portSort.col==='speed'?(_portSort.dir>0?' th-desc':' th-asc'):'');
   const portRenderNow=Date.now(); // 本轮所有行共用同一北京时间快照，避免 09:15 边界显示不一致
   const _renderCloseRangeDistance=(stock,priceInfo,side)=>{
     const range=_PORT_5D_CLOSE[_port5dKey(stock)];
@@ -5097,7 +5097,10 @@ function renderPortfolio(){
     return `<span class="port-range-pill ${cls}" title="${title}">${sign}${pct.toFixed(2)}%</span>`;
   };
 
-  document.getElementById('portSectors').innerHTML = PORT.sectors.map((sec,si)=>{
+  const portSectorRoot=document.getElementById('portSectors');
+  const portTableScrolls=new Map(Array.from(portSectorRoot.querySelectorAll?.('[data-port-sector-key]')||[])
+    .map(card=>[card.getAttribute('data-port-sector-key'),card.querySelector('.overflow')?.scrollLeft||0]));
+  portSectorRoot.innerHTML = PORT.sectors.map((sec,si)=>{
     const secW = secWeights[si];
     const secAlloc = allocModel.categories[si] || {};
     const secAvgPct = secAvgPcts[si];
@@ -5127,8 +5130,6 @@ function renderPortfolio(){
       disp.sort((a,b)=>_portTurnoverCompare(sessionPrices[a.code]?.turnoverRate,sessionPrices[b.code]?.turnoverRate,_portSort.dir));
     } else if(_portSort.col==='vr'){
       disp.sort((a,b)=>((sessionPrices[b.code]?.volRatio??-1)-(sessionPrices[a.code]?.volRatio??-1))*_portSort.dir);
-    } else if(_portSort.col==='speed'){
-      disp.sort((a,b)=>((sessionPrices[b.code]?.speedPct??-9999)-(sessionPrices[a.code]?.speedPct??-9999))*_portSort.dir);
     }
     const rows = sec.stocks.length ? disp.map((sk)=>{
       const ki=sec.stocks.indexOf(sk);
@@ -5158,12 +5159,6 @@ function renderPortfolio(){
       const vrCell = vr!=null
         ? `<span class="port-metric-number ${vrState} ${vrMoveClass}">${Number(vr).toFixed(2)}</span>`
         : `<span class="port-data-empty">—</span>`;
-      const sp = quoteState.canUseReturn?pi?.speedPct:null;
-      const spState=sp==null?'':sp>0.005?'is-up':sp<-0.005?'is-down':'is-flat';
-      const spMoveClass=pi?_portLiveMoveClass(sk,'speedPct',sp,portRenderNow):'port-live-value';
-      const spCell = sp!=null
-        ? `<span class="port-metric-number port-speed-value ${spState} ${spMoveClass}">${sp>0?'+':''}${Number(sp).toFixed(2)}%</span>`
-        : `<span class="port-data-empty">—</span>`;
       const _emUrl = sk.mkt==='SH' ? `https://quote.eastmoney.com/sh${sk.code}.html`
                    : sk.mkt==='SZ' ? `https://quote.eastmoney.com/sz${sk.code}.html`
                    : sk.mkt==='HK' ? `https://quote.eastmoney.com/hk/${String(sk.code).padStart(5,'0')}.html`
@@ -5185,7 +5180,7 @@ function renderPortfolio(){
         <td class="col-weight port-cell-momentum" style="text-align:right">${sk.w!=null?'<span class="port-weight-value">'+sk.w.toFixed(1)+'%</span>':'<span class="port-data-empty">—</span>'}</td>
         <td class="col-turnover port-cell-momentum">${_portTurnoverCell(pi,aPreOpen)}</td>
         <td class="col-vr port-cell-momentum" style="text-align:right">${vrCell}</td>
-        <td class="col-sp port-cell-momentum" style="text-align:right">${spCell}</td>
+        <td class="col-spark port-cell-momentum"><div class="port-stock-spark" data-spark-key="${_escH(String(sk.mkt||'').toLowerCase()+String(sk.code||''))}" data-spark-market="${_escH(sk.mkt||'')}" data-spark-name="${stockNameHtml}" data-spark-status="${_escH(quoteState.status)}"></div></td>
         <td class="col-actions port-cell-actions">
           <div class="port-row-actions">
             <button class="port-row-action port-row-action-edit btn-edit" onclick="openPortModal('edit',${si},${ki})">编辑</button>
@@ -5194,7 +5189,7 @@ function renderPortfolio(){
         </td>
       </tr>`;}).join('')
     : `<tr><td colspan="13" style="text-align:center;color:var(--text2);font-size:13px;padding:20px">暂无持仓 · 点击"加股票"添加</td></tr>`;
-    return `<div class="card mb16 port-sector-card" style="overflow:hidden;--sector-accent:${secColor}">
+    return `<div class="card mb16 port-sector-card" data-port-sector-key="${_escH(String(sec.id??si))}" style="overflow:hidden;--sector-accent:${secColor}">
       <div class="sec-header">
         <div class="port-sector-identity">
           <div class="port-sector-copy">
@@ -5237,7 +5232,7 @@ function renderPortfolio(){
               <th class="${wThCls}" onclick="togglePortSort('w')" style="text-align:right;cursor:pointer">个股仓位 ${wArrow}</th>
               <th class="th-sort th-turnover" onclick="togglePortSort('turnover')" style="cursor:pointer" title="行情源返回的个股换手率（%）">换手率 ${turnoverArrow}</th>
               <th class="${vrThCls} th-vr" onclick="togglePortSort('vr')" style="text-align:right;cursor:pointer">量比 ${vrArrow}</th>
-              <th class="${spThCls} th-sp" onclick="togglePortSort('speed')" style="text-align:right;cursor:pointer">5分钟 ${spArrow}</th>
+              <th class="th-spark" title="当日分时走势 · 虚线为昨收价 · 红涨绿跌 · 约每分钟异步更新">当日分时</th>
               <th class="th-actions" style="text-align:right">操作</th>
             </tr>
           </thead><tbody>${rows}</tbody></table>
@@ -5246,6 +5241,11 @@ function renderPortfolio(){
     </div>`;
   }).join('');
 
+  Array.from(portSectorRoot.querySelectorAll?.('[data-port-sector-key]')||[]).forEach(card=>{
+    const scroller=card.querySelector('.overflow');
+    if(scroller)scroller.scrollLeft=portTableScrolls.get(card.getAttribute('data-port-sector-key'))||0;
+  });
+  if(typeof PortfolioSparklines==='object')PortfolioSparklines.mount();
   _capturePortfolioRenderSnapshot(PORT,_PORT_PRICES,portRenderNow);
 
   // 每次渲染都刷新重仓TOP5（仓位数据不依赖股价）
