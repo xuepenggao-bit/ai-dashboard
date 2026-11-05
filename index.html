@@ -23,7 +23,7 @@
 <link rel="stylesheet" href="assets/canslim-recommendations.css?v=20261101c">
 <script defer src="assets/canslim-recommendations.js?v=20261101c"></script>
 <script defer src="assets/valuation-hk.js?v=20261104a"></script>
-<script defer src="assets/broker-forecasts.js?v=20261104a"></script>
+<script defer src="assets/broker-forecasts.js?v=20261105a"></script>
 <link rel="stylesheet" href="assets/ai-cycle-monitor.css?v=20261101a">
 <script defer src="assets/ai-cycle-monitor.js?v=20261101a"></script>
 <link rel="stylesheet" href="assets/account-openings.css?v=20261010a">
@@ -2148,7 +2148,8 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <span style="color:#d97706;font-weight:600">年度利润增速预测</span> = (上年同比 + 最近期同比 + 最近期环比) / 3 &nbsp;|&nbsp;
       <span style="color:#059669;font-weight:600">年度利润预测</span> = 上年同口径利润 × (1 + 预测增速)
       <br>单季由累计值相减；纯港股只有半年报时按半年比较并注明。三项齐全且比较基数为正才外推；利润保留财报原币，预测PE先统一市值币种，汇率缺失不强算。
-      <br>券商列：按日期取最近5家机构的当年净利润预测，同机构保留最新一条，不足5家取全部；A股为归母口径，纯港股按来源纯利/亏损，A/H沿用对应A股。每日22:35后台核验，列内可展开来源；不替代左侧扣非机械估算或原预测PE。
+      <br>券商列：按日期取最近5家机构的当年净利润预测，同机构保留最新一条，不足5家取全部；A股为归母口径，纯港股按来源纯利/亏损，A/H沿用对应A股。每日22:35后台核验，列内可展开来源。
+      <br><span style="color:#166e68;font-weight:600">预测PE = 总市值（统一至预测币种）÷ 券商预测年度净利润均值</span>；左侧机械利润预测仅供对照。券商预测缺失或均值≤0时不计算PE，不回退机械预测。
     </div>
     <div style="display:flex;align-items:center;gap:8px;white-space:nowrap">
       <span style="font-size:12px;color:var(--text2)" id="val-update-ts">—</span>
@@ -6423,7 +6424,7 @@ function renderValTable(){
     else if(_VAL_TS) tsEl.textContent='财务数据 '+_VAL_STATUS.loaded+'/'+_VAL_STATUS.total+' 只'+(_VAL_STATUS.unsupported?' · '+_VAL_STATUS.unsupported+'只待确认口径':'')+' · '+new Date(_VAL_TS).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
     else tsEl.textContent='尚未取得财务数据';
   }
-  if(_VAL_STATUS.loading&&!Object.keys(_VAL_DATA).length){
+  if(_VAL_STATUS.loading&&!Object.keys(_VAL_DATA).length&&!(window.BrokerForecasts&&BrokerForecasts.getData())){
     wrap.innerHTML='<div style="padding:48px;text-align:center;color:var(--text2);font-size:14px">⏳ 正在并行读取 A股及港股最新财报…</div>';
     return;
   }
@@ -6444,7 +6445,7 @@ function renderValTable(){
 
   // ── 行渲染函数 ────────────────────────────────────────────
   const mkRow=(row)=>{
-    const {sk,sec,pi,d,isHK,noData,predRate,predProfit,mktCap,pe}=row;
+    const {sk,sec,pi,d,isHK,noData,predRate,predProfit,mktCap,pe,brokerProfit,brokerEstimate}=row;
     const priceStr=pi.price!=null
       ?(isHK?Number(pi.price).toFixed(3):Number(pi.price).toFixed(2))
       :'<span style="color:#94a3b8">—</span>';
@@ -6474,8 +6475,8 @@ function renderValTable(){
     const mktCapStr=mktCap>0?`<span style="font-weight:600">${_valFmt(mktCap,0)}</span><small style="color:#94a3b8;font-size:9px;margin-left:3px">${isHK?'HKD':'CNY'}</small>`:'<span style="color:#94a3b8">—</span>';
     const peStr=pe!=null?(()=>{
       const c=pe<30?'#059669':pe<50?'#d97706':'#dc2626';
-      return `<span style="font-weight:700;color:${c}">${pe}x</span>`;
-    })():(predProfit!=null&&predProfit<=0?'<span style="color:#94a3b8;font-size:11px">亏损</span>':mktCap>0&&predProfit>0?'<span style="color:#94a3b8;font-size:10px" title="市值与利润原币不同，等待有效汇率后再计算">待汇率</span>':'<span style="color:#94a3b8">—</span>');
+      return `<span style="font-weight:700;color:${c}" title="以券商当年净利润预测均值为分母${brokerEstimate?.stale?'；使用上次有效缓存':''}">${pe}x</span>`;
+    })():(brokerProfit!=null&&brokerProfit<=0?'<span style="color:#94a3b8;font-size:11px" title="券商预测年度净利润均值≤0，PE不适用">不适用</span>':mktCap>0&&brokerProfit>0?'<span style="color:#94a3b8;font-size:10px" title="市值与券商预测币种不同，等待有效汇率后再计算">待汇率</span>':'<span style="color:#94a3b8" title="等待有效券商预测及总市值，不回退机械利润预测">—</span>');
     return `<tr style="border-bottom:1px solid var(--border);transition:background .12s" onmouseover="this.style.background='rgba(37,99,235,.04)'" onmouseout="this.style.background=''">
       <td style="padding:9px 14px;font-weight:600;color:var(--text);white-space:nowrap">${sk.name}<br>${basisBadge}</td>
       <td style="padding:9px 10px;text-align:center">
@@ -6505,8 +6506,10 @@ function renderValTable(){
     const noData=d.annualProfit==null&&d.qtrProfit==null;
     const {predRate,predProfit}=_valPrediction(d);
     const mktCap=pi.mktCap??null;
-    const pe=ValuationHK.pe(mktCap,predProfit,isHK?'HKD':'CNY',d.currency,_VAL_FX);
-    return {sk,sec,pi,d,isHK,noData,predRate,predProfit,mktCap,pe};
+    const brokerEstimate=window.BrokerForecasts&&typeof BrokerForecasts.estimate==='function'?BrokerForecasts.estimate(sk,d):null;
+    const brokerProfit=_valFinite(brokerEstimate?.profitYi);
+    const pe=ValuationHK.pe(mktCap,brokerProfit,isHK?'HKD':'CNY',brokerEstimate?.currency,_VAL_FX);
+    return {sk,sec,pi,d,isHK,noData,predRate,predProfit,mktCap,pe,brokerProfit,brokerEstimate};
   };
 
   // ── 排序行数组 ─────────────────────────────────────────────
@@ -6549,7 +6552,7 @@ function renderValTable(){
             <th onclick="${sortFn}(${blockKeyLit},'predProfit')" style="padding:9px 12px;text-align:right;font-weight:700;color:#065f46;white-space:nowrap;cursor:pointer;user-select:none" title="沿用本行扣非或归母口径；点击排序">年度利润预测${si('predProfit')}</th>
             <th style="padding:9px 12px;text-align:right;font-weight:700;color:#166e68;white-space:nowrap;border-left:1px solid #b7dcd5" title="数据商根据机构研报摘录的当年净利润预测；A股归母，纯港股按来源纯利/亏损；同一家机构仅保留最新一条，按日期选最近5家取算术平均">券商预测年度净利润均值<br><span style="font-size:9px;font-weight:500">当年 · 最近5家 · 亿元</span></th>
             <th onclick="${sortFn}(${blockKeyLit},'mktCap')"    style="padding:9px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap;border-left:2px solid #e2e8f0;cursor:pointer;user-select:none" title="点击排序">总市值${si('mktCap')}</th>
-            <th onclick="${sortFn}(${blockKeyLit},'pe')"        style="padding:9px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap;cursor:pointer;user-select:none" title="市值按有效汇率换为利润原币后 / 年度利润预测；点击排序">预测PE${si('pe')}</th>
+            <th onclick="${sortFn}(${blockKeyLit},'pe')"        style="padding:9px 12px;text-align:right;font-weight:700;color:#1e293b;white-space:nowrap;cursor:pointer;user-select:none" title="市值按有效汇率换为券商预测币种后 / 券商预测年度净利润均值；点击排序">预测PE${si('pe')}</th>
           </tr>
         </thead>
         <tbody>`;

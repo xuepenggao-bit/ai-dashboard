@@ -1,4 +1,4 @@
-/* Daily provider-extracted broker estimates. Independent of the mechanical forecast/PE. */
+/* Daily provider-extracted broker estimates. Validated means also supply the forecast PE denominator. */
 (function(global){
   'use strict';
   const CACHE_MS=5*60000;
@@ -78,16 +78,31 @@
     checked.sort((a,b)=>b.publishedStamp-a.publishedStamp||a.id.localeCompare(b.id));
     return {valid:true,empty:false,count,reports:checked,mean,currency,status:entry.status,stale:entry.stale===true||entry.status==='source_error'};
   }
+  function readForecast(stock,d,snapshot,now,ahMap){
+    const year=currentYear(now),key=resolveKey(stock,d||{},ahMap,snapshot?.lookup);
+    if(!key)return {year,key,status:'unresolved',reason:'等待A/H对应关系'};
+    if(!validSnapshot(snapshot))return {year,key,status:'unavailable',reason:'当年券商预测待更新'};
+    if(snapshot.targetYear!==year)return {year,key,status:'year_mismatch',reason:'预测年份与当前年度不一致'};
+    const entry=snapshot.stocks[key],checked=validateEntry(entry,key,year,now);
+    return {year,key,entry,checked,status:checked.valid?checked.status:'invalid',reason:checked.reason||
+      (checked.empty?(checked.status==='source_error'?'预测源暂不可达':'暂无有效预测'):undefined)};
+  }
+  function estimateFromSnapshot(stock,d,snapshot,now=Date.now(),ahMap=null){
+    const f=readForecast(stock,d,snapshot,now,ahMap),available=f.checked?.valid&&!f.checked.empty;
+    return {profitYi:available?f.checked.mean:null,currency:available?f.checked.currency:null,
+      forecastYear:f.year,key:f.key,count:available?f.checked.count:0,
+      stale:available?!!f.checked.stale:!!(f.entry?.stale||f.status==='source_error'),status:f.status,
+      ...(f.reason?{reason:f.reason}:{})};
+  }
   const format=v=>Number(v).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
   function placeholder(text,sub='',title=''){
     return '<span class="bf-empty" style="display:block;color:#8a96a6;font-size:12px;line-height:1.6"'+(title?' title="'+esc(title)+'"':'')+'>'+esc(text)+'</span>'+(sub?'<small style="display:block;font-size:10px;line-height:1.6;color:#94a3b8">'+esc(sub)+'</small>':'');
   }
   function renderCell(stock,d,snapshot,now=Date.now(),ahMap=null){
-    const year=currentYear(now),key=resolveKey(stock,d,ahMap,snapshot?.lookup);
+    const {year,key,entry,checked,status}=readForecast(stock,d,snapshot,now,ahMap);
     if(!key)return placeholder('等待A/H对应关系',year+'年');
-    if(!validSnapshot(snapshot))return placeholder('—',year+'年券商预测待更新');
-    if(snapshot.targetYear!==year)return placeholder('—',year+'年预测待更新','不使用其它年度预测冒充当年预测');
-    const entry=snapshot.stocks[key],checked=validateEntry(entry,key,year,now);
+    if(status==='unavailable')return placeholder('—',year+'年券商预测待更新');
+    if(status==='year_mismatch')return placeholder('—',year+'年预测待更新','不使用其它年度预测冒充当年预测');
     if(!checked.valid)return placeholder('—',entry?'预测待校验':'暂无有效预测',checked.reason);
     const checkedDay=day(entry.lastChecked||snapshot.lastChecked),sourceAH=stock?.mkt==='HK'&&key.startsWith('A:');
     if(checked.empty)return placeholder(checked.status==='source_error'?'预测源暂不可达':'暂无有效预测',year+'年'+(checkedDay?' · 核验 '+checkedDay:''));
@@ -100,11 +115,12 @@
       const updated=(r.dateType||r.publishedAtType)==='provider_updated_at',dateLabel=updated?'预测更新日':'预测/报告日期',period=year+(r.periodBasis==='fiscal_year_as_labelled'?'财年（来源口径）':'年');
       return '<li style="margin:8px 0;padding:0;list-style:none;border-top:1px solid #e2e8f0;padding-top:7px"><div style="display:flex;justify-content:space-between;gap:9px;font-size:11px;color:#475569"><b>'+esc(r.broker)+'</b><span title="'+dateLabel+'：数据商标注，不等于后台抓取日期">'+esc(r.publishedDay)+'</span></div><div style="font-size:11px;font-variant-numeric:tabular-nums;color:#166e68;margin-top:2px">'+format(r.profitYi)+' 亿元 · '+esc(checked.currency)+' · '+esc(period)+'</div><a href="'+esc(r.url)+'" target="_blank" rel="noopener noreferrer" style="display:block;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px;font-size:10px;color:#47799c;text-decoration:none" title="'+esc(r.title||'查看预测明细来源')+'">'+esc(r.title||'查看预测明细来源')+' ↗</a></li>';
     }).join('');
-    return '<div class="bf-cell" style="min-width:154px;max-width:300px;line-height:1.55;text-align:right"><strong style="font-size:14px;font-weight:700;color:#166e68;font-variant-numeric:tabular-nums" title="最近'+checked.count+'家机构各自最新有效年度净利润预测的算术平均；A股归母，港股按来源纯利/亏损；不替换左侧机械预测或预测PE">'+format(checked.mean)+'</strong><small style="display:block;font-size:10px;color:#748397">'+esc(meta)+'</small>'+latest+stale+'<details class="bf-reports" data-bf-key="'+esc(key)+'" style="margin-top:3px;text-align:left"><summary style="cursor:pointer;font-size:10px;color:#64849c;text-align:right;list-style-position:inside" title="'+esc(dateRange)+'">预测明细 · '+checked.count+'家</summary><div style="padding:7px 9px;margin-top:6px;border:1px solid #d9e6e9;border-radius:7px;background:#f8fbfc"><div style="font-size:10px;color:#7a8d9b">数据商摘录的机构预测明细，非逐份原始PDF核验</div><div style="margin-top:3px;font-size:10px;color:#7a8d9b">'+esc(metricLabel)+'，非扣非机械估算；单位：亿元</div><ul style="margin:0;padding:0">'+details+'</ul></div></details></div>';
+    return '<div class="bf-cell" style="min-width:154px;max-width:300px;line-height:1.55;text-align:right"><strong style="font-size:14px;font-weight:700;color:#166e68;font-variant-numeric:tabular-nums" title="最近'+checked.count+'家机构各自最新有效年度净利润预测的算术平均；A股归母，港股按来源纯利/亏损；作为预测PE分母，左侧机械预测仅作对照">'+format(checked.mean)+'</strong><small style="display:block;font-size:10px;color:#748397">'+esc(meta)+'</small>'+latest+stale+'<details class="bf-reports" data-bf-key="'+esc(key)+'" style="margin-top:3px;text-align:left"><summary style="cursor:pointer;font-size:10px;color:#64849c;text-align:right;list-style-position:inside" title="'+esc(dateRange)+'">预测明细 · '+checked.count+'家</summary><div style="padding:7px 9px;margin-top:6px;border:1px solid #d9e6e9;border-radius:7px;background:#f8fbfc"><div style="font-size:10px;color:#7a8d9b">数据商摘录的机构预测明细，非逐份原始PDF核验</div><div style="margin-top:3px;font-size:10px;color:#7a8d9b">'+esc(metricLabel)+'，非扣非机械估算；单位：亿元</div><ul style="margin:0;padding:0">'+details+'</ul></div></details></div>';
   }
   let data=null,inflight=null,lastAttempt=0;
   function runtimeMap(){try{if(typeof _VAL_AH_MAP!=='undefined')return _VAL_AH_MAP;}catch(_){}return global._VAL_AH_MAP||null;}
   function cell(stock,d){return renderCell(stock,d,data,Date.now(),runtimeMap());}
+  function estimate(stock,d){return estimateFromSnapshot(stock,d,data,Date.now(),runtimeMap());}
   function redraw(){
     if(typeof document==='undefined')return;
     const opened=new Set([...document.querySelectorAll('#tVal details.bf-reports[open]')].map(e=>e.getAttribute('data-bf-key')));
@@ -125,7 +141,7 @@
       }catch(e){if(global.console)console.warn('[券商预测快照]',e.message);}finally{clearTimeout(timer);}
     })();inflight=task.finally(()=>{inflight=null;});return inflight;
   }
-  const api={refresh,cell,getData:()=>data,resolveKey,renderCell,validateEntry,validSnapshot,currentYear};
+  const api={refresh,cell,estimate,estimateFromSnapshot,getData:()=>data,resolveKey,renderCell,validateEntry,validSnapshot,currentYear};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   global.BrokerForecasts=api;
   if(typeof document==='undefined')return;

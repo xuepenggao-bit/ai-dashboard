@@ -66,10 +66,10 @@ test('the calendar-year rollover hides previous-year values instead of relabelli
  const next=Date.parse('2027-01-01T00:01:00+08:00'),html=m.renderCell({mkt:'SZ',code:'300308'},{},snapshot(entry([999])),next);assert.match(html,/2027年预测待更新/);assert.doesNotMatch(html,/999\.00/);
  assert.equal(m.currentYear(Date.parse('2026-12-31T16:01:00Z')),2027);
 });
-test('report rendering is escaped, source-linked, latest-first and independent of mechanical profits',()=>{
+test('report rendering is escaped, source-linked, latest-first and uses broker forecasts for PE rather than mechanical profits',()=>{
  const e=entry([10,30]);e.reports.reverse();e.reports[0].broker='<img src=x onerror=alert(1)>';e.reports[0].title='<script>alert(1)</script>';const before=JSON.stringify(e);
  const html=m.renderCell({mkt:'SZ',code:'300308'},{annualProfit:999999,predRate:999},snapshot(e),NOW);
- assert.match(html,/20\.00/);assert.doesNotMatch(html,/<img|<script>|999999/);assert.match(html,/&lt;img/);assert.match(html,/noopener noreferrer/);assert.match(html,/非扣非机械估算/);assert.match(html,/不替换左侧机械预测或预测PE/);assert.equal(JSON.stringify(e),before);
+ assert.match(html,/20\.00/);assert.doesNotMatch(html,/<img|<script>|999999/);assert.match(html,/&lt;img/);assert.match(html,/noopener noreferrer/);assert.match(html,/非扣非机械估算/);assert.match(html,/作为预测PE分母，左侧机械预测仅作对照/);assert.equal(JSON.stringify(e),before);
  assert.ok(html.indexOf('券商0')<html.indexOf('&lt;img'));
 });
 test('pure HK forecasts keep their own verified currency rather than inheriting A data',()=>{
@@ -85,11 +85,51 @@ test('latest provider prediction date is visible separately from background chec
  const e=entry([10,20]);e.reports[0].publishedAt='2026-10-21';e.reports[1].publishedAt='2026-09-08';
  const html=m.renderCell({mkt:'SZ',code:'300308'},{},snapshot(e),NOW);assert.match(html,/最新预测 2026-10-21/);assert.match(html,/后台核验 2026-11-04/);assert.doesNotMatch(html,/最新预测 2026-11-04/);
 });
+test('PE estimate shares the displayed broker mean and keeps full arithmetic precision',()=>{
+ const e=entry([10,20,30.1234567]),s=snapshot(e),stock={mkt:'SZ',code:'300308'},financial={annualProfit:999999,predProfit:888888,currency:'USD'};
+ const got=m.estimateFromSnapshot(stock,financial,s,NOW),display=m.renderCell(stock,financial,s,NOW);
+ assert.equal(got.profitYi,m.validateEntry(e,'A:300308',YEAR,NOW).mean);assert.equal(got.profitYi,e.meanProfitYi);assert.notEqual(got.profitYi,Number(e.meanProfitYi.toFixed(2)));
+ assert.match(display,/20\.04/);assert.equal(got.currency,'CNY');assert.equal(got.forecastYear,YEAR);assert.equal(got.key,'A:300308');assert.equal(got.count,3);assert.equal(got.status,'ok');assert.equal(got.stale,false);
+});
+test('PE estimate follows the same matched A/H forecast and snapshot lookup as the column',()=>{
+ const a=entry([12,18]),h=entry([100],{market:'HK',code:'03308',metric:'net_profit'}),s=snapshot(a,{stocks:{'A:300308':a,'HK:03308':h},lookup:{'HK:03308':'A:300308'}}),stock={mkt:'HK',code:'03308'};
+ for(const financial of [{source:'AH',aShareCode:'300308',currency:'HKD'},{}]){
+  const got=m.estimateFromSnapshot(stock,financial,s,NOW);assert.equal(got.key,'A:300308');assert.equal(got.profitYi,15);assert.equal(got.currency,'CNY');assert.match(m.renderCell(stock,financial,s,NOW),/15\.00/);
+ }
+ const confirmedPure=m.estimateFromSnapshot(stock,{source:'HK'},s,NOW);assert.equal(confirmedPure.key,'HK:03308');assert.equal(confirmedPure.profitYi,100);
+});
+test('pure HK PE denominator carries the broker forecast currency, not the financial statement currency',()=>{
+ const hk=entry([7,9],{market:'HK',code:'00700',currency:'USD',metric:'net_profit'});hk.reports.forEach(r=>r.currency='USD');
+ const s=snapshot(hk,{stocks:{'HK:00700':hk}}),got=m.estimateFromSnapshot({mkt:'HK',code:'00700'},{source:'HK',currency:'CNY',annualProfit:200},s,NOW);
+ assert.equal(got.profitYi,8);assert.equal(got.currency,'USD');assert.equal(got.key,'HK:00700');
+});
+test('genuine zero and negative broker means stay zero or negative for the PE applicability check',()=>{
+ for(const values of [[0],[-10],[-4,0]]){
+  const e=entry(values),got=m.estimateFromSnapshot({mkt:'SZ',code:'300308'},{annualProfit:200,predProfit:400},snapshot(e),NOW);
+  assert.equal(got.profitYi,e.meanProfitYi);assert.equal(got.status,'ok');assert.equal(got.currency,'CNY');assert.equal(got.count,values.length);
+ }
+});
+test('missing, invalid and wrong-year broker data cannot fall back to a mechanical PE denominator',()=>{
+ const stock={mkt:'SZ',code:'300308'},d={annualProfit:200,predProfit:999,currency:'CNY'},bad=entry([12,18]);bad.meanProfitYi=777;
+ const samples=[null,snapshot(bad),snapshot(entry([10],{forecastYear:2027})),snapshot(entry([],{meanProfitYi:null,status:'no_reports'})),snapshot(entry([],{meanProfitYi:null,status:'source_error'}))];
+ for(const s of samples){const got=m.estimateFromSnapshot(stock,d,s,NOW);assert.equal(got.profitYi,null);assert.equal(got.currency,null);assert.equal(got.count,0);assert.ok(got.reason);}
+ const mixed=entry([12,18]);mixed.reports[0].currency='USD';assert.equal(m.estimateFromSnapshot(stock,d,snapshot(mixed),NOW).profitYi,null);
+});
+test('previous-year forecasts never become the current PE denominator after the calendar rollover',()=>{
+ const got=m.estimateFromSnapshot({mkt:'SZ',code:'300308'},{annualProfit:200},snapshot(entry([999])),Date.parse('2027-01-01T00:01:00+08:00'));
+ assert.equal(got.profitYi,null);assert.equal(got.forecastYear,2027);assert.equal(got.status,'year_mismatch');assert.equal(got.currency,null);
+});
+test('the dated valid broker cache remains the PE denominator only while the column displays that same cache',()=>{
+ const e=entry([10,20],{status:'source_error'}),s=snapshot(e),stock={mkt:'SZ',code:'300308'},got=m.estimateFromSnapshot(stock,{},s,NOW);
+ assert.equal(got.profitYi,15);assert.equal(got.currency,'CNY');assert.equal(got.stale,true);assert.equal(got.status,'source_error');assert.match(m.renderCell(stock,{},s,NOW),/15\.00/);assert.match(m.renderCell(stock,{},s,NOW),/上次有效缓存/);
+});
 test('module boot is lazy, non-blocking, single-flight and retains working data on fetch failure',async()=>{
  const source=fs.readFileSync(path.join(__dirname,'../assets/broker-forecasts.js'),'utf8'),classes=new Set(),handlers={},intervals=[];let observer,fetches=0,release,fail=false,redraws=0;
  const tab={classList:{contains:c=>classes.has(c)}},doc={hidden:false,getElementById:id=>id==='tVal'?tab:null,querySelectorAll:()=>[],addEventListener:(n,f)=>handlers[n]=f};
- const c=vm.createContext({Date,URL,AbortController,console,setTimeout,clearTimeout,setInterval:f=>intervals.push(f),document:doc,MutationObserver:class{constructor(f){observer=f;}observe(){}},renderValTable:()=>redraws++,fetch:async()=>{fetches++;await new Promise(r=>release=r);if(fail)throw Error('network');return {ok:true,json:async()=>snapshot()};}});
+ class Clock extends Date{static now(){return NOW;}}
+ const c=vm.createContext({Date:Clock,URL,AbortController,console,setTimeout,clearTimeout,setInterval:f=>intervals.push(f),document:doc,MutationObserver:class{constructor(f){observer=f;}observe(){}},renderValTable:()=>redraws++,fetch:async()=>{fetches++;await new Promise(r=>release=r);if(fail)throw Error('network');return {ok:true,json:async()=>snapshot()};}});
  vm.runInContext(source,c);assert.equal(fetches,0);classes.add('active');observer();assert.equal(fetches,1);const inFlight=c.BrokerForecasts.refresh(true);assert.equal(fetches,1);release();await inFlight;assert.equal(redraws,1);assert.equal(c.BrokerForecasts.getData().targetYear,YEAR);
+ const got=c.BrokerForecasts.estimate({mkt:'SZ',code:'300308'},{currency:'USD',annualProfit:999999});assert.equal(got.profitYi,20);assert.equal(got.currency,'CNY');assert.match(c.BrokerForecasts.cell({mkt:'SZ',code:'300308'},{}),/20\.00/);
  const before=c.BrokerForecasts.getData();fail=true;const second=c.BrokerForecasts.refresh(true);release();await second;assert.equal(c.BrokerForecasts.getData(),before);assert.equal(fetches,2);
  doc.hidden=true;intervals[0]();assert.equal(fetches,2);
 });
