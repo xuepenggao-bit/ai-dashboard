@@ -26,6 +26,7 @@
 <link rel="stylesheet" href="assets/canslim-recommendations.css?v=20261101c">
 <script defer src="assets/canslim-recommendations.js?v=20261101c"></script>
 <script defer src="assets/valuation-hk.js?v=20261104a"></script>
+<link rel="stylesheet" href="assets/valuation-table.css?v=20261105a">
 <script defer src="assets/broker-forecasts.js?v=20261105-f9dd1c5c"></script>
 <link rel="stylesheet" href="assets/ai-cycle-monitor.css?v=20261101a">
 <script defer src="assets/ai-cycle-monitor.js?v=20261101a"></script>
@@ -37,6 +38,8 @@
 <link rel="stylesheet" href="assets/market-heat.css?v=20261015a">
 <link rel="stylesheet" href="assets/market-environment.css?v=20261019a">
 <script defer src="assets/market-close-refresh.js?v=20261030a"></script>
+<script defer src="assets/market-kpi-snapshot.js?v=20261105a"></script>
+<script defer src="assets/market-backfill-refresh.js?v=20261105a"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -1886,6 +1889,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="market-environment-title-line"><h1 class="stitle market-environment-title">市场环境</h1><span class="stag market-environment-tag">A股日频 · 市场全景</span><button id="macroBtnRefresh" type="button" class="market-refresh-button" onclick="refreshMacro({force:true,reason:'manual'})">刷新全部</button></div>
     <p class="market-environment-subtitle">从市场热度、交易活跃到资金与风险，观察 A 股整体状态。</p>
     <div class="market-refresh-meta"><span id="marketCloseStatus">收盘补刷 · 北京时间16:10后</span><span id="macroTs" role="status" aria-live="polite">各指标按实际数据日期显示</span><span id="marketFreshnessStatus" role="status">盘中指标约每分钟更新 · 日频、月频指标按实际披露更新</span></div>
+    <div id="marketBackfillStatus" role="status" aria-live="polite" style="margin-top:7px;font-size:12px;line-height:1.6;color:#476781"></div>
   </div>
 
   <!-- KPI Row -->
@@ -2159,7 +2163,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     </div>
   </div>
 
-  <!-- 估值表格容器（外层不限宽，内部按视图内容撑开） -->
+  <!-- 估值表格：列宽随可用空间分配，报告期详情保留在悬停提示中。 -->
   <div id="val-table-wrap" style="border-radius:10px;border:1px solid var(--border);background:var(--card);overflow:hidden">
     <div id="val-table-inner">
       <div style="padding:48px;text-align:center;color:var(--text2);font-size:14px" id="val-placeholder">
@@ -6446,22 +6450,25 @@ function renderValTable(){
   // ── 行渲染函数 ────────────────────────────────────────────
   const mkRow=(row)=>{
     const {sk,sec,pi,d,isHK,noData,predRate,predProfit,mktCap,pe,brokerProfit,brokerEstimate}=row;
+    const escCell=value=>String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const priceStr=pi.price!=null
       ?(isHK?Number(pi.price).toFixed(3):Number(pi.price).toFixed(2))
       :'<span style="color:#94a3b8">—</span>';
     const pctStr=pi.pct!=null?_valPct(pi.pct):'';
     const currencyBadge=(d.currency&&d.annualProfit!=null)
-      ?`<span style="font-size:9px;background:#f1f5f9;color:#64748b;border-radius:3px;padding:0 3px;font-weight:700;margin-left:3px;vertical-align:middle">${d.currency}</span>`:'';
+      ?`<span class="val-currency-badge" style="font-size:9px;background:#f1f5f9;color:#64748b;border-radius:3px;padding:0 3px;font-weight:700;margin-left:3px;vertical-align:middle">${escCell(d.currency)}</span>`:'';
     const basisLabel=d.basisLabel||(d.profitBasis==='recurring_parent_net_profit'?'扣非 · A股':'财务待补');
     const basisTitle=String(d.basisNote||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const basisBadge='<span style="display:inline-block;margin-top:4px;font-size:10px;line-height:1.5;padding:1px 5px;border-radius:4px;background:'+(d.profitBasis==='parent_net_profit'?'#ede9fe;color:#6d28d9':'#e0f2fe;color:#075985')+'" title="'+basisTitle+'">'+basisLabel+'</span>';
     const annProfitStr=noData?'<span style="color:#94a3b8;font-size:11px" title="'+basisTitle+'">'+(d.source==='AH'?'A股扣非数据待补':d.profitBasis==='unavailable'?'对应关系待确认':'财报数据待补')+'</span>'
       :(d.annualProfit!=null?_valFmt(d.annualProfit,2)+currencyBadge:'<span style="color:#94a3b8">—</span>');
-    const annPeriodStr=d.annualPeriod?`<br><span style="font-size:10px;color:var(--text2)">${d.annualPeriod}</span>`:'';
+    const annualYear=String(d.annualPeriod||'').match(/\d{4}/)?.[0]||'';
+    const annPeriodStr=annualYear?`<br><span class="val-period-year" style="font-size:10px;color:var(--text2)">${annualYear}</span>`:'';
+    const annPeriodTitle=escCell(d.annualPeriod||'年度报告期尚未取得');
     const annYoY=noData?'<span style="color:#94a3b8">—</span>':_valPct(d.annualYoY);
     const qtrProfitStr=noData?'<span style="color:#94a3b8">—</span>'
       :(d.qtrProfit!=null?_valFmt(d.qtrProfit,2):'<span style="color:#94a3b8">—</span>');
-    const qtrPeriodStr=d.qtrPeriod?`<br><span style="font-size:10px;color:var(--text2)">${d.qtrPeriod}</span>`:'';
+    const qtrPeriodTitle=escCell(d.qtrPeriod||'最近期报告期尚未取得');
     const qtrYoY=noData?'<span style="color:#94a3b8">—</span>':_valPct(d.qtrYoY);
     const qtrQoQ=noData?'<span style="color:#94a3b8">—</span>':_valPct(d.qtrQoQ);
     const nVals=[d.annualYoY,d.qtrYoY,d.qtrQoQ].filter(v=>v!=null).length;
@@ -6478,21 +6485,21 @@ function renderValTable(){
       return `<span style="font-weight:700;color:${c}" title="以券商当年净利润预测均值为分母${brokerEstimate?.stale?'；使用上次有效缓存':''}">${pe}x</span>`;
     })():(brokerProfit!=null&&brokerProfit<=0?'<span style="color:#94a3b8;font-size:11px" title="券商预测年度净利润均值≤0，PE不适用">不适用</span>':mktCap>0&&brokerProfit>0?'<span style="color:#94a3b8;font-size:10px" title="市值与券商预测币种不同，等待有效汇率后再计算">待汇率</span>':'<span style="color:#94a3b8" title="等待有效券商预测及总市值，不回退机械利润预测">—</span>');
     return `<tr style="border-bottom:1px solid var(--border);transition:background .12s" onmouseover="this.style.background='rgba(37,99,235,.04)'" onmouseout="this.style.background=''">
-      <td style="padding:9px 14px;font-weight:600;color:var(--text);white-space:nowrap">${sk.name}<br>${basisBadge}</td>
+      <td class="val-stock-cell" style="padding:9px 14px;font-weight:600;color:var(--text);white-space:nowrap"><span class="val-stock-name">${escCell(sk.name)}</span><br>${basisBadge}</td>
       <td style="padding:9px 10px;text-align:center">
         <span style="font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;${mktColor[sk.mkt]||'background:#f1f5f9;color:#475569'}">${mktLabel[sk.mkt]||sk.mkt}</span>
       </td>
       <td style="padding:9px 12px;text-align:right;white-space:nowrap">
         <span style="font-weight:700;font-size:14px">${priceStr}</span>${pctStr?'<br>'+pctStr:''}
       </td>
-      <td style="padding:9px 12px;text-align:right;white-space:nowrap;border-left:2px solid #fde68a40">${annProfitStr}${annPeriodStr}</td>
+      <td class="val-annual-profit" title="${annPeriodTitle}" style="padding:9px 12px;text-align:right;white-space:nowrap;border-left:2px solid #fde68a40">${annProfitStr}${annPeriodStr}</td>
       <td style="padding:9px 12px;text-align:right;white-space:nowrap">${annYoY}</td>
-      <td style="padding:9px 12px;text-align:right;white-space:nowrap;border-left:2px solid #bfdbfe40">${qtrProfitStr}${qtrPeriodStr}</td>
+      <td class="val-recent-profit" title="${qtrPeriodTitle}" style="padding:9px 12px;text-align:right;white-space:nowrap;border-left:2px solid #bfdbfe40">${qtrProfitStr}</td>
       <td style="padding:9px 12px;text-align:right;white-space:nowrap">${qtrYoY}</td>
       <td style="padding:9px 12px;text-align:right;white-space:nowrap">${qtrQoQ}</td>
       <td style="padding:9px 12px;text-align:right;white-space:nowrap;border-left:2px solid #ddd6fe40">${predStr}</td>
       <td style="padding:9px 12px;text-align:right;white-space:nowrap">${predProfitStr}</td>
-      <td style="padding:9px 12px;text-align:right;border-left:1px solid #cce5e1;background:#f4faf922">${brokerProfitStr}</td>
+      <td class="val-broker-profit" style="padding:9px 12px;text-align:right;border-left:1px solid #cce5e1;background:#f4faf922">${brokerProfitStr}</td>
       <td style="padding:9px 12px;text-align:right;white-space:nowrap;border-left:2px solid #e2e8f040">${mktCapStr}</td>
       <td style="padding:9px 12px;text-align:right;white-space:nowrap">${peStr}</td>
     </tr>`;
@@ -6529,15 +6536,16 @@ function renderValTable(){
                      '#a78bfa','#34d399','#fb923c','#38bdf8'];
   const renderBlock=({blockKeyLit,label,color,wLabel,stockCnt,rows,sortFn,ss})=>{
     const si=col=>mkSI(ss,col);
-    let h=`<div style="margin-bottom:20px;border-radius:12px;overflow:hidden;border:1px solid ${color}40;box-shadow:0 2px 8px ${color}18">
+    let h=`<div class="val-block" style="margin-bottom:20px;border-radius:12px;overflow:hidden;border:1px solid ${color}40;box-shadow:0 2px 8px ${color}18">
       <div style="padding:10px 18px;background:linear-gradient(90deg,${color}30 0%,${color}10 50%,transparent 100%);border-bottom:2px solid ${color}50;display:flex;align-items:center;gap:10px">
         <span style="display:inline-block;width:5px;height:20px;background:${color};border-radius:3px;flex-shrink:0"></span>
         <span style="font-size:15px;font-weight:800;color:${color};letter-spacing:.04em">${label}</span>
         <span style="font-size:11px;color:var(--text2);background:rgba(255,255,255,.8);border:1px solid ${color}50;border-radius:8px;padding:1px 9px">权重 ${wLabel}</span>
         <span style="font-size:11px;color:var(--text2)">${stockCnt} 只</span>
       </div>
-      <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <div class="val-table-frame">
+      <table class="val-data-table" style="width:100%;border-collapse:collapse;font-size:13px">
+        <colgroup>${[10,4,7,8,6,8,6,6,8,9,14,8,6].map(width=>'<col style="width:'+width+'%">').join('')}</colgroup>
         <thead>
           <tr style="background:linear-gradient(180deg,${color}18,${color}08);border-bottom:2px solid ${color}40">
             <th style="padding:9px 14px;text-align:left;font-weight:700;color:var(--text);white-space:nowrap">股票名称</th>
@@ -7542,50 +7550,56 @@ function _isCurrentHkAmountPartial(latestDate){
 let _hkVolumeFetch=null;
 let _hkVolumeTs=0;
 
+function _marketKpiStampTs(value){
+  if(typeof value==='number')return Number.isFinite(value)?value:0;
+  const raw=String(value||'').trim(),digits=raw.replace(/\D/g,'');
+  if(!/^(?:\d{8}|\d{12}|\d{14}|\d{4}[-/]\d{2}[-/]\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?)$/.test(raw))return 0;
+  if(/^\d{14}$/.test(digits)){
+    const stamp=Date.parse(digits.slice(0,4)+'-'+digits.slice(4,6)+'-'+digits.slice(6,8)+'T'+digits.slice(8,10)+':'+digits.slice(10,12)+':'+digits.slice(12,14)+'+08:00');
+    return Number.isFinite(stamp)&&new Date(stamp+28800000).toISOString().slice(0,19).replace(/\D/g,'')===digits?stamp:0;
+  }
+  if(/^\d{12}$/.test(digits))return _marketKpiStampTs(digits+'00');
+  if(/^\d{8}$/.test(digits))return _marketKpiStampTs(digits+'000000');
+  return 0;
+}
+function _renderHkAmountSeries(d,backend=false){
+  if(!d?.dates?.length||d.dates.length<20||!d.latestDate||!Number.isFinite(d.latestVal)||d.latestVal<=0)return false;
+  const old=BASE.ashare.hkVolume,oldDate=old?.latestDate||old?.dates?.[old.dates.length-1]||'';
+  if(oldDate>d.latestDate)return false;
+  if(oldDate===d.latestDate){
+    const oldTs=_marketKpiStampTs(old.asOf),nextTs=_marketKpiStampTs(d.asOf);
+    if(old.status==='close'&&d.status==='live'||oldTs&&(!nextTs||nextTs<oldTs)||backend&&oldTs&&nextTs===oldTs)return false;
+    if(backend&&!oldTs&&!nextTs)return false;
+  }
+  BASE.ashare.hkVolume=d;
+  const ma5=_movingAverage(d.vals,5),partial=d.status==='close'?false:d.status==='live'?true:_isCurrentHkAmountPartial(d.latestDate);
+  if(partial)ma5[ma5.length-1]=null;
+  if(CH.hkVolume){
+    CH.hkVolume.data.labels=d.labels;CH.hkVolume.data.datasets[0].data=d.vals;
+    CH.hkVolume.data.datasets[0].backgroundColor=d.vals.map((_,i)=>partial&&i===d.vals.length-1?'rgba(251,113,133,.38)':'rgba(225,29,72,.62)');
+    CH.hkVolume.data.datasets[1].data=ma5;CH.hkVolume.update('none');
+  }
+  const kv=document.getElementById('hkVolumeKpiVal'),kd=document.getElementById('hkVolumeKpiDate'),kc=document.getElementById('hkVolumeKpiCnt'),kcmp=document.getElementById('hkVolumeKpiCompare'),kf=document.getElementById('hkVolumeKpiFooter');
+  const stamp=_marketKpiStampTs(d.asOf),time=stamp?new Date(stamp+28800000).toISOString().slice(11,16):'';
+  if(kv)kv.textContent=d.latestVal.toLocaleString('zh-CN',{maximumFractionDigits:0})+' 亿港元';
+  if(kd)kd.textContent=d.latestDate+(time?' '+time:'')+(partial?' · 盘中累计':'')+(backend?' · 后台快照':'');
+  if(kc)kc.textContent=`${d.labels.length}交易日 · ${d.dates[0]} 至 ${d.latestDate}`;
+  if(kcmp){
+    const avg=ma5[ma5.length-1],pct=!partial&&avg?(d.latestVal/avg-1)*100:null;
+    kcmp.textContent=partial?'盘中累计 · 收盘后比较 5 日均额':pct==null?'5 日均额 —':`较 5 日均额 ${pct>=0?'+':''}${pct.toFixed(1)}%`;
+    kcmp.style.color=partial||pct==null?'#64748b':pct>=0?'#dc2626':'#059669';
+  }
+  if(kf)kf.textContent=`来源: ${d.source} · 港股主板成交额 · 柱=每日成交额 · 线=5日均额 · 数据截至 ${d.latestDate}${partial?'（盘中累计）':''}${backend?' · 后台有效快照':''}`;
+  _hkVolumeTs=Date.now();return true;
+}
+
 async function _refreshHkVolumeChart(force=false){
   if(!force&&Date.now()-_hkVolumeTs<45000&&BASE.ashare.hkVolume?.dates?.length) return true;
   if(_hkVolumeFetch) return _hkVolumeFetch;
   _hkVolumeFetch=(async()=>{
     try{
       const d=await _fetchHkMarketAmountSeries();
-      BASE.ashare.hkVolume=d;
-      const ma5=_movingAverage(d.vals,5);
-      const partial=_isCurrentHkAmountPartial(d.latestDate);
-      // 盘中成交额仍在累积，不将未完成交易日混入 5 日均额。
-      if(partial) ma5[ma5.length-1]=null;
-      if(CH.hkVolume){
-        CH.hkVolume.data.labels=d.labels;
-        CH.hkVolume.data.datasets[0].data=d.vals;
-        CH.hkVolume.data.datasets[0].backgroundColor=d.vals.map((_,i)=>
-          partial&&i===d.vals.length-1?'rgba(251,113,133,.38)':'rgba(225,29,72,.62)'
-        );
-        CH.hkVolume.data.datasets[1].data=ma5;
-        CH.hkVolume.update('none');
-      }
-      const kv=document.getElementById('hkVolumeKpiVal');
-      const kd=document.getElementById('hkVolumeKpiDate');
-      const kc=document.getElementById('hkVolumeKpiCnt');
-      const kcmp=document.getElementById('hkVolumeKpiCompare');
-      const kf=document.getElementById('hkVolumeKpiFooter');
-      const timeMatch=String(d.asOf||'').match(/\s(\d{2}:\d{2})/);
-      if(kv) kv.textContent=d.latestVal.toLocaleString('zh-CN',{maximumFractionDigits:0})+' 亿港元';
-      if(kd) kd.textContent=d.latestDate+(partial?' · 盘中累计'+(timeMatch?' '+timeMatch[1]:''):'');
-      if(kc) kc.textContent=`${d.labels.length}交易日 · ${d.dates[0]} 至 ${d.latestDate}`;
-      if(kcmp){
-        if(partial){
-          kcmp.textContent='盘中累计 · 收盘后比较 5 日均额';
-          kcmp.style.color='#64748b';
-        }else{
-          const avg=ma5[ma5.length-1];
-          const pct=avg?((d.latestVal/avg-1)*100):null;
-          kcmp.textContent=pct==null?'5 日均额 —':`较 5 日均额 ${pct>=0?'+':''}${pct.toFixed(1)}%`;
-          kcmp.style.color=pct==null?'#64748b':pct>=0?'#dc2626':'#059669';
-        }
-      }
-      if(kf) kf.textContent=`来源: ${d.source} · 港股主板成交额 · 柱=每日成交额 · 线=5日均额 · 数据截至 ${d.latestDate}${partial?'（盘中累计）':''}`;
-      _hkVolumeTs=Date.now();
-      console.log('[Daily] 港股成交额 OK | 最新:',d.latestDate,d.latestVal+'亿港元',partial?'盘中':'收盘',d.source);
-      return true;
+      return _renderHkAmountSeries(d);
     }catch(e){
       console.warn('[Daily] 港股成交额失败:',e.message);
       const hasPrior=!!(CH.hkVolume&&CH.hkVolume.data.labels?.length);
@@ -7883,6 +7897,25 @@ function _setLimitTrendLivePoint(up,down,clock=_breadthBeijingClock()){
   return true;
 }
 
+function _renderMarketMarginSeries(d,backend=false){
+  if(!d?.latestDate||!Array.isArray(d.vals)||!d.vals.length||!Number.isFinite(d.latestVal)||d.latestVal<=0)return false;
+  const kd=document.getElementById('marginKpiDate'),oldDate=String(kd?.textContent||'').match(/\d{4}-\d{2}-\d{2}/)?.[0]||'';
+  if(oldDate>d.latestDate||backend&&oldDate===d.latestDate)return false;
+  if(CH.margin){
+    CH.margin.data.labels=d.labels;CH.margin.data.datasets[0].data=d.vals;
+    const incr=_marginIncr(d.vals);
+    if(CH.margin.data.datasets[1]){CH.margin.data.datasets[1].data=incr;CH.margin.data.datasets[1].backgroundColor=incr.map(v=>v==null?'rgba(148,163,184,.4)':v>=0?'rgba(220,38,38,.6)':'rgba(5,150,105,.6)');}
+    const vals=d.vals.filter(v=>Number.isFinite(v)&&v>0),minV=Math.min(...vals),maxV=Math.max(...vals),pad=Math.round((maxV-minV)*.15)||1000;
+    CH.margin.options.scales.y.suggestedMin=minV-pad;CH.margin.options.scales.y.suggestedMax=maxV+pad;CH.margin.update('none');
+  }
+  const kv=document.getElementById('marginKpiVal'),kc=document.getElementById('marginKpiCnt'),kf=document.getElementById('marginKpiFooter');
+  if(kv)kv.textContent='¥'+d.latestVal.toLocaleString()+'亿';
+  if(kd)kd.textContent=d.latestDate+(backend?' · 后台快照':'');
+  if(kc)kc.textContent='近'+d.labels.length+'交易日 · '+d.labels[0]+'起';
+  if(kf)kf.textContent='数据截至'+d.latestDate+(backend?' · 东方财富后台有效快照':'');
+  return true;
+}
+
 async function fetchDailyCharts(force=false){
   let dailyOk=true;
   // A/H 股成交额与两融并行读取，避免额外增加宏观页等待时间。
@@ -7895,32 +7928,7 @@ async function fetchDailyCharts(force=false){
       _DC60+'reportName=RPTA_RZRQ_LSHJ&columns=DIM_DATE,RZRQYE&sortColumns=DIM_DATE',
       'DIM_DATE',['RZRQYE']
     );
-    if(CH.margin){
-      CH.margin.data.labels=d.labels;
-      CH.margin.data.datasets[0].data=d.vals;
-      // 每日融资增量(余额环比变化, 红增绿减)
-      const incr=_marginIncr(d.vals);
-      if(CH.margin.data.datasets[1]){
-        CH.margin.data.datasets[1].data=incr;
-        CH.margin.data.datasets[1].backgroundColor=incr.map(v=>v==null?'rgba(148,163,184,.4)':v>=0?'rgba(220,38,38,.6)':'rgba(5,150,105,.6)');
-      }
-      // 动态调整 Y 轴建议范围
-      const minV=Math.min(...d.vals.filter(v=>v!=null));
-      const maxV=Math.max(...d.vals.filter(v=>v!=null));
-      const pad=Math.round((maxV-minV)*0.15)||1000;
-      CH.margin.options.scales.y.suggestedMin=minV-pad;
-      CH.margin.options.scales.y.suggestedMax=maxV+pad;
-      CH.margin.update('none');
-    }
-    // 更新 KPI 显示
-    const kv=document.getElementById('marginKpiVal');
-    const kd=document.getElementById('marginKpiDate');
-    const kc=document.getElementById('marginKpiCnt');
-    const kf=document.getElementById('marginKpiFooter');
-    if(kv&&d.latestVal!=null) kv.textContent='¥'+d.latestVal.toLocaleString()+'亿';
-    if(kd&&d.latestDate)      kd.textContent=d.latestDate;
-    if(kc) kc.textContent='近'+d.labels.length+'交易日 · '+d.labels[0]+'起';
-    if(kf&&d.latestDate)      kf.textContent='数据截至'+d.latestDate;
+    _renderMarketMarginSeries(d);
     console.log('[Daily] 融资融券 OK | 字段:'+d.usedField+' 最新:'+d.latestDate,d.latestVal+'亿');
   }catch(e){
     dailyOk=false;
@@ -8119,7 +8127,7 @@ async function fetchMacroMarketCaps(force=false){
     try{
       const saved=JSON.parse(localStorage.getItem(key)||'null');
       if(saved&&Date.now()-saved.savedAt<7*86400000){
-        if(saved.rows&&_macroCapBreakdown(saved.rows)) _macroCapState.rows=saved.rows;
+        if(saved.rows&&_macroCapBreakdown(saved.rows)&&_MACRO_CAP_CONFIG.every(c=>saved.rows[c.code].stamp>=(_macroCapState.rows[c.code]?.stamp||''))) _macroCapState.rows=saved.rows;
       }
     }catch(_){}
     _renderMacroMarketCaps(true);
@@ -8134,7 +8142,7 @@ async function fetchMacroMarketCaps(force=false){
       if(!response.ok) throw new Error('HTTP '+response.status);
       const incoming=_parseMacroMarketCaps(new TextDecoder('gbk').decode(await response.arrayBuffer()));
       const next=_macroCapBreakdown(incoming),old=_macroCapBreakdown(_macroCapState.rows);
-      const accepted=next&&(!old||next.stamp>=old.stamp);
+      const accepted=next&&(!old||_MACRO_CAP_CONFIG.every(c=>incoming[c.code].stamp>=_macroCapState.rows[c.code].stamp));
       if(accepted) _macroCapState.rows=incoming;
       _renderMacroMarketCaps(!accepted);
       if(accepted){try{localStorage.setItem(key,JSON.stringify({savedAt:Date.now(),rows:_macroCapState.rows}));}catch(_){}}
@@ -8145,18 +8153,64 @@ async function fetchMacroMarketCaps(force=false){
   try{return await _macroCapState.pending;}finally{_macroCapState.pending=null;}
 }
 
+const _MACRO_PE_CONFIG={
+  '000001.SH':{elPe:'kSsePe',elDate:'kSsePeDate',elHint:'kSsePeHint',avg:13,lo:11,hi:17,txCode:'sh000001'},
+  '399001.SZ':{elPe:'kSzePe',elDate:'kSzePeDate',elHint:'kSzePeHint',avg:28,lo:22,hi:38,txCode:'sz399001'},
+  '399006.SZ':{elPe:'kGemPe',elDate:'kGemPeDate',elHint:'kGemPeHint',avg:45,lo:35,hi:65,txCode:'sz399006'},
+  '000688.SH':{elPe:'kStarPe',elDate:'kStarPeDate',elHint:'kStarPeHint',avg:90,lo:60,hi:150,txCode:'sh000688'},
+};
+const _macroPeRows={};
+function _applyMacroPeQuote(secucode,pe,quoteTs,options={}){
+  const cfg=Object.prototype.hasOwnProperty.call(_MACRO_PE_CONFIG,secucode)?_MACRO_PE_CONFIG[secucode]:null;
+  if(!cfg||!Number.isFinite(pe)||pe<=3||pe>=2000||!Number.isFinite(quoteTs)||quoteTs<=0||quoteTs>Date.now()+120000)return false;
+  const old=_macroPeRows[secucode];
+  if(old&&quoteTs<old.quoteTs)return false;
+  if(old&&quoteTs===old.quoteTs&&(!old.backend||options.backend))return !options.backend;
+  _macroPeRows[secucode]={pe,quoteTs,backend:!!options.backend};
+  const el=document.getElementById(cfg.elPe),hint=document.getElementById(cfg.elHint),date=document.getElementById(cfg.elDate);
+  if(el){el.textContent=pe.toFixed(1)+'x';el.style.color='';el.style.fontSize='';}
+  if(hint)hint.textContent='历史均值 ~'+cfg.avg+'x · '+(pe<cfg.lo?'低估':pe<cfg.hi?'合理':'偏高')+'区间';
+  if(date){
+    const label=new Date(quoteTs+28800000).toISOString();
+    date.textContent=label.slice(0,10)+(options.dateOnly?'':' '+label.slice(11,16))+(options.backend?' · 后台快照':'');
+    date.title='来源：'+(options.source||'腾讯财经')+'；按数据源时点显示，不使用网页抓取时间';
+    date.style.background=options.backend?'#fef9c3':'#d1fae5';date.style.color=options.backend?'#92400e':'#065f46';
+  }
+  return true;
+}
+function _applyMarketKpiSnapshot(snapshot){
+  if(snapshot?.schemaVersion!==1)return 0;
+  let applied=0;
+  if(snapshot.caps?.quotes?.length===4){
+    const rows={};
+    for(const q of snapshot.caps.quotes){
+      if(!_MACRO_CAP_CONFIG.some(c=>c.code===q.code)||!Number.isFinite(q.quoteTs)||q.quoteTs<=0||q.quoteTs>Date.now()+120000)continue;
+      rows[q.code]={yi:q.totalCapYi,stamp:new Date(q.quoteTs+28800000).toISOString().slice(0,19).replace(/\D/g,'')};
+    }
+    const next=_macroCapBreakdown(rows),old=_macroCapBreakdown(_macroCapState.rows);
+    if(next&&(!old||_MACRO_CAP_CONFIG.every(c=>rows[c.code].stamp>=_macroCapState.rows[c.code].stamp)&&_MACRO_CAP_CONFIG.some(c=>rows[c.code].stamp>_macroCapState.rows[c.code].stamp))){
+      _macroCapState.rows=rows;_renderMacroMarketCaps(true);applied++;
+    }
+  }
+  for(const q of snapshot.pe?.quotes||[])if(_MACRO_PE_CONFIG[q.secucode]?.txCode===q.code&&_applyMacroPeQuote(q.secucode,q.pe,q.quoteTs,{backend:true,source:snapshot.pe.source}))applied++;
+  const hk=snapshot.hkAmount?.series,lastHk=hk?.[hk.length-1];
+  if(lastHk){
+    const dates=hk.map(r=>r.date);
+    if(_renderHkAmountSeries({dates,labels:dates.map(_fmtDayLabel),vals:hk.map(r=>r.amountYi),latestDate:lastHk.date,latestVal:lastHk.amountYi,status:lastHk.status,asOf:lastHk.asOf?lastHk.date+' '+lastHk.asOf:'',source:snapshot.hkAmount.source},true))applied++;
+  }
+  const margin=snapshot.margin?.series,lastMargin=margin?.[margin.length-1];
+  if(lastMargin&&_renderMarketMarginSeries({labels:margin.map(r=>_fmtDayLabel(r.date)),vals:margin.map(r=>r.balanceYi),latestDate:lastMargin.date,latestVal:lastMargin.balanceYi},true))applied++;
+  return applied;
+}
+
 // ── 日频 KPI 卡片实时刷新（总市值、PE、两融）────────────────────
 async function fetchMacroKpis(force=false){
   const marketCapsJob=fetchMacroMarketCaps(force);
   let peOk=false;
-  const _now = new Date();
-  const _pad = n => String(n).padStart(2,'0');
-  // 日期格式：YYYY-MM-DD
-  const todayStr = new Date(Date.now()+8*3600000).toISOString().slice(0,10);
-  // ── 0. PE 卡片日期标签先标记"加载中…"，等数据源返回后由 _applyPe 写入真实数据日期
-  ['kSsePeDate','kSzePeDate','kGemPeDate','kStarPeDate'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){ el.textContent='加载中…'; el.style.background='#e0e7ff'; el.style.color='#3730a3'; }
+  // Keep valid observations visible during a source retry.
+  Object.entries(_MACRO_PE_CONFIG).forEach(([sc,cfg])=>{
+    const el=document.getElementById(cfg.elDate);
+    if(el&&!_macroPeRows[sc]){el.textContent='加载中…';el.style.background='#e0e7ff';el.style.color='#3730a3';}
   });
 
   // 总额与四个不重叠板块由 fetchMacroMarketCaps 的同源完整快照统一更新。
@@ -8169,44 +8223,11 @@ async function fetchMacroKpis(force=false){
   try{
     // 指数配置：SECUCODE → { 元素ID, 历史均值, [低估上限, 偏高下限], 腾讯代码 }
     // 科创50(000688.SH)为科技创新板，PE历史均值远高于主板，阈值相应调整
-    const PE_CFG = {
-      '000001.SH': {elPe:'kSsePe',  elDate:'kSsePeDate',  elHint:'kSsePeHint',  avg:13, lo:11, hi:17, txCode:'sh000001'},
-      '399001.SZ': {elPe:'kSzePe',  elDate:'kSzePeDate',  elHint:'kSzePeHint',  avg:28, lo:22, hi:38, txCode:'sz399001'},
-      '399006.SZ': {elPe:'kGemPe',  elDate:'kGemPeDate',  elHint:'kGemPeHint',  avg:45, lo:35, hi:65, txCode:'sz399006'},
-      '000688.SH': {elPe:'kStarPe', elDate:'kStarPeDate', elHint:'kStarPeHint', avg:90, lo:60, hi:150, txCode:'sh000688'},
-    };
-
-    // 更新 PE 卡片显示，同时更新数据日期标签
-    const _applyPe = (secucode, pe, dataDate) => {
-      const cfg = PE_CFG[secucode]; if(!cfg||!(pe>0)) return false;
-      const el = document.getElementById(cfg.elPe);
-      if(el){
-        el.textContent = pe.toFixed(1)+'x';
-        // 清除"加载中"时设置的灰色，恢复正常字色
-        el.style.color = '';
-        el.style.fontSize = '';
-      }
-      const he = document.getElementById(cfg.elHint);
-      if(he) he.textContent = pe<cfg.lo ? `历史均值 ~${cfg.avg}x · 低估区间`
-                            : pe<cfg.hi ? `历史均值 ~${cfg.avg}x · 合理区间`
-                            :             `历史均值 ~${cfg.avg}x · 偏高区间`;
-      // 更新数据日期标签：显示"数据日期 HH:MM:SS获取"，秒数变化可证明是实时数据
-      const de = document.getElementById(cfg.elDate);
-      if(de){
-        const dateStr = dataDate
-          ? String(dataDate).replace(/^(\d{4})(\d{2})(\d{2}).*/, '$1-$2-$3').replace(/^(\d{4}-\d{2}-\d{2}).*/, '$1')
-          : todayStr;
-        const t = new Date();
-        const hms = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')}`;
-        de.textContent = `${dateStr} ${hms}获取`;
-        de.style.background = '#d1fae5'; de.style.color = '#065f46';
-      }
-      return true;
-    };
+    const PE_CFG=_MACRO_PE_CONFIG;
 
     // 全部数据源失败时：值显示"获取失败"，日期标签变红
     const _markPeFailed = (secucode) => {
-      const cfg = PE_CFG[secucode]; if(!cfg) return;
+      const cfg = PE_CFG[secucode]; if(!cfg||_macroPeRows[secucode]) return;
       const el = document.getElementById(cfg.elPe);
       // 只要当前值不是有效PE（即不以数字+x结尾），就标为失败
       if(el && !/^\d/.test(el.textContent)){
@@ -8245,7 +8266,7 @@ async function fetchMacroKpis(force=false){
           const pe = parseFloat(f[39]);
           // 指数PE可能达数百倍（科创50等），上限放宽至2000
           if(pe > 3 && pe < 2000){
-            if(/^\d{14}$/.test(f[30]||'')&&_applyPe(secucode,pe,f[30].slice(0,8)))peLoaded++;
+            if(f[2]===txCode.slice(2)&&_applyMacroPeQuote(secucode,pe,_marketKpiStampTs(f[30])))peLoaded++;
           }
         });
         console.log('[MacroKpi] PE TX field[39] loaded:', peLoaded,
@@ -8286,7 +8307,7 @@ async function fetchMacroKpis(force=false){
         });
         let dcLoaded = 0;
         Object.entries(latest).forEach(([sc,row])=>{
-          if(_applyPe(sc, parseFloat(row[c.peCol]), row.TRADE_DATE)) dcLoaded++;
+          if(_applyMacroPeQuote(sc,parseFloat(row[c.peCol]),_marketKpiStampTs(String(row.TRADE_DATE||'').slice(0,10)),{source:'东方财富',dateOnly:true}))dcLoaded++;
         });
         peLoaded += dcLoaded;
         console.log('[MacroKpi] PE DC OK report:',c.report,'col:',c.peCol,'dcLoaded:',dcLoaded);
@@ -8339,13 +8360,29 @@ window.addEventListener('highlow52-live-state',()=>{
   if(!refreshMacro.pending&&refreshMacro.lastReport)_macroRefreshCaption(refreshMacro.lastReport);
 });
 async function refreshMacro(options={}){
-  if(refreshMacro.pending)return refreshMacro.pending;
   const force=options===true||options.force===true;
+  const manual=options.reason==='manual';
+  if(refreshMacro.pending){
+    // A deliberate click must not be swallowed by an earlier auto/cache round.
+    // Coalesce repeated clicks into exactly one fresh forced follow-up.
+    if(manual&&!refreshMacro.pendingManual){
+      if(!refreshMacro.manualQueued){
+        const previous=refreshMacro.pending;
+        refreshMacro.manualQueued=previous.catch(()=>null)
+          .then(()=>new Promise(resolve=>setTimeout(resolve,0)))
+          .then(()=>refreshMacro({force:true,reason:'manual'}))
+          .finally(()=>{refreshMacro.manualQueued=null;});
+      }
+      return refreshMacro.manualQueued;
+    }
+    return refreshMacro.pending;
+  }
   const startedAt=Date.now();
   const btn=document.getElementById('macroBtnRefresh'),ts=document.getElementById('macroTs');
   if(btn){btn.classList.add('loading');btn.disabled=true;}
   if(ts)ts.textContent=options.reason==='close'?'收盘后统一核验中…':'正在核验全部市场指标…';
   const alertEl=document.getElementById('macroAlert');if(alertEl)alertEl.style.display='none';
+  refreshMacro.pendingManual=manual;
   refreshMacro.pending=(async()=>{
     const task=(name,fn)=>_macroRefreshTask(name,()=>{
       if(typeof fn!=='function')throw new Error('模块尚未就绪');
@@ -8362,12 +8399,24 @@ async function refreshMacro(options={}){
       task('市场热度',window.refreshMarketHeat),
       task('个人开户数',window.AccountOpenings&&window.AccountOpenings.refresh),
     ];
+    if(window.MarketKpiSnapshot&&typeof window.MarketKpiSnapshot.refresh==='function')
+      jobs.push(_macroRefreshTask('后台指标快照',()=>window.MarketKpiSnapshot.refresh(force),false));
     // 只在盘中尝试实时点；16:10后仅读取已经核验的收盘序列，不重复全市场扫描。
     const clock=_beijingMarketClock(startedAt);
     if(clock.minutes<970)jobs.push(_macroRefreshTask('盘中涨跌快照',()=>refreshBreadthTrendLive(true),false));
+    if((manual||options.reason==='backfill')&&clock.minutes<970){
+      // These scans used to be fire-and-forget. Wait for their shared promises
+      // before assessing gaps, rather than dispatching another scan too early.
+      if(typeof refreshHighLow52Live==='function')jobs.push(_macroRefreshTask('当日全市场统计',()=>refreshHighLow52Live(force),false));
+      if(typeof window.marketQualityClosePending==='function')jobs.push(_macroRefreshTask('共享收盘统计',()=>window.marketQualityClosePending()||true,false));
+    }
     // iVIX是其它风险面板的依赖，不属于本Tab的收盘核验成功条件。
     jobs.push(_macroRefreshTask('iVIX',fetchVixChart,false));
-    const results=await Promise.all(jobs),completedAt=Date.now();
+    const results=await Promise.all(jobs);
+    // Live source observations always win. A newly produced backend snapshot is
+    // only applied when its actual observation time is newer, never checkedAt.
+    if(window.MarketKpiSnapshot&&typeof window.MarketKpiSnapshot.apply==='function')window.MarketKpiSnapshot.apply();
+    const completedAt=Date.now();
     const failed=results.filter(result=>result.required&&!result.ok).map(result=>result.name);
     // A successful old JSON read is not proof of a completed closing refresh.
     // Publication-based/monthly indicators have their own expected-date rules.
@@ -8381,10 +8430,18 @@ async function refreshMacro(options={}){
     _macroRefreshCaption(report,completedAt);
     const idx=TAB_ORDER.indexOf('t0');if(idx>=0)_TAB_TS[idx]=completedAt;
     if(window.MarketCloseRefresh&&typeof window.MarketCloseRefresh.observe==='function')window.MarketCloseRefresh.observe(report);
+    if(manual&&window.MarketBackfillRefresh&&typeof window.MarketBackfillRefresh.request==='function'){
+      const items=window.MarketEnvironmentFreshness?.inspect(completedAt)||[];
+      // Start only explicit manual recovery. The controller returns after
+      // acceptance and follows the real runs in the background, without locking
+      // the page or recursively dispatching from its own refresh callbacks.
+      Promise.resolve().then(()=>window.MarketBackfillRefresh.request({reason:'manual',items}))
+        .catch(()=>{const el=document.getElementById('marketBackfillStatus');if(el)el.textContent='后台刷新请求暂未确认，已保留有效数据，可稍后重试。';});
+    }
     return report;
   })();
   try{return await refreshMacro.pending;}
-  finally{refreshMacro.pending=null;if(btn){btn.classList.remove('loading');btn.disabled=false;}}
+  finally{refreshMacro.pending=null;refreshMacro.pendingManual=false;if(btn){btn.classList.remove('loading');btn.disabled=false;}}
 }
 
 // ── 自动刷新周期控制 ─────────────────────────────────────────

@@ -1,0 +1,52 @@
+name: Refresh Market Environment KPI Fallback
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/refresh_market_kpis.py'
+      - '.github/workflows/refresh-market-kpis.yml'
+      - 'tests/test_refresh_market_kpis.py'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-market-kpis
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify identities, units, observation times and last-good retention
+        run: python -m unittest discover -s tests -p test_refresh_market_kpis.py -v
+      - name: Refresh independently validated market KPI parts
+        run: python .github/scripts/refresh_market_kpis.py
+      # Bot commits do not rebuild Pages: the browser also reads the raw JSON.
+      - name: Persist the market KPI fallback snapshot
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/market_kpis.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: refresh market environment KPI fallback $(date -u '+%Y-%m-%d %H:%M UTC')"
+          for attempt in 1 2 3 4 5; do
+            if ! git pull --rebase origin main; then
+              if git rev-parse --verify -q REBASE_HEAD >/dev/null; then git rebase --abort; fi
+              exit 1
+            fi
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1

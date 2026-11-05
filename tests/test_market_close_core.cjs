@@ -180,7 +180,7 @@ test('task wrapper catches false values, errors and timeouts without rejecting s
 const capCodes = ['sh000002', 'sz399107', 'sz399102', 'sh000680'];
 function quoteText(codes, values, field, stamp = '20261019150000') {
   return codes.map((code, index) => {
-    const fields = Array(46).fill(''); fields[30] = stamp; fields[field] = values[index];
+    const fields = Array(46).fill(''); fields[2] = code.slice(2); fields[30] = stamp; fields[field] = values[index];
     return 'v_' + code + '="' + fields.join('~') + '";';
   }).join('\n');
 }
@@ -219,12 +219,13 @@ test('failed forced market-cap checks return false and preserve the last good sn
 
 function kpiFixture(capJob, raw) {
   const flags = [];
-  const context = evaluate(['fetchMacroKpis'], {
+  const context = evaluate(['_marketKpiStampTs', '_applyMacroPeQuote', 'fetchMacroKpis'], {
     Date: fakeDate(afterClose), document: {getElementById() { return null; }},
     fetchMacroMarketCaps: force => { flags.push(force); return capJob; },
     fetch: async () => ({ok: true, arrayBuffer: async () => new TextEncoder().encode(raw).buffer,
       json: async () => ({result: {data: []}})}),
   });
+  vm.runInContext(html.slice(html.indexOf('const _MACRO_PE_CONFIG='),html.indexOf('function _applyMacroPeQuote(')),context);
   return {context, flags};
 }
 const peText = quoteText(['sh000001', 'sz399001', 'sz399006', 'sh000688'], [15, 28, 45, 90], 39);
