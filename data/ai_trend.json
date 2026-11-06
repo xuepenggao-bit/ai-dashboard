@@ -1,6 +1,6 @@
 {
-  "updated": "2026-11-06 16:08:07",
-  "last_checked": "2026-11-06 15:49:07",
+  "updated": "2026-11-06 16:34:57",
+  "last_checked": "2026-11-06 16:34:57",
   "scan_interval_hours": 3,
   "scanner_method": "local-evidence-v2",
   "capex_as_of": "2026-10-29",
@@ -191,7 +191,8 @@
     "2026-05",
     "2026-07",
     "2026-08",
-    "2026-09"
+    "2026-09",
+    "2026-10"
   ],
   "arr_openai": [
     60,
@@ -203,7 +204,8 @@
     null,
     null,
     400,
-    500
+    500,
+    500.0
   ],
   "arr_anthropic": [
     null,
@@ -215,29 +217,23 @@
     470,
     650,
     null,
+    null,
     null
   ],
-  "arr_as_of": "2026-10-08",
+  "arr_as_of": "2026-11-02",
   "arr_note": "年化收入运行率公开里程碑（非传统合同ARR） · 仅提取来源明确给出的金额，不从增速或定性表述反推数值",
   "arr_latest_events": {
     "openai": {
       "company": "OpenAI",
-      "summary": "9月末约500亿美元运行率；10/8更正口径",
+      "summary": "最新公开披露的年化收入运行率约为$50B。",
       "numeric": true,
-      "arr_yi": 500,
-      "comparison": "~",
-      "source_date": "2026-10-08",
-      "metric_period": "2026-09",
-      "effective_date": "2026-09-30",
-      "source_label": "Reuters：OpenAI9月运行率接近500亿美元，低于先前口径",
+      "source_label": "reuters.com",
+      "source_date": "2026-10-09",
       "source_url": "https://www.reuters.com/business/openais-annualized-revenue-20-billion-less-than-previously-signaled-ft-reports-2026-10-08/",
-      "readable_source_url": "https://www.streetinsider.com/Reuters/OpenAIs%2BSeptember%2Bannualized%2Brevenue%2Bnears%2B%2450%2Bbillion%2C%2Bless%2Bthan%2Bpreviously%2Bindicated%2C%2Bsource%2Bsays/27167688.html?classic=1",
-      "checked_at": "2026-11-01",
+      "arr_yi": 500.0,
+      "metric_period": "2026-10",
       "basis": "annualized_revenue_run_rate",
-      "basis_note": "公司/媒体报告的annualized revenue run-rate；公司2026年1月CFO文章亦称ARR。公开披露含订阅、API及其它业务，不能简单当合同续费ARR。部分云渠道按净额记录，未取得完整审计口径桥接。",
-      "correction": true,
-      "correction_note": "同一测量期的会计/比较口径修正，不是一个新的后续月份经营读数；不能据此计算负增长或触发行业阶段退档。",
-      "previous_reported_arr_yi": 700
+      "correction": false
     },
     "anthropic": {
       "company": "Anthropic",
@@ -251,23 +247,13 @@
   },
   "arr_sources": {
     "openai": {
-      "company": "OpenAI",
-      "summary": "9月末约500亿美元运行率；10/8更正口径",
-      "numeric": true,
-      "arr_yi": 500,
-      "comparison": "~",
-      "source_date": "2026-10-08",
-      "metric_period": "2026-09",
-      "effective_date": "2026-09-30",
-      "source_label": "Reuters：OpenAI9月运行率接近500亿美元，低于先前口径",
+      "source_label": "reuters.com",
+      "source_date": "2026-10-09",
       "source_url": "https://www.reuters.com/business/openais-annualized-revenue-20-billion-less-than-previously-signaled-ft-reports-2026-10-08/",
-      "readable_source_url": "https://www.streetinsider.com/Reuters/OpenAIs%2BSeptember%2Bannualized%2Brevenue%2Bnears%2B%2450%2Bbillion%2C%2Bless%2Bthan%2Bpreviously%2Bindicated%2C%2Bsource%2Bsays/27167688.html?classic=1",
-      "checked_at": "2026-11-01",
+      "arr_yi": 500.0,
+      "metric_period": "2026-10",
       "basis": "annualized_revenue_run_rate",
-      "basis_note": "公司/媒体报告的annualized revenue run-rate；公司2026年1月CFO文章亦称ARR。公开披露含订阅、API及其它业务，不能简单当合同续费ARR。部分云渠道按净额记录，未取得完整审计口径桥接。",
-      "correction": true,
-      "correction_note": "同一测量期的会计/比较口径修正，不是一个新的后续月份经营读数；不能据此计算负增长或触发行业阶段退档。",
-      "previous_reported_arr_yi": 700
+      "correction": false
     },
     "anthropic": {
       "company": "Anthropic",

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "asOf": "2026-11-06",
-  "updatedAt": "2026-11-06T16:13:45+08:00",
-  "lastChecked": "2026-11-06T16:13:45+08:00",
-  "evidenceVersion": "d624a44729c583f6180c3c3d69da7f9607d2a57cf02cfae6d9cd40e037221774",
+  "updatedAt": "2026-11-06T16:35:04+08:00",
+  "lastChecked": "2026-11-06T16:35:04+08:00",
+  "evidenceVersion": "9dd7ffa31bb789d59f2650180c5b7676ac518e8d131b042ea9d7aae3f7399090",
   "series": [
     {
       "id": "capex-alphabet",
@@ -610,6 +610,20 @@
           "correctionNote": "同一测量期的会计/比较口径修正，不是一个新的后续月份经营读数；不能据此计算负增长或触发行业阶段退档。",
           "lowUsdB": null,
           "highUsdB": null
+        },
+        {
+          "period": "2026-10",
+          "effectiveDate": "2026-10-09",
+          "disclosedAt": "2026-10-09",
+          "valueUsdB": 50.0,
+          "type": "run_rate",
+          "basis": "annualized_revenue_run_rate",
+          "basisKey": "annualized_revenue_run_rate",
+          "sourceId": "arr-ed0960c18b82",
+          "effectiveDatePrecision": "disclosed_as_of",
+          "dateNote": "Milestone known as of disclosure date; exact measurement day not inferred.",
+          "lowUsdB": null,
+          "highUsdB": null
         }
       ],
       "corrections": [
@@ -635,16 +649,16 @@
       ],
       "unit": "USD billion",
       "latest": {
-        "period": "2026-09",
-        "effectiveDate": "2026-09-30",
-        "disclosedAt": "2026-10-08",
+        "period": "2026-10",
+        "effectiveDate": "2026-10-09",
+        "disclosedAt": "2026-10-09",
         "valueUsdB": 50.0,
         "type": "run_rate",
-        "basis": "公司/媒体报告的annualized revenue run-rate；公司2026年1月CFO文章亦称ARR。公开披露含订阅、API及其它业务，不能简单当合同续费ARR。部分云渠道按净额记录，未取得完整审计口径桥接。",
+        "basis": "annualized_revenue_run_rate",
         "basisKey": "annualized_revenue_run_rate",
-        "sourceId": "arr-2d6d57cff1a5",
-        "correction": true,
-        "correctionNote": "同一测量期的会计/比较口径修正，不是一个新的后续月份经营读数；不能据此计算负增长或触发行业阶段退档。",
+        "sourceId": "arr-ed0960c18b82",
+        "effectiveDatePrecision": "disclosed_as_of",
+        "dateNote": "Milestone known as of disclosure date; exact measurement day not inferred.",
         "lowUsdB": null,
         "highUsdB": null
       }
@@ -1838,6 +1852,13 @@
       "kind": "rating_agency",
       "verified": true,
       "rank": "official"
+    },
+    {
+      "id": "arr-ed0960c18b82",
+      "name": "reuters.com",
+      "url": "https://www.reuters.com/business/openais-annualized-revenue-20-billion-less-than-previously-signaled-ft-reports-2026-10-08/",
+      "date": "2026-10-09",
+      "rank": "reliable_media"
     }
   ],
   "notes": [
@@ -1923,7 +1944,12 @@
     }
   ],
   "quality": {
-    "issues": [],
+    "issues": [
+      "coreweave page: 403 Client Error: Forbidden for url: https://www.sec.gov/Archives/edgar/data/1769628/000176962826000362/coreweave2q26earningspress.htm",
+      "coreweave page: 403 Client Error: Forbidden for url: https://www.sec.gov/Archives/edgar/data/1769628/000176962826000429/crwv2026convertpresentat.htm",
+      "coreweave page: Redirect left issuer domain",
+      "nebius page: PDF extraction requires reviewed evidence"
+    ],
     "supersededObservations": [],
     "hasNumericObservations": true,
     "guidanceSeparatedFromActual": true,
