@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-01",
+  "asOf": "2026-11-06",
   "series": [
     {
       "id": "capex-alphabet",
@@ -669,12 +669,33 @@
       },
       {
         "effectiveDate": "2026-09-30",
-        "disclosedAt": "2026-10-14",
-        "metric": "recognized_revenue_quarter_media_report",
-        "valueUsdB": 16.8,
-        "status": "media_reported_actual_unaudited",
-        "fact": "Reuters Breakingviews引述投资者交流称Q3收入约168亿美元；单独作为未审计商业化证据，不以×4生成所谓672亿美元ARR。",
-        "sourceId": "anth-q3-bv-20261015",
+        "disclosedAt": "2026-11-02",
+        "metric": "recognized_revenue_quarter",
+        "valueUsdB": 16.956,
+        "priorComparableUsdB": 1.382,
+        "status": "issuer_filing_interim_unaudited",
+        "fact": "S-1/A披露Q3已确认收入169.56亿美元，上年同期13.82亿、上季115.55亿；取代先前媒体约168亿的初步数字，不乘4生成运行率。",
+        "sourceId": "anth-s1a-20261102",
+        "companyId": "anthropic"
+      },
+      {
+        "effectiveDate": "2026-09-30",
+        "disclosedAt": "2026-11-02",
+        "metric": "gaap_operating_income_quarter",
+        "valueUsdB": -0.567,
+        "status": "issuer_filing_interim_unaudited",
+        "fact": "Q3 GAAP经营亏损5.67亿美元，上季经营盈利9.74亿；公司指出Q3包含50亿美元较高成本的短期算力与约20亿美元非现金捐赠相关费用。商业化增长并未自动转化为可持续利润。",
+        "sourceId": "anth-s1a-20261102",
+        "companyId": "anthropic"
+      },
+      {
+        "effectiveDate": "2026-09-30",
+        "disclosedAt": "2026-11-02",
+        "metric": "purchase_and_lease_commitments_next_12_months",
+        "valueUsdB": 69.8,
+        "status": "issuer_filing_forward_contractual_obligations",
+        "fact": "截至及期后披露的约8954亿美元采购与租赁承诺中，约698亿美元将在2026年9月末之后12个月到期；绝大多数承诺涉及算力与基础设施，不是已发生Capex，也不得与云厂商资本开支相加。",
+        "sourceId": "anth-s1a-20261102",
         "companyId": "anthropic"
       }
     ],
@@ -1068,6 +1089,20 @@
         "anth-s1-20261026"
       ],
       "note": "GAAP经营利润率；调整后10%不替代GAAP"
+    },
+    {
+      "companyId": "anthropic",
+      "company": "Anthropic",
+      "metric": "gaap_operating_margin_pct",
+      "period": "2026-Q3",
+      "value": -3,
+      "unit": "%",
+      "effectiveDate": "2026-09-30",
+      "disclosedAt": "2026-11-02",
+      "sourceIds": [
+        "anth-s1a-20261102"
+      ],
+      "note": "公司按整数披露GAAP经营利润率；上季+8%，当季调整后15%不替代GAAP。"
     }
   ],
   "sources": [
@@ -1186,14 +1221,69 @@
       "rank": "official"
     },
     {
+      "id": "anth-s1a-20261102",
+      "name": "Anthropic SEC S-1/A · Q3与算力承诺",
+      "url": "https://www.sec.gov/Archives/edgar/data/2130357/000162828026068676/anthropicpbc-sx1ax1.htm",
+      "date": "2026-11-02",
+      "kind": "issuer_filing",
+      "locator": "Quarterly Consolidated Statements of Operations；Compute Investments；Liquidity and Capital Resources—Contractual Obligations",
+      "verified": true,
+      "rank": "official"
+    },
+    {
       "id": "anth-q3-bv-20261015",
       "name": "Reuters Breakingviews：Anthropic投资者交流中的Q3收入",
       "url": "https://www.breakingviews.com/ddb76cfb4026/columns/breaking-view/anthropics-2-trln-dream-faces-deflation-trap-2026-10-15/",
       "date": "2026-10-15",
       "kind": "reuters_analysis_reported",
-      "sourceCaveat": "属于专栏中的知情人士消息，不是SEC已列示的Q3正式报表；与H1正式数据分层呈现。",
+      "sourceCaveat": "历史来源；其中约168亿美元的Q3初步收入已由11月2日S-1/A所列169.56亿美元替代。",
       "verified": true,
       "rank": "reliable_media"
+    },
+    {
+      "id": "oa-infrastructure-20261105",
+      "name": "OpenAI 11/5 · 算力园区与供电安排",
+      "url": "https://openai.com/index/setting-new-standard-responsible-ai-infrastructure/",
+      "date": "2026-11-05",
+      "kind": "issuer",
+      "verified": true,
+      "rank": "official"
+    },
+    {
+      "id": "marvell-lumentum-agreement-20261102",
+      "name": "Marvell SEC 8-K · Lumentum合并协议",
+      "url": "https://www.sec.gov/Archives/edgar/data/1835632/000119312526442714/d81187d8k.htm",
+      "date": "2026-11-02",
+      "kind": "issuer_filing",
+      "verified": true,
+      "rank": "official"
+    },
+    {
+      "id": "lumentum-fy27q1-20261102",
+      "name": "Lumentum FY27Q1财报 · 光互连与OCS",
+      "url": "https://investor.lumentum.com/financial-news-releases/news-details/2026/Lumentum-Announces-First-Quarter-of-Fiscal-Year-2027-Financial-Results/default.aspx",
+      "date": "2026-11-02",
+      "kind": "issuer",
+      "verified": true,
+      "rank": "official"
+    },
+    {
+      "id": "fred-nasdaq-close-20261105",
+      "name": "FRED / Nasdaq · 11/5日收盘",
+      "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=NASDAQCOM&cosd=2026-11-04&coed=2026-11-05",
+      "date": "2026-11-05",
+      "kind": "market_data",
+      "verified": true,
+      "rank": "reviewed"
+    },
+    {
+      "id": "sp-meta-outlook-20261030",
+      "name": "S&P · Meta主体展望10/30转负确认",
+      "url": "https://spratings.spglobal.com/ratings/%5Blang%5D/regulatory/article/-/view/type/HTML/id/3653386",
+      "date": "2026-11-02",
+      "kind": "rating_agency",
+      "verified": true,
+      "rank": "official"
     },
     {
       "id": "crwv_q4_2025_deck",
@@ -1464,10 +1554,40 @@
     },
     {
       "title": "Anthropic：运行率与已实现收入分开",
-      "text": "最新可核验运行率仍为7月末超过650亿美元，披露于8月17日；10月26日S-1的新运行率字段留空，不用单季度收入乘4补造。S-1列示H1营收162.86亿美元、GAAP经营利润率-4%。",
+      "text": "11/2 S-1/A披露Q3收入169.56亿美元（环比约+47%），GAAP经营亏损5.67亿，上季盈利9.74亿。最新有金额支持的运行率仍是7月末超650亿美元；招股书没有给出可替代的新运行率，不将季度收入乘4计入曲线。",
       "sourceIds": [
         "anth-july-65-20260817",
-        "anth-s1-20261026"
+        "anth-s1a-20261102"
+      ]
+    },
+    {
+      "title": "Anthropic：算力承诺强化建设，现金兑现仍需验证",
+      "text": "截至9月末及期后，已签采购和租赁承诺合计约8954亿美元，其中约698亿在9月末后12个月到期。承诺多为算力基础设施、跨多年履行，不是当年已支出；跟踪短约算力占比、长期算力上架、经营现金转化和资金到位。",
+      "sourceIds": [
+        "anth-s1a-20261102"
+      ]
+    },
+    {
+      "title": "11/5美股：估值下调不等于已砍订单",
+      "text": "纳斯达克综合指数11/5收24,315点，较前收跌5.52%。同时，Meta的S&P展望已转负、评级仍为AA−。近期应先核对新单、上架、融资成本与自由现金流，而非把股价回撤当成云厂商下修Capex、或阶段已经转换的证据。",
+      "sourceIds": [
+        "fred-nasdaq-close-20261105",
+        "sp-meta-outlook-20261030"
+      ]
+    },
+    {
+      "title": "OpenAI：园区落地增加供电约束观察点",
+      "text": "11/5发布社区与园区政策方案，披露佐治亚拟建园区高需求时可减载最多1GW；这是需求响应条款，不是新上电容量、全年Capex或新增运行率。跟踪并网和交付时点。",
+      "sourceIds": [
+        "oa-infrastructure-20261105"
+      ]
+    },
+    {
+      "title": "光互连：需求继续兑现，竞争转向系统级集成",
+      "text": "Lumentum FY27Q1收入12.6亿美元，管理层称光路交换（OCS）与泵浦激光器带动增长，并称第二个NPO/CPO项目对应逾50亿美元采购承诺。Marvell同日宣布全股票收购Lumentum协议，尚待批准。关注可插拔模块与集成光互连并行节奏、平台验证和供应商份额；海外承诺不是A股公司订单。",
+      "sourceIds": [
+        "lumentum-fy27q1-20261102",
+        "marvell-lumentum-agreement-20261102"
       ]
     },
     {

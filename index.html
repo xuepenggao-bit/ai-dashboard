@@ -24,7 +24,7 @@
 <link rel="stylesheet" href="assets/chain-monitor.css?v=20261026c">
 <script defer src="assets/chain-monitor.js?v=20261026c"></script>
 <link rel="stylesheet" href="assets/canslim-recommendations.css?v=20261101c">
-<script defer src="assets/canslim-recommendations.js?v=20261101c"></script>
+<script defer src="assets/canslim-recommendations.js?v=20261106a"></script>
 <script defer src="assets/valuation-hk.js?v=20261104a"></script>
 <link rel="stylesheet" href="assets/valuation-table.css?v=20261105a">
 <script defer src="assets/broker-forecasts.js?v=20261105-f9dd1c5c"></script>
@@ -5435,7 +5435,7 @@ function _renderArrLatestEvent(d){
     .sort((a,b)=>String(b.source_date).localeCompare(String(a.source_date)));
   if(!events.length){ el.replaceChildren(); el.style.display='none'; return; }
   el.replaceChildren();
-  const allowed=['openai.com','anthropic.com','cnbc.com','reuters.com','bloomberg.com','bloomberglaw.com','axios.com','nytimes.com','ft.com','wsj.com'];
+  const allowed=['openai.com','anthropic.com','sec.gov','cnbc.com','reuters.com','bloomberg.com','bloomberglaw.com','axios.com','nytimes.com','ft.com','wsj.com'];
   // 两家公司分别展示；前瞻预期只作文字动态，不写入已实现里程碑曲线。
   events.forEach((event,index)=>{
     const row=document.createElement('div');
@@ -5604,7 +5604,8 @@ function _renderCreditRatings(d){
     const name=el('div','credit-rating-company-name');
     name.append(el('span','credit-rating-mark',company.mark||String(company.display_name||'?').charAt(0)),el('span','',company.display_name||key));
     const primary=(company.ratings&&company.ratings.sp)||{};
-    head.append(name,el('span','credit-rating-outlook',primary.outlook==='Stable'?'展望稳定':(primary.outlook||'展望未列示')));
+    const outlookLabels={Stable:'展望稳定',Negative:'展望负面',Positive:'展望正面'};
+    head.append(name,el('span','credit-rating-outlook',outlookLabels[primary.outlook]||primary.outlook||'展望未列示'));
     const hero=el('div','credit-rating-hero');
     hero.append(el('strong','credit-rating-hero-value',primary.rating||'—'),el('span','credit-rating-hero-label','S&P 长期评级'));
     const agencies=el('div','credit-rating-agencies');

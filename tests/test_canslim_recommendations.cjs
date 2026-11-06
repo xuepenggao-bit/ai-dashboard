@@ -66,11 +66,22 @@ test('Published research has 12 unique issuers, dated filings and consistent sco
   const data=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/canslim_recommendations.json'),'utf8'));
   assert.equal(api.valid(data),true);const prepared=api.prepare(data),stocks=prepared.sectors.flatMap(x=>x.stocks);
   assert.equal(stocks.length,12);assert.equal(new Set(stocks.map(x=>x.code)).size,12);
+  assert.match(data.priceAsOf,/^\d{4}-\d{2}-\d{2}$/);
+  assert.ok(data.priceAsOf<=data.asOf);
+  for(const market of [data.market,data.hkMarket]){
+    assert.equal(market.endDate,data.priceAsOf);
+    assert.equal(market.chart.at(-1).date,data.priceAsOf);
+    assert.equal(market.chart.at(-1).close,market.close);
+  }
+  assert.equal(data.fx.businessDate,data.priceAsOf);
   for(const group of prepared.sectors){
     assert.equal(group.stocks.length,6);
     for(let i=1;i<group.stocks.length;i++)assert.ok(group.stocks[i-1].total>=group.stocks[i].total);
     for(const s of group.stocks){
-      assert.equal(s.metrics.priceDate,'2026-10-30');
+      assert.equal(s.metrics.priceDate,data.priceAsOf);
+      assert.equal(s.metrics.endDate,data.priceAsOf);
+      assert.equal(s.metrics.close,s.metrics.price);
+      assert.ok(Math.abs(s.metrics.price*s.metrics.totalShares/s.metrics.ttmParentNetProfit-s.metrics.peTtm)<1e-8);
       assert.equal(s.canslimTotal,api.KEYS.reduce((sum,k)=>sum+s.scores[k].score,0));
       assert.equal(s.total,s.canslimTotal+s.scores.P.score);
       assert.ok(Number.isInteger(s.scores.P.score)&&s.scores.P.score>=0&&s.scores.P.score<=15);
@@ -97,6 +108,8 @@ test('A/H are sixteen securities for twelve issuers, paired and valued independe
       if(company.securities.length===1)continue;
       const [a,h]=company.securities;
       assert.equal(h.shareClass,'H');assert.equal(h.currency,'HKD');assert.notEqual(a.metrics.price,h.metrics.price);
+      assert.equal(h.metrics.priceDate,d.priceAsOf);assert.equal(h.metrics.endDate,d.priceAsOf);
+      assert.equal(h.metrics.close,h.metrics.price);
       assert.equal(a.metrics.totalShares,h.metrics.totalShares);assert.equal(a.metrics.ttmParentNetProfit,h.metrics.ttmParentNetProfit);
       const expected=h.metrics.price*h.fxCnyPerHkd*h.metrics.totalShares/h.metrics.ttmParentNetProfit;
       assert.ok(Math.abs(expected-h.metrics.peTtm)<1e-8);
@@ -110,8 +123,8 @@ test('A/H are sixteen securities for twelve issuers, paired and valued independe
     }
   }
   const a=rows.find(s=>s.id==='A-603083'),h=rows.find(s=>s.id==='H-06166');
-  assert.ok(a.gates.some(x=>x.startsWith('估值高于')));assert.ok(!h.gates.some(x=>x.startsWith('估值高于')));
-  assert.notEqual(a.scores.P.score,h.scores.P.score);assert.ok(h.scores.P.score>a.scores.P.score,'Lower H PE receives higher P score independently of A');
+  for(const s of [a,h])assert.equal(s.gates.some(x=>x.startsWith('估值高于')),s.metrics.peTtm>s.peerPE*1.3);
+  assert.ok(h.scores.P.score>a.scores.P.score,'Lower H PE receives higher P score independently of A');
   assert.ok(rows.find(s=>s.id==='H-03308').hShare.relativeToA>0,'H can be more expensive than A; never force a discount');
 });
 test('Published metadata and UI declare CAN SLIM35 plus P15 and no old hard-veto wording',()=>{
@@ -143,7 +156,8 @@ test('Industry outlook has sourced scenarios, parameter monitoring and nonduplic
     const r=group.outlook,m=group.industryMetrics;assert.equal(r.scenarios.length,3);assert.equal(r.monitoring.length,8);assert.equal(r.flow.length,4);assert.ok(r.analysis.length>=6);assert.ok(r.customers.length>=2);
     const sourceIds=new Set(r.sources.map(s=>s.id));
     const verify=o=>{if(!o||typeof o!=='object')return;if(Array.isArray(o)){o.forEach(verify);return}if(o.sourceIds)assert.ok(o.sourceIds.every(id=>sourceIds.has(id)));Object.values(o).forEach(verify)};verify(r);
-    assert.equal(m.quarters.length,3);assert.equal(m.returns.length,127);assert.ok(Math.abs(m.returns[0].sample)<1e-9);assert.ok(Math.abs(m.returns[0].benchmark)<1e-9);assert.equal(m.returns.at(-1).date,'2026-10-30');
+    assert.equal(m.quarters.length,3);assert.equal(m.returns.length,127);assert.ok(Math.abs(m.returns[0].sample)<1e-9);assert.ok(Math.abs(m.returns[0].benchmark)<1e-9);assert.equal(m.returns.at(-1).date,raw.priceAsOf);
+    assert.ok(Math.abs(m.excess126-(m.returns.at(-1).sample-m.returns.at(-1).benchmark))<1e-9);
     for(const row of m.quarters)for(const k of ['revenue','profit'])assert.ok(Number.isFinite(row[k]));
   }
   const pcb=raw.sectors.find(g=>g.id==='pcb');assert.equal(pcb.industryMetrics.memberCodes.length,5);assert.ok(!pcb.industryMetrics.memberCodes.includes('688183'));

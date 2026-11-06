@@ -32,15 +32,21 @@ data.arr_latest_events.openai.source_url = 'https://bloomberg.com.evil.invalid/'
 data.arr_latest_events.anthropic.source_url = 'javascript:alert(1)';
 context._renderArrLatestEvent(data);
 assert.equal(elements.arrLatestEvent.children.flatMap(n => n.children).filter(n => n.tag === 'a').length, 0);
+data.arr_latest_events.anthropic = { company: 'Anthropic', summary: '单季收入，不计入运行率曲线', numeric: false, source_date: '2026-11-02', source_url: 'https://www.sec.gov/Archives/edgar/data/2130357/filing.htm' };
+context._renderArrLatestEvent(data);
+assert.equal(elements.arrLatestEvent.children.flatMap(n => n.children).filter(n => n.tag === 'a').length, 1, 'official SEC filing is linked');
+assert.deepEqual(data.arr_anthropic, [470, 650], 'quarterly revenue is not a run-rate point');
 context._renderArrLatestEvent({});
 assert.equal(elements.arrLatestEvent.children.length, 0);
 assert.equal(elements.arrLatestEvent.style.display, 'none');
 context._renderCreditRatings({ credit_ratings: { checked_at: '2026-09-29', as_of: '2026-08-21', companies: {
   microsoft: { display_name: 'Microsoft', ratings: { sp: { rating: 'AAA', outlook: 'Stable' }, fitch: { rating: 'WD', note: '撤销评级' } }, last_action: { label: '确认评级', detail: '公开报道' } },
-  amazon: { display_name: 'Amazon', ratings: { sp: { rating: 'AA', outlook: 'Stable' } }, last_action: { kind: 'flat', label: '展望调整', detail: '正面调为稳定，评级不变' } }
+  amazon: { display_name: 'Amazon', ratings: { sp: { rating: 'AA', outlook: 'Stable' } }, last_action: { kind: 'flat', label: '展望调整', detail: '正面调为稳定，评级不变' } },
+  meta: { display_name: 'Meta', ratings: { sp: { rating: 'AA-', outlook: 'Negative' } }, last_action: { kind: 'flat', label: '展望转负', detail: '评级不变' } }
 } } });
 assert.match(text(elements.creditRatingGrid), /WD/);
 assert.match(text(elements.creditRatingGrid), /展望调整/);
+assert.match(text(elements.creditRatingGrid), /Meta展望负面AA-/);
 assert.equal(elements.creditRatingTs.textContent, '公开来源核查 2026-09-29');
 for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
   if (match[1].trim()) new vm.Script(match[1]);

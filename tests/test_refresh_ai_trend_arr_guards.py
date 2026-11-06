@@ -128,6 +128,27 @@ class ArrUpsertTests(unittest.TestCase):
 
 
 class ArrMainIntegrationTests(unittest.TestCase):
+    def test_older_milestone_does_not_displace_newer_reviewed_filing(self):
+        filing = {"company": "Anthropic", "summary": "Actual quarter revenue, not run rate",
+                  "numeric": False, "disclosure_type": "reported_quarter_revenue", "source_date": "2026-11-02",
+                  "source_url": "https://www.sec.gov/Archives/edgar/data/2130357/example.htm"}
+        before = {"arr_labels": ["2026-07"], "arr_openai": [None], "arr_anthropic": [650],
+                  "arr_latest_events": {"anthropic": filing}, "arr_sources": {"anthropic": {
+                      "source_date": "2026-08-17", "metric_period": "2026-07", "arr_yi": 650}}}
+        article = result("Anthropic annualized revenue reached $65 billion in July 2026.",
+                         date="2026-08-17", url="https://www.cnbc.com/2026/08/17/anthropic-run-rate.html")
+        self.assertEqual(m._arr_candidate("anthropic", m.ARR_COMPANIES["anthropic"], [article])["arr_yi"], 650)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "ai_trend.json"
+            output.write_text(json.dumps(before), encoding="utf-8")
+            with mock.patch.object(m, "OUT", str(output)), mock.patch.object(m, "latest_capex_results", return_value=[]), \
+                 mock.patch.object(m, "latest_arr_results", side_effect=lambda key, cfg: [article] if key == "anthropic" else []):
+                m.main()
+            after = json.loads(output.read_text(encoding="utf-8"))
+        self.assertEqual(after["arr_latest_events"]["anthropic"], filing)
+        self.assertEqual(after["arr_sources"], before["arr_sources"])
+        self.assertEqual(after["arr_anthropic"], [650])
+
     def test_reviewed_same_period_correction_passes_full_main_guard(self):
         before = {"arr_labels": ["2026-09"], "arr_openai": [700], "arr_anthropic": [None],
                   "arr_latest_events": {"openai": {"numeric": True, "source_date": "2026-09-29", "arr_yi": 700, "basis": "gross_annualized_revenue_run_rate"}},

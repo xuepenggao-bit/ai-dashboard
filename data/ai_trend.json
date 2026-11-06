@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-01 20:55:19",
+  "updated": "2026-11-06 16:08:07",
   "last_checked": "2026-11-06 15:49:07",
   "scan_interval_hours": 3,
   "scanner_method": "local-evidence-v2",
@@ -241,15 +241,12 @@
     },
     "anthropic": {
       "company": "Anthropic",
-      "summary": "最新公开披露的年化收入运行率约为$65B。",
-      "numeric": true,
-      "source_label": "cnbc.com",
-      "source_date": "2026-08-18",
-      "source_url": "https://www.cnbc.com/2026/08/17/anthropic-says-annualized-revenue-climbed-to-65-billion-in-july.html",
-      "arr_yi": 650.0,
-      "metric_period": "2026-07",
-      "basis": "annualized_revenue_run_rate",
-      "correction": false
+      "summary": "S-1/A披露三季度已确认收入169.56亿美元、GAAP经营亏损5.67亿美元。季度收入不是年化运行率；运行率曲线保留7月末超650亿美元的最新已核验观测。",
+      "numeric": false,
+      "disclosure_type": "reported_quarter_revenue",
+      "source_label": "SEC · Anthropic S-1/A",
+      "source_date": "2026-11-02",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/2130357/000162828026068676/anthropicpbc-sx1ax1.htm"
     }
   },
   "arr_sources": {
@@ -274,7 +271,7 @@
     },
     "anthropic": {
       "company": "Anthropic",
-      "summary": "最新核验数值仍为7月末超过650亿美元；10/26 S-1新运行率留空，未补造",
+      "summary": "最新核验数值仍为7月末超过650亿美元；11/2 S-1/A未填列更新的运行率金额",
       "numeric": true,
       "arr_yi": 650,
       "comparison": ">",
@@ -284,7 +281,7 @@
       "source_label": "Axios：Anthropic7月末运行率超过650亿美元（Bloomberg报道）",
       "source_url": "https://www.axios.com/2026/08/17/anthropic-revenue-run-rate-ipo-openai",
       "readable_source_url": "https://www.axios.com/2026/08/17/anthropic-revenue-run-rate-ipo-openai",
-      "checked_at": "2026-11-01",
+      "checked_at": "2026-11-06",
       "basis": "annualized_revenue_run_rate",
       "basis_note": "S-1定义：测量日前28天consumption-based fees×13，加测量日当月subscription fees×12。是短期用量/订阅年化指标，不是合同ARR，也非GAAP营收。云渠道gross呈现与OpenAI部分net呈现不同。"
     }
@@ -362,9 +359,9 @@
     }
   },
   "credit_ratings": {
-    "as_of": "2026-09-29",
+    "as_of": "2026-11-03",
     "scope": "long-term issuer / senior unsecured",
-    "note": "公开来源核查截至2026-09-29；核查日期不代表评级动作日期。新债定级不等于主体升降级；部分动作由财经媒体转述，未取得评级机构最新完整历史。WD=撤销评级；—=未核实到公开评级，不等于无评级。",
+    "note": "公开来源核查截至2026-11-06；核查日期不代表评级动作日期。Meta的S&P展望转负但仍为AA−，新债定级不等于主体升降级。未取得所有机构完整历史。WD=撤销评级；—=未核实到公开评级，不等于无评级。",
     "companies": {
       "alphabet": {
         "display_name": "Alphabet / Google",
@@ -374,12 +371,12 @@
           "sp": {
             "rating": "AA+",
             "outlook": "Stable",
-            "note": "S&P AA+ / 稳定；2026-08-06 SEC新债预期评级，2026-05-14 S&P新债公告同时确认主体评级不变。"
+            "note": "S&P AA+ / 稳定；2026-11-02 SEC欧元新债文件列示；非主体评级上调。"
           },
           "moodys": {
             "rating": "Aa2",
             "outlook": "Stable",
-            "note": "Moody’s Aa2 / 稳定；2026-08-06 SEC新债预期评级。"
+            "note": "Moody’s Aa2 / 稳定；2026-11-02 SEC欧元新债文件列示。"
           },
           "fitch": {
             "rating": "—",
@@ -390,20 +387,20 @@
         "last_action": {
           "kind": "flat",
           "label": "新债定级",
-          "date": "2026-08-06",
-          "event_type": "new_issue_expected_rating",
-          "detail": "2026-08-06 · 新债文件列示预期 AA+ / Aa2、展望稳定；不是主体升降级。",
-          "source_url": "https://www.sec.gov/Archives/edgar/data/1652044/000119312526338750/d159970dfwp.htm"
+          "date": "2026-11-02",
+          "event_type": "new_issue_disclosure",
+          "detail": "2026-11-02 · 60亿欧元新债列示 AA+ / Aa2、展望稳定；不是主体升降级。",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/1652044/000119312526443857/d134038dfwp.htm"
         },
-        "source_label": "SEC · 2026-08-06 新债发行文件",
-        "source_url": "https://www.sec.gov/Archives/edgar/data/1652044/000119312526338750/d159970dfwp.htm",
-        "source_date": "2026-08-06",
+        "source_label": "SEC · 2026-11-02 欧元新债定价文件",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1652044/000119312526443857/d134038dfwp.htm",
+        "source_date": "2026-11-02",
         "previous_evidence": {
           "source_date": "2026-08-17",
           "source_url": "https://www.spglobal.com/ratings/en/regulatory/article/-/view/type/HTML/id/3612219",
           "note": "澳元新债定级页面标题仍可检索，本次未能重新取得正文，不作为更新的主体评级动作。"
         },
-        "checked_at": "2026-09-29",
+        "checked_at": "2026-11-06",
         "verification_note": "按可访问公开资料核查；未取得所有机构完整最新评级行动历史。"
       },
       "microsoft": {
@@ -435,14 +432,14 @@
           "label": "确认评级",
           "date": "2026-08-21",
           "event_type": "issuer_affirmation",
-          "detail": "2026-08-21 · 据媒体转述，Moody’s 确认 Aaa / 稳定；公司官网仍列 AAA / Aaa。",
-          "source_url": "https://www.investing.com/news/stock-market-news/moodys-affirms-microsoft-stock-aaa-rating-outlook-stable-93CH-4872059",
-          "verification_level": "secondary_report"
+          "detail": "2026-08-21 · Moody’s确认长期发行人及高级无担保债Aaa / 稳定；公司官网列 AAA / Aaa。",
+          "source_url": "https://ratings.moodys.com/ratings-news/471480",
+          "verification_level": "rating_agency"
         },
         "source_label": "Microsoft · 公司信用评级",
         "source_url": "https://www.microsoft.com/en-us/investor/faq",
         "source_date": null,
-        "checked_at": "2026-09-29",
+        "checked_at": "2026-11-06",
         "verification_note": "按可访问公开资料核查；未取得所有机构完整最新评级行动历史。"
       },
       "amazon": {
@@ -458,7 +455,7 @@
           "moodys": {
             "rating": "A1",
             "outlook": "Stable",
-            "note": "A1 / 稳定；2026-02-20展望由正面调为稳定，评级维持；7月SEC新债文件确认A1。"
+            "note": "A1 / 稳定；2026-02-20展望由正面调为稳定，评级维持；9月SEC新债文件确认A1。"
           },
           "fitch": {
             "rating": "AA-",
@@ -471,21 +468,21 @@
           "label": "展望调整",
           "date": "2026-02-20",
           "event_type": "outlook_revision",
-          "detail": "2026-02-20 · Moody’s 展望由正面调为稳定，A1不变；7月SEC文件仍列 AA / A1 / AA-。",
+          "detail": "2026-02-20 · Moody’s展望由正面调为稳定，A1不变；9月SEC新债仍列 AA / A1 / AA−。",
           "source_url": "https://finance.yahoo.com/news/moody-shifts-amazon-outlook-stable-230825793.html",
           "verification_level": "secondary_report"
         },
-        "source_label": "SEC · 2026-07-07 新债发行文件",
-        "source_url": "https://www.sec.gov/Archives/edgar/data/1018724/000110465926081334/tm2619352d3_fwp.htm",
-        "source_date": "2026-07-07",
+        "source_label": "SEC · 2026-09-09 新债发行文件",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1018724/000110465926106322/tm2624614d4_fwp.htm",
+        "source_date": "2026-09-09",
         "recent_issuance": {
           "source_date": "2026-09-09",
           "event_type": "new_issue_disclosure",
-          "source_url": "https://de.advfn.com/borse/NASDAQ/AMZN/nachrichten/99278443/form-fwp-filing-under-securities-act-rules-163-4",
-          "verification_level": "filing_reproduction",
-          "note": "较新FWP转载列示A1 / AA / AA-，未列示展望；未取得SEC原文，不作为新的主体评级调整。"
+          "source_url": "https://www.sec.gov/Archives/edgar/data/1018724/000110465926106322/tm2624614d4_fwp.htm",
+          "verification_level": "issuer_filing",
+          "note": "SEC原文列示A1 / AA / AA−，未列示展望，不作为新的主体评级动作。"
         },
-        "checked_at": "2026-09-29",
+        "checked_at": "2026-11-06",
         "verification_note": "按可访问公开资料核查；未取得所有机构完整最新评级行动历史。"
       },
       "meta": {
@@ -495,13 +492,13 @@
         "ratings": {
           "sp": {
             "rating": "AA-",
-            "outlook": "Stable",
-            "note": "S&P 长期发行人评级，展望稳定"
+            "outlook": "Negative",
+            "note": "S&P长期发行人评级AA−；2026-10-30展望由稳定转负面，评级不变。"
           },
           "moodys": {
             "rating": "Aa3",
             "outlook": "Stable",
-            "note": "Moody’s 高级无担保评级，展望稳定"
+            "note": "Moody’s高级无担保债Aa3 / 稳定；2026-11-03新债评级公告及SEC文件确认。"
           },
           "fitch": {
             "rating": "—",
@@ -511,27 +508,27 @@
         },
         "last_action": {
           "kind": "flat",
-          "label": "确认评级",
-          "date": "2026-02-27",
-          "event_type": "issuer_affirmation",
-          "detail": "2026-02-27 · 据媒体转述，Moody’s 确认 Aa3 / 稳定；4月SEC新债文件列 AA- / Aa3。",
-          "source_url": "https://www.investing.com/news/stock-market-news/moodys-affirms-meta-aa3-rating-on-strong-performance-93CH-4532317",
-          "verification_level": "secondary_report"
+          "label": "展望转负",
+          "date": "2026-10-30",
+          "event_type": "outlook_revision",
+          "detail": "2026-10-30 · S&P因资本开支与自由经营现金流不确定性将展望转为负面；AA−不变。11/3新债获AA− / Aa3。",
+          "source_url": "https://spratings.spglobal.com/ratings/%5Blang%5D/regulatory/article/-/view/type/HTML/id/3653386",
+          "verification_level": "rating_agency"
         },
-        "source_label": "SEC · 2026-04-30 新债发行文件",
-        "source_url": "https://www.sec.gov/Archives/edgar/data/1326801/000119312526197902/d148113dfwp.htm",
-        "source_date": "2026-04-30",
+        "source_label": "SEC · 2026-11-03 新债文件及两机构评级",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1326801/000119312526445646/d186765dfwp.htm",
+        "source_date": "2026-11-03",
         "excluded_evidence": {
           "source_url": "https://www.spglobal.com/ratings/en/regulatory/article/-/view/type/HTML/id/3612754",
           "reason": "评级主体为Sopaipilla Investor LLC，不能当作Meta主体评级动作。"
         },
-        "checked_at": "2026-09-29",
+        "checked_at": "2026-11-06",
         "verification_note": "按可访问公开资料核查；未取得所有机构完整最新评级行动历史。"
       }
     },
-    "checked_at": "2026-09-29"
+    "checked_at": "2026-11-06"
   },
-  "arr_checked_at": "2026-11-01",
+  "arr_checked_at": "2026-11-06",
   "arr_forecasts": [
     {
       "company": "Anthropic",
