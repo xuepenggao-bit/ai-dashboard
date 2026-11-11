@@ -24,3 +24,32 @@ test('same date cannot regress to an older revision',()=>{const api=engine(),fre
 test('payload rejects duplicate or unsorted days and requires an explicit time zone',()=>{const api=engine();assert.equal(api.normalizePayload(payload([row(),row()]),NOW),null);assert.equal(api.normalizePayload(payload([row(),row('2026-10-13')]),NOW),null);const p=payload();p.updatedAt='2026-10-14T16:00:00';assert.equal(api.normalizePayload(p,NOW),null);});
 test('zone boundaries are thermal labels without buy or sell signals',()=>{const api=engine();assert.equal(api.zone(0).label,'低温');assert.equal(api.zone(20).label,'偏冷');assert.equal(api.zone(40).label,'适中');assert.equal(api.zone(60).label,'偏热');assert.equal(api.zone(80).label,'高温');assert.equal(api.zone(100).label,'高温');});
 test('uses the canonical model to reject a score inconsistent with raw inputs',()=>{const api=engine(true),p=payload();assert.ok(api.normalizePayload(p,NOW));p.series[0].components.find(item=>item.id==='medianReturn').value=3;assert.equal(api.normalizePayload(p,NOW),null);const staleVersion=payload();staleVersion.modelVersion='old';assert.equal(api.normalizePayload(staleVersion,NOW),null);});
+
+function indexPayload(series=[{date:'2026-10-12',close:4203.17},{date:'2026-10-14',close:4175.72}]){
+  return{schemaVersion:1,symbol:'000300',updatedAt:'2026-10-14T16:00:00+08:00',series};
+}
+test('CSI 300 matches the heat series by exact date without interpolating gaps',()=>{
+  const api=engine(),dates=['2026-10-12','2026-10-13','2026-10-14'].map(date=>({date}));
+  const plain=x=>JSON.parse(JSON.stringify(x));
+  assert.deepEqual(plain(api.benchmarkValues(dates)),[null,null,null]);
+  assert.equal(api.acceptBenchmark(indexPayload(),{now:NOW,persist:false}),true);
+  assert.deepEqual(plain(api.benchmarkValues(dates)),[4203.17,null,4175.72]);
+  const older=indexPayload([{date:'2026-10-14',close:4400}]);older.updatedAt='2026-10-14T15:30:00+08:00';
+  assert.equal(api.acceptBenchmark(older,{now:NOW,persist:false}),true);
+  assert.deepEqual(plain(api.benchmarkValues(dates)),[4203.17,null,4175.72]);
+  assert.equal(api.acceptPayload(payload(),{now:NOW,persist:false}),true);
+  assert.equal(api.orderedRows()[0].score,50);
+});
+test('CSI 300 rejects wrong symbol, invalid prices, duplicates and uncompleted closes',()=>{
+  const api=engine();
+  for(const change of [p=>p.symbol='000985',p=>p.series[0].close=0,p=>p.series[0].close='4200',p=>p.series[0].date='2026-10-11',p=>p.series[0].date=p.series[1].date,p=>p.updatedAt='2026-10-14T14:40:00+08:00',p=>{p.series[1].date='2026-10-15';p.updatedAt='2026-10-15T09:55:00+08:00';}]){
+    const candidate=indexPayload();change(candidate);assert.equal(api.normalizeBenchmark(candidate,NOW),null);
+  }
+});
+test('heat keeps its fixed left scale while CSI 300 uses a separate right scale and tooltip unit',()=>{
+  const config=engine().chartConfig(),[heat,index]=config.data.datasets,scales=config.options.scales,format=config.options.plugins.tooltip.callbacks.label;
+  assert.equal(heat.yAxisID,'y');assert.equal(scales.y.position,'left');assert.equal(scales.y.min,0);assert.equal(scales.y.max,100);
+  assert.equal(index.yAxisID,'yIndex');assert.equal(scales.yIndex.position,'right');assert.equal(scales.yIndex.grid.drawOnChartArea,false);assert.equal(index.spanGaps,false);
+  assert.match(format({dataset:heat,parsed:{y:56.2}}),/56\.2 \/ 100/);
+  assert.match(format({dataset:index,parsed:{y:4075.71}}),/沪深 300 收盘 4,075\.71 点/);
+});

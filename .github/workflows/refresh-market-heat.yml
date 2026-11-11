@@ -8,11 +8,13 @@ on:
       - 'assets/market-heat.js'
       - '.github/scripts/refresh_market_heat.cjs'
       - '.github/scripts/refresh_market_heat_support.py'
+      - '.github/scripts/refresh_market_heat_csi300.py'
       - '.github/workflows/refresh-market-heat.yml'
       - 'tests/test_market_heat.cjs'
       - 'tests/test_market_heat_ui.cjs'
       - 'tests/test_market_heat_freshness.cjs'
       - 'tests/test_refresh_market_heat_support.py'
+      - 'tests/test_refresh_market_heat_csi300.py'
   schedule:
     # Beijing 08:35, 16:35 and 20:35; upstream completions also recompute.
     - cron: '35 0,8,12 * * 1-5'
@@ -54,7 +56,9 @@ jobs:
       - name: Test causal weights, disclosures and missing-data coverage
         run: node --test tests/test_market_heat.cjs tests/test_market_heat_ui.cjs tests/test_market_heat_freshness.cjs
       - name: Test actual warm-up amounts and lagged funding data
-        run: python -m unittest discover -s tests -p test_refresh_market_heat_support.py -v
+        run: |
+          python -m unittest discover -s tests -p test_refresh_market_heat_support.py -v
+          python -m unittest discover -s tests -p test_refresh_market_heat_csi300.py -v
       - name: Restore verified support cache
         uses: actions/cache@v4
         with:
@@ -65,11 +69,16 @@ jobs:
         run: python .github/scripts/refresh_market_heat_support.py --input-dir data --cache-dir "$RUNNER_TEMP/market-heat-cache" --output data/market_heat_support.json
       - name: Recompute the latest complete 60-session temperature
         run: node .github/scripts/refresh_market_heat.cjs
+      - name: Refresh the optional CSI 300 closing comparison
+        continue-on-error: true
+        timeout-minutes: 3
+        run: python .github/scripts/refresh_market_heat_csi300.py
       - name: Persist the explained composite score
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add data/market_heat.json data/market_heat_support.json
+          if [ -f data/market_heat_csi300.json ]; then git add data/market_heat_csi300.json; fi
           git diff --staged --quiet && exit 0
           git commit -m "chore: refresh A-share market temperature $(date -u '+%Y-%m-%d %H:%M UTC')"
           for attempt in 1 2 3 4 5; do

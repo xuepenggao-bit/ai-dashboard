@@ -35,7 +35,7 @@
 <link rel="stylesheet" href="assets/ma-breadth.css?v=20261014a">
 <link rel="stylesheet" href="assets/market-risk.css?v=20261015a">
 <link rel="stylesheet" href="assets/market-quality.css?v=20261015a">
-<link rel="stylesheet" href="assets/market-heat.css?v=20261015a">
+<link rel="stylesheet" href="assets/market-heat.css?v=20261111a">
 <link rel="stylesheet" href="assets/market-environment.css?v=20261019a">
 <script defer src="assets/market-close-refresh.js?v=20261030a"></script>
 <script defer src="assets/market-kpi-snapshot.js?v=20261105a"></script>
@@ -1944,7 +1944,11 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
       <div class="market-heat-scale" aria-hidden="true"><div class="market-heat-scale-bar"><i id="marketHeatPointer"></i></div><div class="market-heat-scale-labels"><span>低温</span><span>偏冷</span><span>适中</span><span>偏热</span><span>高温</span></div></div>
       <div class="market-heat-score-note" id="marketHeatCoverage">分数越高，交易与趋势越热。</div>
     </div>
-    <div class="market-heat-chart-panel"><div class="market-heat-chart-heading"><span>近 60 个交易日</span><span>市场热度 · 分</span></div><div class="market-heat-plot"><canvas id="cMarketHeat" role="img" aria-label="A 股市场热度近60个交易日曲线"></canvas></div><div id="marketHeatRange" class="market-heat-range"></div></div>
+    <div class="market-heat-chart-panel">
+      <div class="market-heat-chart-heading"><span>近 60 个交易日</span><span class="market-heat-series-legend"><span class="market-heat-series-score">市场热度 · 左轴 / 分</span><span class="market-heat-series-index">沪深 300 · 右轴 / 点</span></span></div>
+      <div class="market-heat-plot"><canvas id="cMarketHeat" role="img" aria-label="近60个交易日的A股市场热度（左轴，分）与沪深300收盘走势（右轴，点）"></canvas></div>
+      <div id="marketHeatRange" class="market-heat-range"></div>
+    </div>
   </div>
   <div class="market-heat-components-heading"><span>本期热度构成</span><span>按固定权重合成</span></div>
   <div class="market-heat-components" id="marketHeatComponents"><div class="market-heat-empty">正在核对各项指标的日期与覆盖范围…</div></div>
@@ -13423,7 +13427,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="assets/market-risk.js?v=20261030a" defer></script>
 <script src="assets/market-quality.js?v=20261030a" defer></script>
 <script src="assets/market-heat-engine.js?v=20261027a" defer></script>
-<script src="assets/market-heat.js?v=20261027a" defer></script>
+<script src="assets/market-heat.js?v=20261111a" defer></script>
 <script src="assets/high-low-52w-live.js?v=20261030a" defer></script>
 <script src="assets/market-freshness.js?v=20261030c" defer></script>
 <script src="assets/market-refresh-scheduler.js?v=20261030b" defer></script>
