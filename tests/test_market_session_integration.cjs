@@ -22,7 +22,7 @@ const fnNames=['_portMarketState','_portStockState','_portEffectivePrices','_por
   '_portReconcileSessions','_buildPortfolioAllocationModel','renderPortfolio','_beijingMarketClock','_isWeekdayMarketClock',
   '_isAPreOpenZeroWindow','_isAStockMarket','_isPortfolioAStockPreOpen','_portfolioStockDisplayPct','_portTopDisplayPct',
   '_isPortfolioHKStock','_portTopMarketIcon','_renderPortTopWeightedSummary','renderPortTop3','_renderPortBreadth',
-  '_renderPortTopW','_portTurnoverRate','_portTurnoverCell','_portTurnoverCompare','_port5dKey','_escH',
+  '_renderPortTopW','_portTurnoverRate','_portTurnoverCell','_portTurnoverCompare','_port5dKey','_port5dBuild','_port5dConfirmedClose','_port5dTencentClose','_escH',
   '_histBeijingDate','_histReturnEligible','_histStatusLabel','_histCsiValue','_computePortPct','_touchHistoryRecord','addHistRecord',
   '_fetchPortfolioPricesRound','_portRenderQuoteProgress'];
 const source=fnNames.map(extract).join('\n');
@@ -126,6 +126,64 @@ test('all Top7 ranks and weighted summaries exclude closed returns while heavy l
   const heavy=h.element('portTop5W').innerHTML;
   assert.match(heavy,new RegExp(HK.name));assert.match(heavy,/休市/);assert.match(heavy,/70\.0%/);
   assert.match(heavy,/port-top-weighted-value">\+4\.00%/);assert.doesNotMatch(heavy,/19\.87|370\.123/);
+});
+test('heavy Top7 shows MA5 immediately right of current price with A/H precision and trend cues',()=>{
+  const h=harness('2026-11-13');h.ctx._PORT_PRICES={
+    [A.code]:quote(A,'2026-11-13',4,73.45),[HK.code]:quote(HK,'2026-11-13',-1,370.123)};
+  h.ctx._PORT_5D_CLOSE={
+    ['SH:'+A.code]:{ma5:70,ma5From:'2026-11-06',ma5To:'2026-11-12',source:'腾讯日K'},
+    ['HK:'+HK.code]:{ma5:380.456,ma5From:'2026-11-06',ma5To:'2026-11-12',source:'腾讯日K'}};
+  h.ctx.renderPortTop3();
+  const heavy=h.element('portTop5W').innerHTML;
+  assert.match(heavy,/现价 73\.45<\/span><span class="port-heavy-ma5 is-above"[^>]+>.*?<b>70\.00<\/b>/);
+  assert.match(heavy,/现价 370\.123<\/span><span class="port-heavy-ma5 is-below"[^>]+>.*?<b>380\.456<\/b>/);
+  assert.ok(heavy.indexOf(HK.name)<heavy.indexOf(A.name));
+  assert.match(heavy,/仓位加权涨跌幅/);
+  for(const id of ['portTop3Up','portTop3Down'])assert.doesNotMatch(h.element(id).innerHTML,/MA5/);
+  delete h.ctx._PORT_5D_CLOSE['SH:'+A.code];
+  h.ctx._PORT_PRICES[HK.code].suspended=true;
+  h.ctx._renderPortTopW();
+  assert.match(h.element('portTop5W').innerHTML,/现价 停牌<\/span><span class="port-heavy-ma5 is-neutral"/);
+  assert.match(h.element('portTop5W').innerHTML,/port-heavy-ma5 is-missing[^>]+>.*?<b>—<\/b>/);
+});
+test('MA5 uses five unique completed daily closes even when long-window ranges are unavailable',()=>{
+  const {ctx}=harness('2026-11-13'),today='2026-11-13';
+  const rows=['06','09','10','11','12','13','16'].map((day,i)=>({date:'2026-11-'+day,close:10+i}));
+  rows.push({date:'2026-11-10',close:12},{date:'2026-11-08',close:1000},{date:'2026-11-31',close:1000},{date:'2026-11-12',close:Infinity});
+  const before=ctx._port5dBuild(rows,today,'腾讯日K');
+  assert.deepEqual([before.ma5,before.ma5From,before.ma5To,before.high,before.low],[12,'2026-11-06','2026-11-12',null,null]);
+  const after=ctx._port5dBuild(rows,today,'腾讯日K',true);
+  assert.deepEqual([after.ma5,after.ma5From,after.ma5To,after.to],[13,'2026-11-09','2026-11-13','2026-11-12']);
+  assert.equal(ctx._port5dBuild(rows.slice(0,4),today,'腾讯日K').ma5,null);
+});
+test('a same-day MA5 close requires a matching final A/H quote and cannot leak an intraday bar',()=>{
+  const {ctx}=harness(),today='2026-11-13',bar={date:today,close:100,volume:50};
+  const quote=(stamp,price=100)=>({30:stamp,3:price});
+  const a={phase:'after_close',market:'A',closeMinute:900},hk={phase:'after_close',market:'HK',closeMinute:970};
+  assert.equal(ctx._port5dTencentClose(bar,quote('20261113150001'),today,a),true);
+  assert.equal(ctx._port5dTencentClose(bar,quote('20261113145959'),today,a),false);
+  assert.equal(ctx._port5dTencentClose(bar,quote('2026/11/13 16:08:11'),today,hk),true);
+  assert.equal(ctx._port5dTencentClose(bar,quote('2026/11/13 16:08:11'),today,{...hk,phase:'closing_auction'}),false);
+  assert.equal(ctx._port5dTencentClose(bar,quote('20261113150100',99),today,a),false);
+  assert.equal(ctx._port5dTencentClose({...bar,volume:0},quote('20261113150100'),today,a),false);
+});
+test('daily cache backfills MA5 once and only refetches after the corresponding market closes',async()=>{
+  const h=harness('2026-11-13','14:55:00'),calls=[],today='2026-11-13';
+  h.ctx._port5dInflight=null;h.ctx._portCloseRetry=new Map();h.ctx.PORT_5D_CLOSE_KEY='test';
+  h.ctx.localStorage={setItem(){}};
+  h.ctx._PORT_5D_CLOSE['SH:'+A.code]={dayKey:today,high:150,low:90};
+  h.ctx._fetchPort5dOne=async(stock,date,market)=>{
+    const close=market.phase==='after_close';calls.push([stock.mkt,close]);
+    return{dayKey:date,high:150,low:90,to:'2026-11-12',ma5:close?101:100,ma5To:close?today:'2026-11-12',ma5From:'2026-11-06'};
+  };
+  vm.runInContext(extract('fetchPortFiveDayRanges'),h.ctx);
+  await h.ctx.fetchPortFiveDayRanges();await h.ctx.fetchPortFiveDayRanges();
+  assert.deepEqual(calls,[['HK',false],['SH',false]]);
+  h.state.now=ts(today,'15:01:00');await h.ctx.fetchPortFiveDayRanges();await h.ctx.fetchPortFiveDayRanges();
+  assert.deepEqual(calls.at(-1),['SH',true]);assert.equal(calls.length,3);
+  h.state.now=ts(today,'16:05:00');await h.ctx.fetchPortFiveDayRanges();assert.equal(calls.length,3);
+  h.state.now=ts(today,'16:11:00');await h.ctx.fetchPortFiveDayRanges();await h.ctx.fetchPortFiveDayRanges();
+  assert.deepEqual(calls.at(-1),['HK',true]);assert.equal(calls.length,4);
 });
 test('distribution and market averages reject closed HK quotes, not merely the table',()=>{
   const h=harness();h.ctx._PORT_PRICES={

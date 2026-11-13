@@ -439,6 +439,19 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-top-row{align-items:stretch}
 .port-top-card{display:flex;min-height:0;flex-direction:column}
 .port-top-list{display:flex;flex:1;min-height:0;flex-direction:column}
+.port-heavy-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:3px 7px;padding:8px 7px;margin-bottom:5px;border-radius:8px}
+.port-heavy-rank{grid-row:1/3;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#e4edfc;color:#25569c;font-size:11px;font-weight:850}
+.port-heavy-change{text-align:right;font-size:19px;font-weight:900;line-height:1.12;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.port-heavy-change.is-status{font-size:13px;letter-spacing:0}
+.port-heavy-detail{grid-column:2/-1;display:flex;align-items:center;justify-content:space-between;gap:2px 6px;flex-wrap:wrap;min-width:0;font-size:10.5px;font-variant-numeric:tabular-nums}
+.port-heavy-weight{font-weight:750;color:#315e9b;white-space:nowrap}.port-heavy-weight.is-missing{color:var(--text2);font-weight:500}
+.port-heavy-prices{display:flex;align-items:center;justify-content:flex-end;gap:5px;white-space:nowrap;margin-inline-start:auto;color:#556579}
+.port-heavy-ma5{display:inline-flex;align-items:center;gap:4px;border:1px solid #d9e5f1;border-radius:6px;padding:2px 4px;background:#f0f5fa;color:#3f5776;line-height:1.2}
+.port-heavy-ma5-label{font-size:9px;font-weight:750}.port-heavy-ma5 b{font-size:10.5px;font-weight:850}
+.port-heavy-ma5.is-above{background:#fcf1ee;border-color:#f0d9d3;color:#9b493d}.port-heavy-ma5.is-below{background:#eaf5f0;border-color:#d2e7dc;color:#246953}
+.port-heavy-ma5.is-missing{background:#f4f6f9;border-color:#e6ebf1;color:#56677b}
+@media(max-width:1080px){#tPort .port-top-row.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){#tPort .port-top-row.g4{grid-template-columns:minmax(0,1fr)}}
 .port-top-weighted-wrap{margin-top:auto;padding-top:18px}
 .port-top-weighted{display:flex;align-items:center;gap:9px;margin-top:9px;padding:10px 11px;border:1px solid var(--ptw-border);border-radius:11px;background:linear-gradient(135deg,var(--ptw-bg) 0%,#fff 78%);box-shadow:0 4px 13px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.85)}
 .port-top-weighted-wrap .port-top-weighted{margin-top:0}
@@ -4160,7 +4173,8 @@ let _PORT_RENDER_SNAPSHOT = {}; // 上一次已呈现的实时数值，仅用于
 let _PORT_RENDER_MOVES = {};    // 短时保留变化方向，防止紧邻的二次渲染过早清除动画
 // v2 会主动淘汰旧的“5日高低点”缓存，保证新窗口首次打开即重新计算。
 const PORT_5D_CLOSE_KEY = 'aiDashboard.portfolioCloseRange.v2';
-let _PORT_5D_CLOSE = {}; // "市场:代码" → {high,low,highFrom,lowFrom,to,asOf,dayKey,updatedAt}
+let _PORT_5D_CLOSE = {}; // "市场:代码" → 收盘区间与 MA5，MA5 保留单独的截止日
+const _portCloseRetry = new Map();
 let _port5dInflight = null;
 let _pfInflight = false;   // fetchPortPrices 进行中标志：防止上一轮未完又触发（自动刷新高频时避免重叠/快照竞争）
 let _portSort = {col:'w', dir:1};
@@ -4173,7 +4187,7 @@ try{
   const cutoff=Date.now()-14*86400000;
   Object.keys(saved5d||{}).forEach(key=>{
     const row=saved5d[key];
-    if(row && Number(row.high)>0 && Number(row.low)>0 && Number(row.updatedAt)>cutoff)
+    if(row && Number(row.updatedAt)>cutoff && (Number(row.high)>0||Number(row.low)>0||Number(row.ma5)>0||row.ma5===null))
       _PORT_5D_CLOSE[key]=row;
   });
 }catch(e){ /* Safari 隐私模式禁用 localStorage 时仅失去跨刷新缓存 */ }
@@ -4216,6 +4230,9 @@ function _portReconcileSessions(force=false){
   if(typeof PortfolioMarketSession!=='object'||document.hidden)return;
   const c=PortfolioMarketSession.clock(),a=_portMarketState('A'),hk=_portMarketState('HK');
   const stamp=[c.date,a.status,a.phase,hk.status,hk.phase].join('|');
+  if(document.getElementById('tPort')?.classList.contains('active')&&(a.phase==='after_close'||hk.phase==='after_close')){
+    fetchPortFiveDayRanges().catch(error=>console.warn('[历史收盘价]',error.message));
+  }
   if(!force&&_portReconcileSessions.stamp===stamp)return;
   _portReconcileSessions.stamp=stamp;
   if(typeof PORT!=='undefined'&&PORT){
@@ -4290,10 +4307,6 @@ function _capturePortfolioRenderSnapshot(port,prices,now){
   });
 }
 
-function _portBeijingDate(){
-  return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Shanghai'});
-}
-
 function _port5dSymbol(stock){
   if(stock.mkt==='HK') return 'hk'+String(stock.code).padStart(5,'0');
   return (stock.mkt==='SH'?'sh':'sz')+String(stock.code).padStart(6,'0');
@@ -4305,23 +4318,44 @@ function _port5dSecid(stock){
   return market+'.'+code;
 }
 
-function _port5dBuild(rows,today,source){
-  const clean=(rows||[]).map(row=>({date:String(row.date||''),close:Number(row.close)}))
-    .filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&row.date<today&&row.close>0)
-    .sort((a,b)=>a.date.localeCompare(b.date));
-  const last20=clean.slice(-20);
-  if(last20.length<20) throw new Error('前20个交易日数据不足');
-  const last10=last20.slice(-10);
+function _port5dBuild(rows,today,source,includeToday=false){
+  const byDate=new Map();
+  for(const row of rows||[]){
+    const date=String(row?.date||''),close=Number(row?.close),time=Date.parse(date+'T00:00:00Z');
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(time)||new Date(time).toISOString().slice(0,10)!==date||date>today||(date===today&&!includeToday)||typeof row.close==='boolean'||!Number.isFinite(close)||close<=0) continue;
+    const weekday=new Date(time).getUTCDay();
+    if(weekday!==0&&weekday!==6) byDate.set(date,{date,close});
+  }
+  const clean=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
+  if(!clean.length) throw new Error('缺少有效日线收盘价');
+  const previous=clean.filter(row=>row.date<today),last20=previous.slice(-20),last10=previous.slice(-10),last5=clean.slice(-5);
+  const to=previous.at(-1)?.date||null;
   return {
-    high:Math.max(...last20.map(row=>row.close)),
-    low:Math.min(...last10.map(row=>row.close)),
-    highFrom:last20[0].date, lowFrom:last10[0].date,
-    to:last20[last20.length-1].date, asOf:last20[last20.length-1].date,
+    high:last20.length===20?Math.max(...last20.map(row=>row.close)):null,
+    low:last10.length===10?Math.min(...last10.map(row=>row.close)):null,
+    highFrom:last20.length===20?last20[0].date:null, lowFrom:last10.length===10?last10[0].date:null,
+    to,asOf:to,ma5:last5.length===5?last5.reduce((sum,row)=>sum+row.close,0)/5:null,
+    ma5From:last5.length===5?last5[0].date:null,ma5To:last5.at(-1).date,
     dayKey:today, updatedAt:Date.now(), source
   };
 }
 
-async function _fetchPort5dOne(stock,today){
+function _port5dConfirmedClose(bar,quoteDate,quoteMinute,quotePrice,today,market){
+  if(market?.phase!=='after_close'||bar?.date!==today||!(Number(bar.volume)>0))return false;
+  if(quoteDate!==today||!Number.isInteger(quoteMinute)||quoteMinute>=1440||!Number.isInteger(market.closeMinute))return false;
+  // 港股收市竞价可在结束时间前两分钟随机撮合，仍须等待市场进入已收盘阶段。
+  const earliest=market.closeMinute-(market.market==='HK'?2:0),close=Number(bar.close);
+  return quoteMinute>=earliest&&Number.isFinite(close)&&close>0&&Math.abs(close-Number(quotePrice))<0.00001;
+}
+
+function _port5dTencentClose(bar,quote,today,market){
+  const stamp=String(quote?.[30]||'').replace(/\D/g,'');
+  if(!/^\d{14}$/.test(stamp))return false;
+  const date=stamp.slice(0,4)+'-'+stamp.slice(4,6)+'-'+stamp.slice(6,8),hour=Number(stamp.slice(8,10)),minute=Number(stamp.slice(10,12));
+  return hour<24&&minute<60&&_port5dConfirmedClose(bar,date,hour*60+minute,quote[3],today,market);
+}
+
+async function _fetchPort5dOne(stock,today,market){
   const symbol=_port5dSymbol(stock);
   const errors=[];
   // 腾讯日K主源：A股、港股格式一致；请求30根，取前一交易日起最近20/10个有效收盘日。
@@ -4339,7 +4373,10 @@ async function _fetchPort5dOne(stock,today){
     const json=JSON.parse(text.slice(start));
     const data=json?.data?.[symbol]||json?.data?.[symbol+'qfq'];
     const days=data?.day||data?.qfqday||[];
-    return _port5dBuild(days.map(row=>({date:row[0],close:row[2]})),today,'腾讯日K');
+    const rows=days.map(row=>({date:row[0],close:row[2],volume:row[5]}));
+    const quote=data?.qt?.[symbol];
+    const confirmed=String(quote?.[2]||'').padStart(stock.mkt==='HK'?5:6,'0')===symbol.slice(2)&&_port5dTencentClose(rows.at(-1),quote,today,market);
+    return _port5dBuild(rows,today,'腾讯日K',confirmed);
   }catch(e){ errors.push('腾讯:'+e.message); }
 
   // 东方财富日K仅在腾讯失败时补位；不传 beg，避免接口忽略 lmt 后返回全历史。
@@ -4355,7 +4392,12 @@ async function _fetchPort5dOne(stock,today){
       json=await (await fetch(url,{signal:ctrl.signal,cache:'no-store'})).json();
     }finally{ clearTimeout(tid); }
     const kl=json?.data?.klines||[];
-    return _port5dBuild(kl.map(line=>{const f=String(line).split(',');return {date:f[0],close:f[2]};}),today,'东方财富日K');
+    const rows=kl.map(line=>{const f=String(line).split(',');return {date:f[0],close:f[2],volume:f[5]};});
+    // 备用日线没有收盘时刻；只有与同证券的已核验收盘报价相符时，才纳入当天。
+    const live=_PORT_PRICES[stock.code],quoteTime=typeof PortfolioMarketSession==='object'?PortfolioMarketSession.quoteTimestamp(live):null;
+    const clock=quoteTime?PortfolioMarketSession.clock(quoteTime):null;
+    const confirmed=clock&&String(live.mkt)===String(stock.mkt)&&_port5dConfirmedClose(rows.at(-1),clock.date,clock.minute,live.price,today,market);
+    return _port5dBuild(rows,today,'东方财富日K',confirmed);
   }catch(e){ errors.push('东方财富:'+e.message); }
   throw new Error(errors.join(' | '));
 }
@@ -4363,10 +4405,18 @@ async function _fetchPort5dOne(stock,today){
 async function fetchPortFiveDayRanges(){
   if(_port5dInflight) return _port5dInflight;
   portLoad();
-  const today=_portBeijingDate();
+  const now=Date.now(),today=new Date(now+8*3600000).toISOString().slice(0,10);
   const unique=new Map();
   (PORT?.sectors||[]).forEach(sec=>(sec.stocks||[]).forEach(stock=>unique.set(_port5dKey(stock),stock)));
-  const missing=[...unique.entries()].filter(([key])=>!_PORT_5D_CLOSE[key]||_PORT_5D_CLOSE[key].dayKey!==today);
+  const ranked=[...unique.entries()].sort((a,b)=>(b[1].w??-1)-(a[1].w??-1));
+  const topKeys=new Set(ranked.slice(0,7).map(([key])=>key));
+  const missing=ranked.map(([key,stock])=>[key,stock,_portMarketState(stock.mkt,now)]).filter(([key,stock,market])=>{
+    const row=_PORT_5D_CLOSE[key],afterClose=market.phase==='after_close',phase=afterClose?'close':'prior';
+    const wantsToday=afterClose&&topKeys.has(key)&&!['suspended','no_trade'].includes(_portStockState(stock,_PORT_PRICES[stock.code],now).status);
+    if(row?.dayKey===today&&Object.hasOwn(row,'ma5')&&(!wantsToday||row.ma5To===today))return false;
+    const retry=_portCloseRetry.get(key);
+    return !retry||retry.stamp!==today+phase||now-retry.at>=300000;
+  });
   if(!missing.length) return Promise.resolve();
 
   _port5dInflight=(async()=>{
@@ -4374,14 +4424,24 @@ async function fetchPortFiveDayRanges(){
     // 每批5只，避免首次载入时同时发出过多历史请求；成功结果当天复用，10秒刷新不会重拉。
     for(let i=0;i<missing.length;i+=5){
       const batch=missing.slice(i,i+5);
-      const results=await Promise.all(batch.map(async([key,stock])=>{
-        try{ return [key,await _fetchPort5dOne(stock,today),null]; }
+      const results=await Promise.all(batch.map(async([key,stock,market])=>{
+        _portCloseRetry.set(key,{stamp:today+(market.phase==='after_close'?'close':'prior'),at:Date.now()});
+        try{ return [key,await _fetchPort5dOne(stock,today,market),null]; }
         catch(error){ return [key,null,error]; }
       }));
       results.forEach(([key,row,error])=>{
-        if(row){ _PORT_5D_CLOSE[key]=row; changed=true; }
-        else console.warn('[前20日最高/前10日最低收盘价]',key,error&&error.message);
+        if(row){
+          const saved=_PORT_5D_CLOSE[key];
+          if(saved?.to>row.to||(!(row.high>0)&&saved?.high>0)||(!(row.low>0)&&saved?.low>0)){
+            for(const field of ['high','low','highFrom','lowFrom','to','asOf'])row[field]=saved[field];
+          }
+          if(saved?.ma5To>row.ma5To||(!(row.ma5>0)&&saved?.ma5>0)){
+            row.ma5=saved.ma5;row.ma5From=saved.ma5From;row.ma5To=saved.ma5To;row.ma5Source=saved.ma5Source||saved.source;
+          }
+          _PORT_5D_CLOSE[key]=row;changed=true;
+        }else console.warn('[历史收盘价]',key,error&&error.message);
       });
+      if(batch.some(([key])=>topKeys.has(key))&&changed)_renderPortTopW();
     }
     if(changed){
       try{ localStorage.setItem(PORT_5D_CLOSE_KEY,JSON.stringify(_PORT_5D_CLOSE)); }catch(e){}
@@ -12633,8 +12693,8 @@ async function _fetchPortfolioPricesRound(){
     renderPortfolio();
     renderPortTop3();
     _renderPortTopW();
-    // 历史收盘价按北京时间每日缓存；新增股票时只补拉缺失项，自动股价刷新不会重复请求。
-    fetchPortFiveDayRanges().catch(function(e){ console.warn('[前20日最高/前10日最低收盘价]',e.message); });
+    // 日线缓存独立于实时报价；重仓 MA5 仅在各自市场收盘后补算当日。
+    fetchPortFiveDayRanges().catch(function(e){ console.warn('[历史收盘价]',e.message); });
     // 指数 / 主力 / 大盘统计 已由 refreshPortAll() 与本函数并行触发，此处不再串行调用（避免等股价+港股回退跑完才开始）。
     // 注：定时自动刷新、保存持仓等仅调 fetchPortPrices 的入口，本就只需刷股价，无需连带重活。
     // 如果估值分析标签页是活动状态，同步刷新估值表格（更新股价+市值列）
@@ -12956,25 +13016,25 @@ function _renderPortTopW(){
       ? '未开盘'
       : item.price==null ? item.statusLabel||'待更新' : item.mkt==='HK' ? Number(item.price).toFixed(3) : Number(item.price).toFixed(2);
     var wLine    = item.w != null
-      ? '<div style="font-size:11px;color:var(--blue);font-weight:700;margin-top:2px">仓位 '+Number(item.w).toFixed(1)+'%</div>'
-      : '<div style="font-size:11px;color:var(--text2);margin-top:2px">仓位未设置</div>';
+      ? '<span class="port-heavy-weight">仓位 '+Number(item.w).toFixed(1)+'%</span>'
+      : '<span class="port-heavy-weight is-missing">仓位未设置</span>';
     var marketIcon = _portTopMarketIcon(item.mkt,item.code);
-    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;'
-         + 'border-radius:8px;background:'+bgRow+';margin-bottom:5px">'
-      + '<span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:#dbeafe;'
-      + 'color:var(--blue);font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center">'
-      + rank+'</span>'
-      + '<div style="flex:1;min-width:0">'
-      + '<div class="port-stock-name-line" title="'+item.name+'">'
-      + '<span class="port-stock-name-text">'+item.name+'</span>'+marketIcon+'</div>'
-      + wLine
-      + '</div>'
-      + '<div style="text-align:right;flex-shrink:0">'
-      + '<div style="font-size:20px;font-weight:900;color:'+pctColor+';line-height:1.1;letter-spacing:-.01em">'
-      + (item.pct==null?(item.statusLabel||'待更新'):sign+Number(item.pct).toFixed(2)+'%')+'</div>'
-      + '<div style="font-size:11px;color:var(--text2);margin-top:1px">现价 '+priceStr+'</div>'
-      + '</div>'
-      + '</div>';
+    var range=_PORT_5D_CLOSE[_port5dKey(item)],ma5=Number(range?.ma5),precision=item.mkt==='HK'?3:2;
+    var hasMA5=Number.isFinite(ma5)&&ma5>0&&/^\d{4}-\d{2}-\d{2}$/.test(range?.ma5From||'')&&range.ma5From<=range.ma5To,ma5Text=hasMA5?ma5.toFixed(precision):'—';
+    var comparable=hasMA5&&item.status==='valid'&&Number.isFinite(Number(item.price))&&Number(item.price)>0;
+    var roundedPrice=comparable?Number(Number(item.price).toFixed(precision)):null,roundedMA5=Number(ma5Text);
+    var above=comparable&&roundedPrice>roundedMA5,below=comparable&&roundedPrice<roundedMA5;
+    var ma5Class=!hasMA5?'is-missing':above?'is-above':below?'is-below':'is-neutral';
+    var ma5Title=hasMA5?'最近 5 个已收盘交易日收盘均价 · '+range.ma5From+' 至 '+range.ma5To+' · '+(range.ma5Source||range.source||'日线')+(above?' · 现价在 MA5 上方':below?' · 现价在 MA5 下方':comparable?' · 现价与 MA5 持平':''):'MA5：等待 5 个有效收盘价';
+    return '<div class="port-heavy-row" style="background:'+bgRow+'">'
+      + '<span class="port-heavy-rank">'+rank+'</span>'
+      + '<div class="port-stock-name-line" title="'+_escH(item.name)+'">'
+      + '<span class="port-stock-name-text">'+_escH(item.name)+'</span>'+marketIcon+'</div>'
+      + '<div class="port-heavy-change'+(item.pct==null?' is-status':'')+'" style="color:'+pctColor+'">'
+      + (item.pct==null?_escH(item.statusLabel||'待更新'):sign+Number(item.pct).toFixed(2)+'%')+'</div>'
+      + '<div class="port-heavy-detail">'+wLine+'<div class="port-heavy-prices"><span>现价 '+_escH(priceStr)+'</span>'
+      + '<span class="port-heavy-ma5 '+ma5Class+'" title="'+_escH(ma5Title)+'" aria-label="'+_escH('MA5 '+ma5Text+'，'+ma5Title)+'"><span class="port-heavy-ma5-label">MA5</span><b>'+ma5Text+'</b></span>'
+      + '</div></div></div>';
   }).join('')+_renderPortTopWeightedSummary(topW,'orange');
 }
 
