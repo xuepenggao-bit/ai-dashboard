@@ -439,17 +439,23 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-top-row{align-items:stretch}
 .port-top-card{display:flex;min-height:0;flex-direction:column}
 .port-top-list{display:flex;flex:1;min-height:0;flex-direction:column}
-.port-heavy-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:3px 7px;padding:8px 7px;margin-bottom:5px;border-radius:8px}
-.port-heavy-rank{grid-row:1/3;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#e4edfc;color:#25569c;font-size:11px;font-weight:850}
+.port-heavy-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:6px 7px;padding:7px;margin-bottom:5px;border-radius:9px}
+.port-heavy-rank{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#e4edfc;color:#25569c;font-size:11px;font-weight:850}
+.port-heavy-identity{min-width:0}
 .port-heavy-change{text-align:right;font-size:19px;font-weight:900;line-height:1.12;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
 .port-heavy-change.is-status{font-size:13px;letter-spacing:0}
-.port-heavy-detail{grid-column:2/-1;display:flex;align-items:center;justify-content:space-between;gap:2px 6px;flex-wrap:wrap;min-width:0;font-size:10.5px;font-variant-numeric:tabular-nums}
-.port-heavy-weight{font-weight:750;color:#315e9b;white-space:nowrap}.port-heavy-weight.is-missing{color:var(--text2);font-weight:500}
-.port-heavy-prices{display:flex;align-items:center;justify-content:flex-end;gap:5px;white-space:nowrap;margin-inline-start:auto;color:#556579}
-.port-heavy-ma5{display:inline-flex;align-items:center;gap:4px;border:1px solid #d9e5f1;border-radius:6px;padding:2px 4px;background:#f0f5fa;color:#3f5776;line-height:1.2}
-.port-heavy-ma5-label{font-size:9px;font-weight:750}.port-heavy-ma5 b{font-size:10.5px;font-weight:850}
-.port-heavy-ma5.is-above{background:#fcf1ee;border-color:#f0d9d3;color:#9b493d}.port-heavy-ma5.is-below{background:#eaf5f0;border-color:#d2e7dc;color:#246953}
-.port-heavy-ma5.is-missing{background:#f4f6f9;border-color:#e6ebf1;color:#56677b}
+.port-heavy-weight{display:block;margin-top:2px;color:#315e9b;font-size:10.5px;font-weight:750;font-variant-numeric:tabular-nums;white-space:nowrap}.port-heavy-weight.is-missing{color:var(--text2);font-weight:500}
+.port-heavy-prices{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;min-width:0;font-variant-numeric:tabular-nums}
+.port-heavy-metric{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 5px;min-width:0;padding:5px 7px;border:1px solid var(--ph-border);border-radius:8px;background:linear-gradient(160deg,var(--ph-bg-start),var(--ph-bg-end));color:var(--ph-ink);box-shadow:inset 0 1px 0 #ffffffad;line-height:1.1}
+.port-heavy-metric-label{font-size:10px;font-weight:750;letter-spacing:.03em;white-space:nowrap}
+.port-heavy-metric-value{margin-inline-start:auto;font-size:15px;font-weight:850;letter-spacing:-.025em;white-space:nowrap}
+.port-heavy-ma5{--ph-bg-start:#f5f8fd;--ph-bg-end:#ebf1f8;--ph-border:#dae4ef;--ph-ink:#3f5776}
+.port-heavy-ma5.is-above{--ph-bg-start:#fff7f5;--ph-bg-end:#fbece8;--ph-border:#f0d9d3;--ph-ink:#944238}
+.port-heavy-ma5.is-below{--ph-bg-start:#f4faf7;--ph-bg-end:#e7f3ed;--ph-border:#d2e7dc;--ph-ink:#235f4d}
+.port-heavy-current{--ph-bg-start:#edf4ff;--ph-bg-end:#e0ebfc;--ph-border:#c6d7ee;--ph-ink:#194477;box-shadow:inset 0 1px 0 #ffffffc9,0 1px 2px #193d6811}
+.port-heavy-current .port-heavy-metric-value{font-size:17px;font-weight:900}
+.port-heavy-metric.is-missing,.port-heavy-current.is-status{--ph-bg-start:#f8fafc;--ph-bg-end:#eff3f7;--ph-border:#e2e8ef;--ph-ink:#526379}
+.port-heavy-current.is-status .port-heavy-metric-value{font-size:12px;line-height:1.5;letter-spacing:0}
 @media(max-width:1080px){#tPort .port-top-row.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){#tPort .port-top-row.g4{grid-template-columns:minmax(0,1fr)}}
 .port-top-weighted-wrap{margin-top:auto;padding-top:18px}
@@ -13028,13 +13034,14 @@ function _renderPortTopW(){
     var ma5Title=hasMA5?'最近 5 个已收盘交易日收盘均价 · '+range.ma5From+' 至 '+range.ma5To+' · '+(range.ma5Source||range.source||'日线')+(above?' · 现价在 MA5 上方':below?' · 现价在 MA5 下方':comparable?' · 现价与 MA5 持平':''):'MA5：等待 5 个有效收盘价';
     return '<div class="port-heavy-row" style="background:'+bgRow+'">'
       + '<span class="port-heavy-rank">'+rank+'</span>'
-      + '<div class="port-stock-name-line" title="'+_escH(item.name)+'">'
-      + '<span class="port-stock-name-text">'+_escH(item.name)+'</span>'+marketIcon+'</div>'
+      + '<div class="port-heavy-identity"><div class="port-stock-name-line" title="'+_escH(item.name)+'">'
+      + '<span class="port-stock-name-text">'+_escH(item.name)+'</span>'+marketIcon+'</div>'+wLine+'</div>'
       + '<div class="port-heavy-change'+(item.pct==null?' is-status':'')+'" style="color:'+pctColor+'">'
       + (item.pct==null?_escH(item.statusLabel||'待更新'):sign+Number(item.pct).toFixed(2)+'%')+'</div>'
-      + '<div class="port-heavy-detail">'+wLine+'<div class="port-heavy-prices"><span>现价 '+_escH(priceStr)+'</span>'
-      + '<span class="port-heavy-ma5 '+ma5Class+'" title="'+_escH(ma5Title)+'" aria-label="'+_escH('MA5 '+ma5Text+'，'+ma5Title)+'"><span class="port-heavy-ma5-label">MA5</span><b>'+ma5Text+'</b></span>'
-      + '</div></div></div>';
+      + '<div class="port-heavy-prices">'
+      + '<span class="port-heavy-metric port-heavy-ma5 '+ma5Class+'" title="'+_escH(ma5Title)+'" aria-label="'+_escH('MA5 '+ma5Text+'，'+ma5Title)+'"><span class="port-heavy-metric-label">MA5</span><b class="port-heavy-metric-value">'+ma5Text+'</b></span>'
+      + '<span class="port-heavy-metric port-heavy-current'+(item.price==null||item.status==='preopen'?' is-status':'')+'"><span class="port-heavy-metric-label">现价</span><b class="port-heavy-metric-value">'+_escH(priceStr)+'</b></span>'
+      + '</div></div>';
   }).join('')+_renderPortTopWeightedSummary(topW,'orange');
 }
 
