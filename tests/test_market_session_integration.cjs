@@ -135,15 +135,16 @@ test('heavy Top7 shows MA5 immediately left of current price with A/H precision 
     ['HK:'+HK.code]:{ma5:380.456,ma5From:'2026-11-06',ma5To:'2026-11-12',source:'腾讯日K'}};
   h.ctx.renderPortTop3();
   const heavy=h.element('portTop5W').innerHTML;
-  assert.match(heavy,/port-heavy-ma5 is-above"[^>]+>.*?<b class="port-heavy-metric-value">70\.00<\/b><\/span><span class="port-heavy-metric port-heavy-current">.*?现价<\/span><b class="port-heavy-metric-value">73\.45<\/b>/);
-  assert.match(heavy,/port-heavy-ma5 is-below"[^>]+>.*?<b class="port-heavy-metric-value">380\.456<\/b><\/span><span class="port-heavy-metric port-heavy-current">.*?现价<\/span><b class="port-heavy-metric-value">370\.123<\/b>/);
+  assert.equal((heavy.match(/class="port-heavy-quote"><div class="port-heavy-change[^>]*>[^<]*<\/div><div class="port-heavy-prices">/g)||[]).length,2);
+  assert.match(heavy,/port-heavy-ma5 is-above"[^>]+>.*?<b class="port-heavy-metric-value">70\.00<\/b><\/span><span class="port-heavy-metric port-heavy-current">.*?现价<\/span><b class="port-heavy-metric-value"[^>]*>73\.45<\/b>/);
+  assert.match(heavy,/port-heavy-ma5 is-below"[^>]+>.*?<b class="port-heavy-metric-value">380\.456<\/b><\/span><span class="port-heavy-metric port-heavy-current">.*?现价<\/span><b class="port-heavy-metric-value"[^>]*>370\.123<\/b>/);
   assert.ok(heavy.indexOf(HK.name)<heavy.indexOf(A.name));
   assert.match(heavy,/仓位加权涨跌幅/);
   for(const id of ['portTop3Up','portTop3Down'])assert.doesNotMatch(h.element(id).innerHTML,/MA5/);
   delete h.ctx._PORT_5D_CLOSE['SH:'+A.code];
   h.ctx._PORT_PRICES[HK.code].suspended=true;
   h.ctx._renderPortTopW();
-  assert.match(h.element('portTop5W').innerHTML,/port-heavy-ma5 is-neutral[^>]+>.*?<\/b><\/span><span class="port-heavy-metric port-heavy-current is-status">.*?现价<\/span><b class="port-heavy-metric-value">停牌<\/b>/);
+  assert.match(h.element('portTop5W').innerHTML,/port-heavy-ma5 is-neutral[^>]+>.*?<\/b><\/span><span class="port-heavy-metric port-heavy-current is-status">.*?现价<\/span><b class="port-heavy-metric-value"[^>]*>停牌<\/b>/);
   assert.match(h.element('portTop5W').innerHTML,/port-heavy-ma5 is-missing[^>]+>.*?<b class="port-heavy-metric-value">—<\/b>/);
 });
 test('MA5 uses five unique completed daily closes even when long-window ranges are unavailable',()=>{
@@ -217,7 +218,7 @@ test('explicit suspension at A 9:05 takes label priority over 未开盘 in table
   h.ctx.renderPortfolio();const row=rowFor(h,A.name);
   assert.match(row,/data-quote-status="suspended">停牌/);assert.doesNotMatch(row,/未开盘/);
   assert.doesNotMatch(row,/88\.00|9\.00%/);
-  assert.match(h.element('portTop5W').innerHTML,/现价<\/span><b class="port-heavy-metric-value">停牌/);assert.doesNotMatch(h.element('portTop5W').innerHTML,/未开盘/);
+  assert.match(h.element('portTop5W').innerHTML,/现价<\/span><b class="port-heavy-metric-value"[^>]*>停牌/);assert.doesNotMatch(h.element('portTop5W').innerHTML,/未开盘/);
   assert.match(h.element('portTop5W').innerHTML,/port-top-weighted-value">—/);
 });
 test('inverse holiday A closed / HK open on 2026-10-02 uses HK only',()=>{
