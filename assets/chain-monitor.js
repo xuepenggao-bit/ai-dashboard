@@ -158,9 +158,12 @@
   }
   function validResearch(r,today=beijingDay()){
     const sourcesOK=list=>Array.isArray(list)&&list.every(s=>/^https:\/\//.test(s.url||'')&&/^\d{4}-\d{2}-\d{2}$/.test(s.date||'')&&s.date<=r.asOf);
+    const event=r?.eventReview;
+    const eventOK=event===undefined||Boolean(event?.title&&event.summary&&Array.isArray(event.cards)&&event.cards.length&&
+      event.cards.every(card=>card?.title&&card.fact&&card.watch&&sourcesOK(card.sources)));
     return r?.schemaVersion===1&&/^\d{4}-\d{2}-\d{2}$/.test(r.asOf||'')&&r.asOf<=today&&Array.isArray(r.groups)&&r.groups.length>=9&&new Set(r.groups.map(g=>g.id)).size===r.groups.length&&
       r.groups.every(g=>g.id&&typeof g.fact==='string'&&g.fact&&(!g.asOf||g.asOf<=r.asOf)&&sourcesOK(g.sources))&&
-      (!r.marketContext||Array.isArray(r.marketContext)&&r.marketContext.every(c=>c.title&&c.fact&&sourcesOK(c.sources)));
+      (!r.marketContext||Array.isArray(r.marketContext)&&r.marketContext.every(c=>c.title&&c.fact&&sourcesOK(c.sources)))&&eventOK;
   }
   function chooseResearch(old,fresh,today=beijingDay()){
     if(!validResearch(fresh,today))return old;
@@ -188,6 +191,14 @@
     const v=growth(s,key,period);return v===null?'—':pct(v);
   }
   function sourceLinks(sources,max=4){return (sources||[]).filter(s=>/^https:\/\//.test(s.url||'')).slice(0,max).map(s=>'<a href="'+esc(s.url)+'" target="_blank" rel="noopener">'+esc(s.name||'来源')+(s.date?' · '+esc(s.date):'')+' ↗</a>').join('');}
+  function eventReview(review){
+    if(!review?.title||!Array.isArray(review.cards)||!review.cards.length)return '';
+    return `<section class="cm-panel cm-event-review" aria-labelledby="chainEventTitle"><div class="cm-heading">
+      <div><h3 id="chainEventTitle">${esc(review.title)}</h3><p>${esc(review.summary)}</p></div></div>
+      <div class="cm-research-context">${review.cards.map(card=>`<article><h4>${esc(card.title)}</h4>
+      <p>${esc(card.fact)}</p><p class="cm-explain">${esc(card.watch)}</p>
+      <div class="cm-source">${sourceLinks(card.sources,4)}</div></article>`).join('')}</div></section>`;
+  }
   function skeleton(){root.innerHTML=`
     <div class="cm-hero"><div class="cm-hero-top"><div><div class="cm-eyebrow">AI SUPPLY CHAIN · EARNINGS × VALUATION</div><h2>产业链监控</h2><p>先看增长是否兑现，再看价格是否合适。把实际业绩、估值约束和下一步交易观察条件放在同一张地图上。</p></div><button class="cm-refresh" id="stageFreshBtn">↻ 刷新业绩与估值</button></div><div class="cm-status" id="stageApiTs">正在读取最新业绩与估值快照…</div></div>
     <div id="chainContent"><div class="cm-loading">正在加载产业链研究数据…</div></div>`;
@@ -217,6 +228,7 @@
     content.innerHTML=`
     <div class="cm-kpis"><div class="cm-kpi"><span>产业链覆盖</span><strong>${groups.length} 个环节</strong><small>${stocks.length} 只代表公司 · 非全行业统计</small></div><div class="cm-kpi"><span>最新应披露财报</span><strong>${fresh} / ${stocks.length}</strong><small>${esc(currentDates.join(' / '))} · 实际披露口径</small></div><div class="cm-kpi cm-kpi-candidate"><span>通过观察筛选</span><strong>${candidates.length} 只</strong><small>增长 + 同环节估值 + 现金转化</small></div><div class="cm-kpi"><span>估值行情日期</span><strong class="cm-kpi-date">${esc(latest)}</strong><small>TTM利润分母随新财报更新</small></div></div>
     ${fresh<stocks.length?'<div class="cm-asof-alert">部分公司尚未取得最新应披露财报，相关公司不进入研究候选。旧数据保留并注明报告期。</div>':''}
+    ${eventReview(data.research?.eventReview)}
     <section class="cm-panel"><div class="cm-heading"><div><h3>交易观察清单</h3><p>优先最新财报与近期公告，每个环节优先一家公司；同时保留盈利风险与现金流反证，不按极端增速挑选。</p></div><span>证据驱动 · ${priority.length} 只观察 · 非买入排名</span></div>
     <div class="cm-opportunities">${priority.length?priority.map(s=>{
       const a=s.analysis,g=groupMap.get(s.group),note=noteFor(s.group),stockNote=s.reportDate>note.reportDate?'新报告期已更新，定性说明待最新公告复核。':note.stockNotes?.[s.code];

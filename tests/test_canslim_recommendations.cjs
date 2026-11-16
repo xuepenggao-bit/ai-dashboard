@@ -67,7 +67,8 @@ test('Published research has 12 unique issuers, dated filings and consistent sco
   assert.equal(api.valid(data),true);const prepared=api.prepare(data),stocks=prepared.sectors.flatMap(x=>x.stocks);
   assert.equal(stocks.length,12);assert.equal(new Set(stocks.map(x=>x.code)).size,12);
   assert.match(data.priceAsOf,/^\d{4}-\d{2}-\d{2}$/);
-  assert.ok(data.priceAsOf<=data.asOf);
+  assert.match(data.asOf,/^\d{4}-\d{2}-\d{2}$/);
+  assert.ok(data.windowStart<=data.asOf);
   for(const market of [data.market,data.hkMarket]){
     assert.equal(market.endDate,data.priceAsOf);
     assert.equal(market.chart.at(-1).date,data.priceAsOf);
