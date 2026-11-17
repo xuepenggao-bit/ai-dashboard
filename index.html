@@ -12769,7 +12769,7 @@ function renderPortTop3(){
     var sign   = item.pct > 0 ? '+' : '';
     var priceStr = _isPortfolioAStockPreOpen(item.mkt,item.code,topNow)
       ? '未开盘'
-      : item.mkt==='HK' ? Number(item.price).toFixed(3) : Number(item.price).toFixed(2);
+      : Number(item.price).toFixed(2);
     var wStr = (item.w != null && item.w > 0)
       ? '<div style="font-size:11px;color:var(--text2);margin-top:2px">仓位 '+Number(item.w).toFixed(1)+'%</div>'
       : '';
@@ -13026,15 +13026,15 @@ function _renderPortTopW(){
     var sign     = item.pct > 0 ? '+' : '';
     var priceStr = item.status==='preopen'
       ? '未开盘'
-      : item.price==null ? item.statusLabel||'待更新' : item.mkt==='HK' ? Number(item.price).toFixed(3) : Number(item.price).toFixed(2);
+      : item.price==null ? item.statusLabel||'待更新' : Number(item.price).toFixed(2);
     var wLine    = item.w != null
       ? '<span class="port-heavy-weight">仓位 '+Number(item.w).toFixed(1)+'%</span>'
       : '<span class="port-heavy-weight is-missing">仓位未设置</span>';
     var marketIcon = _portTopMarketIcon(item.mkt,item.code);
-    var range=_PORT_5D_CLOSE[_port5dKey(item)],ma5=Number(range?.ma5),precision=item.mkt==='HK'?3:2;
-    var hasMA5=Number.isFinite(ma5)&&ma5>0&&/^\d{4}-\d{2}-\d{2}$/.test(range?.ma5From||'')&&range.ma5From<=range.ma5To,ma5Text=hasMA5?ma5.toFixed(precision):'—';
+    var range=_PORT_5D_CLOSE[_port5dKey(item)],ma5=Number(range?.ma5);
+    var hasMA5=Number.isFinite(ma5)&&ma5>0&&/^\d{4}-\d{2}-\d{2}$/.test(range?.ma5From||'')&&range.ma5From<=range.ma5To,ma5Text=hasMA5?ma5.toFixed(2):'—';
     var comparable=hasMA5&&item.status==='valid'&&Number.isFinite(Number(item.price))&&Number(item.price)>0;
-    var roundedPrice=comparable?Number(Number(item.price).toFixed(precision)):null,roundedMA5=Number(ma5Text);
+    var roundedPrice=comparable?Number(priceStr):null,roundedMA5=Number(ma5Text);
     var above=comparable&&roundedPrice>roundedMA5,below=comparable&&roundedPrice<roundedMA5;
     var ma5Class=!hasMA5?'is-missing':above?'is-above':below?'is-below':'is-neutral';
     var ma5Title=hasMA5?'最近 5 个已收盘交易日收盘均价 · '+range.ma5From+' 至 '+range.ma5To+' · '+(range.ma5Source||range.source||'日线')+(above?' · 现价在 MA5 上方':below?' · 现价在 MA5 下方':comparable?' · 现价与 MA5 持平':''):'MA5：等待 5 个有效收盘价';

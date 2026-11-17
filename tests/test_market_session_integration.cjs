@@ -127,7 +127,7 @@ test('all Top7 ranks and weighted summaries exclude closed returns while heavy l
   assert.match(heavy,new RegExp(HK.name));assert.match(heavy,/休市/);assert.match(heavy,/70\.0%/);
   assert.match(heavy,/port-top-weighted-value">\+4\.00%/);assert.doesNotMatch(heavy,/19\.87|370\.123/);
 });
-test('heavy Top7 shows MA5 immediately left of current price with A/H precision and trend cues',()=>{
+test('Top7 shows A/H prices to two decimals and keeps heavy MA5 trend cues aligned',()=>{
   const h=harness('2026-11-13');h.ctx._PORT_PRICES={
     [A.code]:quote(A,'2026-11-13',4,73.45),[HK.code]:quote(HK,'2026-11-13',-1,370.123)};
   h.ctx._PORT_5D_CLOSE={
@@ -137,10 +137,18 @@ test('heavy Top7 shows MA5 immediately left of current price with A/H precision 
   const heavy=h.element('portTop5W').innerHTML;
   assert.equal((heavy.match(/class="port-heavy-quote"><div class="port-heavy-change[^>]*>[^<]*<\/div><div class="port-heavy-prices">/g)||[]).length,2);
   assert.match(heavy,/port-heavy-ma5 is-above"[^>]+>.*?<b class="port-heavy-metric-value">70\.00<\/b><\/span><span class="port-heavy-metric port-heavy-current">.*?现价<\/span><b class="port-heavy-metric-value"[^>]*>73\.45<\/b>/);
-  assert.match(heavy,/port-heavy-ma5 is-below"[^>]+>.*?<b class="port-heavy-metric-value">380\.456<\/b><\/span><span class="port-heavy-metric port-heavy-current">.*?现价<\/span><b class="port-heavy-metric-value"[^>]*>370\.123<\/b>/);
+  assert.match(heavy,/port-heavy-ma5 is-below"[^>]+>.*?<b class="port-heavy-metric-value">380\.46<\/b><\/span><span class="port-heavy-metric port-heavy-current">.*?现价<\/span><b class="port-heavy-metric-value" title="370\.12">370\.12<\/b>/);
   assert.ok(heavy.indexOf(HK.name)<heavy.indexOf(A.name));
   assert.match(heavy,/仓位加权涨跌幅/);
-  for(const id of ['portTop3Up','portTop3Down'])assert.doesNotMatch(h.element(id).innerHTML,/MA5/);
+  for(const id of ['portTop3Up','portTop3Down']){
+    const html=h.element(id).innerHTML;
+    assert.match(html,/现价 73\.45<\/div>/);
+    assert.match(html,/现价 370\.12<\/div>/);
+    assert.doesNotMatch(html,/MA5/);
+  }
+  h.ctx._PORT_PRICES[HK.code].price=380.458;
+  h.ctx._renderPortTopW();
+  assert.match(h.element('portTop5W').innerHTML,/port-heavy-ma5 is-neutral" title="[^"]+现价与 MA5 持平"[^>]*>.*?>380\.46<\/b>.*?title="380\.46">380\.46<\/b>/);
   delete h.ctx._PORT_5D_CLOSE['SH:'+A.code];
   h.ctx._PORT_PRICES[HK.code].suspended=true;
   h.ctx._renderPortTopW();
