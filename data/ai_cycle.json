@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-18",
-  "updatedAt": "2026-11-06T16:35:04+08:00",
-  "lastChecked": "2026-11-18T19:53:37+08:00",
-  "evidenceVersion": "9dd7ffa31bb789d59f2650180c5b7676ac518e8d131b042ea9d7aae3f7399090",
+  "asOf": "2026-11-19",
+  "updatedAt": "2026-11-19T04:39:43+08:00",
+  "lastChecked": "2026-11-19T04:39:43+08:00",
+  "evidenceVersion": "30bdc1dcf0620bda50b96f07461468826443c3a030592f188a2c279c83db2107",
   "series": [
     {
       "id": "capex-alphabet",
@@ -42,30 +42,32 @@
         {
           "period": "CY2026",
           "effectiveDate": "2026-12-31",
-          "disclosedAt": "2026-10-28",
-          "valueUsdB": 200.0,
-          "lowUsdB": 195.0,
+          "disclosedAt": "2026-11-18",
+          "valueUsdB": 205.0,
+          "lowUsdB": 205.0,
           "highUsdB": 205.0,
           "type": "guidance",
-          "basis": "CY2026 · 公司整体Capex，主要为技术基础设施；Q3实际$51.355B不能替代全年指引",
+          "basis": "CY2026 · 公司正式Capex指引",
           "basisKey": "cash_ppe",
-          "sourceId": "alphabet-2026-guide",
-          "comparable": true
+          "comparable": true,
+          "comparisonNote": null,
+          "sourceId": "capex-cafd3e9759bf"
         }
       ],
       "unit": "USD billion",
       "latest": {
         "period": "CY2026",
         "effectiveDate": "2026-12-31",
-        "disclosedAt": "2026-10-28",
-        "valueUsdB": 200.0,
-        "lowUsdB": 195.0,
+        "disclosedAt": "2026-11-18",
+        "valueUsdB": 205.0,
+        "lowUsdB": 205.0,
         "highUsdB": 205.0,
         "type": "guidance",
-        "basis": "CY2026 · 公司整体Capex，主要为技术基础设施；Q3实际$51.355B不能替代全年指引",
+        "basis": "CY2026 · 公司正式Capex指引",
         "basisKey": "cash_ppe",
-        "sourceId": "alphabet-2026-guide",
-        "comparable": true
+        "comparable": true,
+        "comparisonNote": null,
+        "sourceId": "capex-cafd3e9759bf"
       }
     },
     {
@@ -1859,6 +1861,13 @@
       "url": "https://www.reuters.com/business/openais-annualized-revenue-20-billion-less-than-previously-signaled-ft-reports-2026-10-08/",
       "date": "2026-10-09",
       "rank": "reliable_media"
+    },
+    {
+      "id": "capex-cafd3e9759bf",
+      "name": "Alphabet 官方业绩披露",
+      "url": "https://abc.xyz/investor/events/event-details/2026/2026-Q3-Earnings-Call-2026-Ujou16CTw9/default.aspx",
+      "date": "2026-11-18",
+      "rank": "official"
     }
   ],
   "notes": [
@@ -1948,7 +1957,25 @@
       "coreweave page: 403 Client Error: Forbidden for url: https://www.sec.gov/Archives/edgar/data/1769628/000176962826000429/crwv2026convertpresentat.htm",
       "coreweave page: Redirect left issuer domain"
     ],
-    "supersededObservations": [],
+    "supersededObservations": [
+      {
+        "observation": {
+          "period": "CY2026",
+          "effectiveDate": "2026-12-31",
+          "disclosedAt": "2026-10-28",
+          "valueUsdB": 200.0,
+          "lowUsdB": 195.0,
+          "highUsdB": 205.0,
+          "type": "guidance",
+          "basis": "CY2026 · 公司整体Capex，主要为技术基础设施；Q3实际$51.355B不能替代全年指引",
+          "basisKey": "cash_ppe",
+          "sourceId": "alphabet-2026-guide",
+          "comparable": true
+        },
+        "replacedBySourceId": "capex-cafd3e9759bf",
+        "correction": false
+      }
+    ],
     "hasNumericObservations": true,
     "guidanceSeparatedFromActual": true,
     "missingIsZero": false,
