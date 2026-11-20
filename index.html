@@ -2075,6 +2075,22 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
     <div class="tx3 mt4 market-series-footer" id="cLimitFooter">来源: 东方财富 · 沪深 A 股官方分钟序列/个股日行情 · 折线=涨停/跌停家数 · 柱=涨停−跌停 · 加载中…</div>
   </div>
 
+  <!-- MARKET_QUALITY_CARDS_START -->
+<section class="card market-quality-card" id="marketMedianCard" style="margin-top:18px">
+  <div class="market-quality-heading"><div><div class="ct">沪深 A 股 · 个股收益中位数</div><div class="market-quality-subtitle">观察普通股票的当日表现 · 近60个交易日</div></div><span class="market-quality-date" id="marketMedianDate">等待有效数据</span></div>
+  <div class="market-quality-summary"><div class="market-quality-main"><span>当日收益中位数</span><strong id="marketMedianValue">—</strong></div><div class="market-quality-detail"><span id="marketMedianQuartiles">中间50%的股票收益区间：—</span><span id="marketMedianCoverage">有效交易股票：—</span></div></div>
+  <div class="market-quality-legend"><span><i class="quality-line"></i>个股收益中位数</span><span><i class="quality-band"></i>25%—75%分位区间</span></div>
+  <div class="market-quality-plot"><canvas id="cMarketMedian" role="img" aria-label="最近60个交易日沪深A股个股收益中位数及25%至75%分位区间"></canvas></div>
+  <div class="market-quality-range" id="marketMedianRange"></div><div class="market-quality-footer" id="marketMedianFooter">以有效交易股票的当日涨跌幅计算；缺失行情不计作平盘。</div>
+</section>
+<section class="card market-quality-card market-concentration-card" id="marketConcentrationCard" style="margin-top:18px">
+  <div class="market-quality-heading"><div><div class="ct">沪深 A 股 · 成交额集中度</div><div class="market-quality-subtitle">成交额前20只股票占全市场成交额的比例 · 近60个交易日</div></div><span class="market-quality-date" id="marketConcentrationDate">等待有效数据</span></div>
+  <div class="market-quality-summary"><div class="market-quality-main"><span>成交额前20只股票占比</span><strong id="marketConcentrationValue">—</strong></div><div class="market-quality-detail"><span id="marketConcentrationTop20">前20只成交额：—</span><span id="marketConcentrationTotal">沪深 A 股成交额：—</span></div></div>
+  <div class="market-quality-plot"><canvas id="cMarketConcentration" role="img" aria-label="最近60个交易日成交额前20只股票占沪深A股成交额的比例"></canvas></div>
+  <div class="market-quality-range" id="marketConcentrationRange"></div><div class="market-quality-footer" id="marketConcentrationFooter">每日按成交额重新排序取前20只；分子与分母使用同一股票范围和同一时点。</div>
+</section>
+  <!-- MARKET_QUALITY_CARDS_END -->
+
   <!-- 日频：港股成交额趋势（近 60 个交易日） -->
   <div class="card mb16 market-series-card market-series-card--hk" id="marketHkVolumeCard">
     <div class="ch">
@@ -2129,22 +2145,6 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
   <div class="environment-risk-footer" id="etfSharesFooter">仅覆盖3只代表 ETF，非全市场合计。净申赎估算＝份额净变化×当日单位净值，不等于实际资金净流入。</div>
 </section>
   <!-- MARKET_RISK_AND_ETF_CARDS_END -->
-  <!-- MARKET_QUALITY_CARDS_START -->
-<section class="card market-quality-card" id="marketMedianCard" style="margin-top:18px">
-  <div class="market-quality-heading"><div><div class="ct">沪深 A 股 · 个股收益中位数</div><div class="market-quality-subtitle">观察普通股票的当日表现 · 近60个交易日</div></div><span class="market-quality-date" id="marketMedianDate">等待有效数据</span></div>
-  <div class="market-quality-summary"><div class="market-quality-main"><span>当日收益中位数</span><strong id="marketMedianValue">—</strong></div><div class="market-quality-detail"><span id="marketMedianQuartiles">中间50%的股票收益区间：—</span><span id="marketMedianCoverage">有效交易股票：—</span></div></div>
-  <div class="market-quality-legend"><span><i class="quality-line"></i>个股收益中位数</span><span><i class="quality-band"></i>25%—75%分位区间</span></div>
-  <div class="market-quality-plot"><canvas id="cMarketMedian" role="img" aria-label="最近60个交易日沪深A股个股收益中位数及25%至75%分位区间"></canvas></div>
-  <div class="market-quality-range" id="marketMedianRange"></div><div class="market-quality-footer" id="marketMedianFooter">以有效交易股票的当日涨跌幅计算；缺失行情不计作平盘。</div>
-</section>
-<section class="card market-quality-card market-concentration-card" id="marketConcentrationCard" style="margin-top:18px">
-  <div class="market-quality-heading"><div><div class="ct">沪深 A 股 · 成交额集中度</div><div class="market-quality-subtitle">成交额前20只股票占全市场成交额的比例 · 近60个交易日</div></div><span class="market-quality-date" id="marketConcentrationDate">等待有效数据</span></div>
-  <div class="market-quality-summary"><div class="market-quality-main"><span>成交额前20只股票占比</span><strong id="marketConcentrationValue">—</strong></div><div class="market-quality-detail"><span id="marketConcentrationTop20">前20只成交额：—</span><span id="marketConcentrationTotal">沪深 A 股成交额：—</span></div></div>
-  <div class="market-quality-plot"><canvas id="cMarketConcentration" role="img" aria-label="最近60个交易日成交额前20只股票占沪深A股成交额的比例"></canvas></div>
-  <div class="market-quality-range" id="marketConcentrationRange"></div><div class="market-quality-footer" id="marketConcentrationFooter">每日按成交额重新排序取前20只；分子与分母使用同一股票范围和同一时点。</div>
-</section>
-  <!-- MARKET_QUALITY_CARDS_END -->
-
   <!-- ACCOUNT_OPENINGS_CARD_START -->
   <div class="card mb16 ao-card" id="accountOpeningCard" style="margin-top:18px">
     <div class="ch ao-heading">

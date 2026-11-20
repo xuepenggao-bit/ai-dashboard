@@ -96,7 +96,9 @@ test('KOL remains the final industry sibling; market risk and ETF shares follow 
   assert.ok(risk.start>ma.end&&etf.start>risk.end,'Risk and ETF cards follow the existing MA breadth');
   const median=dom.one('marketMedianCard'),concentration=dom.one('marketConcentrationCard'),account=dom.one('accountOpeningCard');
   for(const node of [median,concentration,account])assert.equal(node.parent,market);
-  assert.ok(median.start>etf.end&&concentration.start>median.end&&account.start>concentration.end,'New market-quality indicators precede the final monthly account card');
+  const limits=dom.one('marketLimitsCard'),hk=dom.one('marketHkVolumeCard');
+  assert.ok(median.start>limits.end&&concentration.start>median.end&&hk.start>concentration.end,'Market-quality indicators follow limit moves and precede HK turnover');
+  assert.ok(account.start>etf.end,'Monthly account openings remain after ETF shares');
   assert.equal(dom.markup.slice(account.end,market.end-6).replace(/<!--[\s\S]*?-->/g,'').trim(),'','Account openings are at the bottom of market environment');
   assert.ok(!(grid.start>market.start&&grid.end<market.end),'KOL is not duplicated in the market tab');
   for(const id of ['kolBtn','kolCount','kolTs','cMaBreadth','maBreadthKpi20','maBreadthKpi60','maBreadthKpi120'])
