@@ -21,9 +21,17 @@ class MajorIndicesTests(unittest.TestCase):
         self.assertEqual(stamp, IND.quote_timestamp('2026-09-23 15:30'))
         self.assertEqual(dt.datetime.fromtimestamp(stamp / 1000, dt.timezone.utc).hour, 7)
 
-    def test_all_15_labels_and_no_duplicate_ids(self):
-        self.assertEqual(len(IND.INDICES), 15)
-        self.assertEqual(len(IND.BY_LABEL), 15)
+    def test_epoch_seconds_and_milliseconds_are_not_short_calendar_dates(self):
+        for value in (NOW // 1000, float(NOW // 1000), str(NOW // 1000), NOW, str(NOW)):
+            self.assertEqual(IND.quote_timestamp(value), NOW)
+
+    def test_all_16_labels_and_no_duplicate_ids(self):
+        self.assertEqual(len(IND.INDICES), 16)
+        self.assertEqual(len(IND.BY_LABEL), 16)
+        gold = IND.BY_LABEL['COMEX黄金']
+        self.assertEqual((gold['region'], gold['secid'], gold['code']),
+                         ('commodity', '101.GC00Y', 'GC00Y'))
+        self.assertEqual((gold['currency'], gold['unit']), ('USD', 'USD/oz'))
 
     def test_tencent_realtime_hk_exact_symbol_and_time(self):
         fields = [''] * 34
@@ -48,6 +56,50 @@ class MajorIndicesTests(unittest.TestCase):
                         'trends': ['2026-09-23 15:59,0,202']}}
         rows = IND.parse_em_minutes(IND.BY_LABEL['纳指期指'], raw, NOW)
         self.assertAlmostEqual(rows[0]['pct'], 1)
+
+    def test_comex_gold_direct_quote_and_units(self):
+        config = IND.BY_LABEL['COMEX黄金']
+        raw = {'data': {'f57': 'GC00Y', 'f58': 'COMEX黄金', 'f43': 3589.3,
+                        'f169': -96.2, 'f170': -2.61, 'f86': (NOW - 60000) // 1000,
+                        'f124': 0}}
+        quote = IND.parse_em_stock(config, raw, NOW)[0]
+        self.assertEqual(quote['price'], 3589.3)
+        self.assertEqual(quote['pct'], -2.61)
+        self.assertEqual(quote['delta'], -96.2)
+        self.assertEqual(quote['quoteTs'], NOW - 60000)
+        self.assertEqual((quote['region'], quote['currency'], quote['unit']),
+                         ('commodity', 'USD', 'USD/oz'))
+        raw['data']['f57'] = 'XAUUSD'
+        self.assertEqual(IND.parse_em_stock(config, raw, NOW), [], 'Never substitute London spot gold')
+
+    def test_comex_gold_list_accepts_only_the_configured_futures(self):
+        raw = {'data': {'diff': [
+            {'f12': 'XAUUSD', 'f2': 3500, 'f3': 1, 'f86': NOW // 1000},
+            {'f12': 'GC00Y', 'f2': 3589.3, 'f3': -2.61, 'f4': -96.2, 'f124': (NOW - 60000) // 1000},
+        ]}}
+        rows = IND.parse_em_list(raw, NOW)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['label'], 'COMEX黄金')
+
+    def test_comex_gold_minute_uses_previous_settlement_not_previous_close(self):
+        raw = {'data': {'code': 'GC00Y', 'preClose': 3500, 'preSettlement': 3600,
+                        'trends': ['2026-09-23 15:59,0,3564']}}
+        rows = IND.parse_em_minutes(IND.BY_LABEL['COMEX黄金'], raw, NOW)
+        self.assertAlmostEqual(rows[0]['pct'], -1)
+        self.assertEqual(rows[0]['delta'], -36)
+        raw['data']['code'] = 'GC00'
+        self.assertEqual(len(IND.parse_em_minutes(IND.BY_LABEL['COMEX黄金'], raw, NOW)), 1)
+        raw['data']['code'] = 'XAUUSD'
+        self.assertEqual(IND.parse_em_minutes(IND.BY_LABEL['COMEX黄金'], raw, NOW), [])
+
+    def test_comex_gold_outages_keep_last_verified_quote(self):
+        quote = IND.make_quote(IND.BY_LABEL['COMEX黄金'], 3589.3, -2.61, -96.2, NOW - 60000, 'em', NOW)
+        previous = {'COMEX黄金': quote}
+        self.assertEqual(IND.merge_quotes(previous, [], NOW), previous)
+        bad = {**quote, 'price': 0, 'quoteTs': NOW}
+        self.assertEqual(IND.merge_quotes(previous, [bad], NOW), previous)
+        older = {**quote, 'price': 3600, 'quoteTs': NOW - 120000}
+        self.assertEqual(IND.merge_quotes(previous, [older], NOW), previous)
 
     def test_missing_close_wrong_symbol_and_missing_timestamp_rejected(self):
         config = IND.BY_LABEL['台湾加权']

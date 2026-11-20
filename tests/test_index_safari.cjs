@@ -16,7 +16,7 @@ module.exports=(async()=>{
   const {ctx,storage}=context();
   const empty=ctx._idxListHtml({});
   const labels=[...empty.matchAll(/data-idx-label="([^"]+)"/g)].map(m=>m[1]);
-  assert.equal(labels.length,15,'Failed feeds must not remove any index');
+  assert.equal(labels.length,16,'Failed feeds must not remove any index');
   assert.deepEqual(labels,Array.from(vm.runInContext('_IDX_ORDER',ctx)));
   assert.equal((empty.match(/role="group"/g)||[]).length,5);
   assert.ok(empty.indexOf('A股平均股价')<empty.indexOf('恒生指数'));
@@ -76,11 +76,11 @@ module.exports=(async()=>{
   };
   integration._idxFetchEmBatch=async()=>[];
   await integration._fetchIndexPricesOnce();
-  assert.equal((list.innerHTML.match(/data-idx-label=/g)||[]).length,15);
+  assert.equal((list.innerHTML.match(/data-idx-label=/g)||[]).length,16);
   assert.ok(/data-idx-label="台湾加权"[\s\S]*?105\.00/.test(list.innerHTML));
   assert.ok(/data-idx-label="韩国KOSPI200"[\s\S]*?105\.00/.test(list.innerHTML));
   assert.equal(button.disabled,false);
   const broken=context({'aiDashboard.allIndices.quote.v1':'{invalid'}).ctx;
   assert.ok(broken._idxListHtml({}).includes('韩国KOSPI200'));
-  return 'PASS: fixed 15 slots / 5 groups, sticky cache, timestamp guard, JSONP batching, minute fallback, Safari failure recovery';
+  return 'PASS: fixed 16 slots / 5 groups, sticky cache, timestamp guard, JSONP batching, minute fallback, Safari failure recovery';
 })();

@@ -1,0 +1,25 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+const source=html.slice(html.indexOf('const _IDX_TENCENT ='),html.indexOf('// ── 国债收益率'));
+const ctx=vm.createContext({Date,Map,Set,Promise,AbortController,TextDecoder,setTimeout,clearTimeout,console:{warn(){}},window:{},
+  localStorage:{getItem(){return null;},setItem(){}},document:{getElementById(){return null;}},_escH:String,_portfolioIndexDisplayPct:(r,p)=>p,_isTradingNow:()=>true});
+vm.runInContext(source,ctx);
+const gold=vm.runInContext('_IDX_EM.find(x=>x.label==="COMEX黄金")',ctx),now=Date.now();
+assert.deepEqual(Array.from(gold.secids),['101.GC00Y']);assert.equal(gold.region,'commodity');
+const group=vm.runInContext('_IDX_GROUPS.at(-1)',ctx);
+assert.deepEqual(Array.from(group.labels),['美国10年期','美元兑人民币','COMEX黄金']);
+const stamp=new Date(now+8*3600000).toISOString().slice(0,16).replace('T',' ');
+const minute=ctx._idxMinuteRow(gold,{data:{code:'GC00Y',preClose:3500,preSettlement:3600,trends:[stamp+',0,3564']}});
+assert.equal(minute.price,3564);assert.ok(Math.abs(minute.pct+1)<1e-8);assert.equal(minute.delta,-36);
+assert.equal(ctx._idxMinuteRow(gold,{data:{code:'XAUUSD',preSettlement:3600,trends:[stamp+',0,3564']}}),null);
+assert.equal(ctx._idxEmListRows({data:{diff:[{f12:'XAUUSD',f2:3500,f3:1,f124:now/1000}]}},[gold]).length,0);
+const row={label:gold.label,region:gold.region,price:3589.3,pct:-2.61,delta:-96.2,quoteTs:now-10*60000,src:'em'};
+const view=ctx._idxRowHtml(row,now);
+assert.ok(view.includes('3589.30')&&view.includes('-2.61%'));assert.ok(view.includes('美元/盎司')&&view.includes('昨结算价')&&view.includes('行情时间'));
+assert.ok(view.includes('延迟'),'Do not call a delayed public quote real time');
+ctx._idxPublishNonHkRow(row,0);
+ctx._idxPublishNonHkRow({...row,price:3500,quoteTs:row.quoteTs-60000},0);
+assert.equal(vm.runInContext('_IDX_CACHE["COMEX黄金"].price',ctx),3589.3);
+assert.ok(html.includes('.port-index-card{display:flex;flex-direction:column;min-height:594px}'));
+assert.ok(/\.port-index-row\{min-height:25px/.test(html),'Compact rows must make room for the sixteenth quote');
+console.log('PASS: COMEX identity, USD/oz, settlement-based move, final group, retention, delayed labeling and fixed-height compact layout');

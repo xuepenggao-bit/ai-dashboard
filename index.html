@@ -474,12 +474,14 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-top-weighted-label{font-size:10.5px;font-weight:850;color:#334155;letter-spacing:.025em;white-space:nowrap}
 .port-top-weighted-meta{margin-top:2px;font-size:9.5px;font-weight:650;color:#8491a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .port-top-weighted-value{flex:0 0 auto;font-size:19px;font-weight:900;line-height:1;color:var(--ptw-color);font-variant-numeric:tabular-nums;letter-spacing:-.025em;white-space:nowrap}
-.port-index-card{display:flex;flex-direction:column;min-height:0}
+/* 保持原 15 项列表的 594px 桌面高度；第 16 项由行高和分组间距腾出空间。 */
+.port-index-card{display:flex;flex-direction:column;min-height:594px}
 .port-index-list{display:flex;flex:1 0 auto;min-height:0;flex-direction:column;justify-content:space-between}
 .port-index-group{flex:0 0 auto;min-width:0}
-.port-index-group+.port-index-group{margin-top:9px;padding-top:7px;border-top:1px solid #e2e8f0}
-.port-index-row{min-height:27px;margin-bottom:0!important;font-variant-numeric:tabular-nums}
-.port-index-row+.port-index-row{margin-top:3px}
+.port-index-group+.port-index-group{margin-top:7px;padding-top:6px;border-top:1px solid #e2e8f0}
+.port-index-row{min-height:25px;margin-bottom:0!important;font-variant-numeric:tabular-nums;column-gap:6px}
+.port-index-row>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.port-index-row+.port-index-row{margin-top:2px}
 .port-market-breadth{margin-top:10px;padding-top:10px;border-top:1px solid #bfdbfe}
 .port-market-breadth-title{font-size:10px;color:#3b82f6;font-weight:800;letter-spacing:.05em;margin-bottom:7px}
 .port-market-breadth-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
@@ -8945,25 +8947,26 @@ const _IDX_EM = [
   {secids:['100.HSAHP'], code:'HSAHP', altCodes:['HSCAHPI'], label:'A/H溢价', region:'ah'},
   {secids:['171.US10Y'], code:'US10Y', altCodes:[], label:'美国10年期', region:'rate'},
   {secids:['133.USDCNH'], code:'USDCNH', altCodes:[], label:'美元兑人民币', region:'fx'},
+  {secids:['101.GC00Y'], code:'GC00Y', altCodes:['GC00'], label:'COMEX黄金', region:'commodity'}, // 黄金连续期货，美元/盎司；不是伦敦现货
   {secids:['104.CN00Y'], code:'CN00Y', altCodes:['CN00'],    label:'A50期指', region:'fut'},  // SGX A50期指当月连续
   {secids:['103.NQ00Y'], code:'NQ00Y', altCodes:['NQ00'],    label:'纳指期指', region:'fut'},  // CME 小型纳指当月连续
   {secids:['100.KOSPI200'], code:'KOSPI200', altCodes:[], label:'韩国KOSPI200', region:'intl'},  // 韩国 KOSPI 200
   {secids:['100.TWII'],     code:'TWII',     altCodes:[], label:'台湾加权',     region:'intl'},  // 台湾加权指数 TAIEX
 ];
-// 渲染顺序固定（A股平均股价和 A/H 溢价后留分组间距；USD/CNH 固定在最后一行）
-const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股平均股价','恒生指数','恒生科技','A/H溢价','韩国KOSPI200','台湾加权','A50期指','纳指期指','美国10年期','美元兑人民币'];
+// 渲染顺序固定；利率、美元兑人民币和 COMEX 黄金同属最下面一组。
+const _IDX_ORDER = ['上证指数','深证成指','创业板指','科创 50','中证全指','A股平均股价','恒生指数','恒生科技','A/H溢价','韩国KOSPI200','台湾加权','A50期指','纳指期指','美国10年期','美元兑人民币','COMEX黄金'];
 // 分组是固定结构，不依赖某条行情是否成功；也不依赖旧版 Safari 的 flex gap。
 const _IDX_GROUPS = [
   {name:'A股指数',labels:_IDX_ORDER.slice(0,6)},
   {name:'港股指数',labels:_IDX_ORDER.slice(6,9)},
   {name:'海外指数',labels:_IDX_ORDER.slice(9,11)},
   {name:'指数期货',labels:_IDX_ORDER.slice(11,13)},
-  {name:'利率与汇率',labels:_IDX_ORDER.slice(13)}
+  {name:'利率、汇率与贵金属',labels:_IDX_ORDER.slice(13)}
 ];
 const _IDX_CONFIG = [..._IDX_TENCENT,..._IDX_EM];
 const _IDX_ALL_CACHE_KEY = 'aiDashboard.allIndices.quote.v1';
 // 发布时内嵌可核验行情：新浏览器没有缓存、第三方接口失败，也能立即显示数值。
-const _IDX_BOOTSTRAP = /* INDEX_SNAPSHOT_START */ {"updated_at":"2026-09-24T01:50:34+00:00","quotes":{"上证指数":{"label":"上证指数","region":"a","price":3920.21,"pct":-0.414325343196531,"delta":-16.309999999999945,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"深证成指":{"label":"深证成指","region":"a","price":13533.89,"pct":-0.7493361357047923,"delta":-102.18000000000029,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"创业板指":{"label":"创业板指","region":"a","price":3359.64,"pct":-0.5908965827418067,"delta":-19.970000000000255,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"科创 50":{"label":"科创 50","region":"a","price":1646.58,"pct":-0.8591986031248999,"delta":-14.269999999999982,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"中证全指":{"label":"中证全指","region":"a","price":5860.3,"pct":-0.6334715802538526,"delta":-37.35999999999967,"quoteTs":1790214600000,"src":"em_minute","ts":1790214602053},"A股平均股价":{"label":"A股平均股价","region":"a","price":29.14,"pct":-0.546075085324238,"delta":-0.16000000000000014,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"恒生指数":{"label":"恒生指数","region":"hk","price":24708.37,"pct":-0.5063597985352386,"delta":-125.75,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"恒生科技":{"label":"恒生科技","region":"hk","price":4343.58,"pct":-0.8104460536141223,"delta":-35.48999999999978,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"A/H溢价":{"label":"A/H溢价","region":"ah","price":124.36,"pct":0.06437077566785465,"delta":0.0799999999999983,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"韩国KOSPI200":{"label":"韩国KOSPI200","region":"intl","price":1126.12,"pct":1.1515314829785295,"delta":12.819999999999936,"quoteTs":1790145000000,"src":"em_minute","ts":1790214602053},"台湾加权":{"label":"台湾加权","region":"intl","price":47957.02,"pct":-0.41586642437729804,"delta":-200.27000000000407,"quoteTs":1790214600000,"src":"em_minute","ts":1790214602053},"A50期指":{"label":"A50期指","region":"fut","price":14444,"pct":-0.6192376496490959,"delta":-90,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"纳指期指":{"label":"纳指期指","region":"fut","price":30726.12,"pct":-0.12556578551752295,"delta":-38.63000000000102,"quoteTs":1790214600000,"src":"em_minute","ts":1790214602053},"美国10年期":{"label":"美国10年期","region":"rate","price":5.1225,"pct":0.1622932227914209,"delta":0.008299999999999308,"quoteTs":1790214600000,"src":"em_minute","ts":1790214602053},"美元兑人民币":{"label":"美元兑人民币","region":"fx","price":6.7194,"pct":0.11770841093645679,"delta":0.00790000000000024,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053}}} /* INDEX_SNAPSHOT_END */;
+const _IDX_BOOTSTRAP = /* INDEX_SNAPSHOT_START */ {"updated_at":"2026-11-20T09:17:58.697Z","quotes":{"上证指数":{"label":"上证指数","region":"a","price":3920.21,"pct":-0.414325343196531,"delta":-16.309999999999945,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"深证成指":{"label":"深证成指","region":"a","price":13533.89,"pct":-0.7493361357047923,"delta":-102.18000000000029,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"创业板指":{"label":"创业板指","region":"a","price":3359.64,"pct":-0.5908965827418067,"delta":-19.970000000000255,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"科创 50":{"label":"科创 50","region":"a","price":1646.58,"pct":-0.8591986031248999,"delta":-14.269999999999982,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"中证全指":{"label":"中证全指","region":"a","price":5860.3,"pct":-0.6334715802538526,"delta":-37.35999999999967,"quoteTs":1790214600000,"src":"em_minute","ts":1790214602053},"A股平均股价":{"label":"A股平均股价","region":"a","price":29.14,"pct":-0.546075085324238,"delta":-0.16000000000000014,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"恒生指数":{"label":"恒生指数","region":"hk","price":24708.37,"pct":-0.5063597985352386,"delta":-125.75,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"恒生科技":{"label":"恒生科技","region":"hk","price":4343.58,"pct":-0.8104460536141223,"delta":-35.48999999999978,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"A/H溢价":{"label":"A/H溢价","region":"ah","price":124.36,"pct":0.06437077566785465,"delta":0.0799999999999983,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"韩国KOSPI200":{"label":"韩国KOSPI200","region":"intl","price":1126.12,"pct":1.1515314829785295,"delta":12.819999999999936,"quoteTs":1790145000000,"src":"em_minute","ts":1790214602053},"台湾加权":{"label":"台湾加权","region":"intl","price":47957.02,"pct":-0.41586642437729804,"delta":-200.27000000000407,"quoteTs":1790214600000,"src":"em_minute","ts":1790214602053},"A50期指":{"label":"A50期指","region":"fut","price":14444,"pct":-0.6192376496490959,"delta":-90,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"纳指期指":{"label":"纳指期指","region":"fut","price":30726.12,"pct":-0.12556578551752295,"delta":-38.63000000000102,"quoteTs":1790214600000,"src":"em_minute","ts":1790214602053},"美国10年期":{"label":"美国10年期","region":"rate","price":5.1225,"pct":0.1622932227914209,"delta":0.008299999999999308,"quoteTs":1790214600000,"src":"em_minute","ts":1790214602053},"美元兑人民币":{"label":"美元兑人民币","region":"fx","price":6.7194,"pct":0.11770841093645679,"delta":0.00790000000000024,"quoteTs":1790214660000,"src":"em_minute","ts":1790214602053},"COMEX黄金":{"label":"COMEX黄金","region":"commodity","price":3584.3,"pct":-2.75,"delta":-101.2,"quoteTs":1795164268000,"src":"em","currency":"USD","unit":"USD/oz","ts":1795164268000}}} /* INDEX_SNAPSHOT_END */;
 
 // 粘性缓存：每个指数上次成功获取的值。某数据源偶发失败时回填，保证不闪现消失
 let _IDX_CACHE = {};   // label → {label, price, pct, delta, region, ts}
@@ -9190,7 +9193,7 @@ function _idxUpdateTimestamp(rowMap,nowMs=Date.now()){
 
 function _idxRowHtml(r,nowMs=Date.now()){
   const session=typeof _portIndexMarketState==='function'?_portIndexMarketState(r.region,nowMs):null;
-  if(session?.isClosed)return `<div data-idx-label="${_escH(r.label)}" class="port-index-row" style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:8px;background:#f1f5f9"><span style="font-size:12px;font-weight:700">${_escH(r.label)}</span><span style="font-size:13px;font-weight:700;color:#64748b">休市</span></div>`;
+  if(session?.isClosed)return `<div data-idx-label="${_escH(r.label)}" class="port-index-row" style="display:flex;align-items:center;justify-content:space-between;padding:3px 6px;border-radius:7px;background:#f1f5f9"><span style="font-size:12px;font-weight:700">${_escH(r.label)}</span><span style="font-size:13px;font-weight:700;color:#64748b">休市</span></div>`;
   const unavailable=!(Number(r.price)>0);
   const displayPct = _portfolioIndexDisplayPct(r.region,r.pct,nowMs) ?? 0;
   const displayMove = r.region === 'rate' ? (Number(r.delta)||0)*100 : displayPct;
@@ -9211,19 +9214,25 @@ function _idxRowHtml(r,nowMs=Date.now()){
     accent='#0f766e';bg='#f0fdfa';badge=' <span style="font-size:9px;background:#ccfbf1;color:#115e59;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">美债</span>';
   }else if(r.region==='fx'){
     accent='#2563eb';bg='#eff6ff';badge=' <span style="font-size:9px;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:0 4px;font-weight:700;vertical-align:middle">离岸</span>';
+  }else if(r.region==='commodity'){
+    accent='#b7791f';bg='#fffbeb';
   }
-  const priceStr=unavailable?'加载中':r.region==='rate'?Number(r.price).toFixed(3)+'%':r.region==='fx'?Number(r.price).toFixed(4):Number(r.price).toFixed(2);
-  const delayed=_IDX_HK_LABELS.includes(r.label)&&r.quoteTs&&(r.src==='tc'||(_isTradingNow(nowMs)&&nowMs-r.quoteTs>120000));
+  const priceStr=unavailable?'加载中':r.region==='rate'?Number(r.price).toFixed(3)+'%':r.region==='fx'?Number(r.price).toFixed(4):(r.region==='commodity'?'$':'')+Number(r.price).toFixed(2);
+  const delayed=r.quoteTs&&(_IDX_HK_LABELS.includes(r.label)
+    ?(r.src==='tc'||(_isTradingNow(nowMs)&&nowMs-r.quoteTs>120000))
+    :r.region==='commodity'&&nowMs-r.quoteTs>120000);
   if(delayed) badge+=' <small style="font-size:10px;font-weight:500;color:#a16207">延迟</small>';
   if(r.snapshot&&!unavailable)
     badge+=' <small style="font-size:9px;font-weight:500;color:#64748b">备份</small>';
   else if(r.retained&&!_IDX_HK_LABELS.includes(r.label)&&!unavailable)
     badge+=' <small style="font-size:9px;font-weight:500;color:#64748b">沿用</small>';
   const moveStr=unavailable?'自动重试':r.region==='rate'?`${arrow} ${sign}${displayMove.toFixed(1)}bp`:`${arrow} ${sign}${displayPct.toFixed(2)}%`;
-  const snapshotTitle=r.snapshot?'后台备份 · 行情时间 '+new Date(r.quoteTs).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}):'';
-  return `<div data-idx-label="${_escH(r.label)}" class="port-index-row" title="${_escH(snapshotTitle)}" style="display:flex;align-items:center;flex-wrap:nowrap;padding:5px 8px;border-radius:8px;background:${bg};border-left:3px solid ${accent}">
-    <span style="flex:0 0 auto;font-size:12px;font-weight:700;color:var(--text);letter-spacing:.01em;white-space:nowrap;margin-right:6px">${r.label}${badge}</span>
-    <span style="flex:1;font-size:12px;font-weight:600;color:#475569;text-align:right;white-space:nowrap;margin-right:8px">${priceStr}</span>
+  const instrumentTitle=r.region==='commodity'?'COMEX黄金连续期货 · 美元/盎司 · 涨跌幅按昨结算价计算 · 第三方公开行情可能延迟':'';
+  const quoteTitle=r.quoteTs&&(r.snapshot||r.region==='commodity')?(r.snapshot?'后台备份 · ':'')+'行情时间 '+new Date(r.quoteTs).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}):'';
+  const snapshotTitle=[instrumentTitle,quoteTitle].filter(Boolean).join(' · ');
+  return `<div data-idx-label="${_escH(r.label)}" class="port-index-row" title="${_escH(snapshotTitle)}" style="display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;padding:3px 6px;border-radius:7px;background:${bg};border-left:3px solid ${accent}">
+    <span style="font-size:12px;font-weight:700;color:var(--text);letter-spacing:.01em;white-space:nowrap">${r.label}${badge}</span>
+    <span style="font-size:12px;font-weight:600;color:#475569;text-align:right;white-space:nowrap">${priceStr}</span>
     <span style="font-size:13px;font-weight:900;color:${color};flex:0 0 auto;white-space:nowrap;letter-spacing:-.01em">${moveStr}</span>
   </div>`;
 }
@@ -9346,7 +9355,7 @@ function _idxMinuteRow(idx,payload){
   const d=payload&&payload.data;
   const codes=[idx.code,...(idx.altCodes||[])].map(code=>String(code).toUpperCase());
   if(!d||!codes.includes(String(d.code).toUpperCase())||!Array.isArray(d.trends)) return null;
-  const previous=Number(idx.region==='fut'&&Number(d.preSettlement)>0?d.preSettlement:d.preClose);
+  const previous=Number(['fut','commodity'].includes(idx.region)&&Number(d.preSettlement)>0?d.preSettlement:d.preClose);
   if(!(previous>0)) return null;
   // trends2 的时间为北京时间，显式解析兼容 Safari；不拿请求时间冒充行情时间。
   for(let i=d.trends.length-1;i>=0;i--){
@@ -9471,7 +9480,7 @@ async function _fetchIndexPricesOnce(){
   if(!listEl) return;
   if(btn) btn.disabled = true;
   try{
-  // 首帧即生成全部 15 个固定位置，并回显可信缓存；不因某个端点失败改变分组。
+  // 首帧即生成全部 16 个固定位置，并回显可信缓存；不因某个端点失败改变分组。
   _idxRenderFastHk({},reqSeq);
 
   const rowMap = {};   // label → {label, price, pct, region}

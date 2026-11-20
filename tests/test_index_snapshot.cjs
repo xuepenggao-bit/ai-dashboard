@@ -19,22 +19,22 @@ function context(saved={},denyStorage=false){
 module.exports=(async()=>{
   const {ctx,list}=context({},true);
   const order=Array.from(vm.runInContext('_IDX_ORDER',ctx));
-  assert.equal(Object.keys(bootstrap.quotes).length,15,'Deployment must include all 15 genuine bootstrap quotes');
+  assert.equal(Object.keys(bootstrap.quotes).length,16,'Deployment must include all 16 genuine bootstrap quotes');
   order.forEach(label=>{
     const quote=bootstrap.quotes[label];
     assert.ok(quote&&quote.price>0&&Number.isFinite(quote.pct),label+' needs a numeric price and move');
     assert.ok(quote.quoteTs>0&&quote.src,label+' needs a source and real quote time');
   });
   const initial=ctx._idxListHtml({});
-  assert.equal((initial.match(/data-idx-label=/g)||[]).length,15);
+  assert.equal((initial.match(/data-idx-label=/g)||[]).length,16);
   assert.ok(!/暂缺|加载中|自动重试/.test(initial),'Cold Safari with no storage must display all quote values');
   assert.ok(initial.includes('备份')&&initial.includes('后台备份 · 行情时间'),'Fallback must never masquerade as live');
-  // Total external outage must leave all 15 values visible, including in private browsing.
+  // Total external outage must leave all 16 values visible, including in private browsing.
   ctx._idxFetch=async()=>{throw Error('network unavailable');};
   ctx._idxJsonp=async()=>{throw Error('script blocked');};
   ctx._fetchSinaRT=async()=>({});
   await ctx.fetchIndexPrices();
-  assert.equal((list.innerHTML.match(/data-idx-label=/g)||[]).length,15);
+  assert.equal((list.innerHTML.match(/data-idx-label=/g)||[]).length,16);
   assert.ok(!/暂缺|加载中|自动重试/.test(list.innerHTML));
   const now=Date.now();
   const live={label:'台湾加权',region:'intl',price:51000,pct:1,quoteTs:now,src:'em'};
@@ -63,5 +63,5 @@ module.exports=(async()=>{
   assert.ok(!vm.runInContext('_IDX_CACHE["台湾加权"].snapshot',c),'Realtime data clears the backup flag');
   // A corrupted browser cache must not prevent the embedded snapshot from loading.
   assert.ok(!context({'aiDashboard.allIndices.quote.v1':'not json'}).ctx._idxListHtml({}).includes('加载中'));
-  return 'PASS: all-15 cold start, private mode, complete outage, backup labels, timestamp arbitration, raw/Pages race and fetch throttling';
+  return 'PASS: all-16 cold start, private mode, complete outage, backup labels, timestamp arbitration, raw/Pages race and fetch throttling';
 })();

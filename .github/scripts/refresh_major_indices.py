@@ -43,6 +43,9 @@ INDICES = [
     {"label": "纳指期指", "region": "fut", "code": "NQ00Y", "secid": "103.NQ00Y", "altCodes": ["NQ00"]},
     {"label": "美国10年期", "region": "rate", "code": "US10Y", "secid": "171.US10Y"},
     {"label": "美元兑人民币", "region": "fx", "code": "USDCNH", "secid": "133.USDCNH"},
+    # COMEX gold continuous futures, not London spot gold or Shanghai gold.
+    {"label": "COMEX黄金", "region": "commodity", "code": "GC00Y", "secid": "101.GC00Y",
+     "altCodes": ["GC00"], "currency": "USD", "unit": "USD/oz"},
 ]
 BY_LABEL = {item["label"]: item for item in INDICES}
 PRIORITY = {"tc_rt": 4, "em": 4, "tc": 3, "em_minute": 2, "em_daily": 1}
@@ -59,7 +62,14 @@ def number(value):
 def quote_timestamp(value):
     """Provider calendar strings use Beijing time, including overseas indices."""
     text = str(value or "").strip()
-    for fmt in ("%Y%m%d%H%M%S", "%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+    formats = ((r"\d{14}", "%Y%m%d%H%M%S"),
+               (r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", "%Y-%m-%d %H:%M:%S"),
+               (r"\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}", "%Y/%m/%d %H:%M:%S"),
+               (r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}", "%Y-%m-%d %H:%M"))
+    for pattern, fmt in formats:
+        # strptime otherwise accepts 10-digit epoch seconds as year-1790 dates.
+        if not re.fullmatch(pattern, text):
+            continue
         try:
             return int(dt.datetime.strptime(text, fmt).replace(tzinfo=BEIJING).timestamp() * 1000)
         except ValueError:
@@ -78,6 +88,9 @@ def make_quote(config, price, pct, delta, timestamp, source, now_ms):
     row = {"label": config["label"], "region": config["region"], "price": number(price),
            "pct": number(pct), "delta": number(delta), "quoteTs": quote_timestamp(timestamp),
            "src": source, "ts": now_ms}
+    for key in ("currency", "unit"):
+        if key in config:
+            row[key] = config[key]
     if row["delta"] is None and row["price"] and row["pct"] is not None and row["pct"] > -100:
         row["delta"] = row["price"] - row["price"] / (1 + row["pct"] / 100)
     return row if valid_quote(row, now_ms, max_age_days=14) else None
@@ -96,7 +109,7 @@ def valid_quote(row, now_ms, max_age_days=None):
     if abs(pct) > (100 if row["region"] == "rate" else 30):
         return False
     limits = {"恒生指数": (5000, 60000), "恒生科技": (500, 30000), "A/H溢价": (50, 400),
-              "美国10年期": (0.001, 30), "美元兑人民币": (3, 15)}
+              "美国10年期": (0.001, 30), "美元兑人民币": (3, 15), "COMEX黄金": (100, 50000)}
     low, high = limits.get(row["label"], (0, float("inf")))
     return low < price < high
 
@@ -221,7 +234,7 @@ def parse_em_minutes(config, payload, now_ms):
     raw = payload.get("data") or {}
     if not matches_code(config, raw.get("code")):
         return []
-    previous = number(raw.get("preSettlement")) if config["region"] == "fut" else None
+    previous = number(raw.get("preSettlement")) if config["region"] in ("fut", "commodity") else None
     previous = previous if previous and previous > 0 else number(raw.get("preClose"))
     if previous is None or previous <= 0:
         return []
