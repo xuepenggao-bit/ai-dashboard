@@ -1,0 +1,56 @@
+name: Refresh Global AI Market Prices
+
+on:
+  schedule:
+    # Beijing 08:45 and 16:45; completed US/Asian sessions only.
+    - cron: '45 0,8 * * 1-5'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/refresh_ai_global_market.py'
+      - '.github/workflows/refresh-ai-global-market.yml'
+      - 'tests/test_refresh_ai_global_market.py'
+
+concurrency:
+  group: refresh-ai-global-market
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify sample identities, date cutoffs and failure retention
+        run: python -m unittest discover -s tests -p test_refresh_ai_global_market.py -v
+      - name: Refresh four-market completed close snapshot
+        run: python .github/scripts/refresh_ai_global_market.py
+      - name: Verify the published cross-market chart contract
+        run: node --test tests/test_ai_global_market.cjs
+      - name: Persist price snapshot without changing research notes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/ai_global_market_prices.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: refresh global AI equity price comparison"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1

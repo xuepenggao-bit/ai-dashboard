@@ -1,0 +1,434 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-11-20",
+  "cutoff": "核验截止 11:26 北京时间；盘中不冒充收盘",
+  "headline": "AI产业仍在扩张，股票市场转向检验：交付能否变成现金，风险溢价是否见顶",
+  "summary": "本期判断：不能用“AI需求崩塌”解释所有下跌，也不能用强财报推断股票必然反弹。四地的共同约束来自客户融资、合规和资本回报；分歧在于美国平台治理、韩国存储升级、台湾制造兑现、中国本土云增长与海外限制。先看下方价格与宽基对照，再用事件和现金回报检验叙事。研究姿态为分化观察、等待验证，不提供组合加减仓指令。",
+  "regions": [
+    {
+      "id": "us",
+      "label": "美国 · 计算平台与云资本开支",
+      "title": "增长兑现很强，风险溢价却不只看增长",
+      "fact": "NVIDIA 11月17日披露FY27 Q3收入同比翻倍；Q4收入指引包含额外一周，毛利率指引低于Q3。与此同时，公司已正式启动领导层过渡。",
+      "view": "当前要区分交付、盈利质量、治理及融资四条线。芯片与云巨头也不应同涨同跌地看待：设备商先确认收入，客户随后承受折旧、算力成本与资本回报压力。宏观贴现率上升可压低股票估值，而不必先等到订单减少。",
+      "watch": "关注Rubin实际交付、毛利率和应收；12月1日NVIDIA公开会议及下一轮云厂商指引。只有股价相对宽基与财务证据共同改善，才将一次反弹视为可持续修复。",
+      "sourceIds": [
+        "nvda-fy27q3-20261117",
+        "nvda-transition-20261112",
+        "fed-minutes-20261118"
+      ]
+    },
+    {
+      "id": "kr",
+      "label": "韩国 · HBM与服务器存储",
+      "title": "HBM4升级，不等于锁定未来利润",
+      "fact": "SK hynix预期Q4 HBM4出货与收入超过HBM3E，2027、2028年各逾半产能已有长协覆盖。三星Q3披露HBM4销售扩大，11月20日又公布先进存储出身的新业务负责人。",
+      "view": "这些是产品结构和执行的积极线索；长协锁量不代表锁住毛利，三星追赶也可能改变供给和议价。韩国两股样本高度集中于存储，波动不应解读为全韩国AI板块的统计表现。",
+      "watch": "HBM4认证、良率与长协定价；服务器DRAM价格、2027扩产与自由现金流。若扩产先于终端回报改善，应重新核验盈利可持续性。",
+      "sourceIds": [
+        "kr_hynix_q3",
+        "kr_samsung_q3",
+        "kr_samsung_leadership"
+      ]
+    },
+    {
+      "id": "tw",
+      "label": "台湾 · 先进制造、ASIC与机柜",
+      "title": "制造端仍强，价格与交易约束另有逻辑",
+      "fact": "台积电10月新台币营收同比+59.7%；联发科披露AI加速器已开始初始交付，鸿海则上调产品线展望。金管会11月19日宣布次日起收紧部分卖空交易约束。",
+      "view": "需求线索来自不同环节：代工看产能与结构，ASIC看项目兑现，机柜看交付和现金。限空措施改变交易条件，不保证见底；台积电整体月营收也不是纯AI收入。GPU以外的定制硅增长，会重分配而非简单增加所有供应商份额。",
+      "watch": "11月月营收、ASIC与机柜指引兑现、先进封装爬坡、外资与市场广度。不得把临时价格稳定写成盈利或风险溢价已经改善。",
+      "sourceIds": [
+        "tw_tsmc_october",
+        "tw_mediatek_asic",
+        "tw_foxconn_q3",
+        "tw_fsc_short_rules"
+      ]
+    },
+    {
+      "id": "cn",
+      "label": "中国 · A股硬件样本与国内云需求",
+      "title": "海外合规压力，叠加国内云需求扩张",
+      "fact": "新易盛11月18日表示尚无需求预期下修或砍单；胜宏披露部分高阶产品排单较长。腾讯、阿里最新季度披露国内云需求增长，同时资本投入较重。",
+      "view": "海外需求、国内替代与本土AI变现必须分开看。公司经营表述可反驳无来源的全面砍单传闻，但还不是可审计的客户订单表；董事长回购提议和银行贷款承诺都不等于已经执行回购。中国行情样本仅为A股光模块/PCB，不代表港股或全部AI应用公司。",
+      "watch": "1.6T与高阶PCB交付、海外良率、毛利和应收回款；国内云外部客户收入、自由现金流与算力采购可得性。以原始公告和收入确认检验“强订单”是否兑现。",
+      "sourceIds": [
+        "cn_eoptolink_operations",
+        "cn_victory_pcb",
+        "cn_tencent_q3",
+        "cn_alibaba_q3",
+        "cn_innolight_buyback"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "title": "算力限制从芯片出口延伸到远程访问",
+      "date": "2026-11-19",
+      "type": "监管事实 / 非法律意见",
+      "fact": "BIS于11月16日宣布针对第三国数据中心远程访问先进计算能力的临时最终规则，Federal Register确认11月19日生效；部分既存受覆盖服务有90天许可安排。",
+      "readThrough": "合规、终端用户识别与许可可能影响跨境算力客户及交付节奏；这是潜在传导渠道，不代表所有海外数据中心或全部中国需求被一刀切停止。 验证：核对客户最终受益人、合同所在地区、许可与过渡条款；国内替代受益仍需订单和产能验证。",
+      "sourceIds": [
+        "bis-remote-20261116",
+        "bis-effective-20261119"
+      ]
+    },
+    {
+      "title": "台湾金管会扩大稳定股市措施",
+      "date": "2026-11-19",
+      "type": "公司/监管原始披露",
+      "fact": "11月20日起，收盘跌幅达3.5%的股票次日融券/借券卖出不得低于前收；借券卖出日委托量上限由过去30日均量的3%降至1%，合资格避险和做市等有例外。",
+      "readThrough": "改变短期卖空约束和交易流动性，与企业盈利基本面属于不同维度。政策支持不能替代AI投资回报及盈利验证。 口径提醒：不是全面禁止做空，亦不是股价底部保证",
+      "sourceIds": [
+        "tw_fsc_short_rules"
+      ]
+    },
+    {
+      "title": "Alibaba September Quarter 2026 Results",
+      "date": "2026-11-19",
+      "type": "公司/监管原始披露",
+      "fact": "AI云与计算服务收入同比53%、外部客户收入64%，分部调整EBITA同比121%、利润率14.5%；季度资本支出504.77亿元、同比60%。",
+      "readThrough": "国内AI需求开始同时体现在云增长与分部利润，但投资对现金流的占用依然大；需求扩张不自动等于A股每家硬件公司的份额增长。 口径提醒：分部包含云与平头哥，不能等同纯模型收入；集团资本支出不等于纯GPU采购",
+      "sourceIds": [
+        "cn_alibaba_q3"
+      ]
+    },
+    {
+      "title": "利率不是单向下行背景",
+      "date": "2026-11-18",
+      "type": "宏观事实 / 估值传导判断",
+      "fact": "10月28日FOMC保持目标区间3.75%—4%；11月18日发布的纪要讨论AI债务、复杂融资和通胀压力，几乎所有与会者认为基准情形下进一步收紧可能合适，但取决于后续数据。BLS 11月10日公布10月CPI环比+0.4%、核心环比+0.3%；因2025年10月基数缺失，未发布对应同比。",
+      "readThrough": "这是对当时政策与通胀的已公布信息，不能称为11月已经加息；更高贴现率和融资成本对远期利润占比较高、依赖外部融资的AI资产更敏感。 验证：下一次FOMC为12月8—9日。跟踪通胀、长端利率和融资费用，不能以预测市场概率充当政策决定。",
+      "sourceIds": [
+        "fed-statement-20261028",
+        "fed-minutes-20261118",
+        "cpi-20261110"
+      ]
+    },
+    {
+      "title": "Tencent Announces 2026 Third Quarter Results",
+      "date": "2026-11-18",
+      "type": "公司/监管原始披露",
+      "fact": "云服务收入同比35%。资本开支付款651亿元、同比225%；总资本开支814.33亿元是另一口径。non-IFRS运营利润下降6%，剔除新AI产品则增长8%。",
+      "readThrough": "国内AI云需求及采购强，但AI投入压低短期利润和现金流；对国内供应链既有需求机会，也有采购可得性和回报风险。 口径提醒：必须区分资本开支付款与总资本开支；不得把两种口径叠加",
+      "sourceIds": [
+        "cn_tencent_q3"
+      ]
+    },
+    {
+      "title": "收入翻倍，并非需求已经坍塌",
+      "date": "2026-11-17",
+      "type": "已披露事实 / 研究解读",
+      "fact": "NVIDIA FY27 Q3收入1158亿美元，同比+103%；数据中心收入1076亿美元，同比+110%。公司已开始Vera Rubin NVL72量产交付。",
+      "readThrough": "产业端仍有真实交付；对HBM、先进封装、网络与高阶PCB属于需求线索，不等于任何一家亚洲供应商已确认订单。 验证：确认新平台实际交付、产品结构与回款；若收入增长无法覆盖毛利和融资风险，股价仍可弱于业绩。",
+      "sourceIds": [
+        "nvda-fy27q3-20261117"
+      ]
+    },
+    {
+      "title": "Q4指引很强，但要剔除额外一周的错觉",
+      "date": "2026-11-17",
+      "type": "公司指引 / 非已实现业绩",
+      "fact": "Q4收入指引1300亿美元±3%，该季度比通常多一周，且未计中国数据中心计算收入；GAAP与非GAAP毛利率指引71%—72%，低于Q3实际74.8%与74.9%。",
+      "readThrough": "收入指引不宜按完全相同季度长度机械比较；先分清销量、平台切换及利润率的变化，再讨论估值修复。 验证：跟踪相同周数的收入、Rubin爬坡成本和毛利指引，不能只看名义收入环比。",
+      "sourceIds": [
+        "nvda-fy27q3-20261117"
+      ]
+    },
+    {
+      "title": "领导层过渡增加独立风险溢价",
+      "date": "2026-11-12",
+      "type": "官方人事事实 / 公司预期",
+      "fact": "NVIDIA官方宣布Jensen Huang辞去CEO、总裁及董事职务，Colette Kress任临时CEO兼CFO，董事会启动永久继任者遴选。公司称经营、客户承诺和产品路线图预计持续。",
+      "readThrough": "治理与关键人风险可使股票表现脱离财报；此处不把社交争议或指控写成已经裁定的事实。 验证：关注董事会正式披露、继任进展与客户履约；没有新公告前不据传闻推断订单中止。",
+      "sourceIds": [
+        "nvda-transition-20261112"
+      ]
+    },
+    {
+      "title": "资本开支上调与利息压力并存",
+      "date": "2026-11-10",
+      "type": "财报事实 / 管理层前瞻指引",
+      "fact": "CoreWeave将2026 Capex区间下限由350亿美元提高至370亿美元，上限维持390亿美元；Q3 GAAP净亏损7.09亿美元。Q4利息费用指引10.5亿—11.5亿美元，公司预计未来三个月收到约90亿美元客户预付款与存款。",
+      "readThrough": "客户预付款与外部融资支持基础设施建设，但不等于可持续自由现金；关注账面订单转成交付和应收回款的速度。 验证：比较Capex、客户预付款到款、当期经营现金流及利息支出；若融资转弱，建设需求可先强后放缓。",
+      "sourceIds": [
+        "crwv-q3-20261110"
+      ]
+    },
+    {
+      "title": "TSMC October 2026 Revenue Report",
+      "date": "2026-11-10",
+      "type": "公司/监管原始披露",
+      "fact": "10月合并营收新台币5868.9亿元，环比14.7%、同比59.7%；1—10月合计44856.2亿元、同比43.3%。",
+      "readThrough": "强劲月营收是先进制造需求的硬证据，但不能据此推导每一种GPU/ASIC客户订单；股价还受资本回报、风险溢价及出口规则影响。 口径提醒：公司整体月营收，不是纯AI营收；新台币同比不可与美元年度指引直接混比",
+      "sourceIds": [
+        "tw_tsmc_october"
+      ]
+    },
+    {
+      "title": "SK hynix Q3 2026 Business Results",
+      "date": "2026-10-28",
+      "type": "公司/监管原始披露",
+      "fact": "公司表示HBM4及服务器高附加值产品销售扩大；预期第四季HBM4的出货量和收入超过HBM3E。与14家主要客户的长期供应协议覆盖2027、2028年各逾一半产能。",
+      "readThrough": "HBM4升级有利产品结构；长协降低销量不确定性，但定价仍会反映市况。不能将产能覆盖率等同利润锁定率。 口径提醒：已披露业务进展与管理层前瞻指引并列，HBM4四季度占比尚待业绩验证",
+      "sourceIds": [
+        "kr_hynix_q3"
+      ]
+    }
+  ],
+  "social": [
+    {
+      "title": "关注销售地域披露与最终使用地",
+      "date": "2026-11-15",
+      "type": "作者观点 / 披露有看跌利益",
+      "fact": "公开可读部分质疑NVIDIA地域收入披露能否反映最终使用地，并披露仍持有该股看跌期权。这里只转述作者已公开的疑问，不将其当成已证实的违规或会计结论。",
+      "readThrough": "用NVIDIA正式财报地域口径、BIS规则及已披露客户信息核验；不能依据该文直接推断虚假收入。 访问范围：仅公开可读摘要，未访问付费内容",
+      "sourceIds": [
+        "social-us-0"
+      ]
+    },
+    {
+      "title": "辞职不等于监管议题结束",
+      "date": "2026-11-12",
+      "type": "政界立场 / 非裁定",
+      "fact": "其本人账号要求NVIDIA及相关人士继续向国会作答，显示议题已进入政治监督层面。帖子属于政界人士主张，不是司法或监管已作出的违规认定。",
+      "readThrough": "后续以正式函件、公司回复和监管公开文件为准。 访问范围：原帖日期与正文可公开读取",
+      "sourceIds": [
+        "social-us-1"
+      ]
+    },
+    {
+      "title": "强交付与融资、治理问题需要同时看",
+      "date": "2026-11-18",
+      "type": "署名产业评论 / 非一致预期",
+      "fact": "其公开文章强调NVIDIA最新财报的增长延续，同时把管理层更替、Anthropic上市进展和美国新规作为本周验证点。反映的是一位作者的产业观察，不是全市场共识。",
+      "readThrough": "财报数字已对照公司公告；尚未定稿的政策、客户或市场判断不作硬事实。 访问范围：公开文章可读",
+      "sourceIds": [
+        "social-us-2"
+      ]
+    },
+    {
+      "title": "社区讨论：云增长与资本强度同时存在",
+      "date": "2026-11-19",
+      "type": "匿名社区观点片段，不是X关注账号摘要、不代表市场共识；事实数字由阿里原始季报独立核对",
+      "fact": "作者将财报讨论拆成云收入加速和利润率改善，以及仍然较重的资本支出/负自由现金流两面。",
+      "readThrough": "可在社交讨论卡中并列展示多空关注点，但不可写为整体情绪指标、投资者一致预期或未披露订单的证据。",
+      "sourceIds": [
+        "reddit_baba_earnings",
+        "cn_alibaba_q3"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "label": "修复路径",
+      "title": "经营兑现 + 相对价格企稳",
+      "condition": "正式披露延续交付与回款；治理和许可证更清晰；代表股相对本地宽基不再持续走弱。",
+      "action": "继续研究现金回报更清晰的环节；先核对公司数据，再讨论估值，不把单日上涨当作反转确认。"
+    },
+    {
+      "label": "基准观察",
+      "title": "产业强，股票继续分化",
+      "condition": "收入增长仍高，但毛利、资金成本和资本投入压住股东回报；不同技术路径份额重新分配。",
+      "action": "分别跟踪HBM、先进封装、ASIC、光互连和PCB；减少把同一增长叙事套在全部公司的做法。"
+    },
+    {
+      "label": "风险路径",
+      "title": "融资或合规开始影响交付",
+      "condition": "预付款未到账、许可或上架延后，随后公司披露订单或盈利预期调整。",
+      "action": "从云客户到硬件供应商逐层重新核验合同、现金流和利润；没有原始披露前，不把传言作为砍单事实。"
+    }
+  ],
+  "counterargument": "最强反方是：订单、月营收与HBM交付继续强劲，近期市场可能先为极端风险定价；治理或融资缓和后，价格修复可先于新财报。相反，若只有融资支撑建设、现金回报持续落后，强营收也不足以结束估值压缩。两种路径均需要相对价格、毛利和现金共同检验。",
+  "limitations": "行情为各地最近已完成交易日的固定代表股本币价格收益，非行业指数，不含股息、汇率、交易成本和生存者偏差修正。代表股选择偏向大型硬件及云平台，韩国仅两家存储公司，中国为A股硬件样本，不能外推整个市场。未取得可靠的全行业一致预期、客户订单明细或全平台社交情绪；社交仅为可读署名/匿名观点样本，未取得可核对的新鲜亚洲X原帖，不以二次转述补造。政策仅作为股票研究的风险因素，不代替法律意见。",
+  "sources": [
+    {
+      "id": "nvda-fy27q3-20261117",
+      "title": "NVIDIA FY27 Q3官方财报",
+      "date": "2026-11-17",
+      "period": "截至2026-10-25季度",
+      "url": "https://investor.nvidia.com/news/press-release-details/2026/NVIDIA-Announces-Financial-Results-for-Third-Quarter-Fiscal-2027/default.aspx",
+      "type": "issuer_report",
+      "status": "fact_source_reported"
+    },
+    {
+      "id": "nvda-transition-20261112",
+      "title": "NVIDIA官方领导层过渡公告",
+      "date": "2026-11-12",
+      "url": "https://nvidianews.nvidia.com/news/nvidia-announces-ceo-transition",
+      "type": "issuer_announcement",
+      "status": "fact_source_reported"
+    },
+    {
+      "id": "bis-remote-20261116",
+      "title": "BIS远程访问先进芯片规则发布",
+      "date": "2026-11-16",
+      "url": "https://www.bis.gov/press-release/bis-issues-rule-addressing-remote-access-american-super-intelligence-technology",
+      "type": "regulator",
+      "status": "fact_source_reported"
+    },
+    {
+      "id": "bis-effective-20261119",
+      "title": "Federal Register：远程算力新规生效日",
+      "date": "2026-11-19",
+      "url": "https://www.federalregister.gov/documents/2026/11/19/2026-23529/addressing-remote-access-to-advanced-semiconductors",
+      "type": "regulation",
+      "status": "fact_source_reported"
+    },
+    {
+      "id": "fed-statement-20261028",
+      "title": "美联储10月28日议息声明",
+      "date": "2026-10-28",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+      "type": "central_bank",
+      "status": "fact_source_reported"
+    },
+    {
+      "id": "fed-minutes-20261118",
+      "title": "10月27—28日FOMC纪要（11月18日发布）",
+      "date": "2026-11-18",
+      "period": "2026-10-27—2026-10-28",
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomcminutes20261028.htm",
+      "type": "central_bank",
+      "status": "fact_source_reported"
+    },
+    {
+      "id": "cpi-20261110",
+      "title": "美国BLS：10月CPI",
+      "date": "2026-11-10",
+      "period": "2026-10",
+      "url": "https://www.bls.gov/news.release/archives/cpi_11102026.htm",
+      "type": "official_statistics",
+      "status": "fact_source_reported"
+    },
+    {
+      "id": "crwv-q3-20261110",
+      "title": "CoreWeave Q3官方财报与全年指引",
+      "date": "2026-11-10",
+      "period": "2026-Q3及2026全年指引",
+      "url": "https://investors.coreweave.com/news/news-details/2026/CoreWeave-Reports-Strong-Third-Quarter-2026-Results/",
+      "type": "issuer_report",
+      "status": "fact_source_reported"
+    },
+    {
+      "id": "nvda-calendar-20261119",
+      "title": "NVIDIA确认12月1日UBS科技与AI会议发言",
+      "date": "2026-11-19",
+      "url": "https://investor.nvidia.com/news/press-release-details/2026/NVIDIA-Announces-Upcoming-Event-for-Financial-Community-5d06fa639/default.aspx",
+      "type": "issuer_calendar",
+      "status": "fact_source_reported"
+    },
+    {
+      "id": "kr_hynix_q3",
+      "title": "SK hynix Q3 2026 Business Results",
+      "date": "2026-10-28",
+      "url": "https://news.skhynix.com/en/q3-2026-business-results/",
+      "type": "issuer_release"
+    },
+    {
+      "id": "kr_samsung_q3",
+      "title": "Samsung Electronics Announces Third Quarter 2026 Results",
+      "date": "2026-10-29",
+      "url": "https://news.samsung.com/global/samsung-electronics-announces-third-quarter-2026-results",
+      "type": "issuer_release"
+    },
+    {
+      "id": "kr_samsung_leadership",
+      "title": "Samsung Electronics Announces New Leadership",
+      "date": "2026-11-20",
+      "url": "https://news.samsung.com/global/samsung-electronics-announces-new-leadership-5",
+      "type": "issuer_release"
+    },
+    {
+      "id": "tw_tsmc_october",
+      "title": "TSMC October 2026 Revenue Report",
+      "date": "2026-11-10",
+      "url": "https://pr.tsmc.com/english/news/3349",
+      "type": "issuer_release"
+    },
+    {
+      "id": "tw_mediatek_asic",
+      "title": "MediaTek 3Q26 Earnings Call Transcript",
+      "date": "2026-10-30",
+      "url": "https://www.mediatek.com/hubfs/MediaTek-Assets/Pdfs/Quarterly%20Earnings%20Release/2026/Quarterly%20Earnings%20Release-2026Q3/%E8%AA%AA%E6%98%8E%E6%9C%83%E9%80%90%E5%AD%97%E7%A8%BF.pdf",
+      "type": "issuer_transcript"
+    },
+    {
+      "id": "tw_foxconn_q3",
+      "title": "Hon Hai Technology Group Announces Third Quarter 2026 Financial Results",
+      "date": "2026-11-12",
+      "url": "https://www.foxconn.com/en-us/press-center/press-releases/latest-news/2154",
+      "type": "issuer_release_and_slides"
+    },
+    {
+      "id": "tw_fsc_short_rules",
+      "title": "台湾金管会扩大稳定股市措施",
+      "date": "2026-11-19",
+      "url": "https://www.fsc.gov.tw/ch/home.jsp?dataserno=202611190001&dtable=News&id=96&mcustomize=news_view.jsp&parentpath=0,2&toolsflag=Y",
+      "type": "regulator_release"
+    },
+    {
+      "id": "cn_eoptolink_operations",
+      "title": "新易盛：关于公司近期生产经营情况的公告（2026-069）",
+      "date": "2026-11-18",
+      "url": "https://static.cninfo.com.cn/finalpage/2026-11-18/1225678180.PDF",
+      "type": "issuer_filing"
+    },
+    {
+      "id": "cn_innolight_buyback",
+      "title": "中际旭创：关于收到董事长提议回购公司股份的公告（2026-109）",
+      "date": "2026-11-18",
+      "url": "https://static.cninfo.com.cn/finalpage/2026-11-18/1225678038.PDF",
+      "type": "issuer_filing"
+    },
+    {
+      "id": "cn_victory_pcb",
+      "title": "胜宏科技：关于取得金融机构股票回购专项贷款承诺函的公告（2026-093）",
+      "date": "2026-11-18",
+      "url": "https://static.cninfo.com.cn/finalpage/2026-11-18/1225678459.PDF",
+      "type": "issuer_filing"
+    },
+    {
+      "id": "cn_tencent_q3",
+      "title": "Tencent Announces 2026 Third Quarter Results",
+      "date": "2026-11-18",
+      "url": "https://www.prnewswire.com/apac/news-releases/tencent-announces-2026-third-quarter-results-302943839.html",
+      "type": "issuer_release_distributed_by_prnewswire"
+    },
+    {
+      "id": "cn_alibaba_q3",
+      "title": "Alibaba September Quarter 2026 Results",
+      "date": "2026-11-19",
+      "url": "https://home.alibabagroup.com/en-US/document-2060213191907999744",
+      "type": "issuer_release_and_slides"
+    },
+    {
+      "id": "social-us-0",
+      "title": "Michael Burry · Substack · Cassandra Unchained",
+      "date": "2026-11-15",
+      "url": "https://michaeljburry.substack.com/p/how-nvidias-changed-asian-revenue",
+      "type": "attributed_opinion"
+    },
+    {
+      "id": "social-us-1",
+      "title": "Elizabeth Warren · Bluesky · warren.senate.gov",
+      "date": "2026-11-12",
+      "url": "https://bsky.app/profile/warren.senate.gov/post/3n24spc7ces2t",
+      "type": "attributed_opinion"
+    },
+    {
+      "id": "social-us-2",
+      "title": "Michael Parekh · Substack · AI: Reset to Zero",
+      "date": "2026-11-18",
+      "url": "https://michaelparekh.substack.com/p/ai-will-nvidia-reign-on-a-week-of",
+      "type": "attributed_opinion"
+    },
+    {
+      "id": "reddit_baba_earnings",
+      "title": "u/Dolphin_research · Reddit",
+      "date": "2026-11-19",
+      "url": "https://www.reddit.com/r/baba/comments/1y06ubu/alibabas_ai_cloud_grew_53_as_ecommerce_profit/",
+      "type": "community_opinion"
+    }
+  ]
+}
