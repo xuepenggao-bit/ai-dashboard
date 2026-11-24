@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "targetYear": 2026,
-  "generatedAt": "2026-11-24T09:51:40+08:00",
-  "lastChecked": "2026-11-24T09:51:40+08:00",
-  "asOf": "2026-11-24",
+  "generatedAt": "2026-11-25T07:36:39+08:00",
+  "lastChecked": "2026-11-25T07:36:39+08:00",
+  "asOf": "2026-11-25",
   "method": {
     "limit": 5,
     "selection": "latest_per_broker",
@@ -17,6 +17,7 @@
     "HK:02476": "A:300476",
     "HK:06166": "A:603083",
     "HK:00668": "A:300866",
+    "A:301376": "A:301376",
     "HK:01801": "HK:01801",
     "HK:06160": "A:688235",
     "HK:09995": "A:688331",
@@ -127,7 +128,7 @@
       ],
       "status": "ok",
       "stale": false,
-      "lastChecked": "2026-11-24T09:51:40+08:00",
+      "lastChecked": "2026-11-25T07:36:39+08:00",
       "updatedAt": "2026-11-14T04:57:44+08:00"
     },
     "A:002594": {
@@ -232,7 +233,7 @@
       ],
       "status": "ok",
       "stale": false,
-      "lastChecked": "2026-11-24T09:51:40+08:00",
+      "lastChecked": "2026-11-25T07:36:39+08:00",
       "updatedAt": "2026-11-19T06:15:07+08:00"
     },
     "A:300476": {
@@ -319,7 +320,7 @@
       ],
       "status": "ok",
       "stale": false,
-      "lastChecked": "2026-11-24T09:51:40+08:00",
+      "lastChecked": "2026-11-25T07:36:39+08:00",
       "updatedAt": "2026-11-09T03:01:09+08:00"
     },
     "A:300750": {
@@ -424,7 +425,7 @@
       ],
       "status": "ok",
       "stale": false,
-      "lastChecked": "2026-11-24T09:51:40+08:00",
+      "lastChecked": "2026-11-25T07:36:39+08:00",
       "updatedAt": "2026-11-24T09:51:40+08:00"
     },
     "A:300866": {
@@ -529,8 +530,113 @@
       ],
       "status": "ok",
       "stale": false,
-      "lastChecked": "2026-11-24T09:51:40+08:00",
+      "lastChecked": "2026-11-25T07:36:39+08:00",
       "updatedAt": "2026-11-17T07:28:59+08:00"
+    },
+    "A:301376": {
+      "market": "A",
+      "code": "301376",
+      "forecastYear": 2026,
+      "currency": "CNY",
+      "metric": "parent_net_profit",
+      "meanProfitYi": 4.927999999999999,
+      "reportCount": 5,
+      "reports": [
+        {
+          "id": "eastmoney-a-d1c05f951ec9985c0981",
+          "broker": "东方证券",
+          "brokerCode": "10004846",
+          "researcher": "陈笑,刘彦菁,郑紫舟",
+          "title": "机构盈利预测明细（研报摘录） · 东方证券",
+          "publishedAt": "2026-11-23",
+          "forecastYear": 2026,
+          "currency": "CNY",
+          "profitYi": 4.93,
+          "url": "https://emweb.securities.eastmoney.com/PC_HSF10/ProfitForecast/Index?type=web&code=SZ301376",
+          "sourceType": "provider_broker_detail",
+          "sourceOrder": 0,
+          "metric": "parent_net_profit",
+          "dateType": "provider_publication_date",
+          "periodBasis": "calendar_year",
+          "sourceNote": "东方财富按机构提供的研报摘录，原始字段为归母净利润（元），非扣非、非EPS反推；链接为提供商预测明细页。"
+        },
+        {
+          "id": "eastmoney-a-fd8ca92ee80aba1ff4ce",
+          "broker": "长江证券",
+          "brokerCode": "10005685",
+          "researcher": "蔡方羿,李锦,米雁翔,张彦淳",
+          "title": "机构盈利预测明细（研报摘录） · 长江证券",
+          "publishedAt": "2026-11-15",
+          "forecastYear": 2026,
+          "currency": "CNY",
+          "profitYi": 4.99,
+          "url": "https://emweb.securities.eastmoney.com/PC_HSF10/ProfitForecast/Index?type=web&code=SZ301376",
+          "sourceType": "provider_broker_detail",
+          "sourceOrder": 1,
+          "metric": "parent_net_profit",
+          "dateType": "provider_publication_date",
+          "periodBasis": "calendar_year",
+          "sourceNote": "东方财富按机构提供的研报摘录，原始字段为归母净利润（元），非扣非、非EPS反推；链接为提供商预测明细页。"
+        },
+        {
+          "id": "eastmoney-a-6935440250a1313e8d3c",
+          "broker": "东北证券",
+          "brokerCode": "10005609",
+          "researcher": "陈渊文",
+          "title": "机构盈利预测明细（研报摘录） · 东北证券",
+          "publishedAt": "2026-11-15",
+          "forecastYear": 2026,
+          "currency": "CNY",
+          "profitYi": 5.0,
+          "url": "https://emweb.securities.eastmoney.com/PC_HSF10/ProfitForecast/Index?type=web&code=SZ301376",
+          "sourceType": "provider_broker_detail",
+          "sourceOrder": 2,
+          "metric": "parent_net_profit",
+          "dateType": "provider_publication_date",
+          "periodBasis": "calendar_year",
+          "sourceNote": "东方财富按机构提供的研报摘录，原始字段为归母净利润（元），非扣非、非EPS反推；链接为提供商预测明细页。"
+        },
+        {
+          "id": "eastmoney-a-c78c1aedbded50d98c80",
+          "broker": "方正证券",
+          "brokerCode": "10004823",
+          "researcher": "李珍妮,马萤",
+          "title": "机构盈利预测明细（研报摘录） · 方正证券",
+          "publishedAt": "2026-11-04",
+          "forecastYear": 2026,
+          "currency": "CNY",
+          "profitYi": 4.91,
+          "url": "https://emweb.securities.eastmoney.com/PC_HSF10/ProfitForecast/Index?type=web&code=SZ301376",
+          "sourceType": "provider_broker_detail",
+          "sourceOrder": 3,
+          "metric": "parent_net_profit",
+          "dateType": "provider_publication_date",
+          "periodBasis": "calendar_year",
+          "sourceNote": "东方财富按机构提供的研报摘录，原始字段为归母净利润（元），非扣非、非EPS反推；链接为提供商预测明细页。"
+        },
+        {
+          "id": "eastmoney-a-003ff1667dec04c27223",
+          "broker": "中金公司",
+          "brokerCode": "10014783",
+          "researcher": "柳政甫,骆峥",
+          "title": "机构盈利预测明细（研报摘录） · 中金公司",
+          "publishedAt": "2026-10-31",
+          "forecastYear": 2026,
+          "currency": "CNY",
+          "profitYi": 4.81,
+          "url": "https://emweb.securities.eastmoney.com/PC_HSF10/ProfitForecast/Index?type=web&code=SZ301376",
+          "sourceType": "provider_broker_detail",
+          "sourceOrder": 4,
+          "metric": "parent_net_profit",
+          "dateType": "provider_publication_date",
+          "periodBasis": "calendar_year",
+          "sourceNote": "东方财富按机构提供的研报摘录，原始字段为归母净利润（元），非扣非、非EPS反推；链接为提供商预测明细页。"
+        }
+      ],
+      "status": "ok",
+      "stale": false,
+      "lastChecked": "2026-11-25T07:36:39+08:00",
+      "updatedAt": "2026-11-25T07:36:39+08:00"
     },
     "A:603083": {
       "market": "A",
@@ -598,7 +704,7 @@
       ],
       "status": "ok",
       "stale": false,
-      "lastChecked": "2026-11-24T09:51:40+08:00",
+      "lastChecked": "2026-11-25T07:36:39+08:00",
       "updatedAt": "2026-11-04T17:34:45+08:00"
     },
     "A:688235": {
@@ -703,7 +809,7 @@
       ],
       "status": "ok",
       "stale": false,
-      "lastChecked": "2026-11-24T09:51:40+08:00",
+      "lastChecked": "2026-11-25T07:36:39+08:00",
       "updatedAt": "2026-11-17T07:28:59+08:00"
     },
     "A:688331": {
@@ -808,7 +914,7 @@
       ],
       "status": "ok",
       "stale": false,
-      "lastChecked": "2026-11-24T09:51:40+08:00",
+      "lastChecked": "2026-11-25T07:36:39+08:00",
       "updatedAt": "2026-11-21T05:55:43+08:00"
     },
     "HK:01801": {
@@ -903,7 +1009,7 @@
       ],
       "status": "ok",
       "stale": false,
-      "lastChecked": "2026-11-24T09:51:40+08:00",
+      "lastChecked": "2026-11-25T07:36:39+08:00",
       "updatedAt": "2026-11-24T09:51:40+08:00"
     }
   }
