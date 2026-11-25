@@ -11441,6 +11441,7 @@ var _newsInflight = null;
 var _NEWS_THROTTLE = 25000; // 页面可见时每30秒检查，留5秒余量避免边界重复请求
 var _NEWS_TOP_CACHE = 'news_top_cache_v2';
 var _NEWS_WATCHLIST_CACHE = 'news_watchlist_cache_v1';
+var _newsTopItems = [];
 
 async function fetchNews(force){
   // 英文资讯使用同源 JSON 缓存，和中文实时源一起响应总刷新、页面恢复与定时检查。
@@ -11464,7 +11465,7 @@ async function fetchNews(force){
         _newsSuccessTS=Date.now();
         const unique=[...new Set(sources)];
         const sourceLabel=unique.length===1?unique[0]:'多源';
-        const label=sources.length===2?'更新':'部分更新';
+        const label=sources.length===2?'已检查':'部分可用'; // 检查时间不是新闻发布时间。
         if(ts) ts.textContent=label+' '
           +new Date(_newsSuccessTS).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})
           +' · '+sourceLabel;
@@ -11522,8 +11523,14 @@ function _newsTime(epoch,withDate){
 }
 function _newsParseTime(value){
   if(value==null||value==='') return 0;
-  if(typeof value==='number') return value>1e12?Math.floor(value/1000):Math.floor(value);
-  const parsed=Date.parse(String(value).replace(/-/g,'/'));
+  const text=String(value).trim();
+  if(/^\d+(?:\.\d+)?$/.test(text)){
+    const n=Number(text);
+    return Number.isFinite(n)&&n>0?Math.floor(n>1e12?n/1000:n):0;
+  }
+  // 无时区的供应商日期明确为北京时间；ISO 的 Z / offset 不得被替换破坏。
+  const china=text.match(/^(\d{4})[-\/](\d{2})[-\/](\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/);
+  const parsed=china?Date.UTC(+china[1],+china[2]-1,+china[3],+china[4]-8,+china[5],+(china[6]||0)):Date.parse(text);
   return isFinite(parsed)?Math.floor(parsed/1000):0;
 }
 function _newsCleanItems(items,limit){
@@ -11539,7 +11546,7 @@ function _newsCleanItems(items,limit){
     .slice(0,limit);
 }
 
-// JSON 拉取：短超时 + 一次退避重试。不同域名由 _newsFirstAvailable 并行竞争，
+// JSON 拉取：短超时 + 有界重试。不同来源并行请求，结果按文章时间合并，
 // 不再对同一个失效接口连续等待二十多秒。
 async function _newsFetchJson(url,tries,timeout){
   tries=tries||1; timeout=timeout||6500;
@@ -11586,12 +11593,12 @@ function _newsFirstAvailable(sources,limit){
   });
 }
 
-async function _newsWscnArticles(){
+async function _newsWscnArticles(host){
   const ts=Date.now();
   const j=await _newsFetchJson(
     // 同一文章可能因同时属于多个频道而重复出现，多取一些后按标题去重，确保 TOP 5 足额。
-    'https://api-one.wallstcn.com/apiv1/content/articles?channel=global-channel&client=pc&limit=30&_='+ts,
-    2,7000
+    'https://'+(host||'api-one-wscn.awtmt.com')+'/apiv1/content/articles?channel=global-channel&client=pc&limit=30&_='+ts,
+    1,4500
   );
   if(j&&j.code!==20000) throw new Error('接口代码 '+j.code);
   return ((j&&j.data&&j.data.items)||[]).map(function(n){
@@ -11606,8 +11613,9 @@ async function _newsWscnArticles(){
 async function _newsEastmoneyArticles(){
   const ts=Date.now();
   const u='https://np-listapi.eastmoney.com/comm/web/getNewsByColumns?client=web&biz=web_news'
-    +'&column=350&order=1&needInteractData=0&page_index=1&page_size=12&req_trace='+ts+'&fields=&types=1,20&_='+ts;
-  const j=await _newsFetchJson(u,2,5500);
+    +'&column=350&order=1&needInteractData=0&page_index=1&page_size=40&req_trace='+ts+'&fields=&types=1,20&_='+ts;
+  const j=await _newsFetchJson(u,1,4500);
+  if(j&&String(j.code)!=='1') throw new Error('东方财富接口代码 '+j.code);
   return ((j&&j.data&&j.data.list)||[]).map(function(n){
     return{
       title:_newsClip(n.title,100),
@@ -11619,7 +11627,8 @@ async function _newsEastmoneyArticles(){
 }
 function _newsRenderTop(el,items){
   el.innerHTML=items.map(function(item,i){
-    return _newsTopRow(item.url,item.title,item.publisher,_newsTime(item.ts,true),i+1);
+    const source=[...new Set([item.provider,item.publisher].filter(Boolean))].join(' · ');
+    return _newsTopRow(item.url,item.title,source,_newsTime(item.ts,true),i+1);
   }).join('');
 }
 function _newsRenderWatchlist(el,items){
@@ -11650,21 +11659,64 @@ function _newsRestoreCache(el,sourceEl,key,legacyKey,renderer){
   return false;
 }
 
+function _newsTopMerge(items,source){
+  const now=Date.now()/1000;
+  const clean=(items||[]).map(function(item){
+    return {title:_newsClip(item&&item.title,100),url:_newsSafeUrl(item&&item.url),
+      publisher:_newsClip(item&&item.publisher||source||'',60),provider:_newsClip(item&&item.provider||source||'',60),
+      ts:_newsParseTime(item&&item.ts)};
+  }).filter(function(item){return item.url&&item.ts>0&&item.ts<=now+300;});
+  // 延迟到达的旧 Pages / 本地缓存 / 旧源不能覆盖已取得的新文章。
+  const urls=new Set();
+  _newsTopItems=_newsCleanItems(_newsTopItems.concat(clean),100).filter(function(item){
+    if(urls.has(item.url))return false;urls.add(item.url);return true;
+  }).slice(0,5);
+  return _newsTopItems;
+}
+
 async function _fetchNewsTop(){
   const el=document.getElementById('newsTop');
   const sourceEl=document.getElementById('newsTopSource');
   if(!el) return '';
-  try{
-    const result=await _newsFirstAvailable([
-      {name:'华尔街见闻',load:_newsWscnArticles},
-      {name:'东方财富',load:_newsEastmoneyArticles},
-    ],5);
-    _newsRenderTop(el,result.items);
-    _newsSaveCache(_NEWS_TOP_CACHE,result.items,result.source);
-    if(sourceEl) sourceEl.textContent=result.source+' · TOP 5';
-    return result.source;
-  }catch(e){
-    console.warn('[要闻] 全部实时源失败:',e.message);
+  let liveSuccess=0,snapshotFresh=false;
+  function show(items,source){
+    const merged=_newsTopMerge(items,source);
+    if(merged.length){
+      _newsRenderTop(el,merged);
+      _newsSaveCache(_NEWS_TOP_CACHE,merged,'多源精选');
+      if(sourceEl){
+        sourceEl.textContent=(liveSuccess?'最新 ':'备份 · ')+_newsTime(merged[0].ts,true);
+        sourceEl.title=[...new Set(merged.map(function(item){return item.provider||item.publisher;}))].join(' / ')+' · 按文章原始发布时间排序';
+      }
+    }
+  }
+  try{show((JSON.parse(localStorage.getItem(_NEWS_TOP_CACHE)||'null')||{}).items||[],'本地备份');}catch(_){}
+  const stamp='?_='+Date.now();
+  const jobs=['data/finance_news.json','https://raw.githubusercontent.com/xuepenggao-bit/ai-dashboard/main/data/finance_news.json'].map(async function(url){
+    try{
+      const payload=await _newsFetchJson(url+stamp,1,4500);
+      const updated=_newsParseTime(payload&&payload.updatedAt);
+      if(!payload||!Array.isArray(payload.items)||!updated||updated>Date.now()/1000+300)throw new Error('备份格式无效');
+      if(payload.status!=='retained'&&Date.now()/1000-updated<=15*60)snapshotFresh=true;
+      show(payload.items,'后台备份');
+    }catch(e){console.warn('[要闻备份]',url,e.message);}
+  });
+  // 所有来源都参与合并。较快返回的旧列表不能截断较慢来源的新文章。
+  [{name:'华尔街见闻',load:function(){return _newsWscnArticles('api-one-wscn.awtmt.com');}},
+   {name:'华尔街见闻',load:function(){return _newsWscnArticles('api-one.wallstcn.com');}},
+   {name:'东方财富',load:_newsEastmoneyArticles}].forEach(function(source){
+    jobs.push(Promise.resolve().then(source.load).then(function(items){
+      if(!_newsCleanItems(items,5).some(function(item){const ts=_newsParseTime(item.ts);return _newsSafeUrl(item.url)&&ts>0&&ts<=Date.now()/1000+300;}))throw new Error('空数据');
+      liveSuccess++;show(items,source.name);
+    }).catch(function(e){console.warn('[要闻直连]',source.name,e.message);}));
+  });
+  await Promise.allSettled(jobs);
+  if(_newsTopItems.length){
+    if(sourceEl&&!liveSuccess){
+      sourceEl.textContent='备份 · 最新 '+_newsTime(_newsTopItems[0].ts,true);
+      sourceEl.title+=' · 直连暂不可达'+(snapshotFresh?'，已读取近期后台快照':'，当前沿用已知内容');
+    }
+    return liveSuccess?'多源要闻':snapshotFresh?'后台要闻':'';
   }
   if(_newsRestoreCache(el,sourceEl,_NEWS_TOP_CACHE,'news_top_cache',_newsRenderTop)) return '';
   el.innerHTML=_newsEmpty('要闻暂时无法取得');

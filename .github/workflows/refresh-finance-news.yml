@@ -1,0 +1,52 @@
+name: Refresh Finance News
+
+on:
+  schedule:
+    # Every five minutes; GitHub can delay scheduled starts. The UI separately
+    # displays collection/publication timestamps and reads raw JSON as backup.
+    - cron: '3,8,13,18,23,28,33,38,43,48,53,58 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/refresh_finance_news.py'
+      - '.github/workflows/refresh-finance-news.yml'
+      - 'tests/test_refresh_finance_news.py'
+
+concurrency:
+  group: refresh-finance-news
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test source identity, publication time, sorting and outage retention
+        run: python -m unittest discover -s tests -p test_refresh_finance_news.py -v
+      - name: Refresh five newest financial articles
+        run: python .github/scripts/refresh_finance_news.py
+      - name: Persist shared news without changing the website or portfolio
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/finance_news.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: refresh finance news $(date -u '+%Y-%m-%d %H:%M UTC')"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
