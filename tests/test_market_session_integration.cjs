@@ -127,6 +127,28 @@ test('all Top7 ranks and weighted summaries exclude closed returns while heavy l
   assert.match(heavy,new RegExp(HK.name));assert.match(heavy,/休市/);assert.match(heavy,/70\.0%/);
   assert.match(heavy,/port-top-weighted-value">\+4\.00%/);assert.doesNotMatch(heavy,/19\.87|370\.123/);
 });
+test('heavy Top7 negative weighted value is green while its orange frame and nonnegative values stay unchanged',()=>{
+  const ctx=harness().ctx;
+  const cases=[
+    {items:[{pct:-3,w:30},{pct:1,w:70}],value:'-0.20%',color:'#078447'},
+    {items:[{pct:2,w:100}],value:'+2.00%',color:'#c2410c'},
+    {items:[{pct:1,w:50},{pct:-1,w:50}],value:'0.00%',color:'#c2410c'},
+    {items:[],value:'—',color:'#c2410c'},
+    {items:[{pct:-10,w:90,returnEligible:false},{pct:1,w:10}],value:'+1.00%',color:'#c2410c'}
+  ];
+  for(const item of cases){
+    const view=ctx._renderPortTopWeightedSummary(item.items,'orange');
+    assert.ok(view.includes('port-top-weighted-value">'+item.value+'</strong>'));
+    assert.ok(view.includes('--ptw-value-color:'+item.color+';'));
+    for(const token of ['--ptw-color:#c2410c;','--ptw-bg:#fff7ed;','--ptw-border:#fed7aa;','--ptw-mark-bg:#ffedd5'])assert.ok(view.includes(token));
+  }
+  for(const [pct,color] of [[1,'#c81e1e'],[-1,'#078447'],[0,'#64748b']]){
+    const view=ctx._renderPortTopWeightedSummary([{pct,w:100}]);
+    assert.ok(view.includes('--ptw-color:'+color+';'));
+    assert.ok(view.includes('--ptw-value-color:'+color+';'),'Other Top7 summaries retain their original sign colors');
+  }
+  assert.match(html,/\.port-top-weighted-value\{[^}]*color:var\(--ptw-value-color,var\(--ptw-color\)\)/);
+});
 test('Top7 shows A/H prices to two decimals and keeps heavy MA5 trend cues aligned',()=>{
   const h=harness('2026-11-13');h.ctx._PORT_PRICES={
     [A.code]:quote(A,'2026-11-13',4,73.45),[HK.code]:quote(HK,'2026-11-13',-1,370.123)};

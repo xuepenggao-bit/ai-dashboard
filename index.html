@@ -473,7 +473,7 @@ body{font-family:'Microsoft YaHei','微软雅黑','PingFang SC',sans-serif;backg
 .port-top-weighted-copy{flex:1;min-width:0}
 .port-top-weighted-label{font-size:10.5px;font-weight:850;color:#334155;letter-spacing:.025em;white-space:nowrap}
 .port-top-weighted-meta{margin-top:2px;font-size:9.5px;font-weight:650;color:#8491a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.port-top-weighted-value{flex:0 0 auto;font-size:19px;font-weight:900;line-height:1;color:var(--ptw-color);font-variant-numeric:tabular-nums;letter-spacing:-.025em;white-space:nowrap}
+.port-top-weighted-value{flex:0 0 auto;font-size:19px;font-weight:900;line-height:1;color:var(--ptw-value-color,var(--ptw-color));font-variant-numeric:tabular-nums;letter-spacing:-.025em;white-space:nowrap}
 /* 保持原 15 项列表的 594px 桌面高度；第 16 项由行高和分组间距腾出空间。 */
 .port-index-card{display:flex;flex-direction:column;min-height:594px}
 .port-index-list{display:flex;flex:1 0 auto;min-height:0;flex-direction:column;justify-content:space-between}
@@ -8693,13 +8693,14 @@ function _renderPortTopWeightedSummary(items, theme){
   var up=avg!=null&&avg>0, down=avg!=null&&avg<0;
   var orange=theme==='orange';
   var color=orange?'#c2410c':up?'#c81e1e':down?'#078447':'#64748b';
+  var valueColor=down?'#078447':color;
   var bg=orange?'#fff7ed':up?'#fff4f4':down?'#effcf5':'#f7f9fc';
   var border=orange?'#fed7aa':up?'#fecaca':down?'#bbf7d0':'#dce3ec';
   var markBg=orange?'#ffedd5':up?'#fee2e2':down?'#dcfce7':'#eef2f7';
   var value=avg==null?'—':(avg>0?'+':'')+avg.toFixed(2)+'%';
   var meta=avg==null?'暂无有效仓位':valid.length+'只 · 榜内仓位 '+weightSum.toFixed(1)+'%';
   return '<div class="port-top-weighted-wrap"><div class="port-top-weighted" title="Σ（榜内股票涨跌幅 × 仓位）÷ Σ榜内仓位"'
-    +' style="--ptw-color:'+color+';--ptw-bg:'+bg+';--ptw-border:'+border+';--ptw-mark-bg:'+markBg+'">'
+    +' style="--ptw-color:'+color+';--ptw-value-color:'+valueColor+';--ptw-bg:'+bg+';--ptw-border:'+border+';--ptw-mark-bg:'+markBg+'">'
     +'<span class="port-top-weighted-mark">∑</span>'
     +'<div class="port-top-weighted-copy">'
     +'<div class="port-top-weighted-label">仓位加权涨跌幅</div>'
